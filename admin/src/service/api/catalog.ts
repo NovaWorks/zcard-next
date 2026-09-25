@@ -10,6 +10,9 @@ export function fetchProducts(params?: {
   page_size?: number;
   options_only?: boolean;
   is_locked?: boolean;
+  inventory?: string;
+  restocked_only?: boolean;
+  auto_listing?: boolean;
   low_stock_only?: boolean;
   out_of_stock_only?: boolean;
   upstream_source_id?: number;
@@ -309,3 +312,10 @@ export function setDeliverySource(productId: number, data: Record<string, unknow
 }
 
 export function classifyProducts(data: Record<string, unknown>) { return request<any>({url:'/api/v1/admin/products/classify',method:'post',data}); }
+
+export function manageProductListing(data: {
+  action: string; ids?: number[]; filter?: Record<string, unknown>;
+  apply?: boolean; revisions?: Record<string, string>;
+}) {
+  return request<any>({ url: "/api/v1/admin/products/listing", method: "post", data, timeout: 30000, silentError: true });
+}

@@ -324,7 +324,11 @@ func (s *AdminCatalogService) SetDeliverySource(ctx context.Context, req *adminv
 				return e
 			}
 		}
-		return c.Product.UpdateOneID(p.ID).AddLockVersion(1).Exec(ctx)
+		update := c.Product.UpdateOneID(p.ID).AddLockVersion(1)
+		if mode == "local" || mode == "reuse" {
+			update.SetAutoListing(false).SetListingChangedAt(time.Now().UnixMilli()).SetListingZeroSince(0).SetListingRestocked(false).SetListingMessage("已切换本地发货，自动上下架已暂停")
+		}
+		return update.Exec(ctx)
 	})
 	if err != nil {
 		return nil, err

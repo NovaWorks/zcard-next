@@ -19,7 +19,7 @@ func (s *AdminCatalogService) SetProductLock(ctx context.Context, req *adminv1.S
 	}
 	err = data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
 		c := data.Client(ctx, s.repo.data)
-		q := c.Product.Update().Where(product.ID(req.Id), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID), product.StatusGTE(0), product.LockVersion(req.ExpectedVersion)).SetIsLocked(req.IsLocked).AddLockVersion(1)
+		q := c.Product.Update().Where(product.ID(req.Id), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID), product.StatusGTE(0), product.LockVersion(req.ExpectedVersion)).SetIsLocked(req.IsLocked).AddLockVersion(1).SetListingChangedAt(time.Now().UnixMilli()).SetListingZeroSince(0)
 		if req.IsLocked {
 			q.SetLockedBy(actor).SetLockedAt(time.Now().UTC())
 		} else {
@@ -78,7 +78,7 @@ func (r *ProductRepoImpl) batchStatus(ctx context.Context, ids []uint64, status 
 		}
 		skipped = n
 		for _, p := range rows {
-			if e = data.Client(ctx, r.data).Product.UpdateOneID(p.ID).SetStatus(status).Exec(ctx); e != nil {
+			if e = data.ManualListing(data.Client(ctx, r.data).Product.UpdateOneID(p.ID), status).Exec(ctx); e != nil {
 				return e
 			}
 			updated++

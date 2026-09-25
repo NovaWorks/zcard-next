@@ -291,6 +291,9 @@ message CreateSyncTaskRequest {
 message PreviewProductsRequest {
   uint64 connection_id = 1 [(google.api.field_behavior) = REQUIRED];
   string quote_code = 2; // 非空时仅返回该商品，并实时获取账号单件报价（含各规格）
+  bool async = 3; // 后台加载目录，短轮询读取状态
+  string snapshot_id = 4; // 已加载目录凭证，报价与导入均复用
+  bool refresh = 5; // 明确重试或刷新；不覆盖其他窗口持有的快照
 }
 
 message PreviewProduct {
@@ -320,6 +323,11 @@ message PreviewCategory {
 message PreviewProductsReply {
   repeated PreviewCategory categories = 1;
   int32 total = 2;
+  string snapshot_id = 3;
+  string status = 4; // pending | loading | ready | failed
+  string message = 5;
+  int32 loaded_count = 6;
+  int64 expires_at = 7;
 }
 
 message ImportProductsRequest {
@@ -335,6 +343,7 @@ message ImportProductsRequest {
   bool save_category_rules = 12;
   bool selected_categories_only = 13; // 不修改整个上游分类的默认映射
   string request_key = 9; // 同一次提交/网络重试使用同一键
+  string snapshot_id = 14;
   repeated ImportCategoryDraft category_drafts = 8; // 仅在提交时创建，限所选商品涉及分类
 }
 

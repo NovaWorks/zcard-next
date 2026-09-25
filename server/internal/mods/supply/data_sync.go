@@ -45,6 +45,7 @@ const (
 	ScopeCollect = "collect"
 	ScopePrice   = "price"
 	ScopeStatus  = "status"
+	ScopeListing = "listing"
 	ScopeStock   = "stock" // 仅补查已映射商品库存，不写价格、分类、上下架
 )
 
@@ -175,8 +176,8 @@ func (s *SyncService) runSync(ctx context.Context, taskID uint64) error {
 	if scope == "" {
 		scope = ScopeCollect // 历史任务兼容
 	}
-	if scope != ScopeCollect && scope != ScopePrice && scope != ScopeStatus && scope != ScopeStock {
-		_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusFailed, "INVALID_SCOPE", "scope 必须为 collect|price|status|stock")
+	if scope != ScopeCollect && scope != ScopePrice && scope != ScopeStatus && scope != ScopeListing && scope != ScopeStock {
+		_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusFailed, "INVALID_SCOPE", "scope 必须为 collect|price|status|listing|stock")
 		return nil
 	}
 	conn, err := s.repo.GetConnection(ctx, task.ConnectionID)
@@ -290,7 +291,7 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 		}
 
 		listedAt := time.Now().UTC()
-		list0, err := list(ctx, page, 50)
+		list0, err := list(adapter.WithCatalogRead(ctx), page, 50)
 		if err != nil {
 			// fail-open：拉取失败 → 已处理部分保留，任务失败留痕（可重跑）。
 			// 限流信号反馈节奏器（AIMD 降速/熔断判据）
@@ -339,7 +340,7 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 		}
 		list0.Items = maintainable
 		// 采集和状态同步统一补查；失败项保持未知并汇总。
-		if scope == ScopeCollect || scope == ScopeStatus {
+		if scope == ScopeCollect || scope == ScopeStatus || scope == ScopeListing {
 			if conn.Driver == "acg_faka" {
 				for i := range list0.Items {
 					list0.Items[i].Stock = -2
@@ -357,8 +358,19 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 			}
 		}
 
-		if scope == ScopeCollect || scope == ScopeStatus {
-			for _, p := range list0.Items {
+		if scope == ScopeCollect || scope == ScopeStatus || scope == ScopeListing {
+			for i := range list0.Items {
+				if e := s.listingSKUStock(ctx, a, conn.ID, &list0.Items[i]); e != nil {
+					if errors.Is(e, adapter.ErrRateLimited) {
+						if s.pacer != nil {
+							s.pacer.OnRateLimited(ctx, conn, "库存检查限流")
+						}
+						_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusFailed, "STOCK_QUERY_FAILED", "规格库存检查被限流，请稍后重试")
+						return nil
+					}
+					return e
+				}
+				p := list0.Items[i]
 				stockTotal++
 				if p.Stock < -1 {
 					stockFailed++
@@ -537,16 +549,19 @@ func (s *SyncService) syncOneLocked(ctx context.Context, taskID uint64, task *en
 		if e = data.GuardUpstreamDelivery(ctx, s.repo.entClient(ctx), local); e != nil {
 			return false, e
 		}
+		if e = s.validateListingSKUs(ctx, local.ID, p); e != nil {
+			return false, e
+		}
 	}
 	// ── 轻量 scope：无映射（未导入）直接跳过，绝不创建 ──
-	if task.Scope == ScopePrice || task.Scope == ScopeStatus {
+	if task.Scope == ScopePrice || task.Scope == ScopeStatus || task.Scope == ScopeListing {
 		if notFound {
 			return false, nil
 		}
 		if task.Scope == ScopePrice {
 			return false, s.syncPriceOnly(ctx, conn, mapping, p, task.ForceReprice, stats)
 		}
-		return false, s.syncStatusOnly(ctx, conn, mapping, p, stats)
+		return false, s.syncStatusOnly(ctx, conn, mapping, p, stats, task.Scope == ScopeListing)
 	}
 
 	if notFound {
@@ -614,6 +629,12 @@ func (s *SyncService) syncOneLocked(ctx context.Context, taskID uint64, task *en
 	}
 	stats.Processed++
 
+	// Collection may replace the local SKU set in this transaction. Recheck
+	// after the upsert before caching stock or restoring availability.
+	if err := s.validateListingSKUs(ctx, productID, p); err != nil {
+		return false, err
+	}
+
 	// upsert 映射（up_stock 缓存 + pricing_override 持久化）
 	mapping.LocalProductID = productID
 	mapping.UpstreamCategory = p.CategoryID
@@ -627,6 +648,13 @@ func (s *SyncService) syncOneLocked(ctx context.Context, taskID uint64, task *en
 		return false, err
 	}
 
+	if exists, e := s.repo.entClient(ctx).Product.Query().Where(product.ID(productID)).Exist(ctx); e != nil {
+		return false, e
+	} else if exists {
+		if err := s.observeListing(ctx, productID, p); err != nil {
+			return false, err
+		}
+	}
 	// 取消检查（每商品粒度太细，放每页尾部；此处仅任务级取消标志）
 	return false, nil
 }
@@ -706,8 +734,12 @@ func (s *SyncService) localProductShelvedOff(ctx context.Context, localProductID
 // syncStatusOnly uses the normalized stock after upstream backfill (-1 unlimited, -2 unknown).
 // 单向语义：只传导「下架」，不自动上架——运营在后台手动下架的商品不被同步
 // 拉回（重新上架走后台操作；上游可售≠本地必须卖）。
-func (s *SyncService) syncStatusOnly(ctx context.Context, conn *ent.SupplyConnection, mapping *ent.SupplyMapping, p *adapter.Product, stats *TaskProgress) error {
-	if s.maintainer != nil && !p.IsActive {
+func (s *SyncService) syncStatusOnly(ctx context.Context, conn *ent.SupplyConnection, mapping *ent.SupplyMapping, p *adapter.Product, stats *TaskProgress, listingOnly ...bool) error {
+	local, localErr := s.repo.entClient(ctx).Product.Get(ctx, mapping.LocalProductID)
+	if localErr != nil && !ent.IsNotFound(localErr) {
+		return localErr
+	}
+	if s.maintainer != nil && !p.IsActive && (local == nil || !local.AutoListing) && !(len(listingOnly) > 0 && listingOnly[0]) {
 		if _, err := s.maintainer.UpdateUpstreamStatus(ctx, conn.ID, p.ID, 0); err != nil {
 			return err
 		}
@@ -719,6 +751,12 @@ func (s *SyncService) syncStatusOnly(ctx context.Context, conn *ent.SupplyConnec
 	if err := s.repo.UpsertMapping(ctx, mapping); err != nil {
 		return err
 	}
+	if local != nil {
+		if err := s.observeListing(ctx, local.ID, p); err != nil {
+			return err
+		}
+	}
+
 	stats.Updated++
 	stats.Processed++
 	return nil

@@ -4,12 +4,15 @@
  * 全字段表单（分类/描述/封面+图集 media 上传/排序/上下架三态/发货模式/库存显示/积分价）
  * + SKU 规格管理子表格 + 下单控件配置（独立弹窗）。
  */
+import ListingManagement from "./components/listing-management.vue";
 import { ref, reactive, computed, onMounted, onBeforeUnmount, h, watch } from "vue";
 import { onBeforeRouteLeave, useRoute } from "vue-router";
 import { NButton, NTag, NSpace, NPopconfirm, NInputNumber, NPopover } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import {
   fetchProducts,
+  createSupplySyncTask,
+  fetchSupplySyncTask,
   setProductLock,
   fetchProduct,
   createProduct,
@@ -114,6 +117,112 @@ function beforeUnload(event: BeforeUnloadEvent) {
 }
 onMounted(() => window.addEventListener("beforeunload", beforeUnload));
 onBeforeUnmount(() => window.removeEventListener("beforeunload", beforeUnload));
+const showListing = ref(false);
+const listingIds = ref<number[]>([]);
+const listingFilter = ref<Record<string, unknown>>({});
+const listingAction = ref("enable");
+const listingScope = ref("");
+const inventoryFilter = ref("");
+const restockedOnly = ref(false);
+const autoListingFilter = ref<string | null>(null);
+const inventoryTabs = [
+  { label: "全部", value: "" },
+  { label: "有库存", value: "available" },
+  { label: "库存告急", value: "low" },
+  { label: "无库存", value: "empty" },
+  { label: "待确认", value: "unknown" },
+];
+function currentFilters() {
+  return {
+    keyword: keyword.value || undefined,
+    is_locked:
+      lockFilter.value === null ? undefined : lockFilter.value === "locked",
+    status: statusFilter.value || undefined,
+    inventory: inventoryFilter.value || undefined,
+    restocked_only: restockedOnly.value || undefined,
+    auto_listing:
+      autoListingFilter.value === null
+        ? undefined
+        : autoListingFilter.value === "enabled",
+    category_id: categoryFilter.value || undefined,
+    upstream_source_id:
+      (supplyFilter.value ?? 0) > 0 ? supplyFilter.value! : undefined,
+    local_only: supplyFilter.value === 0 || undefined,
+  };
+}
+function openListing(ids: number[] = [], action = "enable") {
+  listingIds.value = [...ids];
+  listingAction.value = action;
+  listingFilter.value = { ...currentFilters() };
+  listingScope.value = ids.length
+    ? `已选 ${ids.length} 件商品`
+    : `当前全部筛选结果（${total.value} 件，包含其他页）`;
+  showListing.value = true;
+}
+function listingSaved() {
+  checkedKeys.value = [];
+  void loadList();
+}
+function showRestocked() {
+  const next = !restockedOnly.value;
+  if (next) { statusFilter.value = -1; inventoryFilter.value = 'available'; }
+  restockedOnly.value = next;
+  onSearch();
+}
+
+const checkingStock = ref(false);
+const stockCheckMessage = ref("");
+let stockCheckTimer: ReturnType<typeof setTimeout> | undefined;
+let stockCheckSequence = 0;
+async function checkChannelStock() {
+  if (!supplyFilter.value || checkingStock.value) return;
+  checkingStock.value = true;
+  stockCheckMessage.value = "正在创建后台检查任务…";
+  const seq = ++stockCheckSequence;
+  const r = await createSupplySyncTask({
+    connection_id: supplyFilter.value,
+    scope: "listing",
+    mode: "full",
+  });
+  if (seq !== stockCheckSequence) return;
+  if (r.error) {
+    checkingStock.value = false;
+    stockCheckMessage.value =
+      "检查任务未能启动，请到货源任务列表查看是否已有任务运行。";
+    return;
+  }
+  const task = (r.data as any)?.task || r.data;
+  const id = (task as any)?.id;
+  if (!id) {
+    checkingStock.value = false;
+    stockCheckMessage.value = "任务已提交，请在货源任务列表查看进度。";
+    return;
+  }
+  const poll = async () => {
+    if (seq !== stockCheckSequence) return;
+    const x = await fetchSupplySyncTask(id);
+    if (seq !== stockCheckSequence) return;
+    const t = (x.data as any)?.task || x.data;
+    if (x.error) {
+      checkingStock.value = false;
+      stockCheckMessage.value = `任务 #${id} 在后台继续，可到货源任务列表查看。`;
+      return;
+    }
+    stockCheckMessage.value = `库存与补货检查 #${id} · ${t?.processed || 0} 件已处理。仅自动管理商品会按规则修改上下架，其他商品只更新库存信息。`;
+    if (["done", "failed", "canceled"].includes(t?.status)) {
+      checkingStock.value = false;
+      stockCheckMessage.value = `检查 #${id} ${t.status === "done" ? "已完成" : "有未完成项，请到货源任务列表查看"}；已刷新列表。`;
+      void loadList();
+      return;
+    }
+    stockCheckTimer = setTimeout(poll, 3000);
+  };
+  void poll();
+}
+onBeforeUnmount(() => {
+  stockCheckSequence++;
+  clearTimeout(stockCheckTimer);
+});
 const keyword = ref("");
 const products = ref<any[]>([]);
 const categories = ref<any[]>([]);
@@ -123,7 +232,10 @@ const page = ref(1);
 const pageSize = ref(20);
 
 // 快捷筛选卡片（后端 status 口径：0=全部 1=上架 2=隐藏 -1=仅下架；low_stock=库存告急）
-const statusFilter = ref<number | "low_stock" | "out_of_stock">(0);
+const statusFilter = ref<number>(0);
+watch([statusFilter, inventoryFilter], () => {
+  if (restockedOnly.value && (statusFilter.value !== -1 || inventoryFilter.value !== 'available')) restockedOnly.value = false;
+}, { flush: 'sync' });
 const categoryFilter = ref<number | null>(null); // 分类筛选（null=全部）
 const supplyFilter = ref<number | null>(null); // 渠道筛选（null=全部 0=自营 >0=渠道ID）
 const statusTabs = [
@@ -131,8 +243,6 @@ const statusTabs = [
   { label: "已上架", value: 1, type: "success" as const },
   { label: "已隐藏", value: 2, type: "warning" as const },
   { label: "已下架", value: -1, type: "error" as const },
-  { label: "库存告急", value: "low_stock" as const, type: "warning" as const },
-  { label: "无库存", value: "out_of_stock" as const, type: "error" as const },
 ];
 
 // 列表多选（批量上下架）
@@ -150,7 +260,7 @@ const batchContentIDs = ref<number[]>([]);
 const batchContentCategory = ref<number | null>(null);
 const offPageSelected = computed(() => checkedKeys.value.filter(id => !products.value.some(p => p.id === id)).length);
 const contentProtection = ref({ cover: false, description: false });
-watch([keyword, categoryFilter, supplyFilter, statusFilter, lockFilter], () => { checkedKeys.value = []; }, { flush: "sync" });
+watch([keyword, categoryFilter, supplyFilter, statusFilter, lockFilter, inventoryFilter, restockedOnly, autoListingFilter], () => { checkedKeys.value = []; }, { flush: "sync" });
 function updateCheckedKeys(keys: Array<string | number>) {
   if (loading.value) return;
   const pageIDs = new Set(products.value.map(p => p.id));
@@ -528,6 +638,15 @@ const columns: DataTableColumns<any> = [
     },
   },
   {
+    title: "自动管理 / 原因",
+    key: "auto_listing", width: 230,
+    render: (row) => h('div',{class:'flex flex-col gap-4px'},[
+      h(NButton,{size:'small',text:true,type:row.auto_listing?'primary':'default',disabled:row.is_locked||!checkAuth('catalog:write'),onClick:()=>openListing([row.id],row.auto_listing?'disable':'enable')},{default:()=>row.is_locked?'已锁定 · 不自动调整':row.auto_listing?'自动上下架 · 已开启':'自动上下架 · 未开启'}),
+      row.listing_observed_at ? h('span',{class:'text-12px'},`检查于 ${new Date(Number(row.listing_observed_at)*1000).toLocaleString()}`) : null,
+      h('span',{class:'text-12px'},row.listing_message||({manual:'人工设置',stock_out:'缺货自动下架',upstream_unavailable:'上游不可售，需人工核实',stock_recovered:'补货自动恢复'} as Record<string,string>)[row.listing_reason]||'人工管理'),
+    ]),
+  },
+  {
     title: "状态",
     key: "status",
     width: 84,
@@ -558,7 +677,7 @@ const columns: DataTableColumns<any> = [
                   `${row.status === 1 ? "上架" : row.status === 2 ? "隐藏" : "下架"}${row.status === 2 ? " ↻" : ""}`,
               },
             ),
-          default: () => `是否${row.status === 1 ? "下架" : "上架"}「${row.name}」？`,
+          default: () => `是否${row.status === 1 ? "下架" : "上架"}「${row.name}」？此操作会暂停自动上下架。`,
         },
       ),
   },
@@ -642,14 +761,7 @@ async function loadList() {
   loading.value = true;
   try {
     const { data, error } = await fetchProducts({
-      keyword: keyword.value || undefined,
-      is_locked: lockFilter.value === null ? undefined : lockFilter.value === "locked",
-      status: typeof statusFilter.value === "number" ? statusFilter.value || undefined : undefined,
-      low_stock_only: statusFilter.value === "low_stock" || undefined,
-      out_of_stock_only: statusFilter.value === "out_of_stock" || undefined,
-      category_id: categoryFilter.value || undefined,
-      upstream_source_id: (supplyFilter.value ?? 0) > 0 ? supplyFilter.value! : undefined,
-      local_only: supplyFilter.value === 0 || undefined,
+      ...currentFilters(),
       page: page.value,
       page_size: pageSize.value,
     });
@@ -740,7 +852,7 @@ async function handleBatchStatus(ids: number[], status: number, label: string) {
   if (!ids.length) return;
   const { data, error } = await batchUpdateProductStatus(ids, status);
   if (!error) {
-    batchReport.value=`已${label} ${data?.updated || 0} 件，跳过锁定商品 ${data?.skipped_locked || 0} 件`;batchFailures.value=[];
+    batchReport.value=`已${label} ${data?.updated || 0} 件，跳过锁定商品 ${data?.skipped_locked || 0} 件`;batchFailures.value=[];batchReport.value += "；人工设置已暂停相关商品自动上下架";
     window.$message?.success(batchReport.value);
     checkedKeys.value = [];
     loadList();
@@ -951,7 +1063,7 @@ async function saveAndContinue() {
 
 
 onMounted(() => {
-  if (route.query.low_stock === "1") statusFilter.value = "low_stock";
+  if (route.query.low_stock === "1") {statusFilter.value=1;inventoryFilter.value="low";}
   loadList();
   loadCategories();
   loadConnections();
@@ -959,6 +1071,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <ListingManagement v-model:show="showListing" :ids="listingIds" :filter="listingFilter" :initial-action="listingAction" :scope-label="listingScope" @saved="listingSaved" />
   <div class="product-management min-h-500px flex flex-1 gap-16px overflow-hidden">
     <DeleteProductModal :show="!!deleteTarget" :product="deleteTarget" @update:show="!$event && (deleteTarget = null)" @deleted="loadList" />
     <!-- 左侧：分类树（大厂后台交互——左树筛选 + 右列表；悬停显示完整分类名） -->
@@ -1044,7 +1157,17 @@ onMounted(() => {
         <span v-if="pageLockedCount" class="text-13px">本页 {{ pageLockedCount }} 件已锁定，全选会自动跳过。</span>
       </div>
       <NAlert v-if="batchReport" :type="batchFailures.length?'warning':'success'" closable class="mb-12px" @close="batchReport=''">{{ batchReport }}<ul v-if="batchFailures.length"><li v-for="failure in batchFailures" :key="failure">{{ failure }}</li></ul></NAlert>
-      <FilterTabs v-model:value="statusFilter" :options="statusTabs" class="mb-12px shrink-0" @change="onSearch" />
+      <div class="mb-8px flex flex-wrap items-center gap-8px shrink-0"><span>上架状态</span><FilterTabs v-model:value="statusFilter" :options="statusTabs" @change="onSearch" /></div>
+      <div class="mb-12px flex flex-wrap items-center gap-8px shrink-0"><span>库存状态</span><FilterTabs v-model:value="inventoryFilter" :options="inventoryTabs" @change="onSearch" /></div>
+      <div class="mb-12px flex flex-wrap items-center gap-8px shrink-0">
+        <NButton :type="restockedOnly?'primary':'default'" @click="showRestocked">{{ restockedOnly?'✓ ':'' }}补货待上架</NButton>
+        <NSelect v-model:value="autoListingFilter" :options="[{label:'自动管理已开启',value:'enabled'},{label:'自动管理未开启',value:'disabled'}]" clearable placeholder="全部管理方式" style="width:180px" @update:value="onSearch" />
+        <NButton v-auth="'catalog:write'" :disabled="loading||!total" @click="openListing()">管理全部筛选结果（{{ total }} 件）</NButton>
+        <NButton v-auth="'supply:sync'" :disabled="!supplyFilter||supplyFilter<0||checkingStock" :loading="checkingStock" @click="checkChannelStock">检查该货源库存与补货</NButton>
+        <span class="text-12px">{{ supplyFilter?'按所选货源后台检查':'选择一个货源后可检查库存' }}；待确认包含过期或查询失败，不能当作缺货。</span>
+        <NButton v-if="restockedOnly" text @click="restockedOnly=false;onSearch()">取消补货限定</NButton>
+      </div>
+      <NAlert v-if="stockCheckMessage" type="info" class="mb-12px" role="status" aria-live="polite">{{ stockCheckMessage }}</NAlert>
 
       <!-- 批量操作条（勾选后出现） -->
       <div
@@ -1058,14 +1181,15 @@ onMounted(() => {
           <template #trigger>
             <NButton v-auth="'catalog:write'" size="small" type="success" :disabled="!checkedKeys.length">批量上架</NButton>
           </template>
-          确定上架选中的 {{ checkedKeys.length }} 件商品？
+          确定上架选中的 {{ checkedKeys.length }} 件商品？同时暂停这些商品的自动上下架。
         </NPopconfirm>
         <NPopconfirm @positive-click="handleBatchStatus([...checkedKeys], 0, '下架')">
           <template #trigger>
             <NButton v-auth="'catalog:write'" size="small" type="warning" :disabled="!checkedKeys.length">批量下架</NButton>
           </template>
-          确定下架选中的 {{ checkedKeys.length }} 件商品？
+          确定下架选中的 {{ checkedKeys.length }} 件商品？同时暂停这些商品的自动上下架。
         </NPopconfirm>
+        <NButton v-auth="'catalog:write'" size="small" :disabled="!checkedKeys.length" @click="openListing(checkedKeys)">自动上下架设置</NButton>
         <NButton v-auth="'catalog:write'" size="small" type="primary" @click="openBatchContent">批量修改内容</NButton>
         <NButton v-auth="'catalog:write'" size="small" type="primary" :disabled="!checkedKeys.length" @click="openBatchCategory">修改分类</NButton>
         <NPopconfirm @positive-click="handleBatchDelete">

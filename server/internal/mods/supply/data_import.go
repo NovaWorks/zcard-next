@@ -23,6 +23,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -46,6 +47,9 @@ const (
 
 // PreviewProducts 上游商品预览（缓存 60s）。
 func (s *AdminSupplyService) PreviewProducts(ctx context.Context, req *adminv1.PreviewProductsRequest) (*adminv1.PreviewProductsReply, error) {
+	if req.GetAsync() || req.GetSnapshotId() != "" {
+		return s.previewSnapshot(ctx, req)
+	}
 	entry, err := s.loadPreview(ctx, req.GetConnectionId())
 	if err != nil {
 		return nil, err
@@ -70,7 +74,7 @@ func (s *AdminSupplyService) pricePreview(ctx context.Context, conn *ent.SupplyC
 	}
 	quoter, needsQuote := a.(adapter.AccountQuoter)
 	reply := &adminv1.PreviewProductsReply{}
-	locals, err := s.repo.entClient(ctx).Product.Query().Where(product.UpstreamSourceID(conn.ID), product.StatusGTE(0)).All(ctx)
+	locals, err := s.repo.entClient(ctx).Product.Query().Where(product.UpstreamSourceID(conn.ID), product.StatusGTE(0), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -89,6 +93,7 @@ func (s *AdminSupplyService) pricePreview(ctx context.Context, conn *ent.SupplyC
 				continue
 			}
 			p := proto.Clone(cached).(*adminv1.PreviewProduct)
+			_, p.AlreadyImported = localCats[p.Code]
 			p.IsLocked = locked[p.Code]
 			p.CategoryProtected = protected[p.Code]
 			p.LocalCategoryId = localCats[p.Code]
@@ -153,6 +158,16 @@ func (s *AdminSupplyService) loadPreview(ctx context.Context, connectionID uint6
 	}
 	previewCache.Unlock()
 
+	entry, err := s.fetchPreview(ctx, connectionID, nil)
+	if err == nil {
+		previewCache.Lock()
+		previewCache.m[connectionID] = *entry
+		previewCache.Unlock()
+	}
+	return entry, err
+}
+
+func (s *AdminSupplyService) fetchPreview(ctx context.Context, connectionID uint64, progress func(int)) (*previewEntry, error) {
 	conn, a, err := s.adapterForConnection(ctx, connectionID)
 	if err != nil {
 		return nil, err
@@ -181,13 +196,25 @@ func (s *AdminSupplyService) loadPreview(ctx context.Context, connectionID uint6
 			byCat[p.CategoryID] = append(byCat[p.CategoryID], p)
 			byCode[p.ID] = p
 		}
+		if progress != nil {
+			progress(len(byCode))
+		}
+		if len(byCode) > 50000 {
+			return nil, catalogLoadError("商品目录超过 50000 件，请缩小货源目录范围")
+		}
 		if !list.HasMore {
 			break
+		}
+		if page == previewMaxPages {
+			return nil, catalogLoadError("商品目录超过最大页数，未保存不完整目录，请缩小货源目录范围")
 		}
 	}
 	// ACG 已携带分类，避免为分类名再次下载整个商品目录。
 	if categories == nil {
-		categories, _ = a.ListCategories(ctx)
+		categories, err = a.ListCategories(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
 	for _, c := range categories {
 		catNames[c.ID] = c.Name
@@ -227,10 +254,6 @@ func (s *AdminSupplyService) loadPreview(ctx context.Context, connectionID uint6
 		}
 		entry.categories = append(entry.categories, pc)
 	}
-	previewCache.Lock()
-	previewCache.m[connectionID] = *entry
-	previewCache.Unlock()
-	_ = conn
 	return entry, nil
 }
 
@@ -248,7 +271,11 @@ func (s *AdminSupplyService) adapterForConnection(ctx context.Context, connectio
 	if err := json.Unmarshal([]byte(credsJSON), &creds); err != nil {
 		return nil, nil, err
 	}
-	a, err := adapter.New(conn.Driver, conn.BaseURL, creds, parseRetryIntervals(conn.RetryIntervals))
+	factory := s.adapterFactory
+	if factory == nil {
+		factory = adapter.New
+	}
+	a, err := factory(conn.Driver, conn.BaseURL, creds, parseRetryIntervals(conn.RetryIntervals))
 	if err != nil {
 		return nil, nil, err
 	}

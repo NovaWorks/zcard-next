@@ -34,6 +34,7 @@ const (
 	AdminCatalogService_PreviewBatchUpdateProductContent_FullMethodName = "/zcard.api.admin.v1.AdminCatalogService/PreviewBatchUpdateProductContent"
 	AdminCatalogService_BatchUpdateProductContent_FullMethodName        = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductContent"
 	AdminCatalogService_GetBatchProductContentResult_FullMethodName     = "/zcard.api.admin.v1.AdminCatalogService/GetBatchProductContentResult"
+	AdminCatalogService_ManageProductListing_FullMethodName             = "/zcard.api.admin.v1.AdminCatalogService/ManageProductListing"
 	AdminCatalogService_SetProductLock_FullMethodName                   = "/zcard.api.admin.v1.AdminCatalogService/SetProductLock"
 	AdminCatalogService_GetCategoryPlacements_FullMethodName            = "/zcard.api.admin.v1.AdminCatalogService/GetCategoryPlacements"
 	AdminCatalogService_SetCategoryPlacements_FullMethodName            = "/zcard.api.admin.v1.AdminCatalogService/SetCategoryPlacements"
@@ -86,6 +87,7 @@ type AdminCatalogServiceClient interface {
 	PreviewBatchUpdateProductContent(ctx context.Context, in *PreviewBatchProductContentRequest, opts ...grpc.CallOption) (*BatchProductContentPreview, error)
 	BatchUpdateProductContent(ctx context.Context, in *BatchProductContentRequest, opts ...grpc.CallOption) (*BatchProductContentResult, error)
 	GetBatchProductContentResult(ctx context.Context, in *BatchProductContentRequest, opts ...grpc.CallOption) (*BatchProductContentResult, error)
+	ManageProductListing(ctx context.Context, in *ManageProductListingRequest, opts ...grpc.CallOption) (*ManageProductListingReply, error)
 	SetProductLock(ctx context.Context, in *SetProductLockRequest, opts ...grpc.CallOption) (*AdminProduct, error)
 	GetCategoryPlacements(ctx context.Context, in *GetCategoryPlacementsRequest, opts ...grpc.CallOption) (*CategoryPlacementsReply, error)
 	SetCategoryPlacements(ctx context.Context, in *SetCategoryPlacementsRequest, opts ...grpc.CallOption) (*CategoryPlacementsReply, error)
@@ -265,6 +267,16 @@ func (c *adminCatalogServiceClient) GetBatchProductContentResult(ctx context.Con
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BatchProductContentResult)
 	err := c.cc.Invoke(ctx, AdminCatalogService_GetBatchProductContentResult_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) ManageProductListing(ctx context.Context, in *ManageProductListingRequest, opts ...grpc.CallOption) (*ManageProductListingReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ManageProductListingReply)
+	err := c.cc.Invoke(ctx, AdminCatalogService_ManageProductListing_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -573,6 +585,7 @@ type AdminCatalogServiceServer interface {
 	PreviewBatchUpdateProductContent(context.Context, *PreviewBatchProductContentRequest) (*BatchProductContentPreview, error)
 	BatchUpdateProductContent(context.Context, *BatchProductContentRequest) (*BatchProductContentResult, error)
 	GetBatchProductContentResult(context.Context, *BatchProductContentRequest) (*BatchProductContentResult, error)
+	ManageProductListing(context.Context, *ManageProductListingRequest) (*ManageProductListingReply, error)
 	SetProductLock(context.Context, *SetProductLockRequest) (*AdminProduct, error)
 	GetCategoryPlacements(context.Context, *GetCategoryPlacementsRequest) (*CategoryPlacementsReply, error)
 	SetCategoryPlacements(context.Context, *SetCategoryPlacementsRequest) (*CategoryPlacementsReply, error)
@@ -659,6 +672,9 @@ func (UnimplementedAdminCatalogServiceServer) BatchUpdateProductContent(context.
 }
 func (UnimplementedAdminCatalogServiceServer) GetBatchProductContentResult(context.Context, *BatchProductContentRequest) (*BatchProductContentResult, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetBatchProductContentResult not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) ManageProductListing(context.Context, *ManageProductListingRequest) (*ManageProductListingReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ManageProductListing not implemented")
 }
 func (UnimplementedAdminCatalogServiceServer) SetProductLock(context.Context, *SetProductLockRequest) (*AdminProduct, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetProductLock not implemented")
@@ -1013,6 +1029,24 @@ func _AdminCatalogService_GetBatchProductContentResult_Handler(srv interface{}, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminCatalogServiceServer).GetBatchProductContentResult(ctx, req.(*BatchProductContentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_ManageProductListing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ManageProductListingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).ManageProductListing(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_ManageProductListing_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).ManageProductListing(ctx, req.(*ManageProductListingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1583,6 +1617,10 @@ var AdminCatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetBatchProductContentResult",
 			Handler:    _AdminCatalogService_GetBatchProductContentResult_Handler,
+		},
+		{
+			MethodName: "ManageProductListing",
+			Handler:    _AdminCatalogService_ManageProductListing_Handler,
 		},
 		{
 			MethodName: "SetProductLock",

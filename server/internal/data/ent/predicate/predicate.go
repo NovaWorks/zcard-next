@@ -234,6 +234,9 @@ type SupplierLedgerEntry func(*sql.Selector)
 // SupplierProductPrice is the predicate function for supplierproductprice builders.
 type SupplierProductPrice func(*sql.Selector)
 
+// SupplyCatalogSnapshot is the predicate function for supplycatalogsnapshot builders.
+type SupplyCatalogSnapshot func(*sql.Selector)
+
 // SupplyConnection is the predicate function for supplyconnection builders.
 type SupplyConnection func(*sql.Selector)
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"unicode/utf8"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -33,6 +32,7 @@ func (s *AdminSupplyService) saveImportCategories(ctx context.Context, req *admi
 		}
 	}
 	drafts := map[string]bool{}
+	invalidNames := []string{}
 	for _, draft := range req.CategoryDrafts {
 		if draft == nil || !selected[draft.UpstreamCode] {
 			return nil, fmt.Errorf("待新建分类必须对应所选商品")
@@ -45,9 +45,16 @@ func (s *AdminSupplyService) saveImportCategories(ctx context.Context, req *admi
 			return nil, fmt.Errorf("同一分类不能同时新建和指定映射")
 		}
 		name := strings.TrimSpace(draft.Name)
-		if name == "" || utf8.RuneCountInString(name) > 100 {
-			return nil, fmt.Errorf("分类名称须为 1–100 个字符")
+		if data.ValidateCategoryName(name) != nil {
+			label := []rune(name)
+			if len(label) > 40 {
+				label = append(label[:40], '…')
+			}
+			invalidNames = append(invalidNames, fmt.Sprintf("「%s」（上游分类 %s）", string(label), draft.UpstreamCode))
 		}
+	}
+	if len(invalidNames) > 0 {
+		return nil, fmt.Errorf("以下分类名称须为 1–100 个字符：%s", strings.Join(invalidNames, "、"))
 	}
 	result := map[string]uint64{}
 	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {

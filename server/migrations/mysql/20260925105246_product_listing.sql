@@ -1,0 +1,2 @@
+-- Modify "products" table
+ALTER TABLE `products` ADD COLUMN `auto_listing` bool NOT NULL DEFAULT 0, ADD COLUMN `listing_reason` varchar(40) NOT NULL DEFAULT "", ADD COLUMN `listing_restore_status` tinyint NOT NULL DEFAULT 1, ADD COLUMN `listing_changed_at` bigint NOT NULL DEFAULT 0, ADD COLUMN `listing_observed_at` bigint NOT NULL DEFAULT 0, ADD COLUMN `listing_zero_since` bigint NOT NULL DEFAULT 0, ADD COLUMN `listing_last_stock` int NOT NULL DEFAULT -2, ADD COLUMN `listing_restocked` bool NOT NULL DEFAULT 0, ADD COLUMN `listing_message` varchar(200) NOT NULL DEFAULT "";

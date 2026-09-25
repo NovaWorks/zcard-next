@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/migrations"
 	"io/fs"
 	"path/filepath"
@@ -50,7 +51,9 @@ func TestImportDeliveryUpgradePreservesLegacyOrders(t *testing.T) {
 		t.Fatal(e)
 	}
 	ctx := context.Background()
-	p := d.Client.Product.GetX(ctx, 42)
+	// This test deliberately stops at an older schema. Select only columns
+	// present at that migration instead of all columns in the current Ent model.
+	p := d.Client.Product.Query().Where(product.ID(42)).Select(product.FieldCategoryProtected, product.FieldIsLocked, product.FieldPrice).OnlyX(ctx)
 	it := d.Client.OrderItem.GetX(ctx, 45)
 	if p.CategoryProtected || !p.IsLocked || p.Price != 999 || it.DeliverySourceID != 0 || it.FulfillmentType != "upstream" {
 		t.Fatal("legacy rows mutated")

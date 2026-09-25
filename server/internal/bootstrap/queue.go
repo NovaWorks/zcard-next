@@ -67,7 +67,7 @@ func NewOutboxRelay(d *data.Data, q queue.Enqueuer, logger *slog.Logger) *data.O
 }
 
 // NewCron 进程内周期任务（注册表）。
-func NewCron(notifyDisp *notify.Dispatcher, supplySync *supply.SyncService, supplyScheduler *supply.Scheduler, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl, auditRepo *audit.AuditRepo, visitCounter *audit.VisitCounter, trackRepo *audit.TrackRepo, broadcastSvc *notify.BroadcastService, ticketAdmin *ticket.AdminTicketService, affiliateSvc *affiliate.AffiliateService, orderUC *order.OrderUsecase) *queue.Cron {
+func NewCron(catalogPreview *supply.AdminSupplyService, notifyDisp *notify.Dispatcher, supplySync *supply.SyncService, supplyScheduler *supply.Scheduler, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl, auditRepo *audit.AuditRepo, visitCounter *audit.VisitCounter, trackRepo *audit.TrackRepo, broadcastSvc *notify.BroadcastService, ticketAdmin *ticket.AdminTicketService, affiliateSvc *affiliate.AffiliateService, orderUC *order.OrderUsecase) *queue.Cron {
 	c := queue.NewCron()
 	// 订单超时取消（每分钟扫 pending_payment 到期单；慢支付顺延在其内）
 	c.AddEvery("order.expire_pending", time.Minute, func(ctx context.Context) {
@@ -80,6 +80,7 @@ func NewCron(notifyDisp *notify.Dispatcher, supplySync *supply.SyncService, supp
 		supplySync.PingAllActive(ctx)
 	})
 	// S3：定时同步调度（每分钟扫描 settings.schedule 到期任务）+ 看门狗（僵死任务回收）
+	c.AddEvery("supply.catalog_snapshots", 5*time.Second, catalogPreview.ResumeCatalogSnapshots)
 	c.AddEvery("supply.resume_tasks", 5*time.Second, supplySync.ResumeTasks)
 	c.AddEvery("supply.schedule_scan", time.Minute, supplyScheduler.Scan)
 	c.AddEvery("supply.sync_reap_stale", 10*time.Minute, supplyScheduler.ReapStaleTasks)

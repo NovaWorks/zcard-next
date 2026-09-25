@@ -921,6 +921,18 @@ func (f SupplierProductPriceFunc) Mutate(ctx context.Context, m ent.Mutation) (e
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SupplierProductPriceMutation", m)
 }
 
+// The SupplyCatalogSnapshotFunc type is an adapter to allow the use of ordinary
+// function as SupplyCatalogSnapshot mutator.
+type SupplyCatalogSnapshotFunc func(context.Context, *ent.SupplyCatalogSnapshotMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SupplyCatalogSnapshotFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SupplyCatalogSnapshotMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SupplyCatalogSnapshotMutation", m)
+}
+
 // The SupplyConnectionFunc type is an adapter to allow the use of ordinary
 // function as SupplyConnection mutator.
 type SupplyConnectionFunc func(context.Context, *ent.SupplyConnectionMutation) (ent.Value, error)

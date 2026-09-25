@@ -128,15 +128,18 @@ type PricingResolver interface {
 
 // AdminFilter 管理面商品过滤（含下架/隐藏；成本价下发）。
 type AdminFilter struct {
-	IsLocked    *bool
-	OptionsOnly bool // select lightweight product options without stats
-	StockType   string
-	SubsiteID   uint64
-	CategoryID  uint64
-	Keyword     string
-	Status      int8 // -1=全部
-	Page        int32
-	PageSize    int32
+	Inventory     string
+	RestockedOnly bool
+	AutoListing   *bool
+	IsLocked      *bool
+	OptionsOnly   bool // select lightweight product options without stats
+	StockType     string
+	SubsiteID     uint64
+	CategoryID    uint64
+	Keyword       string
+	Status        int8 // -1=全部
+	Page          int32
+	PageSize      int32
 	// LowStockThreshold 低库存过滤阈值（>0 时仅返回卡密类且可用库存 < 阈值的商品）
 	LowStockThreshold int
 	OutOfStockOnly    bool // 仅库存为 0；未知和不限不算缺货

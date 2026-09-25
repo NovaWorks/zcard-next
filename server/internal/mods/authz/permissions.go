@@ -107,6 +107,7 @@ func init() {
 		Perm{Code: "identity:admin_delete", Desc: "删除员工（超管专属；内置超管角色与本人不可删）", Domain: "identity", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminUserService/DeleteAdmin", Method: "DELETE", Path: "/api/v1/admin/admins/{id}"},
 
+		Perm{Code: "catalog:write", Desc: "预览及批量管理自动上下架", Domain: "catalog", AdminOnly: true, Op: "zcard.api.admin.v1.AdminCatalogService/ManageProductListing", Method: "POST", Path: "/api/v1/admin/products/listing"},
 		Perm{Code: "catalog:lock", Desc: "锁定与解锁商品", Domain: "catalog", AdminOnly: true, Op: "zcard.api.admin.v1.AdminCatalogService/SetProductLock", Method: "PUT", Path: "/api/v1/admin/products/{id}/lock"},
 		Perm{Code: "catalog:category_read", Desc: "查看分类置顶与推荐", Domain: "catalog", Op: "zcard.api.admin.v1.AdminCatalogService/GetCategoryPlacements", Method: "GET", Path: "/api/v1/admin/categories/{category_id}/placements"},
 		Perm{Code: "catalog:category_write", Desc: "设置分类置顶与推荐", Domain: "catalog", AdminOnly: true, Op: "zcard.api.admin.v1.AdminCatalogService/SetCategoryPlacements", Method: "PUT", Path: "/api/v1/admin/categories/{category_id}/placements"},

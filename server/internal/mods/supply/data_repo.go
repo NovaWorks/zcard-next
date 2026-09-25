@@ -509,7 +509,7 @@ func (r *SupplyRepoImpl) TouchScopeAnchor(ctx context.Context, id uint64, scope 
 		upd.SetLastCollectAt(now)
 	case ScopePrice:
 		upd.SetLastPriceSyncAt(now)
-	case ScopeStatus:
+	case ScopeStatus, ScopeListing:
 		upd.SetLastStatusSyncAt(now)
 	default:
 		return nil

@@ -193,7 +193,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	scheduler := supply.NewScheduler(supplyRepoImpl, syncService, logger)
 	visitCounter := audit.NewVisitCounter()
 	affiliateService := affiliate.NewAffiliateService(commissionRepo, portWallet, settingsReader, outboxWriter, logger)
-	cron := bootstrap.NewCron(dispatcher, syncService, scheduler, procureService, supplierRepoImpl, auditRepo, visitCounter, trackRepo, broadcastService, adminTicketService, affiliateService, orderUsecase)
+	cron := bootstrap.NewCron(adminSupplyService, dispatcher, syncService, scheduler, procureService, supplierRepoImpl, auditRepo, visitCounter, trackRepo, broadcastService, adminTicketService, affiliateService, orderUsecase)
 	runMode := provideRunMode()
 	backgroundServer := server.NewBackgroundServer(outboxRelay, cron, runMode)
 	settleService := reseller.NewSettleService(resellerRepo, logger)

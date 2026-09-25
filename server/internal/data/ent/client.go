@@ -91,6 +91,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplycatalogsnapshot"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyimportitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
@@ -268,6 +269,8 @@ type Client struct {
 	SupplierLedgerEntry *SupplierLedgerEntryClient
 	// SupplierProductPrice is the client for interacting with the SupplierProductPrice builders.
 	SupplierProductPrice *SupplierProductPriceClient
+	// SupplyCatalogSnapshot is the client for interacting with the SupplyCatalogSnapshot builders.
+	SupplyCatalogSnapshot *SupplyCatalogSnapshotClient
 	// SupplyConnection is the client for interacting with the SupplyConnection builders.
 	SupplyConnection *SupplyConnectionClient
 	// SupplyImportItem is the client for interacting with the SupplyImportItem builders.
@@ -391,6 +394,7 @@ func (c *Client) init() {
 	c.SupplierAccount = NewSupplierAccountClient(c.config)
 	c.SupplierLedgerEntry = NewSupplierLedgerEntryClient(c.config)
 	c.SupplierProductPrice = NewSupplierProductPriceClient(c.config)
+	c.SupplyCatalogSnapshot = NewSupplyCatalogSnapshotClient(c.config)
 	c.SupplyConnection = NewSupplyConnectionClient(c.config)
 	c.SupplyImportItem = NewSupplyImportItemClient(c.config)
 	c.SupplyMapping = NewSupplyMappingClient(c.config)
@@ -577,6 +581,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		SupplierAccount:          NewSupplierAccountClient(cfg),
 		SupplierLedgerEntry:      NewSupplierLedgerEntryClient(cfg),
 		SupplierProductPrice:     NewSupplierProductPriceClient(cfg),
+		SupplyCatalogSnapshot:    NewSupplyCatalogSnapshotClient(cfg),
 		SupplyConnection:         NewSupplyConnectionClient(cfg),
 		SupplyImportItem:         NewSupplyImportItemClient(cfg),
 		SupplyMapping:            NewSupplyMappingClient(cfg),
@@ -690,6 +695,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		SupplierAccount:          NewSupplierAccountClient(cfg),
 		SupplierLedgerEntry:      NewSupplierLedgerEntryClient(cfg),
 		SupplierProductPrice:     NewSupplierProductPriceClient(cfg),
+		SupplyCatalogSnapshot:    NewSupplyCatalogSnapshotClient(cfg),
 		SupplyConnection:         NewSupplyConnectionClient(cfg),
 		SupplyImportItem:         NewSupplyImportItemClient(cfg),
 		SupplyMapping:            NewSupplyMappingClient(cfg),
@@ -754,11 +760,11 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
 		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
 		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.SupplierAccount,
-		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyConnection,
-		c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce, c.SupplyOrder,
-		c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User, c.UserGroup,
-		c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog, c.WalletAccount,
-		c.WalletTransaction, c.Withdrawal,
+		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyCatalogSnapshot,
+		c.SupplyConnection, c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce,
+		c.SupplyOrder, c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User,
+		c.UserGroup, c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog,
+		c.WalletAccount, c.WalletTransaction, c.Withdrawal,
 	} {
 		n.Use(hooks...)
 	}
@@ -785,11 +791,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
 		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
 		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.SupplierAccount,
-		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyConnection,
-		c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce, c.SupplyOrder,
-		c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User, c.UserGroup,
-		c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog, c.WalletAccount,
-		c.WalletTransaction, c.Withdrawal,
+		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyCatalogSnapshot,
+		c.SupplyConnection, c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce,
+		c.SupplyOrder, c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User,
+		c.UserGroup, c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog,
+		c.WalletAccount, c.WalletTransaction, c.Withdrawal,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -950,6 +956,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SupplierLedgerEntry.mutate(ctx, m)
 	case *SupplierProductPriceMutation:
 		return c.SupplierProductPrice.mutate(ctx, m)
+	case *SupplyCatalogSnapshotMutation:
+		return c.SupplyCatalogSnapshot.mutate(ctx, m)
 	case *SupplyConnectionMutation:
 		return c.SupplyConnection.mutate(ctx, m)
 	case *SupplyImportItemMutation:
@@ -11355,6 +11363,139 @@ func (c *SupplierProductPriceClient) mutate(ctx context.Context, m *SupplierProd
 	}
 }
 
+// SupplyCatalogSnapshotClient is a client for the SupplyCatalogSnapshot schema.
+type SupplyCatalogSnapshotClient struct {
+	config
+}
+
+// NewSupplyCatalogSnapshotClient returns a client for the SupplyCatalogSnapshot from the given config.
+func NewSupplyCatalogSnapshotClient(c config) *SupplyCatalogSnapshotClient {
+	return &SupplyCatalogSnapshotClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `supplycatalogsnapshot.Hooks(f(g(h())))`.
+func (c *SupplyCatalogSnapshotClient) Use(hooks ...Hook) {
+	c.hooks.SupplyCatalogSnapshot = append(c.hooks.SupplyCatalogSnapshot, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `supplycatalogsnapshot.Intercept(f(g(h())))`.
+func (c *SupplyCatalogSnapshotClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SupplyCatalogSnapshot = append(c.inters.SupplyCatalogSnapshot, interceptors...)
+}
+
+// Create returns a builder for creating a SupplyCatalogSnapshot entity.
+func (c *SupplyCatalogSnapshotClient) Create() *SupplyCatalogSnapshotCreate {
+	mutation := newSupplyCatalogSnapshotMutation(c.config, OpCreate)
+	return &SupplyCatalogSnapshotCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SupplyCatalogSnapshot entities.
+func (c *SupplyCatalogSnapshotClient) CreateBulk(builders ...*SupplyCatalogSnapshotCreate) *SupplyCatalogSnapshotCreateBulk {
+	return &SupplyCatalogSnapshotCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SupplyCatalogSnapshotClient) MapCreateBulk(slice any, setFunc func(*SupplyCatalogSnapshotCreate, int)) *SupplyCatalogSnapshotCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SupplyCatalogSnapshotCreateBulk{err: fmt.Errorf("calling to SupplyCatalogSnapshotClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SupplyCatalogSnapshotCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SupplyCatalogSnapshotCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SupplyCatalogSnapshot.
+func (c *SupplyCatalogSnapshotClient) Update() *SupplyCatalogSnapshotUpdate {
+	mutation := newSupplyCatalogSnapshotMutation(c.config, OpUpdate)
+	return &SupplyCatalogSnapshotUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SupplyCatalogSnapshotClient) UpdateOne(_m *SupplyCatalogSnapshot) *SupplyCatalogSnapshotUpdateOne {
+	mutation := newSupplyCatalogSnapshotMutation(c.config, OpUpdateOne, withSupplyCatalogSnapshot(_m))
+	return &SupplyCatalogSnapshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SupplyCatalogSnapshotClient) UpdateOneID(id uint64) *SupplyCatalogSnapshotUpdateOne {
+	mutation := newSupplyCatalogSnapshotMutation(c.config, OpUpdateOne, withSupplyCatalogSnapshotID(id))
+	return &SupplyCatalogSnapshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SupplyCatalogSnapshot.
+func (c *SupplyCatalogSnapshotClient) Delete() *SupplyCatalogSnapshotDelete {
+	mutation := newSupplyCatalogSnapshotMutation(c.config, OpDelete)
+	return &SupplyCatalogSnapshotDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SupplyCatalogSnapshotClient) DeleteOne(_m *SupplyCatalogSnapshot) *SupplyCatalogSnapshotDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SupplyCatalogSnapshotClient) DeleteOneID(id uint64) *SupplyCatalogSnapshotDeleteOne {
+	builder := c.Delete().Where(supplycatalogsnapshot.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SupplyCatalogSnapshotDeleteOne{builder}
+}
+
+// Query returns a query builder for SupplyCatalogSnapshot.
+func (c *SupplyCatalogSnapshotClient) Query() *SupplyCatalogSnapshotQuery {
+	return &SupplyCatalogSnapshotQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSupplyCatalogSnapshot},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SupplyCatalogSnapshot entity by its id.
+func (c *SupplyCatalogSnapshotClient) Get(ctx context.Context, id uint64) (*SupplyCatalogSnapshot, error) {
+	return c.Query().Where(supplycatalogsnapshot.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SupplyCatalogSnapshotClient) GetX(ctx context.Context, id uint64) *SupplyCatalogSnapshot {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SupplyCatalogSnapshotClient) Hooks() []Hook {
+	return c.hooks.SupplyCatalogSnapshot
+}
+
+// Interceptors returns the client interceptors.
+func (c *SupplyCatalogSnapshotClient) Interceptors() []Interceptor {
+	return c.inters.SupplyCatalogSnapshot
+}
+
+func (c *SupplyCatalogSnapshotClient) mutate(ctx context.Context, m *SupplyCatalogSnapshotMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SupplyCatalogSnapshotCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SupplyCatalogSnapshotUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SupplyCatalogSnapshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SupplyCatalogSnapshotDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SupplyCatalogSnapshot mutation op: %q", m.Op())
+	}
+}
+
 // SupplyConnectionClient is a client for the SupplyConnection schema.
 type SupplyConnectionClient struct {
 	config
@@ -13767,10 +13908,10 @@ type (
 		ResellerLedgerEntry, ResellerPricing, ResellerProfile, ResellerRelatedAccount,
 		ResellerSite, Review, RiskLockKey, RolePermission, SecurityAuditLog, Session,
 		Setting, SupplierAccount, SupplierLedgerEntry, SupplierProductPrice,
-		SupplyConnection, SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder,
-		SupplySyncTask, Tag, Ticket, TicketMessage, User, UserGroup, UserSession,
-		V1IDMap, VirtualReview, VisitLog, WalletAccount, WalletTransaction,
-		Withdrawal []ent.Hook
+		SupplyCatalogSnapshot, SupplyConnection, SupplyImportItem, SupplyMapping,
+		SupplyNonce, SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User,
+		UserGroup, UserSession, V1IDMap, VirtualReview, VisitLog, WalletAccount,
+		WalletTransaction, Withdrawal []ent.Hook
 	}
 	inters struct {
 		AdminRole, AdminUser, AffiliateCommission, AuditLog, Banner, Card, CardImport,
@@ -13788,9 +13929,9 @@ type (
 		ResellerLedgerEntry, ResellerPricing, ResellerProfile, ResellerRelatedAccount,
 		ResellerSite, Review, RiskLockKey, RolePermission, SecurityAuditLog, Session,
 		Setting, SupplierAccount, SupplierLedgerEntry, SupplierProductPrice,
-		SupplyConnection, SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder,
-		SupplySyncTask, Tag, Ticket, TicketMessage, User, UserGroup, UserSession,
-		V1IDMap, VirtualReview, VisitLog, WalletAccount, WalletTransaction,
-		Withdrawal []ent.Interceptor
+		SupplyCatalogSnapshot, SupplyConnection, SupplyImportItem, SupplyMapping,
+		SupplyNonce, SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User,
+		UserGroup, UserSession, V1IDMap, VirtualReview, VisitLog, WalletAccount,
+		WalletTransaction, Withdrawal []ent.Interceptor
 	}
 )

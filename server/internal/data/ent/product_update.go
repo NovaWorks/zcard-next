@@ -547,6 +547,167 @@ func (_u *ProductUpdate) ClearUpstreamSyncedAt() *ProductUpdate {
 	return _u
 }
 
+// SetAutoListing sets the "auto_listing" field.
+func (_u *ProductUpdate) SetAutoListing(v bool) *ProductUpdate {
+	_u.mutation.SetAutoListing(v)
+	return _u
+}
+
+// SetNillableAutoListing sets the "auto_listing" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableAutoListing(v *bool) *ProductUpdate {
+	if v != nil {
+		_u.SetAutoListing(*v)
+	}
+	return _u
+}
+
+// SetListingReason sets the "listing_reason" field.
+func (_u *ProductUpdate) SetListingReason(v string) *ProductUpdate {
+	_u.mutation.SetListingReason(v)
+	return _u
+}
+
+// SetNillableListingReason sets the "listing_reason" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableListingReason(v *string) *ProductUpdate {
+	if v != nil {
+		_u.SetListingReason(*v)
+	}
+	return _u
+}
+
+// SetListingRestoreStatus sets the "listing_restore_status" field.
+func (_u *ProductUpdate) SetListingRestoreStatus(v int8) *ProductUpdate {
+	_u.mutation.ResetListingRestoreStatus()
+	_u.mutation.SetListingRestoreStatus(v)
+	return _u
+}
+
+// SetNillableListingRestoreStatus sets the "listing_restore_status" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableListingRestoreStatus(v *int8) *ProductUpdate {
+	if v != nil {
+		_u.SetListingRestoreStatus(*v)
+	}
+	return _u
+}
+
+// AddListingRestoreStatus adds value to the "listing_restore_status" field.
+func (_u *ProductUpdate) AddListingRestoreStatus(v int8) *ProductUpdate {
+	_u.mutation.AddListingRestoreStatus(v)
+	return _u
+}
+
+// SetListingChangedAt sets the "listing_changed_at" field.
+func (_u *ProductUpdate) SetListingChangedAt(v int64) *ProductUpdate {
+	_u.mutation.ResetListingChangedAt()
+	_u.mutation.SetListingChangedAt(v)
+	return _u
+}
+
+// SetNillableListingChangedAt sets the "listing_changed_at" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableListingChangedAt(v *int64) *ProductUpdate {
+	if v != nil {
+		_u.SetListingChangedAt(*v)
+	}
+	return _u
+}
+
+// AddListingChangedAt adds value to the "listing_changed_at" field.
+func (_u *ProductUpdate) AddListingChangedAt(v int64) *ProductUpdate {
+	_u.mutation.AddListingChangedAt(v)
+	return _u
+}
+
+// SetListingObservedAt sets the "listing_observed_at" field.
+func (_u *ProductUpdate) SetListingObservedAt(v int64) *ProductUpdate {
+	_u.mutation.ResetListingObservedAt()
+	_u.mutation.SetListingObservedAt(v)
+	return _u
+}
+
+// SetNillableListingObservedAt sets the "listing_observed_at" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableListingObservedAt(v *int64) *ProductUpdate {
+	if v != nil {
+		_u.SetListingObservedAt(*v)
+	}
+	return _u
+}
+
+// AddListingObservedAt adds value to the "listing_observed_at" field.
+func (_u *ProductUpdate) AddListingObservedAt(v int64) *ProductUpdate {
+	_u.mutation.AddListingObservedAt(v)
+	return _u
+}
+
+// SetListingZeroSince sets the "listing_zero_since" field.
+func (_u *ProductUpdate) SetListingZeroSince(v int64) *ProductUpdate {
+	_u.mutation.ResetListingZeroSince()
+	_u.mutation.SetListingZeroSince(v)
+	return _u
+}
+
+// SetNillableListingZeroSince sets the "listing_zero_since" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableListingZeroSince(v *int64) *ProductUpdate {
+	if v != nil {
+		_u.SetListingZeroSince(*v)
+	}
+	return _u
+}
+
+// AddListingZeroSince adds value to the "listing_zero_since" field.
+func (_u *ProductUpdate) AddListingZeroSince(v int64) *ProductUpdate {
+	_u.mutation.AddListingZeroSince(v)
+	return _u
+}
+
+// SetListingLastStock sets the "listing_last_stock" field.
+func (_u *ProductUpdate) SetListingLastStock(v int32) *ProductUpdate {
+	_u.mutation.ResetListingLastStock()
+	_u.mutation.SetListingLastStock(v)
+	return _u
+}
+
+// SetNillableListingLastStock sets the "listing_last_stock" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableListingLastStock(v *int32) *ProductUpdate {
+	if v != nil {
+		_u.SetListingLastStock(*v)
+	}
+	return _u
+}
+
+// AddListingLastStock adds value to the "listing_last_stock" field.
+func (_u *ProductUpdate) AddListingLastStock(v int32) *ProductUpdate {
+	_u.mutation.AddListingLastStock(v)
+	return _u
+}
+
+// SetListingRestocked sets the "listing_restocked" field.
+func (_u *ProductUpdate) SetListingRestocked(v bool) *ProductUpdate {
+	_u.mutation.SetListingRestocked(v)
+	return _u
+}
+
+// SetNillableListingRestocked sets the "listing_restocked" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableListingRestocked(v *bool) *ProductUpdate {
+	if v != nil {
+		_u.SetListingRestocked(*v)
+	}
+	return _u
+}
+
+// SetListingMessage sets the "listing_message" field.
+func (_u *ProductUpdate) SetListingMessage(v string) *ProductUpdate {
+	_u.mutation.SetListingMessage(v)
+	return _u
+}
+
+// SetNillableListingMessage sets the "listing_message" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableListingMessage(v *string) *ProductUpdate {
+	if v != nil {
+		_u.SetListingMessage(*v)
+	}
+	return _u
+}
+
 // SetIsLocked sets the "is_locked" field.
 func (_u *ProductUpdate) SetIsLocked(v bool) *ProductUpdate {
 	_u.mutation.SetIsLocked(v)
@@ -768,6 +929,16 @@ func (_u *ProductUpdate) check() error {
 			return &ValidationError{Name: "upstream_product_code", err: fmt.Errorf(`ent: validator failed for field "Product.upstream_product_code": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ListingReason(); ok {
+		if err := product.ListingReasonValidator(v); err != nil {
+			return &ValidationError{Name: "listing_reason", err: fmt.Errorf(`ent: validator failed for field "Product.listing_reason": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ListingMessage(); ok {
+		if err := product.ListingMessageValidator(v); err != nil {
+			return &ValidationError{Name: "listing_message", err: fmt.Errorf(`ent: validator failed for field "Product.listing_message": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -937,6 +1108,48 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.UpstreamSyncedAtCleared() {
 		_spec.ClearField(product.FieldUpstreamSyncedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.AutoListing(); ok {
+		_spec.SetField(product.FieldAutoListing, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ListingReason(); ok {
+		_spec.SetField(product.FieldListingReason, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ListingRestoreStatus(); ok {
+		_spec.SetField(product.FieldListingRestoreStatus, field.TypeInt8, value)
+	}
+	if value, ok := _u.mutation.AddedListingRestoreStatus(); ok {
+		_spec.AddField(product.FieldListingRestoreStatus, field.TypeInt8, value)
+	}
+	if value, ok := _u.mutation.ListingChangedAt(); ok {
+		_spec.SetField(product.FieldListingChangedAt, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedListingChangedAt(); ok {
+		_spec.AddField(product.FieldListingChangedAt, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.ListingObservedAt(); ok {
+		_spec.SetField(product.FieldListingObservedAt, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedListingObservedAt(); ok {
+		_spec.AddField(product.FieldListingObservedAt, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.ListingZeroSince(); ok {
+		_spec.SetField(product.FieldListingZeroSince, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedListingZeroSince(); ok {
+		_spec.AddField(product.FieldListingZeroSince, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.ListingLastStock(); ok {
+		_spec.SetField(product.FieldListingLastStock, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedListingLastStock(); ok {
+		_spec.AddField(product.FieldListingLastStock, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.ListingRestocked(); ok {
+		_spec.SetField(product.FieldListingRestocked, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ListingMessage(); ok {
+		_spec.SetField(product.FieldListingMessage, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.IsLocked(); ok {
 		_spec.SetField(product.FieldIsLocked, field.TypeBool, value)
@@ -1585,6 +1798,167 @@ func (_u *ProductUpdateOne) ClearUpstreamSyncedAt() *ProductUpdateOne {
 	return _u
 }
 
+// SetAutoListing sets the "auto_listing" field.
+func (_u *ProductUpdateOne) SetAutoListing(v bool) *ProductUpdateOne {
+	_u.mutation.SetAutoListing(v)
+	return _u
+}
+
+// SetNillableAutoListing sets the "auto_listing" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableAutoListing(v *bool) *ProductUpdateOne {
+	if v != nil {
+		_u.SetAutoListing(*v)
+	}
+	return _u
+}
+
+// SetListingReason sets the "listing_reason" field.
+func (_u *ProductUpdateOne) SetListingReason(v string) *ProductUpdateOne {
+	_u.mutation.SetListingReason(v)
+	return _u
+}
+
+// SetNillableListingReason sets the "listing_reason" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableListingReason(v *string) *ProductUpdateOne {
+	if v != nil {
+		_u.SetListingReason(*v)
+	}
+	return _u
+}
+
+// SetListingRestoreStatus sets the "listing_restore_status" field.
+func (_u *ProductUpdateOne) SetListingRestoreStatus(v int8) *ProductUpdateOne {
+	_u.mutation.ResetListingRestoreStatus()
+	_u.mutation.SetListingRestoreStatus(v)
+	return _u
+}
+
+// SetNillableListingRestoreStatus sets the "listing_restore_status" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableListingRestoreStatus(v *int8) *ProductUpdateOne {
+	if v != nil {
+		_u.SetListingRestoreStatus(*v)
+	}
+	return _u
+}
+
+// AddListingRestoreStatus adds value to the "listing_restore_status" field.
+func (_u *ProductUpdateOne) AddListingRestoreStatus(v int8) *ProductUpdateOne {
+	_u.mutation.AddListingRestoreStatus(v)
+	return _u
+}
+
+// SetListingChangedAt sets the "listing_changed_at" field.
+func (_u *ProductUpdateOne) SetListingChangedAt(v int64) *ProductUpdateOne {
+	_u.mutation.ResetListingChangedAt()
+	_u.mutation.SetListingChangedAt(v)
+	return _u
+}
+
+// SetNillableListingChangedAt sets the "listing_changed_at" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableListingChangedAt(v *int64) *ProductUpdateOne {
+	if v != nil {
+		_u.SetListingChangedAt(*v)
+	}
+	return _u
+}
+
+// AddListingChangedAt adds value to the "listing_changed_at" field.
+func (_u *ProductUpdateOne) AddListingChangedAt(v int64) *ProductUpdateOne {
+	_u.mutation.AddListingChangedAt(v)
+	return _u
+}
+
+// SetListingObservedAt sets the "listing_observed_at" field.
+func (_u *ProductUpdateOne) SetListingObservedAt(v int64) *ProductUpdateOne {
+	_u.mutation.ResetListingObservedAt()
+	_u.mutation.SetListingObservedAt(v)
+	return _u
+}
+
+// SetNillableListingObservedAt sets the "listing_observed_at" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableListingObservedAt(v *int64) *ProductUpdateOne {
+	if v != nil {
+		_u.SetListingObservedAt(*v)
+	}
+	return _u
+}
+
+// AddListingObservedAt adds value to the "listing_observed_at" field.
+func (_u *ProductUpdateOne) AddListingObservedAt(v int64) *ProductUpdateOne {
+	_u.mutation.AddListingObservedAt(v)
+	return _u
+}
+
+// SetListingZeroSince sets the "listing_zero_since" field.
+func (_u *ProductUpdateOne) SetListingZeroSince(v int64) *ProductUpdateOne {
+	_u.mutation.ResetListingZeroSince()
+	_u.mutation.SetListingZeroSince(v)
+	return _u
+}
+
+// SetNillableListingZeroSince sets the "listing_zero_since" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableListingZeroSince(v *int64) *ProductUpdateOne {
+	if v != nil {
+		_u.SetListingZeroSince(*v)
+	}
+	return _u
+}
+
+// AddListingZeroSince adds value to the "listing_zero_since" field.
+func (_u *ProductUpdateOne) AddListingZeroSince(v int64) *ProductUpdateOne {
+	_u.mutation.AddListingZeroSince(v)
+	return _u
+}
+
+// SetListingLastStock sets the "listing_last_stock" field.
+func (_u *ProductUpdateOne) SetListingLastStock(v int32) *ProductUpdateOne {
+	_u.mutation.ResetListingLastStock()
+	_u.mutation.SetListingLastStock(v)
+	return _u
+}
+
+// SetNillableListingLastStock sets the "listing_last_stock" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableListingLastStock(v *int32) *ProductUpdateOne {
+	if v != nil {
+		_u.SetListingLastStock(*v)
+	}
+	return _u
+}
+
+// AddListingLastStock adds value to the "listing_last_stock" field.
+func (_u *ProductUpdateOne) AddListingLastStock(v int32) *ProductUpdateOne {
+	_u.mutation.AddListingLastStock(v)
+	return _u
+}
+
+// SetListingRestocked sets the "listing_restocked" field.
+func (_u *ProductUpdateOne) SetListingRestocked(v bool) *ProductUpdateOne {
+	_u.mutation.SetListingRestocked(v)
+	return _u
+}
+
+// SetNillableListingRestocked sets the "listing_restocked" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableListingRestocked(v *bool) *ProductUpdateOne {
+	if v != nil {
+		_u.SetListingRestocked(*v)
+	}
+	return _u
+}
+
+// SetListingMessage sets the "listing_message" field.
+func (_u *ProductUpdateOne) SetListingMessage(v string) *ProductUpdateOne {
+	_u.mutation.SetListingMessage(v)
+	return _u
+}
+
+// SetNillableListingMessage sets the "listing_message" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableListingMessage(v *string) *ProductUpdateOne {
+	if v != nil {
+		_u.SetListingMessage(*v)
+	}
+	return _u
+}
+
 // SetIsLocked sets the "is_locked" field.
 func (_u *ProductUpdateOne) SetIsLocked(v bool) *ProductUpdateOne {
 	_u.mutation.SetIsLocked(v)
@@ -1819,6 +2193,16 @@ func (_u *ProductUpdateOne) check() error {
 			return &ValidationError{Name: "upstream_product_code", err: fmt.Errorf(`ent: validator failed for field "Product.upstream_product_code": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ListingReason(); ok {
+		if err := product.ListingReasonValidator(v); err != nil {
+			return &ValidationError{Name: "listing_reason", err: fmt.Errorf(`ent: validator failed for field "Product.listing_reason": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ListingMessage(); ok {
+		if err := product.ListingMessageValidator(v); err != nil {
+			return &ValidationError{Name: "listing_message", err: fmt.Errorf(`ent: validator failed for field "Product.listing_message": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -2005,6 +2389,48 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if _u.mutation.UpstreamSyncedAtCleared() {
 		_spec.ClearField(product.FieldUpstreamSyncedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.AutoListing(); ok {
+		_spec.SetField(product.FieldAutoListing, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ListingReason(); ok {
+		_spec.SetField(product.FieldListingReason, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ListingRestoreStatus(); ok {
+		_spec.SetField(product.FieldListingRestoreStatus, field.TypeInt8, value)
+	}
+	if value, ok := _u.mutation.AddedListingRestoreStatus(); ok {
+		_spec.AddField(product.FieldListingRestoreStatus, field.TypeInt8, value)
+	}
+	if value, ok := _u.mutation.ListingChangedAt(); ok {
+		_spec.SetField(product.FieldListingChangedAt, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedListingChangedAt(); ok {
+		_spec.AddField(product.FieldListingChangedAt, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.ListingObservedAt(); ok {
+		_spec.SetField(product.FieldListingObservedAt, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedListingObservedAt(); ok {
+		_spec.AddField(product.FieldListingObservedAt, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.ListingZeroSince(); ok {
+		_spec.SetField(product.FieldListingZeroSince, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedListingZeroSince(); ok {
+		_spec.AddField(product.FieldListingZeroSince, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.ListingLastStock(); ok {
+		_spec.SetField(product.FieldListingLastStock, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedListingLastStock(); ok {
+		_spec.AddField(product.FieldListingLastStock, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.ListingRestocked(); ok {
+		_spec.SetField(product.FieldListingRestocked, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ListingMessage(); ok {
+		_spec.SetField(product.FieldListingMessage, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.IsLocked(); ok {
 		_spec.SetField(product.FieldIsLocked, field.TypeBool, value)

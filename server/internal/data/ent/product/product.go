@@ -77,6 +77,24 @@ const (
 	FieldUpstreamProductCode = "upstream_product_code"
 	// FieldUpstreamSyncedAt holds the string denoting the upstream_synced_at field in the database.
 	FieldUpstreamSyncedAt = "upstream_synced_at"
+	// FieldAutoListing holds the string denoting the auto_listing field in the database.
+	FieldAutoListing = "auto_listing"
+	// FieldListingReason holds the string denoting the listing_reason field in the database.
+	FieldListingReason = "listing_reason"
+	// FieldListingRestoreStatus holds the string denoting the listing_restore_status field in the database.
+	FieldListingRestoreStatus = "listing_restore_status"
+	// FieldListingChangedAt holds the string denoting the listing_changed_at field in the database.
+	FieldListingChangedAt = "listing_changed_at"
+	// FieldListingObservedAt holds the string denoting the listing_observed_at field in the database.
+	FieldListingObservedAt = "listing_observed_at"
+	// FieldListingZeroSince holds the string denoting the listing_zero_since field in the database.
+	FieldListingZeroSince = "listing_zero_since"
+	// FieldListingLastStock holds the string denoting the listing_last_stock field in the database.
+	FieldListingLastStock = "listing_last_stock"
+	// FieldListingRestocked holds the string denoting the listing_restocked field in the database.
+	FieldListingRestocked = "listing_restocked"
+	// FieldListingMessage holds the string denoting the listing_message field in the database.
+	FieldListingMessage = "listing_message"
 	// FieldIsLocked holds the string denoting the is_locked field in the database.
 	FieldIsLocked = "is_locked"
 	// FieldLockVersion holds the string denoting the lock_version field in the database.
@@ -141,6 +159,15 @@ var Columns = []string{
 	FieldUpstreamSourceID,
 	FieldUpstreamProductCode,
 	FieldUpstreamSyncedAt,
+	FieldAutoListing,
+	FieldListingReason,
+	FieldListingRestoreStatus,
+	FieldListingChangedAt,
+	FieldListingObservedAt,
+	FieldListingZeroSince,
+	FieldListingLastStock,
+	FieldListingRestocked,
+	FieldListingMessage,
 	FieldIsLocked,
 	FieldLockVersion,
 	FieldLockedBy,
@@ -202,6 +229,28 @@ var (
 	DefaultStatus int8
 	// UpstreamProductCodeValidator is a validator for the "upstream_product_code" field. It is called by the builders before save.
 	UpstreamProductCodeValidator func(string) error
+	// DefaultAutoListing holds the default value on creation for the "auto_listing" field.
+	DefaultAutoListing bool
+	// DefaultListingReason holds the default value on creation for the "listing_reason" field.
+	DefaultListingReason string
+	// ListingReasonValidator is a validator for the "listing_reason" field. It is called by the builders before save.
+	ListingReasonValidator func(string) error
+	// DefaultListingRestoreStatus holds the default value on creation for the "listing_restore_status" field.
+	DefaultListingRestoreStatus int8
+	// DefaultListingChangedAt holds the default value on creation for the "listing_changed_at" field.
+	DefaultListingChangedAt int64
+	// DefaultListingObservedAt holds the default value on creation for the "listing_observed_at" field.
+	DefaultListingObservedAt int64
+	// DefaultListingZeroSince holds the default value on creation for the "listing_zero_since" field.
+	DefaultListingZeroSince int64
+	// DefaultListingLastStock holds the default value on creation for the "listing_last_stock" field.
+	DefaultListingLastStock int32
+	// DefaultListingRestocked holds the default value on creation for the "listing_restocked" field.
+	DefaultListingRestocked bool
+	// DefaultListingMessage holds the default value on creation for the "listing_message" field.
+	DefaultListingMessage string
+	// ListingMessageValidator is a validator for the "listing_message" field. It is called by the builders before save.
+	ListingMessageValidator func(string) error
 	// DefaultIsLocked holds the default value on creation for the "is_locked" field.
 	DefaultIsLocked bool
 	// DefaultLockVersion holds the default value on creation for the "lock_version" field.
@@ -404,6 +453,51 @@ func ByUpstreamProductCode(opts ...sql.OrderTermOption) OrderOption {
 // ByUpstreamSyncedAt orders the results by the upstream_synced_at field.
 func ByUpstreamSyncedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpstreamSyncedAt, opts...).ToFunc()
+}
+
+// ByAutoListing orders the results by the auto_listing field.
+func ByAutoListing(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAutoListing, opts...).ToFunc()
+}
+
+// ByListingReason orders the results by the listing_reason field.
+func ByListingReason(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldListingReason, opts...).ToFunc()
+}
+
+// ByListingRestoreStatus orders the results by the listing_restore_status field.
+func ByListingRestoreStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldListingRestoreStatus, opts...).ToFunc()
+}
+
+// ByListingChangedAt orders the results by the listing_changed_at field.
+func ByListingChangedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldListingChangedAt, opts...).ToFunc()
+}
+
+// ByListingObservedAt orders the results by the listing_observed_at field.
+func ByListingObservedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldListingObservedAt, opts...).ToFunc()
+}
+
+// ByListingZeroSince orders the results by the listing_zero_since field.
+func ByListingZeroSince(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldListingZeroSince, opts...).ToFunc()
+}
+
+// ByListingLastStock orders the results by the listing_last_stock field.
+func ByListingLastStock(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldListingLastStock, opts...).ToFunc()
+}
+
+// ByListingRestocked orders the results by the listing_restocked field.
+func ByListingRestocked(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldListingRestocked, opts...).ToFunc()
+}
+
+// ByListingMessage orders the results by the listing_message field.
+func ByListingMessage(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldListingMessage, opts...).ToFunc()
 }
 
 // ByIsLocked orders the results by the is_locked field.

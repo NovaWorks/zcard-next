@@ -81,9 +81,9 @@ export function fetchSupplyHealth() {
 
 // ── 交互式导入（ D）──
 
-export function previewSupplyProducts(connectionId: number, quoteCode?: string, signal?: AbortSignal) {
+export function previewSupplyProducts(connectionId: number, quoteCode?: string, signal?: AbortSignal, catalog?: { async?: boolean; snapshot_id?: string; refresh?: boolean }) {
   return request({ url: `/api/v1/admin/supply/connections/${connectionId}/preview`,
-    params: quoteCode ? { quote_code: quoteCode } : undefined, signal, timeout: quoteCode ? 25000 : 60000 });
+    params: { ...catalog, ...(quoteCode ? { quote_code: quoteCode } : {}) }, signal, silentError: true, timeout: quoteCode ? 25000 : 15000 });
 }
 
 export function importSupplyProducts(
@@ -91,6 +91,7 @@ export function importSupplyProducts(
   data: {
     codes: string[];
     request_key?: string;
+    snapshot_id?: string;
     pricing_mode?: string; // percent | fixed | equal | pending
     markup_percent?: number;
     markup_amount_cents?: number;
@@ -99,7 +100,7 @@ export function importSupplyProducts(
     category_drafts?: { upstream_code: string; name: string; parent_id: number }[];
   },
 ) {
-  return request({ url: `/api/v1/admin/supply/connections/${connectionId}/import`, method: "post", data, timeout: 60000 });
+  return request({ url: `/api/v1/admin/supply/connections/${connectionId}/import`, method: "post", data, silentError: true, timeout: 60000 });
 }
 
 export function fetchSupplySyncTask(id: number) {

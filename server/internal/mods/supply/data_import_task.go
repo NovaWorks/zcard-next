@@ -39,7 +39,13 @@ func importFingerprint(c *ent.SupplyConnection) string {
 	return hex.EncodeToString(h[:])
 }
 func productRevision(p *ent.Product) string {
-	b, _ := json.Marshal([]any{p.ID, p.Name, p.Price, p.FactoryPrice, p.CategoryID, p.Status, p.Cover, p.Description, p.Images, p.MemberPrice, p.CoverProtected, p.DescriptionProtected, p.IsLocked, p.LockVersion, p.CategoryProtected, p.FulfillmentMode})
+	fields := []any{p.ID, p.Name, p.Price, p.FactoryPrice, p.CategoryID, p.Status, p.Cover, p.Description, p.Images, p.MemberPrice, p.CoverProtected, p.DescriptionProtected, p.IsLocked, p.LockVersion, p.CategoryProtected, p.FulfillmentMode}
+	// Preserve old checkpoints for untouched products while fencing a later
+	// manual listing action or automation opt-in from pending import activation.
+	if p.AutoListing || p.ListingChangedAt != 0 {
+		fields = append(fields, p.AutoListing, p.ListingChangedAt)
+	}
+	b, _ := json.Marshal(fields)
 	h := sha256.Sum256(b)
 	return hex.EncodeToString(h[:])
 }
@@ -127,7 +133,12 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 	if err != nil {
 		return nil, err
 	}
-	entry, err := s.loadPreview(ctx, conn.ID)
+	var entry *previewEntry
+	if req.SnapshotId != "" {
+		entry, _, err = s.readCatalogSnapshot(ctx, conn, req.SnapshotId)
+	} else {
+		entry, err = s.loadPreview(ctx, conn.ID)
+	}
 	if err != nil {
 		return nil, err
 	}

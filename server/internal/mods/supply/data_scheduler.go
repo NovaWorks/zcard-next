@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplysynctask"
 )
 
@@ -82,7 +83,14 @@ func (s *Scheduler) Scan(ctx context.Context) {
 	}
 	for _, conn := range conns {
 		cfg := loadScheduleConfig(conn)
-		if !cfg.Enabled {
+		// An explicit per-product opt-in enables its channel's full status
+		// checks even if general collect/price schedules are disabled.
+		hasAuto, e := s.repo.entClient(ctx).Product.Query().Where(product.UpstreamSourceID(conn.ID), product.SubsiteID(0), product.AutoListing(true), product.IsLocked(false), product.StatusGTE(0)).Exist(ctx)
+		if e != nil {
+			s.log.Warn("scheduler.listing_failed", "err", e)
+			continue
+		}
+		if !cfg.Enabled && !hasAuto {
 			continue
 		}
 		// 熔断冷却中：本轮跳过（到期后半开探测成功后自然恢复）
@@ -94,6 +102,12 @@ func (s *Scheduler) Scan(ctx context.Context) {
 			continue
 		} else if has {
 			continue // 防重入：上轮任务未完结
+		}
+		if hasAuto && s.dispatchIfDue(ctx, conn, scopePlan{Enabled: true, Interval: 5, Mode: "full"}, ScopeListing) {
+			continue
+		}
+		if !cfg.Enabled {
+			continue
 		}
 		for _, scope := range []string{ScopeCollect, ScopePrice, ScopeStatus} {
 			if s.dispatchIfDue(ctx, conn, cfg.Scopes[scope], scope) {
@@ -164,7 +178,7 @@ func scopeAnchor(conn *ent.SupplyConnection, scope string) time.Time {
 		return conn.LastSyncedAt
 	case ScopePrice:
 		return conn.LastPriceSyncAt
-	case ScopeStatus:
+	case ScopeStatus, ScopeListing:
 		return conn.LastStatusSyncAt
 	}
 	return time.Time{}

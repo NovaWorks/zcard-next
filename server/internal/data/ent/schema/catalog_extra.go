@@ -19,7 +19,7 @@ func (Category) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("id"),
 		field.Uint64("parent_id").Optional().Comment("父分类（NULL=根）"),
-		field.String("name").MaxLen(60),
+		field.String("name").MaxRuneLen(100),
 		field.String("icon").MaxLen(255).Optional(),
 		field.Bool("hide").Default(false),
 		field.Int32("sort").Default(0),

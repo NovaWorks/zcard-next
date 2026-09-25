@@ -2,7 +2,7 @@
 // 上游商品导入弹窗（ D）：预览分类树 → 勾选商品 → 定价策略（四模式）→
 // 类目映射（上游分类 → 本地分类）→ 存为连接默认。已导入商品标注（重导 = 更新）。
 import { filterGroups, selectProducts, matchedRule, type CategoryRule } from "./import-selection";
-import { computed, onBeforeUnmount, reactive, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from "vue";
 import {
   NAlert, NButton, NCheckbox, NCheckboxGroup, NForm, NFormItem, NInputNumber,
   NModal, NSelect, NSpace, NSpin, NTag, NTreeSelect, NInput,
@@ -37,6 +37,27 @@ const emit = defineEmits<{ (e: "update:show", v: boolean): void; (e: "imported")
 
 const loading = ref(false);
 const previewError = ref("");
+const submitError = ref("");
+const previewMessage = ref("");
+const snapshotId = ref("");
+let previewController: AbortController | undefined;
+const nameLength = (name: string) => Array.from(name.trim()).length;
+const invalidDrafts = computed(() => selectedCategories.value.filter(cat => drafts[cat.code] && (nameLength(drafts[cat.code].name) === 0 || nameLength(drafts[cat.code].name) > 100)));
+const showNameErrors = ref(false);
+const nameErrorSummary = ref<HTMLElement>();
+function focusCategory(code: string) {
+  keyword.value = "";
+  nextTick(() => document.getElementById(`import-category-${code}`)?.focus());
+}
+function stopPreview() { previewController?.abort(); previewController = undefined; }
+function pollDelay(signal: AbortSignal) {
+  return new Promise<void>(resolve => {
+    const done = () => { clearTimeout(timer); signal.removeEventListener("abort", done); resolve(); };
+    const timer = setTimeout(done, 2000);
+    signal.addEventListener("abort", done, { once: true });
+    if (signal.aborted) done();
+  });
+}
 let previewRequest = 0;
 const quoteRequests = new Set<AbortController>();
 const importing = ref(false);
@@ -132,34 +153,59 @@ watch(
       loadLocalCategories();
     } else {
       previewRequest++;
+      stopPreview();
       stopQuotes();
     }
   },
   { immediate: true },
 );
 
-async function loadPreview() {
+async function loadPreview(refresh = false, preserve = false) {
   const requestId = ++previewRequest;
+  stopPreview();
+  const controller = new AbortController();
+  previewController = controller;
   stopQuotes();
   const connection = props.connection;
+  const preserveExisting = preserve && categories.value.length > 0;
+  if (refresh) void loadLocalCategories();
   loading.value = true;
   previewError.value = "";
-  categories.value = [];
-  checked.value = [];
-  expandedCats.value = new Set();
-  for (const key of Object.keys(categoryMapDraft)) delete categoryMapDraft[key];
-  for (const key of Object.keys(drafts)) delete drafts[key];
-  keyword.value = "";
-  batchCategory.value = null;
-  resultMessage.value = "";
-  for (const key of Object.keys(productCategories)) delete productCategories[key];
-  categoryRules.value = [];
-  saveCategoryMapping.value = false;
-  saveCategoryRules.value = false;
-  rulesOpen.value = false;
-  Object.assign(pricing, { mode: "channel", markupPercent: 10, markupAmountYuan: 1, saveDefault: false });
+  previewMessage.value = "正在加载上游目录，可以关闭窗口后再回来查看";
+  if (!preserveExisting) {
+    submitError.value = "";
+    snapshotId.value = "";
+    showNameErrors.value = false;
+    categories.value = [];
+    checked.value = [];
+    expandedCats.value = new Set();
+    for (const key of Object.keys(categoryMapDraft)) delete categoryMapDraft[key];
+    for (const key of Object.keys(drafts)) delete drafts[key];
+    keyword.value = "";
+    batchCategory.value = null;
+    resultMessage.value = "";
+    for (const key of Object.keys(productCategories)) delete productCategories[key];
+    categoryRules.value = [];
+    saveCategoryMapping.value = false;
+    saveCategoryRules.value = false;
+    rulesOpen.value = false;
+    Object.assign(pricing, { mode: "channel", markupPercent: 10, markupAmountYuan: 1, saveDefault: false });
+  }
   try {
-    const { data, error } = await previewSupplyProducts(connection.id);
+    let pollToken = "";
+    let data: any;
+    let error: any;
+    while (!controller.signal.aborted) {
+      const response = await previewSupplyProducts(connection.id, undefined, controller.signal, { async: true, snapshot_id: pollToken || undefined, refresh: !pollToken && refresh });
+      if (requestId !== previewRequest || controller.signal.aborted) return;
+      data = response.data; error = response.error;
+      if (error || !data) break;
+      pollToken = data.snapshot_id || pollToken;
+      if (data.status === "failed") { previewError.value = data.message || "目录加载失败，请重试"; return; }
+      if (data.status === "ready" || !data.status) break;
+      previewMessage.value = data.message || `正在加载目录，已读取 ${data.loaded_count || 0} 件商品…`;
+      await pollDelay(controller.signal);
+    }
     if (requestId !== previewRequest) return;
     if (error) {
       const err = error as any;
@@ -169,9 +215,17 @@ async function loadPreview() {
       return;
     }
     if (!error && data) {
+      snapshotId.value = data.snapshot_id || "";
       categories.value = ((data as any).categories || []).map((cat: PreviewCategory) => ({
         ...cat, products: cat.products.map(p => ({ ...p, quote_status: p.quote_status || "pending" })),
       }));
+      if (preserveExisting) {
+        const available = new Set(allProducts.value.filter(p => !p.is_locked).map(p => p.code));
+        const before = checked.value.length;
+        checked.value = checked.value.filter(code => available.has(code));
+        if (checked.value.length < before) resultMessage.value = `目录已更新，移除了 ${before - checked.value.length} 件已不可用或锁定的商品；其他选择和草稿已保留`;
+        return;
+      }
       // 连接默认定价回填
       try {
         const def = JSON.parse(connection.settings || "{}").import_pricing;
@@ -212,7 +266,7 @@ function stopQuotes() {
   for (const controller of quoteRequests) controller.abort();
   quoteRequests.clear();
 }
-onBeforeUnmount(() => { previewRequest++; stopQuotes(); });
+onBeforeUnmount(() => { previewRequest++; stopPreview(); stopQuotes(); });
 
 // At most two visible-category products query the upstream concurrently. The
 // catalog stays usable, and closing/switching the modal cancels stale requests.
@@ -229,7 +283,7 @@ async function loadQuote(p: PreviewItem) {
   quoteRequests.add(controller);
   p.quote_status = "loading";
   try {
-    const { data, error } = await previewSupplyProducts(props.connection.id, p.code, controller.signal);
+    const { data, error } = await previewSupplyProducts(props.connection.id, p.code, controller.signal, { snapshot_id: snapshotId.value || undefined });
     if (requestId !== previewRequest) return;
     const quoted = (data as { categories?: PreviewCategory[] } | null)?.categories
       ?.flatMap(cat => cat.products).find(item => item.code === p.code);
@@ -282,6 +336,11 @@ function toggleAllExpand() {
 }
 
 async function submit() {
+  if (loading.value || previewError.value) return;
+  showNameErrors.value = true;
+  if (invalidDrafts.value.length) {
+    await nextTick(); nameErrorSummary.value?.focus(); return;
+  }
   if (!checked.value.length) {
     window.$message?.warning("请先勾选要导入的商品");
     return;
@@ -294,10 +353,12 @@ async function submit() {
   if (categoryRules.value.some(r => !r.category_id || !r.keywords.length)) {
     window.$message?.warning("请为每条分类规则填写关键词和目标分类"); return;
   }
+  submitError.value = "";
   importing.value = true;
   try {
     const payload: Record<string, unknown> = {
       codes: checked.value,
+      snapshot_id: snapshotId.value || undefined,
       product_categories: Object.fromEntries(checked.value.filter(c => productCategories[c] !== undefined).map(c => [c, productCategories[c]])),
       category_rules: categoryRules.value,
       save_category_rules: saveCategoryRules.value,
@@ -317,6 +378,13 @@ async function submit() {
     if (signature !== submission.signature) submission = { signature, key: crypto.randomUUID() };
     payload.request_key = submission.key;
     const { data, error } = await importSupplyProducts(props.connection.id, payload as any);
+    if (error) {
+      const err = error as any;
+      const message = err.response?.data?.message || err.message || "提交失败，选择和草稿已保留，请重试";
+      if (/目录|货源账号已变化/.test(message)) previewError.value = message;
+      else submitError.value = message;
+      return;
+    }
     if (!error && data) {
       const task = (data as any).task;
       if (task?.id) {
@@ -336,20 +404,25 @@ async function submit() {
   <NModal :show="props.show" preset="card" :title="`导入上游商品：${props.connection?.name || ''}`"
     style="width: 1000px; max-width: 96vw" :closable="!importing" :mask-closable="false" :close-on-esc="!importing"
     @update:show="!importing && emit('update:show', $event)">
-    <NSpin :show="loading || importing">
+    <NSpin :show="importing">
       <div class="import-body" :inert="importing || undefined">
-        <NAlert v-if="loading" type="info" :bordered="false">正在加载上游商品目录，商品较多时请稍候…</NAlert>
-        <NAlert v-else-if="previewError" type="error" :bordered="false">
-          {{ previewError }} <NButton size="small" @click="loadPreview">重新加载</NButton>
+        <NAlert v-if="loading" type="info" :bordered="false" role="status" aria-live="polite">{{ previewMessage }}<div>关闭窗口不影响后台加载，完成后重新打开即可查看。</div></NAlert>
+        <NAlert v-else-if="previewError" type="error" :bordered="false" role="alert">
+          {{ previewError }} <NButton size="small" @click="loadPreview(true, true)">重新加载</NButton>
         </NAlert>
         <NAlert v-else-if="!categories.length" type="warning" :bordered="false">上游商品目录为空，请确认对接账号有可用商品。</NAlert>
+        <NAlert v-if="submitError" type="error" :bordered="false" role="alert">{{ submitError }}</NAlert>
         <NAlert v-if="resultMessage" type="warning" :bordered="false">{{ resultMessage }}</NAlert>
+        <div v-if="showNameErrors && invalidDrafts.length" ref="nameErrorSummary" tabindex="-1" role="alert" class="category-name-errors">
+          <strong>{{ invalidDrafts.length }} 个分类名称需要修改（1–100 个字符）</strong>
+          <div v-for="cat in invalidDrafts" :key="cat.code"><NButton text type="error" @click="focusCategory(cat.code)">{{ cat.name }}：{{ nameLength(drafts[cat.code].name) }} 个字符，点击修改</NButton></div>
+        </div>
         <NSpace class="selection-toolbar">
           <NButton size="small" :disabled="loading || !!previewError" @click="selectAll()">全选全部商品（{{ allProducts.length }} 件）</NButton>
           <NButton v-if="keyword.trim()" size="small" @click="selectAll(true)">全选搜索结果（{{ visibleProducts.length }} 件）</NButton>
-          <NButton size="small" @click="selectAll(false, true)">仅选未导入商品</NButton>
+          <NButton size="small" :disabled="loading || !!previewError" @click="selectAll(false, true)">仅选未导入商品</NButton>
           <NButton size="small" :disabled="!checked.length" @click="checked = []">清空选择</NButton>
-          <NButton size="small" @click="rulesOpen = !rulesOpen">自动分类（{{ categoryRules.length }} 条规则）</NButton>
+          <NButton size="small" :disabled="loading" @click="rulesOpen = !rulesOpen">自动分类（{{ categoryRules.length }} 条规则）</NButton>
         </NSpace>
         <div v-if="rulesOpen" class="classification-panel">
           <NAlert type="info" :bordered="false">按商品名称匹配，排在前面的规则优先。下方结果可逐件修改，手工选择优先；只影响本次选中商品。</NAlert>
@@ -390,7 +463,8 @@ async function submit() {
               </div>
               <div class="category-destination">
                 <template v-if="drafts[cat.code]">
-                  <div class="draft-name"><NTag size="small" type="warning">待新建</NTag><NInput v-model:value="drafts[cat.code].name" size="small" maxlength="100" placeholder="新分类名称" :aria-label="`${cat.name}的新分类名称`" /></div>
+                  <div class="draft-name"><NTag size="small" type="warning">待新建</NTag><NInput v-model:value="drafts[cat.code].name" size="small" :input-props="{ id: `import-category-${cat.code}` }" :status="showNameErrors && (nameLength(drafts[cat.code].name) === 0 || nameLength(drafts[cat.code].name) > 100) ? 'error' : undefined" placeholder="新分类名称（最多 100 字）" :aria-label="`${cat.name}的新分类名称`" /></div>
+                  <small :class="{ 'text-red-500': nameLength(drafts[cat.code].name) > 100 }">{{ nameLength(drafts[cat.code].name) }} / 100 字</small>
                   <NTreeSelect v-model:value="drafts[cat.code].parent_id" :options="localCategoryOptions" clearable filterable show-path size="small" placeholder="创建位置：顶级分类" :aria-label="`${cat.name}的父分类`" />
                   <NButton text size="tiny" @click="delete drafts[cat.code]">取消新建，改选已有分类</NButton>
                 </template>
@@ -485,6 +559,9 @@ async function submit() {
 .category-heading > :not(.category-name) { flex-shrink: 0; }
 .category-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; font-weight: 600; cursor: pointer; }
 .category-destination { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.category-name-errors { margin: 8px 0; padding: 12px; border: 1px solid #d03050; border-radius: 6px; overflow-wrap: anywhere; }
+.category-name-errors :deep(.n-button) { height: auto; max-width: 100%; }
+.category-name-errors :deep(.n-button__content) { white-space: normal; overflow-wrap: anywhere; text-align: left; }
 .draft-name { display: flex; gap: 6px; }
 .product-list { display: flex; flex-direction: column; gap: 5px; padding: 2px 10px 8px 38px; }
 .product-item { display: flex; align-items: center; gap: 8px; }

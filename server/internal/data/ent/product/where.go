@@ -185,6 +185,51 @@ func UpstreamSyncedAt(v time.Time) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldUpstreamSyncedAt, v))
 }
 
+// AutoListing applies equality check predicate on the "auto_listing" field. It's identical to AutoListingEQ.
+func AutoListing(v bool) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldAutoListing, v))
+}
+
+// ListingReason applies equality check predicate on the "listing_reason" field. It's identical to ListingReasonEQ.
+func ListingReason(v string) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingReason, v))
+}
+
+// ListingRestoreStatus applies equality check predicate on the "listing_restore_status" field. It's identical to ListingRestoreStatusEQ.
+func ListingRestoreStatus(v int8) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingRestoreStatus, v))
+}
+
+// ListingChangedAt applies equality check predicate on the "listing_changed_at" field. It's identical to ListingChangedAtEQ.
+func ListingChangedAt(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingChangedAt, v))
+}
+
+// ListingObservedAt applies equality check predicate on the "listing_observed_at" field. It's identical to ListingObservedAtEQ.
+func ListingObservedAt(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingObservedAt, v))
+}
+
+// ListingZeroSince applies equality check predicate on the "listing_zero_since" field. It's identical to ListingZeroSinceEQ.
+func ListingZeroSince(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingZeroSince, v))
+}
+
+// ListingLastStock applies equality check predicate on the "listing_last_stock" field. It's identical to ListingLastStockEQ.
+func ListingLastStock(v int32) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingLastStock, v))
+}
+
+// ListingRestocked applies equality check predicate on the "listing_restocked" field. It's identical to ListingRestockedEQ.
+func ListingRestocked(v bool) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingRestocked, v))
+}
+
+// ListingMessage applies equality check predicate on the "listing_message" field. It's identical to ListingMessageEQ.
+func ListingMessage(v string) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingMessage, v))
+}
+
 // IsLocked applies equality check predicate on the "is_locked" field. It's identical to IsLockedEQ.
 func IsLocked(v bool) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldIsLocked, v))
@@ -1353,6 +1398,356 @@ func UpstreamSyncedAtIsNil() predicate.Product {
 // UpstreamSyncedAtNotNil applies the NotNil predicate on the "upstream_synced_at" field.
 func UpstreamSyncedAtNotNil() predicate.Product {
 	return predicate.Product(sql.FieldNotNull(FieldUpstreamSyncedAt))
+}
+
+// AutoListingEQ applies the EQ predicate on the "auto_listing" field.
+func AutoListingEQ(v bool) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldAutoListing, v))
+}
+
+// AutoListingNEQ applies the NEQ predicate on the "auto_listing" field.
+func AutoListingNEQ(v bool) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldAutoListing, v))
+}
+
+// ListingReasonEQ applies the EQ predicate on the "listing_reason" field.
+func ListingReasonEQ(v string) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingReason, v))
+}
+
+// ListingReasonNEQ applies the NEQ predicate on the "listing_reason" field.
+func ListingReasonNEQ(v string) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldListingReason, v))
+}
+
+// ListingReasonIn applies the In predicate on the "listing_reason" field.
+func ListingReasonIn(vs ...string) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldListingReason, vs...))
+}
+
+// ListingReasonNotIn applies the NotIn predicate on the "listing_reason" field.
+func ListingReasonNotIn(vs ...string) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldListingReason, vs...))
+}
+
+// ListingReasonGT applies the GT predicate on the "listing_reason" field.
+func ListingReasonGT(v string) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldListingReason, v))
+}
+
+// ListingReasonGTE applies the GTE predicate on the "listing_reason" field.
+func ListingReasonGTE(v string) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldListingReason, v))
+}
+
+// ListingReasonLT applies the LT predicate on the "listing_reason" field.
+func ListingReasonLT(v string) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldListingReason, v))
+}
+
+// ListingReasonLTE applies the LTE predicate on the "listing_reason" field.
+func ListingReasonLTE(v string) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldListingReason, v))
+}
+
+// ListingReasonContains applies the Contains predicate on the "listing_reason" field.
+func ListingReasonContains(v string) predicate.Product {
+	return predicate.Product(sql.FieldContains(FieldListingReason, v))
+}
+
+// ListingReasonHasPrefix applies the HasPrefix predicate on the "listing_reason" field.
+func ListingReasonHasPrefix(v string) predicate.Product {
+	return predicate.Product(sql.FieldHasPrefix(FieldListingReason, v))
+}
+
+// ListingReasonHasSuffix applies the HasSuffix predicate on the "listing_reason" field.
+func ListingReasonHasSuffix(v string) predicate.Product {
+	return predicate.Product(sql.FieldHasSuffix(FieldListingReason, v))
+}
+
+// ListingReasonEqualFold applies the EqualFold predicate on the "listing_reason" field.
+func ListingReasonEqualFold(v string) predicate.Product {
+	return predicate.Product(sql.FieldEqualFold(FieldListingReason, v))
+}
+
+// ListingReasonContainsFold applies the ContainsFold predicate on the "listing_reason" field.
+func ListingReasonContainsFold(v string) predicate.Product {
+	return predicate.Product(sql.FieldContainsFold(FieldListingReason, v))
+}
+
+// ListingRestoreStatusEQ applies the EQ predicate on the "listing_restore_status" field.
+func ListingRestoreStatusEQ(v int8) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingRestoreStatus, v))
+}
+
+// ListingRestoreStatusNEQ applies the NEQ predicate on the "listing_restore_status" field.
+func ListingRestoreStatusNEQ(v int8) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldListingRestoreStatus, v))
+}
+
+// ListingRestoreStatusIn applies the In predicate on the "listing_restore_status" field.
+func ListingRestoreStatusIn(vs ...int8) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldListingRestoreStatus, vs...))
+}
+
+// ListingRestoreStatusNotIn applies the NotIn predicate on the "listing_restore_status" field.
+func ListingRestoreStatusNotIn(vs ...int8) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldListingRestoreStatus, vs...))
+}
+
+// ListingRestoreStatusGT applies the GT predicate on the "listing_restore_status" field.
+func ListingRestoreStatusGT(v int8) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldListingRestoreStatus, v))
+}
+
+// ListingRestoreStatusGTE applies the GTE predicate on the "listing_restore_status" field.
+func ListingRestoreStatusGTE(v int8) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldListingRestoreStatus, v))
+}
+
+// ListingRestoreStatusLT applies the LT predicate on the "listing_restore_status" field.
+func ListingRestoreStatusLT(v int8) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldListingRestoreStatus, v))
+}
+
+// ListingRestoreStatusLTE applies the LTE predicate on the "listing_restore_status" field.
+func ListingRestoreStatusLTE(v int8) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldListingRestoreStatus, v))
+}
+
+// ListingChangedAtEQ applies the EQ predicate on the "listing_changed_at" field.
+func ListingChangedAtEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingChangedAt, v))
+}
+
+// ListingChangedAtNEQ applies the NEQ predicate on the "listing_changed_at" field.
+func ListingChangedAtNEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldListingChangedAt, v))
+}
+
+// ListingChangedAtIn applies the In predicate on the "listing_changed_at" field.
+func ListingChangedAtIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldListingChangedAt, vs...))
+}
+
+// ListingChangedAtNotIn applies the NotIn predicate on the "listing_changed_at" field.
+func ListingChangedAtNotIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldListingChangedAt, vs...))
+}
+
+// ListingChangedAtGT applies the GT predicate on the "listing_changed_at" field.
+func ListingChangedAtGT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldListingChangedAt, v))
+}
+
+// ListingChangedAtGTE applies the GTE predicate on the "listing_changed_at" field.
+func ListingChangedAtGTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldListingChangedAt, v))
+}
+
+// ListingChangedAtLT applies the LT predicate on the "listing_changed_at" field.
+func ListingChangedAtLT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldListingChangedAt, v))
+}
+
+// ListingChangedAtLTE applies the LTE predicate on the "listing_changed_at" field.
+func ListingChangedAtLTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldListingChangedAt, v))
+}
+
+// ListingObservedAtEQ applies the EQ predicate on the "listing_observed_at" field.
+func ListingObservedAtEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingObservedAt, v))
+}
+
+// ListingObservedAtNEQ applies the NEQ predicate on the "listing_observed_at" field.
+func ListingObservedAtNEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldListingObservedAt, v))
+}
+
+// ListingObservedAtIn applies the In predicate on the "listing_observed_at" field.
+func ListingObservedAtIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldListingObservedAt, vs...))
+}
+
+// ListingObservedAtNotIn applies the NotIn predicate on the "listing_observed_at" field.
+func ListingObservedAtNotIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldListingObservedAt, vs...))
+}
+
+// ListingObservedAtGT applies the GT predicate on the "listing_observed_at" field.
+func ListingObservedAtGT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldListingObservedAt, v))
+}
+
+// ListingObservedAtGTE applies the GTE predicate on the "listing_observed_at" field.
+func ListingObservedAtGTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldListingObservedAt, v))
+}
+
+// ListingObservedAtLT applies the LT predicate on the "listing_observed_at" field.
+func ListingObservedAtLT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldListingObservedAt, v))
+}
+
+// ListingObservedAtLTE applies the LTE predicate on the "listing_observed_at" field.
+func ListingObservedAtLTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldListingObservedAt, v))
+}
+
+// ListingZeroSinceEQ applies the EQ predicate on the "listing_zero_since" field.
+func ListingZeroSinceEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingZeroSince, v))
+}
+
+// ListingZeroSinceNEQ applies the NEQ predicate on the "listing_zero_since" field.
+func ListingZeroSinceNEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldListingZeroSince, v))
+}
+
+// ListingZeroSinceIn applies the In predicate on the "listing_zero_since" field.
+func ListingZeroSinceIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldListingZeroSince, vs...))
+}
+
+// ListingZeroSinceNotIn applies the NotIn predicate on the "listing_zero_since" field.
+func ListingZeroSinceNotIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldListingZeroSince, vs...))
+}
+
+// ListingZeroSinceGT applies the GT predicate on the "listing_zero_since" field.
+func ListingZeroSinceGT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldListingZeroSince, v))
+}
+
+// ListingZeroSinceGTE applies the GTE predicate on the "listing_zero_since" field.
+func ListingZeroSinceGTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldListingZeroSince, v))
+}
+
+// ListingZeroSinceLT applies the LT predicate on the "listing_zero_since" field.
+func ListingZeroSinceLT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldListingZeroSince, v))
+}
+
+// ListingZeroSinceLTE applies the LTE predicate on the "listing_zero_since" field.
+func ListingZeroSinceLTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldListingZeroSince, v))
+}
+
+// ListingLastStockEQ applies the EQ predicate on the "listing_last_stock" field.
+func ListingLastStockEQ(v int32) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingLastStock, v))
+}
+
+// ListingLastStockNEQ applies the NEQ predicate on the "listing_last_stock" field.
+func ListingLastStockNEQ(v int32) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldListingLastStock, v))
+}
+
+// ListingLastStockIn applies the In predicate on the "listing_last_stock" field.
+func ListingLastStockIn(vs ...int32) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldListingLastStock, vs...))
+}
+
+// ListingLastStockNotIn applies the NotIn predicate on the "listing_last_stock" field.
+func ListingLastStockNotIn(vs ...int32) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldListingLastStock, vs...))
+}
+
+// ListingLastStockGT applies the GT predicate on the "listing_last_stock" field.
+func ListingLastStockGT(v int32) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldListingLastStock, v))
+}
+
+// ListingLastStockGTE applies the GTE predicate on the "listing_last_stock" field.
+func ListingLastStockGTE(v int32) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldListingLastStock, v))
+}
+
+// ListingLastStockLT applies the LT predicate on the "listing_last_stock" field.
+func ListingLastStockLT(v int32) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldListingLastStock, v))
+}
+
+// ListingLastStockLTE applies the LTE predicate on the "listing_last_stock" field.
+func ListingLastStockLTE(v int32) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldListingLastStock, v))
+}
+
+// ListingRestockedEQ applies the EQ predicate on the "listing_restocked" field.
+func ListingRestockedEQ(v bool) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingRestocked, v))
+}
+
+// ListingRestockedNEQ applies the NEQ predicate on the "listing_restocked" field.
+func ListingRestockedNEQ(v bool) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldListingRestocked, v))
+}
+
+// ListingMessageEQ applies the EQ predicate on the "listing_message" field.
+func ListingMessageEQ(v string) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldListingMessage, v))
+}
+
+// ListingMessageNEQ applies the NEQ predicate on the "listing_message" field.
+func ListingMessageNEQ(v string) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldListingMessage, v))
+}
+
+// ListingMessageIn applies the In predicate on the "listing_message" field.
+func ListingMessageIn(vs ...string) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldListingMessage, vs...))
+}
+
+// ListingMessageNotIn applies the NotIn predicate on the "listing_message" field.
+func ListingMessageNotIn(vs ...string) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldListingMessage, vs...))
+}
+
+// ListingMessageGT applies the GT predicate on the "listing_message" field.
+func ListingMessageGT(v string) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldListingMessage, v))
+}
+
+// ListingMessageGTE applies the GTE predicate on the "listing_message" field.
+func ListingMessageGTE(v string) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldListingMessage, v))
+}
+
+// ListingMessageLT applies the LT predicate on the "listing_message" field.
+func ListingMessageLT(v string) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldListingMessage, v))
+}
+
+// ListingMessageLTE applies the LTE predicate on the "listing_message" field.
+func ListingMessageLTE(v string) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldListingMessage, v))
+}
+
+// ListingMessageContains applies the Contains predicate on the "listing_message" field.
+func ListingMessageContains(v string) predicate.Product {
+	return predicate.Product(sql.FieldContains(FieldListingMessage, v))
+}
+
+// ListingMessageHasPrefix applies the HasPrefix predicate on the "listing_message" field.
+func ListingMessageHasPrefix(v string) predicate.Product {
+	return predicate.Product(sql.FieldHasPrefix(FieldListingMessage, v))
+}
+
+// ListingMessageHasSuffix applies the HasSuffix predicate on the "listing_message" field.
+func ListingMessageHasSuffix(v string) predicate.Product {
+	return predicate.Product(sql.FieldHasSuffix(FieldListingMessage, v))
+}
+
+// ListingMessageEqualFold applies the EqualFold predicate on the "listing_message" field.
+func ListingMessageEqualFold(v string) predicate.Product {
+	return predicate.Product(sql.FieldEqualFold(FieldListingMessage, v))
+}
+
+// ListingMessageContainsFold applies the ContainsFold predicate on the "listing_message" field.
+func ListingMessageContainsFold(v string) predicate.Product {
+	return predicate.Product(sql.FieldContainsFold(FieldListingMessage, v))
 }
 
 // IsLockedEQ applies the EQ predicate on the "is_locked" field.

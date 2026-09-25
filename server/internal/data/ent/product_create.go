@@ -410,6 +410,132 @@ func (_c *ProductCreate) SetNillableUpstreamSyncedAt(v *time.Time) *ProductCreat
 	return _c
 }
 
+// SetAutoListing sets the "auto_listing" field.
+func (_c *ProductCreate) SetAutoListing(v bool) *ProductCreate {
+	_c.mutation.SetAutoListing(v)
+	return _c
+}
+
+// SetNillableAutoListing sets the "auto_listing" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableAutoListing(v *bool) *ProductCreate {
+	if v != nil {
+		_c.SetAutoListing(*v)
+	}
+	return _c
+}
+
+// SetListingReason sets the "listing_reason" field.
+func (_c *ProductCreate) SetListingReason(v string) *ProductCreate {
+	_c.mutation.SetListingReason(v)
+	return _c
+}
+
+// SetNillableListingReason sets the "listing_reason" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableListingReason(v *string) *ProductCreate {
+	if v != nil {
+		_c.SetListingReason(*v)
+	}
+	return _c
+}
+
+// SetListingRestoreStatus sets the "listing_restore_status" field.
+func (_c *ProductCreate) SetListingRestoreStatus(v int8) *ProductCreate {
+	_c.mutation.SetListingRestoreStatus(v)
+	return _c
+}
+
+// SetNillableListingRestoreStatus sets the "listing_restore_status" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableListingRestoreStatus(v *int8) *ProductCreate {
+	if v != nil {
+		_c.SetListingRestoreStatus(*v)
+	}
+	return _c
+}
+
+// SetListingChangedAt sets the "listing_changed_at" field.
+func (_c *ProductCreate) SetListingChangedAt(v int64) *ProductCreate {
+	_c.mutation.SetListingChangedAt(v)
+	return _c
+}
+
+// SetNillableListingChangedAt sets the "listing_changed_at" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableListingChangedAt(v *int64) *ProductCreate {
+	if v != nil {
+		_c.SetListingChangedAt(*v)
+	}
+	return _c
+}
+
+// SetListingObservedAt sets the "listing_observed_at" field.
+func (_c *ProductCreate) SetListingObservedAt(v int64) *ProductCreate {
+	_c.mutation.SetListingObservedAt(v)
+	return _c
+}
+
+// SetNillableListingObservedAt sets the "listing_observed_at" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableListingObservedAt(v *int64) *ProductCreate {
+	if v != nil {
+		_c.SetListingObservedAt(*v)
+	}
+	return _c
+}
+
+// SetListingZeroSince sets the "listing_zero_since" field.
+func (_c *ProductCreate) SetListingZeroSince(v int64) *ProductCreate {
+	_c.mutation.SetListingZeroSince(v)
+	return _c
+}
+
+// SetNillableListingZeroSince sets the "listing_zero_since" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableListingZeroSince(v *int64) *ProductCreate {
+	if v != nil {
+		_c.SetListingZeroSince(*v)
+	}
+	return _c
+}
+
+// SetListingLastStock sets the "listing_last_stock" field.
+func (_c *ProductCreate) SetListingLastStock(v int32) *ProductCreate {
+	_c.mutation.SetListingLastStock(v)
+	return _c
+}
+
+// SetNillableListingLastStock sets the "listing_last_stock" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableListingLastStock(v *int32) *ProductCreate {
+	if v != nil {
+		_c.SetListingLastStock(*v)
+	}
+	return _c
+}
+
+// SetListingRestocked sets the "listing_restocked" field.
+func (_c *ProductCreate) SetListingRestocked(v bool) *ProductCreate {
+	_c.mutation.SetListingRestocked(v)
+	return _c
+}
+
+// SetNillableListingRestocked sets the "listing_restocked" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableListingRestocked(v *bool) *ProductCreate {
+	if v != nil {
+		_c.SetListingRestocked(*v)
+	}
+	return _c
+}
+
+// SetListingMessage sets the "listing_message" field.
+func (_c *ProductCreate) SetListingMessage(v string) *ProductCreate {
+	_c.mutation.SetListingMessage(v)
+	return _c
+}
+
+// SetNillableListingMessage sets the "listing_message" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableListingMessage(v *string) *ProductCreate {
+	if v != nil {
+		_c.SetListingMessage(*v)
+	}
+	return _c
+}
+
 // SetIsLocked sets the "is_locked" field.
 func (_c *ProductCreate) SetIsLocked(v bool) *ProductCreate {
 	_c.mutation.SetIsLocked(v)
@@ -613,6 +739,42 @@ func (_c *ProductCreate) defaults() {
 		v := product.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.AutoListing(); !ok {
+		v := product.DefaultAutoListing
+		_c.mutation.SetAutoListing(v)
+	}
+	if _, ok := _c.mutation.ListingReason(); !ok {
+		v := product.DefaultListingReason
+		_c.mutation.SetListingReason(v)
+	}
+	if _, ok := _c.mutation.ListingRestoreStatus(); !ok {
+		v := product.DefaultListingRestoreStatus
+		_c.mutation.SetListingRestoreStatus(v)
+	}
+	if _, ok := _c.mutation.ListingChangedAt(); !ok {
+		v := product.DefaultListingChangedAt
+		_c.mutation.SetListingChangedAt(v)
+	}
+	if _, ok := _c.mutation.ListingObservedAt(); !ok {
+		v := product.DefaultListingObservedAt
+		_c.mutation.SetListingObservedAt(v)
+	}
+	if _, ok := _c.mutation.ListingZeroSince(); !ok {
+		v := product.DefaultListingZeroSince
+		_c.mutation.SetListingZeroSince(v)
+	}
+	if _, ok := _c.mutation.ListingLastStock(); !ok {
+		v := product.DefaultListingLastStock
+		_c.mutation.SetListingLastStock(v)
+	}
+	if _, ok := _c.mutation.ListingRestocked(); !ok {
+		v := product.DefaultListingRestocked
+		_c.mutation.SetListingRestocked(v)
+	}
+	if _, ok := _c.mutation.ListingMessage(); !ok {
+		v := product.DefaultListingMessage
+		_c.mutation.SetListingMessage(v)
+	}
 	if _, ok := _c.mutation.IsLocked(); !ok {
 		v := product.DefaultIsLocked
 		_c.mutation.SetIsLocked(v)
@@ -720,6 +882,43 @@ func (_c *ProductCreate) check() error {
 	if v, ok := _c.mutation.UpstreamProductCode(); ok {
 		if err := product.UpstreamProductCodeValidator(v); err != nil {
 			return &ValidationError{Name: "upstream_product_code", err: fmt.Errorf(`ent: validator failed for field "Product.upstream_product_code": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.AutoListing(); !ok {
+		return &ValidationError{Name: "auto_listing", err: errors.New(`ent: missing required field "Product.auto_listing"`)}
+	}
+	if _, ok := _c.mutation.ListingReason(); !ok {
+		return &ValidationError{Name: "listing_reason", err: errors.New(`ent: missing required field "Product.listing_reason"`)}
+	}
+	if v, ok := _c.mutation.ListingReason(); ok {
+		if err := product.ListingReasonValidator(v); err != nil {
+			return &ValidationError{Name: "listing_reason", err: fmt.Errorf(`ent: validator failed for field "Product.listing_reason": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ListingRestoreStatus(); !ok {
+		return &ValidationError{Name: "listing_restore_status", err: errors.New(`ent: missing required field "Product.listing_restore_status"`)}
+	}
+	if _, ok := _c.mutation.ListingChangedAt(); !ok {
+		return &ValidationError{Name: "listing_changed_at", err: errors.New(`ent: missing required field "Product.listing_changed_at"`)}
+	}
+	if _, ok := _c.mutation.ListingObservedAt(); !ok {
+		return &ValidationError{Name: "listing_observed_at", err: errors.New(`ent: missing required field "Product.listing_observed_at"`)}
+	}
+	if _, ok := _c.mutation.ListingZeroSince(); !ok {
+		return &ValidationError{Name: "listing_zero_since", err: errors.New(`ent: missing required field "Product.listing_zero_since"`)}
+	}
+	if _, ok := _c.mutation.ListingLastStock(); !ok {
+		return &ValidationError{Name: "listing_last_stock", err: errors.New(`ent: missing required field "Product.listing_last_stock"`)}
+	}
+	if _, ok := _c.mutation.ListingRestocked(); !ok {
+		return &ValidationError{Name: "listing_restocked", err: errors.New(`ent: missing required field "Product.listing_restocked"`)}
+	}
+	if _, ok := _c.mutation.ListingMessage(); !ok {
+		return &ValidationError{Name: "listing_message", err: errors.New(`ent: missing required field "Product.listing_message"`)}
+	}
+	if v, ok := _c.mutation.ListingMessage(); ok {
+		if err := product.ListingMessageValidator(v); err != nil {
+			return &ValidationError{Name: "listing_message", err: fmt.Errorf(`ent: validator failed for field "Product.listing_message": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.IsLocked(); !ok {
@@ -887,6 +1086,42 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpstreamSyncedAt(); ok {
 		_spec.SetField(product.FieldUpstreamSyncedAt, field.TypeTime, value)
 		_node.UpstreamSyncedAt = value
+	}
+	if value, ok := _c.mutation.AutoListing(); ok {
+		_spec.SetField(product.FieldAutoListing, field.TypeBool, value)
+		_node.AutoListing = value
+	}
+	if value, ok := _c.mutation.ListingReason(); ok {
+		_spec.SetField(product.FieldListingReason, field.TypeString, value)
+		_node.ListingReason = value
+	}
+	if value, ok := _c.mutation.ListingRestoreStatus(); ok {
+		_spec.SetField(product.FieldListingRestoreStatus, field.TypeInt8, value)
+		_node.ListingRestoreStatus = value
+	}
+	if value, ok := _c.mutation.ListingChangedAt(); ok {
+		_spec.SetField(product.FieldListingChangedAt, field.TypeInt64, value)
+		_node.ListingChangedAt = value
+	}
+	if value, ok := _c.mutation.ListingObservedAt(); ok {
+		_spec.SetField(product.FieldListingObservedAt, field.TypeInt64, value)
+		_node.ListingObservedAt = value
+	}
+	if value, ok := _c.mutation.ListingZeroSince(); ok {
+		_spec.SetField(product.FieldListingZeroSince, field.TypeInt64, value)
+		_node.ListingZeroSince = value
+	}
+	if value, ok := _c.mutation.ListingLastStock(); ok {
+		_spec.SetField(product.FieldListingLastStock, field.TypeInt32, value)
+		_node.ListingLastStock = value
+	}
+	if value, ok := _c.mutation.ListingRestocked(); ok {
+		_spec.SetField(product.FieldListingRestocked, field.TypeBool, value)
+		_node.ListingRestocked = value
+	}
+	if value, ok := _c.mutation.ListingMessage(); ok {
+		_spec.SetField(product.FieldListingMessage, field.TypeString, value)
+		_node.ListingMessage = value
 	}
 	if value, ok := _c.mutation.IsLocked(); ok {
 		_spec.SetField(product.FieldIsLocked, field.TypeBool, value)
@@ -1465,6 +1700,144 @@ func (u *ProductUpsert) UpdateUpstreamSyncedAt() *ProductUpsert {
 // ClearUpstreamSyncedAt clears the value of the "upstream_synced_at" field.
 func (u *ProductUpsert) ClearUpstreamSyncedAt() *ProductUpsert {
 	u.SetNull(product.FieldUpstreamSyncedAt)
+	return u
+}
+
+// SetAutoListing sets the "auto_listing" field.
+func (u *ProductUpsert) SetAutoListing(v bool) *ProductUpsert {
+	u.Set(product.FieldAutoListing, v)
+	return u
+}
+
+// UpdateAutoListing sets the "auto_listing" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateAutoListing() *ProductUpsert {
+	u.SetExcluded(product.FieldAutoListing)
+	return u
+}
+
+// SetListingReason sets the "listing_reason" field.
+func (u *ProductUpsert) SetListingReason(v string) *ProductUpsert {
+	u.Set(product.FieldListingReason, v)
+	return u
+}
+
+// UpdateListingReason sets the "listing_reason" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateListingReason() *ProductUpsert {
+	u.SetExcluded(product.FieldListingReason)
+	return u
+}
+
+// SetListingRestoreStatus sets the "listing_restore_status" field.
+func (u *ProductUpsert) SetListingRestoreStatus(v int8) *ProductUpsert {
+	u.Set(product.FieldListingRestoreStatus, v)
+	return u
+}
+
+// UpdateListingRestoreStatus sets the "listing_restore_status" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateListingRestoreStatus() *ProductUpsert {
+	u.SetExcluded(product.FieldListingRestoreStatus)
+	return u
+}
+
+// AddListingRestoreStatus adds v to the "listing_restore_status" field.
+func (u *ProductUpsert) AddListingRestoreStatus(v int8) *ProductUpsert {
+	u.Add(product.FieldListingRestoreStatus, v)
+	return u
+}
+
+// SetListingChangedAt sets the "listing_changed_at" field.
+func (u *ProductUpsert) SetListingChangedAt(v int64) *ProductUpsert {
+	u.Set(product.FieldListingChangedAt, v)
+	return u
+}
+
+// UpdateListingChangedAt sets the "listing_changed_at" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateListingChangedAt() *ProductUpsert {
+	u.SetExcluded(product.FieldListingChangedAt)
+	return u
+}
+
+// AddListingChangedAt adds v to the "listing_changed_at" field.
+func (u *ProductUpsert) AddListingChangedAt(v int64) *ProductUpsert {
+	u.Add(product.FieldListingChangedAt, v)
+	return u
+}
+
+// SetListingObservedAt sets the "listing_observed_at" field.
+func (u *ProductUpsert) SetListingObservedAt(v int64) *ProductUpsert {
+	u.Set(product.FieldListingObservedAt, v)
+	return u
+}
+
+// UpdateListingObservedAt sets the "listing_observed_at" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateListingObservedAt() *ProductUpsert {
+	u.SetExcluded(product.FieldListingObservedAt)
+	return u
+}
+
+// AddListingObservedAt adds v to the "listing_observed_at" field.
+func (u *ProductUpsert) AddListingObservedAt(v int64) *ProductUpsert {
+	u.Add(product.FieldListingObservedAt, v)
+	return u
+}
+
+// SetListingZeroSince sets the "listing_zero_since" field.
+func (u *ProductUpsert) SetListingZeroSince(v int64) *ProductUpsert {
+	u.Set(product.FieldListingZeroSince, v)
+	return u
+}
+
+// UpdateListingZeroSince sets the "listing_zero_since" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateListingZeroSince() *ProductUpsert {
+	u.SetExcluded(product.FieldListingZeroSince)
+	return u
+}
+
+// AddListingZeroSince adds v to the "listing_zero_since" field.
+func (u *ProductUpsert) AddListingZeroSince(v int64) *ProductUpsert {
+	u.Add(product.FieldListingZeroSince, v)
+	return u
+}
+
+// SetListingLastStock sets the "listing_last_stock" field.
+func (u *ProductUpsert) SetListingLastStock(v int32) *ProductUpsert {
+	u.Set(product.FieldListingLastStock, v)
+	return u
+}
+
+// UpdateListingLastStock sets the "listing_last_stock" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateListingLastStock() *ProductUpsert {
+	u.SetExcluded(product.FieldListingLastStock)
+	return u
+}
+
+// AddListingLastStock adds v to the "listing_last_stock" field.
+func (u *ProductUpsert) AddListingLastStock(v int32) *ProductUpsert {
+	u.Add(product.FieldListingLastStock, v)
+	return u
+}
+
+// SetListingRestocked sets the "listing_restocked" field.
+func (u *ProductUpsert) SetListingRestocked(v bool) *ProductUpsert {
+	u.Set(product.FieldListingRestocked, v)
+	return u
+}
+
+// UpdateListingRestocked sets the "listing_restocked" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateListingRestocked() *ProductUpsert {
+	u.SetExcluded(product.FieldListingRestocked)
+	return u
+}
+
+// SetListingMessage sets the "listing_message" field.
+func (u *ProductUpsert) SetListingMessage(v string) *ProductUpsert {
+	u.Set(product.FieldListingMessage, v)
+	return u
+}
+
+// UpdateListingMessage sets the "listing_message" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateListingMessage() *ProductUpsert {
+	u.SetExcluded(product.FieldListingMessage)
 	return u
 }
 
@@ -2142,6 +2515,167 @@ func (u *ProductUpsertOne) UpdateUpstreamSyncedAt() *ProductUpsertOne {
 func (u *ProductUpsertOne) ClearUpstreamSyncedAt() *ProductUpsertOne {
 	return u.Update(func(s *ProductUpsert) {
 		s.ClearUpstreamSyncedAt()
+	})
+}
+
+// SetAutoListing sets the "auto_listing" field.
+func (u *ProductUpsertOne) SetAutoListing(v bool) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetAutoListing(v)
+	})
+}
+
+// UpdateAutoListing sets the "auto_listing" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateAutoListing() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateAutoListing()
+	})
+}
+
+// SetListingReason sets the "listing_reason" field.
+func (u *ProductUpsertOne) SetListingReason(v string) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingReason(v)
+	})
+}
+
+// UpdateListingReason sets the "listing_reason" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateListingReason() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingReason()
+	})
+}
+
+// SetListingRestoreStatus sets the "listing_restore_status" field.
+func (u *ProductUpsertOne) SetListingRestoreStatus(v int8) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingRestoreStatus(v)
+	})
+}
+
+// AddListingRestoreStatus adds v to the "listing_restore_status" field.
+func (u *ProductUpsertOne) AddListingRestoreStatus(v int8) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddListingRestoreStatus(v)
+	})
+}
+
+// UpdateListingRestoreStatus sets the "listing_restore_status" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateListingRestoreStatus() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingRestoreStatus()
+	})
+}
+
+// SetListingChangedAt sets the "listing_changed_at" field.
+func (u *ProductUpsertOne) SetListingChangedAt(v int64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingChangedAt(v)
+	})
+}
+
+// AddListingChangedAt adds v to the "listing_changed_at" field.
+func (u *ProductUpsertOne) AddListingChangedAt(v int64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddListingChangedAt(v)
+	})
+}
+
+// UpdateListingChangedAt sets the "listing_changed_at" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateListingChangedAt() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingChangedAt()
+	})
+}
+
+// SetListingObservedAt sets the "listing_observed_at" field.
+func (u *ProductUpsertOne) SetListingObservedAt(v int64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingObservedAt(v)
+	})
+}
+
+// AddListingObservedAt adds v to the "listing_observed_at" field.
+func (u *ProductUpsertOne) AddListingObservedAt(v int64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddListingObservedAt(v)
+	})
+}
+
+// UpdateListingObservedAt sets the "listing_observed_at" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateListingObservedAt() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingObservedAt()
+	})
+}
+
+// SetListingZeroSince sets the "listing_zero_since" field.
+func (u *ProductUpsertOne) SetListingZeroSince(v int64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingZeroSince(v)
+	})
+}
+
+// AddListingZeroSince adds v to the "listing_zero_since" field.
+func (u *ProductUpsertOne) AddListingZeroSince(v int64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddListingZeroSince(v)
+	})
+}
+
+// UpdateListingZeroSince sets the "listing_zero_since" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateListingZeroSince() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingZeroSince()
+	})
+}
+
+// SetListingLastStock sets the "listing_last_stock" field.
+func (u *ProductUpsertOne) SetListingLastStock(v int32) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingLastStock(v)
+	})
+}
+
+// AddListingLastStock adds v to the "listing_last_stock" field.
+func (u *ProductUpsertOne) AddListingLastStock(v int32) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddListingLastStock(v)
+	})
+}
+
+// UpdateListingLastStock sets the "listing_last_stock" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateListingLastStock() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingLastStock()
+	})
+}
+
+// SetListingRestocked sets the "listing_restocked" field.
+func (u *ProductUpsertOne) SetListingRestocked(v bool) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingRestocked(v)
+	})
+}
+
+// UpdateListingRestocked sets the "listing_restocked" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateListingRestocked() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingRestocked()
+	})
+}
+
+// SetListingMessage sets the "listing_message" field.
+func (u *ProductUpsertOne) SetListingMessage(v string) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingMessage(v)
+	})
+}
+
+// UpdateListingMessage sets the "listing_message" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateListingMessage() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingMessage()
 	})
 }
 
@@ -2996,6 +3530,167 @@ func (u *ProductUpsertBulk) UpdateUpstreamSyncedAt() *ProductUpsertBulk {
 func (u *ProductUpsertBulk) ClearUpstreamSyncedAt() *ProductUpsertBulk {
 	return u.Update(func(s *ProductUpsert) {
 		s.ClearUpstreamSyncedAt()
+	})
+}
+
+// SetAutoListing sets the "auto_listing" field.
+func (u *ProductUpsertBulk) SetAutoListing(v bool) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetAutoListing(v)
+	})
+}
+
+// UpdateAutoListing sets the "auto_listing" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateAutoListing() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateAutoListing()
+	})
+}
+
+// SetListingReason sets the "listing_reason" field.
+func (u *ProductUpsertBulk) SetListingReason(v string) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingReason(v)
+	})
+}
+
+// UpdateListingReason sets the "listing_reason" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateListingReason() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingReason()
+	})
+}
+
+// SetListingRestoreStatus sets the "listing_restore_status" field.
+func (u *ProductUpsertBulk) SetListingRestoreStatus(v int8) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingRestoreStatus(v)
+	})
+}
+
+// AddListingRestoreStatus adds v to the "listing_restore_status" field.
+func (u *ProductUpsertBulk) AddListingRestoreStatus(v int8) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddListingRestoreStatus(v)
+	})
+}
+
+// UpdateListingRestoreStatus sets the "listing_restore_status" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateListingRestoreStatus() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingRestoreStatus()
+	})
+}
+
+// SetListingChangedAt sets the "listing_changed_at" field.
+func (u *ProductUpsertBulk) SetListingChangedAt(v int64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingChangedAt(v)
+	})
+}
+
+// AddListingChangedAt adds v to the "listing_changed_at" field.
+func (u *ProductUpsertBulk) AddListingChangedAt(v int64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddListingChangedAt(v)
+	})
+}
+
+// UpdateListingChangedAt sets the "listing_changed_at" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateListingChangedAt() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingChangedAt()
+	})
+}
+
+// SetListingObservedAt sets the "listing_observed_at" field.
+func (u *ProductUpsertBulk) SetListingObservedAt(v int64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingObservedAt(v)
+	})
+}
+
+// AddListingObservedAt adds v to the "listing_observed_at" field.
+func (u *ProductUpsertBulk) AddListingObservedAt(v int64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddListingObservedAt(v)
+	})
+}
+
+// UpdateListingObservedAt sets the "listing_observed_at" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateListingObservedAt() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingObservedAt()
+	})
+}
+
+// SetListingZeroSince sets the "listing_zero_since" field.
+func (u *ProductUpsertBulk) SetListingZeroSince(v int64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingZeroSince(v)
+	})
+}
+
+// AddListingZeroSince adds v to the "listing_zero_since" field.
+func (u *ProductUpsertBulk) AddListingZeroSince(v int64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddListingZeroSince(v)
+	})
+}
+
+// UpdateListingZeroSince sets the "listing_zero_since" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateListingZeroSince() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingZeroSince()
+	})
+}
+
+// SetListingLastStock sets the "listing_last_stock" field.
+func (u *ProductUpsertBulk) SetListingLastStock(v int32) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingLastStock(v)
+	})
+}
+
+// AddListingLastStock adds v to the "listing_last_stock" field.
+func (u *ProductUpsertBulk) AddListingLastStock(v int32) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddListingLastStock(v)
+	})
+}
+
+// UpdateListingLastStock sets the "listing_last_stock" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateListingLastStock() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingLastStock()
+	})
+}
+
+// SetListingRestocked sets the "listing_restocked" field.
+func (u *ProductUpsertBulk) SetListingRestocked(v bool) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingRestocked(v)
+	})
+}
+
+// UpdateListingRestocked sets the "listing_restocked" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateListingRestocked() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingRestocked()
+	})
+}
+
+// SetListingMessage sets the "listing_message" field.
+func (u *ProductUpsertBulk) SetListingMessage(v string) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetListingMessage(v)
+	})
+}
+
+// UpdateListingMessage sets the "listing_message" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateListingMessage() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateListingMessage()
 	})
 }
 

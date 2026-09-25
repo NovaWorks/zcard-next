@@ -47,6 +47,7 @@ const OperationAdminCatalogServiceListProducts = "/zcard.api.admin.v1.AdminCatal
 const OperationAdminCatalogServiceListReviews = "/zcard.api.admin.v1.AdminCatalogService/ListReviews"
 const OperationAdminCatalogServiceListSkus = "/zcard.api.admin.v1.AdminCatalogService/ListSkus"
 const OperationAdminCatalogServiceListTags = "/zcard.api.admin.v1.AdminCatalogService/ListTags"
+const OperationAdminCatalogServiceManageProductListing = "/zcard.api.admin.v1.AdminCatalogService/ManageProductListing"
 const OperationAdminCatalogServiceMergeCategories = "/zcard.api.admin.v1.AdminCatalogService/MergeCategories"
 const OperationAdminCatalogServicePreviewBatchUpdateProductContent = "/zcard.api.admin.v1.AdminCatalogService/PreviewBatchUpdateProductContent"
 const OperationAdminCatalogServicePreviewDeleteProduct = "/zcard.api.admin.v1.AdminCatalogService/PreviewDeleteProduct"
@@ -99,6 +100,7 @@ type AdminCatalogServiceHTTPServer interface {
 	ListSkus(context.Context, *ListSkusRequest) (*SkuList, error)
 	// ListTags ── 标签 ──
 	ListTags(context.Context, *emptypb.Empty) (*TagList, error)
+	ManageProductListing(context.Context, *ManageProductListingRequest) (*ManageProductListingReply, error)
 	MergeCategories(context.Context, *MergeCategoriesRequest) (*MergeCategoriesReply, error)
 	PreviewBatchUpdateProductContent(context.Context, *PreviewBatchProductContentRequest) (*BatchProductContentPreview, error)
 	PreviewDeleteProduct(context.Context, *GetProductRequest) (*DeleteProductPreview, error)
@@ -131,6 +133,7 @@ func RegisterAdminCatalogServiceHTTPServer(s *http.Server, srv AdminCatalogServi
 	r.Handle("POST", "/api/v1/admin/products/batch-content/preview", _AdminCatalogService_PreviewBatchUpdateProductContent0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/products/batch-content", _AdminCatalogService_BatchUpdateProductContent0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/products/batch-content/results/{request_id}", _AdminCatalogService_GetBatchProductContentResult0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/products/listing", _AdminCatalogService_ManageProductListing0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/products/{id}/lock", _AdminCatalogService_SetProductLock0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/categories/{category_id}/placements", _AdminCatalogService_GetCategoryPlacements0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/categories/{category_id}/placements", _AdminCatalogService_SetCategoryPlacements0_HTTP_Handler(srv))
@@ -444,6 +447,25 @@ func _AdminCatalogService_GetBatchProductContentResult0_HTTP_Handler(srv AdminCa
 			return err
 		}
 		reply := out.(*BatchProductContentResult)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_ManageProductListing0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ManageProductListingRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceManageProductListing)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ManageProductListing(ctx, req.(*ManageProductListingRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ManageProductListingReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -1072,6 +1094,7 @@ type AdminCatalogServiceHTTPClient interface {
 	ListSkus(ctx context.Context, req *ListSkusRequest, opts ...http.CallOption) (rsp *SkuList, err error)
 	// ListTags ── 标签 ──
 	ListTags(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *TagList, err error)
+	ManageProductListing(ctx context.Context, req *ManageProductListingRequest, opts ...http.CallOption) (rsp *ManageProductListingReply, err error)
 	MergeCategories(ctx context.Context, req *MergeCategoriesRequest, opts ...http.CallOption) (rsp *MergeCategoriesReply, err error)
 	PreviewBatchUpdateProductContent(ctx context.Context, req *PreviewBatchProductContentRequest, opts ...http.CallOption) (rsp *BatchProductContentPreview, err error)
 	PreviewDeleteProduct(ctx context.Context, req *GetProductRequest, opts ...http.CallOption) (rsp *DeleteProductPreview, err error)
@@ -1574,6 +1597,23 @@ func (c *AdminCatalogServiceHTTPClientImpl) ListTags(ctx context.Context, in *em
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminCatalogServiceHTTPClientImpl) ManageProductListing(ctx context.Context, in *ManageProductListingRequest, opts ...http.CallOption) (*ManageProductListingReply, error) {
+	var out ManageProductListingReply
+	pattern := "/api/v1/admin/products/listing"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceManageProductListing),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

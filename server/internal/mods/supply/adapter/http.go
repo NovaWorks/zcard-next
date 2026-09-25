@@ -93,17 +93,29 @@ func (t *transport) do(ctx context.Context, method, path string, query url.Value
 	}
 	var lastErr error
 	attempts := 1 + len(t.retryIntervals)
+	if isCatalogRead(ctx) {
+		attempts = 2
+	}
 	if isStockRead(ctx) {
 		attempts = 2
 	}
 	for i := 0; i < attempts; i++ {
 		if i > 0 {
 			delay := 250 * time.Millisecond
-			if !isStockRead(ctx) {
+			if !isStockRead(ctx) && !isCatalogRead(ctx) {
 				delay = time.Duration(t.retryIntervals[i-1]) * time.Second
+			}
+			if isCatalogRead(ctx) {
+				delay = 2 * time.Second
 			}
 			if isRateLimitedErr(lastErr) {
 				delay *= 2 // 限流退避加倍（AIMD 前的传输层缓冲）
+				if isCatalogRead(ctx) {
+					var he *httpError
+					if errors.As(lastErr, &he) && he.RetryAfter > delay {
+						delay = he.RetryAfter
+					}
+				}
 			}
 			select {
 			case <-time.After(delay):
@@ -153,12 +165,27 @@ func (t *transport) tryOnce(ctx context.Context, method, full string, headers ma
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-	resp, err := t.client.Do(req)
+	client := t.client
+	if isCatalogRead(ctx) {
+		// Copy the client, preserving SSRF/redirect protections and transport.
+		// Do not mutate a shared client's timeout while other calls use it.
+		copy := *client
+		copy.Timeout = catalogRequestTimeout
+		client = &copy
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("adapter: 请求 %s 失败: %w", httpx.RedactURL(full), err)
 	}
 	defer resp.Body.Close()
-	respBody, err := io.ReadAll(resp.Body)
+	var bodyReader io.Reader = resp.Body
+	if isCatalogRead(ctx) {
+		bodyReader = io.LimitReader(resp.Body, 32*1024*1024+1)
+	}
+	respBody, err := io.ReadAll(bodyReader)
+	if isCatalogRead(ctx) && len(respBody) > 32*1024*1024 {
+		return nil, fmt.Errorf("adapter: 商品目录响应超过 32 MiB")
+	}
 	if err != nil {
 		return nil, fmt.Errorf("adapter: 读取响应失败: %w", err)
 	}

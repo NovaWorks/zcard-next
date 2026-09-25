@@ -105,20 +105,7 @@ func (s *AdminCatalogService) ListProducts(ctx context.Context, req *adminv1.Lis
 	if req.GetPageSize() > 0 {
 		size = req.GetPageSize()
 	}
-	rows, total, err := s.repo.ListAdmin(ctx, port.AdminFilter{
-		CategoryID:        req.GetCategoryId(),
-		Keyword:           req.GetKeyword(),
-		Status:            int8(req.GetStatus()),
-		Page:              page,
-		PageSize:          size,
-		LowStockThreshold: s.lowStockThresholdFor(ctx, req.GetLowStockOnly()),
-		OutOfStockOnly:    req.GetOutOfStockOnly(),
-		ConnectionID:      req.GetUpstreamSourceId(),
-		LocalOnly:         req.GetLocalOnly(),
-		StockType:         req.GetStockType(),
-		OptionsOnly:       req.GetOptionsOnly(),
-		IsLocked:          req.IsLocked,
-	})
+	rows, total, err := s.repo.ListAdmin(ctx, s.adminFilter(ctx, req))
 	if err != nil {
 		return nil, errors.InternalServer("catalog.LIST_FAILED", "读取商品失败")
 	}
@@ -130,13 +117,36 @@ func (s *AdminCatalogService) ListProducts(ctx context.Context, req *adminv1.Lis
 			reply.Products = append(reply.Products, ToAdminPB(p))
 		}
 	}
-	reply.Total = total
-	reply.Page = page
-	reply.PageSize = size
+	reply.Total, reply.Page, reply.PageSize = total, page, size
 	if !req.GetOptionsOnly() {
 		s.fillStats(ctx, reply.Products)
 	}
 	return reply, nil
+}
+
+func (s *AdminCatalogService) adminFilter(ctx context.Context, req *adminv1.ListProductsRequest) port.AdminFilter {
+	page, size := req.GetPage(), req.GetPageSize()
+	if page < 1 {
+		page = 1
+	}
+	if size < 1 {
+		size = 20
+	}
+	return port.AdminFilter{
+		CategoryID:        req.GetCategoryId(),
+		Keyword:           req.GetKeyword(),
+		Status:            int8(req.GetStatus()),
+		Page:              page,
+		PageSize:          size,
+		LowStockThreshold: s.lowStockThresholdFor(ctx, req.GetLowStockOnly() || req.Inventory == "low"),
+		Inventory:         req.Inventory, RestockedOnly: req.RestockedOnly, AutoListing: req.AutoListing,
+		OutOfStockOnly: req.GetOutOfStockOnly(),
+		ConnectionID:   req.GetUpstreamSourceId(),
+		LocalOnly:      req.GetLocalOnly(),
+		StockType:      req.GetStockType(),
+		OptionsOnly:    req.GetOptionsOnly(),
+		IsLocked:       req.IsLocked,
+	}
 }
 
 // GetProduct 商品详情。

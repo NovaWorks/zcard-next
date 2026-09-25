@@ -166,6 +166,7 @@ function resetCreate() {
 
 async function handleCreate() {
   if (!newName.value.trim() || creating.value) return;
+  if (Array.from(newName.value.trim()).length > 100) { window.$message?.warning("分类名称不能超过 100 个字符"); return; }
   creating.value = true;
   try {
     const parentId = newParent.value || 0;
@@ -194,6 +195,7 @@ async function handleCreate() {
 
 async function handleRename() {
   if (!renaming.value || !renameText.value.trim()) return;
+  if (Array.from(renameText.value.trim()).length > 100) { window.$message?.warning("分类名称不能超过 100 个字符"); return; }
   const { error } = await updateCategory(renaming.value.id, { name: renameText.value.trim() });
   if (!error) {
     window.$message?.success("已重命名");
@@ -589,7 +591,7 @@ async function onSortBlur(cat: any) {
       <NInput
         v-model:value="newName"
         size="small"
-        placeholder="分类名称"
+        placeholder="分类名称（最多 100 字）"
         class="flex-1"
         @keyup.enter="handleCreate"
       />
@@ -743,7 +745,7 @@ async function onSortBlur(cat: any) {
       style="width: 400px"
       @update:show="(v: boolean) => !v && (renaming = null)"
     >
-      <NInput v-model:value="renameText" @keyup.enter="handleRename" />
+      <NInput placeholder="分类名称（最多 100 字）" v-model:value="renameText" @keyup.enter="handleRename" />
       <template #action>
         <NButton @click="renaming = null">取消</NButton>
         <NButton v-auth="'catalog:category_write'" type="primary" @click="handleRename">确定</NButton>

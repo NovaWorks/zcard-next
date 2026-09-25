@@ -332,7 +332,7 @@ async function handleRerunTask(row: any) {
 
 const taskColumns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 48 },
-  { title: "范围", key: "scope", width: 56, render: (r) => ({ collect: "采集", price: "价格", status: "状态", stock: "库存", import: "导入" } as any)[r.scope || "collect"] || r.scope },
+  { title: "范围", key: "scope", width: 56, render: (r) => ({ collect: "采集", price: "价格", status: "状态", stock: "库存", listing: "补货检查", import: "导入" } as any)[r.scope || "collect"] || r.scope },
   { title: "模式", key: "mode", width: 64, ellipsis: { tooltip: true }, render: r => r.mode === "selected" ? "所选商品" : r.mode },
   {
     title: "状态",
@@ -849,6 +849,7 @@ onMounted(load);
 
     <!-- 定时计划 -->
     <NModal v-model:show="showSchedule" preset="card" title="定时同步计划" style="width: 620px; max-width: 96vw">
+      <NAlert type="info" :bordered="false" class="mb-12px">商品列表中开启的自动上下架独立运行；关闭本页定时计划不会暂停它，请在商品列表暂停自动管理。</NAlert>
       <!-- 执行状态（锚点来自连接行数据；下次 = 上次 + 间隔，窗口内生效） -->
       <div v-if="scheduleConn" class="mb-12px rounded-6px bg-gray-50 p-10px dark:bg-gray-800">
         <div class="mb-6px text-13px font-500">自动任务执行状态</div>

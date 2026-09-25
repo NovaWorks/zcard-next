@@ -3340,6 +3340,18 @@ paths:
                   in: query
                   schema:
                     type: boolean
+                - name: inventory
+                  in: query
+                  schema:
+                    type: string
+                - name: restockedOnly
+                  in: query
+                  schema:
+                    type: boolean
+                - name: autoListing
+                  in: query
+                  schema:
+                    type: boolean
                 - name: optionsOnly
                   in: query
                   schema:
@@ -3477,6 +3489,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.ClassifyProductsReply'
+    /api/v1/admin/products/listing:
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_ManageProductListing
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ManageProductListingRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ManageProductListingReply'
     /api/v1/admin/products/{id}:
         get:
             tags:
@@ -4716,6 +4746,18 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: async
+                  in: query
+                  schema:
+                    type: boolean
+                - name: snapshotId
+                  in: query
+                  schema:
+                    type: string
+                - name: refresh
+                  in: query
+                  schema:
+                    type: boolean
             responses:
                 "200":
                     description: OK
@@ -7381,6 +7423,16 @@ components:
                     type: string
                 lockedAt:
                     type: string
+                autoListing:
+                    type: boolean
+                listingReason:
+                    type: string
+                listingMessage:
+                    type: string
+                listingRestocked:
+                    type: boolean
+                listingObservedAt:
+                    type: string
             description: AdminProduct 管理面商品（含成本价等敏感字段）。
         zcard.api.admin.v1.AdminProfile:
             type: object
@@ -9360,6 +9412,8 @@ components:
                     type: boolean
                 requestKey:
                     type: string
+                snapshotId:
+                    type: string
                 categoryDrafts:
                     type: array
                     items:
@@ -9743,6 +9797,42 @@ components:
                 pageSize:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.ListProductsRequest:
+            type: object
+            properties:
+                categoryId:
+                    type: string
+                keyword:
+                    type: string
+                status:
+                    type: integer
+                    format: int32
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+                lowStockOnly:
+                    type: boolean
+                upstreamSourceId:
+                    type: string
+                outOfStockOnly:
+                    type: boolean
+                localOnly:
+                    type: boolean
+                stockType:
+                    type: string
+                isLocked:
+                    type: boolean
+                inventory:
+                    type: string
+                restockedOnly:
+                    type: boolean
+                autoListing:
+                    type: boolean
+                optionsOnly:
+                    type: boolean
         zcard.api.admin.v1.ListProfilesReply:
             type: object
             properties:
@@ -10163,6 +10253,50 @@ components:
                 revision:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.ManageProductListingReply:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ProductListingTarget'
+                matched:
+                    type: integer
+                    format: int32
+                changed:
+                    type: integer
+                    format: int32
+                skippedLocked:
+                    type: integer
+                    format: int32
+                conflicts:
+                    type: integer
+                    format: int32
+                unsupported:
+                    type: integer
+                    format: int32
+                failed:
+                    type: integer
+                    format: int32
+                truncated:
+                    type: boolean
+        zcard.api.admin.v1.ManageProductListingRequest:
+            type: object
+            properties:
+                action:
+                    type: string
+                ids:
+                    type: array
+                    items:
+                        type: string
+                filter:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.ListProductsRequest'
+                apply:
+                    type: boolean
+                revisions:
+                    type: object
+                    additionalProperties:
+                        type: string
         zcard.api.admin.v1.ManualDeliverRequest:
             required:
                 - orderNo
@@ -10708,6 +10842,17 @@ components:
                 total:
                     type: integer
                     format: int32
+                snapshotId:
+                    type: string
+                status:
+                    type: string
+                message:
+                    type: string
+                loadedCount:
+                    type: integer
+                    format: int32
+                expiresAt:
+                    type: string
         zcard.api.admin.v1.PreviewTemplateReply:
             type: object
             properties:
@@ -10844,6 +10989,24 @@ components:
                 description:
                     type: string
             description: 'Operations: KEEP=0, REPLACE=1, CLEAR=2, FOLLOW_UPSTREAM=3 (cover/description only).'
+        zcard.api.admin.v1.ProductListingTarget:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                revision:
+                    type: string
+                result:
+                    type: string
+                message:
+                    type: string
+                status:
+                    type: integer
+                    format: int32
+                autoListing:
+                    type: boolean
         zcard.api.admin.v1.PromotionItem:
             type: object
             properties:

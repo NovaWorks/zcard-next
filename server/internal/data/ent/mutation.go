@@ -89,6 +89,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplycatalogsnapshot"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyimportitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
@@ -194,6 +195,7 @@ const (
 	TypeSupplierAccount          = "SupplierAccount"
 	TypeSupplierLedgerEntry      = "SupplierLedgerEntry"
 	TypeSupplierProductPrice     = "SupplierProductPrice"
+	TypeSupplyCatalogSnapshot    = "SupplyCatalogSnapshot"
 	TypeSupplyConnection         = "SupplyConnection"
 	TypeSupplyImportItem         = "SupplyImportItem"
 	TypeSupplyMapping            = "SupplyMapping"
@@ -57073,67 +57075,81 @@ func (m *ProcurementOrderMutation) ResetEdge(name string) error {
 // ProductMutation represents an operation that mutates the Product nodes in the graph.
 type ProductMutation struct {
 	config
-	op                    Op
-	typ                   string
-	id                    *uint64
-	created_at            *time.Time
-	updated_at            *time.Time
-	subsite_id            *uint64
-	addsubsite_id         *int64
-	category_id           *uint64
-	addcategory_id        *int64
-	category_protected    *bool
-	name                  *string
-	slug                  *string
-	description           *string
-	cover                 *string
-	images                *[]string
-	appendimages          []string
-	cover_protected       *bool
-	description_protected *bool
-	price                 *int64
-	addprice              *int64
-	factory_price         *int64
-	addfactory_price      *int64
-	draft_premium         *int64
-	adddraft_premium      *int64
-	member_price          *map[string]int64
-	points_required       *int64
-	addpoints_required    *int64
-	stock_type            *product.StockType
-	direct_content        *[]byte
-	stock_visible         *bool
-	fulfillment_mode      *string
-	manual_stock          *int64
-	addmanual_stock       *int64
-	delivery_mode         *product.DeliveryMode
-	control_config        *map[string]interface{}
-	dedup                 *bool
-	sort                  *int32
-	addsort               *int32
-	is_recommend          *bool
-	status                *int8
-	addstatus             *int8
-	upstream_source_id    *uint64
-	addupstream_source_id *int64
-	upstream_product_code *string
-	upstream_synced_at    *time.Time
-	is_locked             *bool
-	lock_version          *int64
-	addlock_version       *int64
-	locked_by             *uint64
-	addlocked_by          *int64
-	locked_at             *time.Time
-	clearedFields         map[string]struct{}
-	skus                  map[uint64]struct{}
-	removedskus           map[uint64]struct{}
-	clearedskus           bool
-	cards                 map[uint64]struct{}
-	removedcards          map[uint64]struct{}
-	clearedcards          bool
-	done                  bool
-	oldValue              func(context.Context) (*Product, error)
-	predicates            []predicate.Product
+	op                        Op
+	typ                       string
+	id                        *uint64
+	created_at                *time.Time
+	updated_at                *time.Time
+	subsite_id                *uint64
+	addsubsite_id             *int64
+	category_id               *uint64
+	addcategory_id            *int64
+	category_protected        *bool
+	name                      *string
+	slug                      *string
+	description               *string
+	cover                     *string
+	images                    *[]string
+	appendimages              []string
+	cover_protected           *bool
+	description_protected     *bool
+	price                     *int64
+	addprice                  *int64
+	factory_price             *int64
+	addfactory_price          *int64
+	draft_premium             *int64
+	adddraft_premium          *int64
+	member_price              *map[string]int64
+	points_required           *int64
+	addpoints_required        *int64
+	stock_type                *product.StockType
+	direct_content            *[]byte
+	stock_visible             *bool
+	fulfillment_mode          *string
+	manual_stock              *int64
+	addmanual_stock           *int64
+	delivery_mode             *product.DeliveryMode
+	control_config            *map[string]interface{}
+	dedup                     *bool
+	sort                      *int32
+	addsort                   *int32
+	is_recommend              *bool
+	status                    *int8
+	addstatus                 *int8
+	upstream_source_id        *uint64
+	addupstream_source_id     *int64
+	upstream_product_code     *string
+	upstream_synced_at        *time.Time
+	auto_listing              *bool
+	listing_reason            *string
+	listing_restore_status    *int8
+	addlisting_restore_status *int8
+	listing_changed_at        *int64
+	addlisting_changed_at     *int64
+	listing_observed_at       *int64
+	addlisting_observed_at    *int64
+	listing_zero_since        *int64
+	addlisting_zero_since     *int64
+	listing_last_stock        *int32
+	addlisting_last_stock     *int32
+	listing_restocked         *bool
+	listing_message           *string
+	is_locked                 *bool
+	lock_version              *int64
+	addlock_version           *int64
+	locked_by                 *uint64
+	addlocked_by              *int64
+	locked_at                 *time.Time
+	clearedFields             map[string]struct{}
+	skus                      map[uint64]struct{}
+	removedskus               map[uint64]struct{}
+	clearedskus               bool
+	cards                     map[uint64]struct{}
+	removedcards              map[uint64]struct{}
+	clearedcards              bool
+	done                      bool
+	oldValue                  func(context.Context) (*Product, error)
+	predicates                []predicate.Product
 }
 
 var _ ent.Mutation = (*ProductMutation)(nil)
@@ -58704,6 +58720,430 @@ func (m *ProductMutation) ResetUpstreamSyncedAt() {
 	delete(m.clearedFields, product.FieldUpstreamSyncedAt)
 }
 
+// SetAutoListing sets the "auto_listing" field.
+func (m *ProductMutation) SetAutoListing(b bool) {
+	m.auto_listing = &b
+}
+
+// AutoListing returns the value of the "auto_listing" field in the mutation.
+func (m *ProductMutation) AutoListing() (r bool, exists bool) {
+	v := m.auto_listing
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAutoListing returns the old "auto_listing" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldAutoListing(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAutoListing is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAutoListing requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAutoListing: %w", err)
+	}
+	return oldValue.AutoListing, nil
+}
+
+// ResetAutoListing resets all changes to the "auto_listing" field.
+func (m *ProductMutation) ResetAutoListing() {
+	m.auto_listing = nil
+}
+
+// SetListingReason sets the "listing_reason" field.
+func (m *ProductMutation) SetListingReason(s string) {
+	m.listing_reason = &s
+}
+
+// ListingReason returns the value of the "listing_reason" field in the mutation.
+func (m *ProductMutation) ListingReason() (r string, exists bool) {
+	v := m.listing_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldListingReason returns the old "listing_reason" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldListingReason(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldListingReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldListingReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldListingReason: %w", err)
+	}
+	return oldValue.ListingReason, nil
+}
+
+// ResetListingReason resets all changes to the "listing_reason" field.
+func (m *ProductMutation) ResetListingReason() {
+	m.listing_reason = nil
+}
+
+// SetListingRestoreStatus sets the "listing_restore_status" field.
+func (m *ProductMutation) SetListingRestoreStatus(i int8) {
+	m.listing_restore_status = &i
+	m.addlisting_restore_status = nil
+}
+
+// ListingRestoreStatus returns the value of the "listing_restore_status" field in the mutation.
+func (m *ProductMutation) ListingRestoreStatus() (r int8, exists bool) {
+	v := m.listing_restore_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldListingRestoreStatus returns the old "listing_restore_status" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldListingRestoreStatus(ctx context.Context) (v int8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldListingRestoreStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldListingRestoreStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldListingRestoreStatus: %w", err)
+	}
+	return oldValue.ListingRestoreStatus, nil
+}
+
+// AddListingRestoreStatus adds i to the "listing_restore_status" field.
+func (m *ProductMutation) AddListingRestoreStatus(i int8) {
+	if m.addlisting_restore_status != nil {
+		*m.addlisting_restore_status += i
+	} else {
+		m.addlisting_restore_status = &i
+	}
+}
+
+// AddedListingRestoreStatus returns the value that was added to the "listing_restore_status" field in this mutation.
+func (m *ProductMutation) AddedListingRestoreStatus() (r int8, exists bool) {
+	v := m.addlisting_restore_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetListingRestoreStatus resets all changes to the "listing_restore_status" field.
+func (m *ProductMutation) ResetListingRestoreStatus() {
+	m.listing_restore_status = nil
+	m.addlisting_restore_status = nil
+}
+
+// SetListingChangedAt sets the "listing_changed_at" field.
+func (m *ProductMutation) SetListingChangedAt(i int64) {
+	m.listing_changed_at = &i
+	m.addlisting_changed_at = nil
+}
+
+// ListingChangedAt returns the value of the "listing_changed_at" field in the mutation.
+func (m *ProductMutation) ListingChangedAt() (r int64, exists bool) {
+	v := m.listing_changed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldListingChangedAt returns the old "listing_changed_at" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldListingChangedAt(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldListingChangedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldListingChangedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldListingChangedAt: %w", err)
+	}
+	return oldValue.ListingChangedAt, nil
+}
+
+// AddListingChangedAt adds i to the "listing_changed_at" field.
+func (m *ProductMutation) AddListingChangedAt(i int64) {
+	if m.addlisting_changed_at != nil {
+		*m.addlisting_changed_at += i
+	} else {
+		m.addlisting_changed_at = &i
+	}
+}
+
+// AddedListingChangedAt returns the value that was added to the "listing_changed_at" field in this mutation.
+func (m *ProductMutation) AddedListingChangedAt() (r int64, exists bool) {
+	v := m.addlisting_changed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetListingChangedAt resets all changes to the "listing_changed_at" field.
+func (m *ProductMutation) ResetListingChangedAt() {
+	m.listing_changed_at = nil
+	m.addlisting_changed_at = nil
+}
+
+// SetListingObservedAt sets the "listing_observed_at" field.
+func (m *ProductMutation) SetListingObservedAt(i int64) {
+	m.listing_observed_at = &i
+	m.addlisting_observed_at = nil
+}
+
+// ListingObservedAt returns the value of the "listing_observed_at" field in the mutation.
+func (m *ProductMutation) ListingObservedAt() (r int64, exists bool) {
+	v := m.listing_observed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldListingObservedAt returns the old "listing_observed_at" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldListingObservedAt(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldListingObservedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldListingObservedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldListingObservedAt: %w", err)
+	}
+	return oldValue.ListingObservedAt, nil
+}
+
+// AddListingObservedAt adds i to the "listing_observed_at" field.
+func (m *ProductMutation) AddListingObservedAt(i int64) {
+	if m.addlisting_observed_at != nil {
+		*m.addlisting_observed_at += i
+	} else {
+		m.addlisting_observed_at = &i
+	}
+}
+
+// AddedListingObservedAt returns the value that was added to the "listing_observed_at" field in this mutation.
+func (m *ProductMutation) AddedListingObservedAt() (r int64, exists bool) {
+	v := m.addlisting_observed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetListingObservedAt resets all changes to the "listing_observed_at" field.
+func (m *ProductMutation) ResetListingObservedAt() {
+	m.listing_observed_at = nil
+	m.addlisting_observed_at = nil
+}
+
+// SetListingZeroSince sets the "listing_zero_since" field.
+func (m *ProductMutation) SetListingZeroSince(i int64) {
+	m.listing_zero_since = &i
+	m.addlisting_zero_since = nil
+}
+
+// ListingZeroSince returns the value of the "listing_zero_since" field in the mutation.
+func (m *ProductMutation) ListingZeroSince() (r int64, exists bool) {
+	v := m.listing_zero_since
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldListingZeroSince returns the old "listing_zero_since" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldListingZeroSince(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldListingZeroSince is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldListingZeroSince requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldListingZeroSince: %w", err)
+	}
+	return oldValue.ListingZeroSince, nil
+}
+
+// AddListingZeroSince adds i to the "listing_zero_since" field.
+func (m *ProductMutation) AddListingZeroSince(i int64) {
+	if m.addlisting_zero_since != nil {
+		*m.addlisting_zero_since += i
+	} else {
+		m.addlisting_zero_since = &i
+	}
+}
+
+// AddedListingZeroSince returns the value that was added to the "listing_zero_since" field in this mutation.
+func (m *ProductMutation) AddedListingZeroSince() (r int64, exists bool) {
+	v := m.addlisting_zero_since
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetListingZeroSince resets all changes to the "listing_zero_since" field.
+func (m *ProductMutation) ResetListingZeroSince() {
+	m.listing_zero_since = nil
+	m.addlisting_zero_since = nil
+}
+
+// SetListingLastStock sets the "listing_last_stock" field.
+func (m *ProductMutation) SetListingLastStock(i int32) {
+	m.listing_last_stock = &i
+	m.addlisting_last_stock = nil
+}
+
+// ListingLastStock returns the value of the "listing_last_stock" field in the mutation.
+func (m *ProductMutation) ListingLastStock() (r int32, exists bool) {
+	v := m.listing_last_stock
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldListingLastStock returns the old "listing_last_stock" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldListingLastStock(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldListingLastStock is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldListingLastStock requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldListingLastStock: %w", err)
+	}
+	return oldValue.ListingLastStock, nil
+}
+
+// AddListingLastStock adds i to the "listing_last_stock" field.
+func (m *ProductMutation) AddListingLastStock(i int32) {
+	if m.addlisting_last_stock != nil {
+		*m.addlisting_last_stock += i
+	} else {
+		m.addlisting_last_stock = &i
+	}
+}
+
+// AddedListingLastStock returns the value that was added to the "listing_last_stock" field in this mutation.
+func (m *ProductMutation) AddedListingLastStock() (r int32, exists bool) {
+	v := m.addlisting_last_stock
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetListingLastStock resets all changes to the "listing_last_stock" field.
+func (m *ProductMutation) ResetListingLastStock() {
+	m.listing_last_stock = nil
+	m.addlisting_last_stock = nil
+}
+
+// SetListingRestocked sets the "listing_restocked" field.
+func (m *ProductMutation) SetListingRestocked(b bool) {
+	m.listing_restocked = &b
+}
+
+// ListingRestocked returns the value of the "listing_restocked" field in the mutation.
+func (m *ProductMutation) ListingRestocked() (r bool, exists bool) {
+	v := m.listing_restocked
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldListingRestocked returns the old "listing_restocked" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldListingRestocked(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldListingRestocked is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldListingRestocked requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldListingRestocked: %w", err)
+	}
+	return oldValue.ListingRestocked, nil
+}
+
+// ResetListingRestocked resets all changes to the "listing_restocked" field.
+func (m *ProductMutation) ResetListingRestocked() {
+	m.listing_restocked = nil
+}
+
+// SetListingMessage sets the "listing_message" field.
+func (m *ProductMutation) SetListingMessage(s string) {
+	m.listing_message = &s
+}
+
+// ListingMessage returns the value of the "listing_message" field in the mutation.
+func (m *ProductMutation) ListingMessage() (r string, exists bool) {
+	v := m.listing_message
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldListingMessage returns the old "listing_message" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldListingMessage(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldListingMessage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldListingMessage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldListingMessage: %w", err)
+	}
+	return oldValue.ListingMessage, nil
+}
+
+// ResetListingMessage resets all changes to the "listing_message" field.
+func (m *ProductMutation) ResetListingMessage() {
+	m.listing_message = nil
+}
+
 // SetIsLocked sets the "is_locked" field.
 func (m *ProductMutation) SetIsLocked(b bool) {
 	m.is_locked = &b
@@ -59043,7 +59483,7 @@ func (m *ProductMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductMutation) Fields() []string {
-	fields := make([]string, 0, 35)
+	fields := make([]string, 0, 44)
 	if m.created_at != nil {
 		fields = append(fields, product.FieldCreatedAt)
 	}
@@ -59137,6 +59577,33 @@ func (m *ProductMutation) Fields() []string {
 	if m.upstream_synced_at != nil {
 		fields = append(fields, product.FieldUpstreamSyncedAt)
 	}
+	if m.auto_listing != nil {
+		fields = append(fields, product.FieldAutoListing)
+	}
+	if m.listing_reason != nil {
+		fields = append(fields, product.FieldListingReason)
+	}
+	if m.listing_restore_status != nil {
+		fields = append(fields, product.FieldListingRestoreStatus)
+	}
+	if m.listing_changed_at != nil {
+		fields = append(fields, product.FieldListingChangedAt)
+	}
+	if m.listing_observed_at != nil {
+		fields = append(fields, product.FieldListingObservedAt)
+	}
+	if m.listing_zero_since != nil {
+		fields = append(fields, product.FieldListingZeroSince)
+	}
+	if m.listing_last_stock != nil {
+		fields = append(fields, product.FieldListingLastStock)
+	}
+	if m.listing_restocked != nil {
+		fields = append(fields, product.FieldListingRestocked)
+	}
+	if m.listing_message != nil {
+		fields = append(fields, product.FieldListingMessage)
+	}
 	if m.is_locked != nil {
 		fields = append(fields, product.FieldIsLocked)
 	}
@@ -59219,6 +59686,24 @@ func (m *ProductMutation) Field(name string) (ent.Value, bool) {
 		return m.UpstreamProductCode()
 	case product.FieldUpstreamSyncedAt:
 		return m.UpstreamSyncedAt()
+	case product.FieldAutoListing:
+		return m.AutoListing()
+	case product.FieldListingReason:
+		return m.ListingReason()
+	case product.FieldListingRestoreStatus:
+		return m.ListingRestoreStatus()
+	case product.FieldListingChangedAt:
+		return m.ListingChangedAt()
+	case product.FieldListingObservedAt:
+		return m.ListingObservedAt()
+	case product.FieldListingZeroSince:
+		return m.ListingZeroSince()
+	case product.FieldListingLastStock:
+		return m.ListingLastStock()
+	case product.FieldListingRestocked:
+		return m.ListingRestocked()
+	case product.FieldListingMessage:
+		return m.ListingMessage()
 	case product.FieldIsLocked:
 		return m.IsLocked()
 	case product.FieldLockVersion:
@@ -59298,6 +59783,24 @@ func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldUpstreamProductCode(ctx)
 	case product.FieldUpstreamSyncedAt:
 		return m.OldUpstreamSyncedAt(ctx)
+	case product.FieldAutoListing:
+		return m.OldAutoListing(ctx)
+	case product.FieldListingReason:
+		return m.OldListingReason(ctx)
+	case product.FieldListingRestoreStatus:
+		return m.OldListingRestoreStatus(ctx)
+	case product.FieldListingChangedAt:
+		return m.OldListingChangedAt(ctx)
+	case product.FieldListingObservedAt:
+		return m.OldListingObservedAt(ctx)
+	case product.FieldListingZeroSince:
+		return m.OldListingZeroSince(ctx)
+	case product.FieldListingLastStock:
+		return m.OldListingLastStock(ctx)
+	case product.FieldListingRestocked:
+		return m.OldListingRestocked(ctx)
+	case product.FieldListingMessage:
+		return m.OldListingMessage(ctx)
 	case product.FieldIsLocked:
 		return m.OldIsLocked(ctx)
 	case product.FieldLockVersion:
@@ -59532,6 +60035,69 @@ func (m *ProductMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpstreamSyncedAt(v)
 		return nil
+	case product.FieldAutoListing:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAutoListing(v)
+		return nil
+	case product.FieldListingReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetListingReason(v)
+		return nil
+	case product.FieldListingRestoreStatus:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetListingRestoreStatus(v)
+		return nil
+	case product.FieldListingChangedAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetListingChangedAt(v)
+		return nil
+	case product.FieldListingObservedAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetListingObservedAt(v)
+		return nil
+	case product.FieldListingZeroSince:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetListingZeroSince(v)
+		return nil
+	case product.FieldListingLastStock:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetListingLastStock(v)
+		return nil
+	case product.FieldListingRestocked:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetListingRestocked(v)
+		return nil
+	case product.FieldListingMessage:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetListingMessage(v)
+		return nil
 	case product.FieldIsLocked:
 		v, ok := value.(bool)
 		if !ok {
@@ -59598,6 +60164,21 @@ func (m *ProductMutation) AddedFields() []string {
 	if m.addupstream_source_id != nil {
 		fields = append(fields, product.FieldUpstreamSourceID)
 	}
+	if m.addlisting_restore_status != nil {
+		fields = append(fields, product.FieldListingRestoreStatus)
+	}
+	if m.addlisting_changed_at != nil {
+		fields = append(fields, product.FieldListingChangedAt)
+	}
+	if m.addlisting_observed_at != nil {
+		fields = append(fields, product.FieldListingObservedAt)
+	}
+	if m.addlisting_zero_since != nil {
+		fields = append(fields, product.FieldListingZeroSince)
+	}
+	if m.addlisting_last_stock != nil {
+		fields = append(fields, product.FieldListingLastStock)
+	}
 	if m.addlock_version != nil {
 		fields = append(fields, product.FieldLockVersion)
 	}
@@ -59632,6 +60213,16 @@ func (m *ProductMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedStatus()
 	case product.FieldUpstreamSourceID:
 		return m.AddedUpstreamSourceID()
+	case product.FieldListingRestoreStatus:
+		return m.AddedListingRestoreStatus()
+	case product.FieldListingChangedAt:
+		return m.AddedListingChangedAt()
+	case product.FieldListingObservedAt:
+		return m.AddedListingObservedAt()
+	case product.FieldListingZeroSince:
+		return m.AddedListingZeroSince()
+	case product.FieldListingLastStock:
+		return m.AddedListingLastStock()
 	case product.FieldLockVersion:
 		return m.AddedLockVersion()
 	case product.FieldLockedBy:
@@ -59714,6 +60305,41 @@ func (m *ProductMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddUpstreamSourceID(v)
+		return nil
+	case product.FieldListingRestoreStatus:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddListingRestoreStatus(v)
+		return nil
+	case product.FieldListingChangedAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddListingChangedAt(v)
+		return nil
+	case product.FieldListingObservedAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddListingObservedAt(v)
+		return nil
+	case product.FieldListingZeroSince:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddListingZeroSince(v)
+		return nil
+	case product.FieldListingLastStock:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddListingLastStock(v)
 		return nil
 	case product.FieldLockVersion:
 		v, ok := value.(int64)
@@ -59917,6 +60543,33 @@ func (m *ProductMutation) ResetField(name string) error {
 		return nil
 	case product.FieldUpstreamSyncedAt:
 		m.ResetUpstreamSyncedAt()
+		return nil
+	case product.FieldAutoListing:
+		m.ResetAutoListing()
+		return nil
+	case product.FieldListingReason:
+		m.ResetListingReason()
+		return nil
+	case product.FieldListingRestoreStatus:
+		m.ResetListingRestoreStatus()
+		return nil
+	case product.FieldListingChangedAt:
+		m.ResetListingChangedAt()
+		return nil
+	case product.FieldListingObservedAt:
+		m.ResetListingObservedAt()
+		return nil
+	case product.FieldListingZeroSince:
+		m.ResetListingZeroSince()
+		return nil
+	case product.FieldListingLastStock:
+		m.ResetListingLastStock()
+		return nil
+	case product.FieldListingRestocked:
+		m.ResetListingRestocked()
+		return nil
+	case product.FieldListingMessage:
+		m.ResetListingMessage()
 		return nil
 	case product.FieldIsLocked:
 		m.ResetIsLocked()
@@ -83544,6 +84197,1280 @@ func (m *SupplierProductPriceMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *SupplierProductPriceMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown SupplierProductPrice edge %s", name)
+}
+
+// SupplyCatalogSnapshotMutation represents an operation that mutates the SupplyCatalogSnapshot nodes in the graph.
+type SupplyCatalogSnapshotMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *uint64
+	created_at       *time.Time
+	updated_at       *time.Time
+	subsite_id       *uint64
+	addsubsite_id    *int64
+	token            *string
+	connection_id    *uint64
+	addconnection_id *int64
+	identity         *string
+	status           *string
+	lease_token      *string
+	lease_until      *int64
+	addlease_until   *int64
+	expires_at       *int64
+	addexpires_at    *int64
+	attempts         *int
+	addattempts      *int
+	loaded_count     *int
+	addloaded_count  *int
+	message          *string
+	payload          *json.RawMessage
+	appendpayload    json.RawMessage
+	clearedFields    map[string]struct{}
+	done             bool
+	oldValue         func(context.Context) (*SupplyCatalogSnapshot, error)
+	predicates       []predicate.SupplyCatalogSnapshot
+}
+
+var _ ent.Mutation = (*SupplyCatalogSnapshotMutation)(nil)
+
+// supplycatalogsnapshotOption allows management of the mutation configuration using functional options.
+type supplycatalogsnapshotOption func(*SupplyCatalogSnapshotMutation)
+
+// newSupplyCatalogSnapshotMutation creates new mutation for the SupplyCatalogSnapshot entity.
+func newSupplyCatalogSnapshotMutation(c config, op Op, opts ...supplycatalogsnapshotOption) *SupplyCatalogSnapshotMutation {
+	m := &SupplyCatalogSnapshotMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSupplyCatalogSnapshot,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSupplyCatalogSnapshotID sets the ID field of the mutation.
+func withSupplyCatalogSnapshotID(id uint64) supplycatalogsnapshotOption {
+	return func(m *SupplyCatalogSnapshotMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SupplyCatalogSnapshot
+		)
+		m.oldValue = func(ctx context.Context) (*SupplyCatalogSnapshot, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SupplyCatalogSnapshot.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSupplyCatalogSnapshot sets the old SupplyCatalogSnapshot of the mutation.
+func withSupplyCatalogSnapshot(node *SupplyCatalogSnapshot) supplycatalogsnapshotOption {
+	return func(m *SupplyCatalogSnapshotMutation) {
+		m.oldValue = func(context.Context) (*SupplyCatalogSnapshot, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SupplyCatalogSnapshotMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SupplyCatalogSnapshotMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SupplyCatalogSnapshot entities.
+func (m *SupplyCatalogSnapshotMutation) SetID(id uint64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SupplyCatalogSnapshotMutation) ID() (id uint64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SupplyCatalogSnapshotMutation) IDs(ctx context.Context) ([]uint64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uint64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SupplyCatalogSnapshot.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SupplyCatalogSnapshotMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SupplyCatalogSnapshotMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SupplyCatalogSnapshot entity.
+// If the SupplyCatalogSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyCatalogSnapshotMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SupplyCatalogSnapshotMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SupplyCatalogSnapshotMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SupplyCatalogSnapshotMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the SupplyCatalogSnapshot entity.
+// If the SupplyCatalogSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyCatalogSnapshotMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SupplyCatalogSnapshotMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetSubsiteID sets the "subsite_id" field.
+func (m *SupplyCatalogSnapshotMutation) SetSubsiteID(u uint64) {
+	m.subsite_id = &u
+	m.addsubsite_id = nil
+}
+
+// SubsiteID returns the value of the "subsite_id" field in the mutation.
+func (m *SupplyCatalogSnapshotMutation) SubsiteID() (r uint64, exists bool) {
+	v := m.subsite_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubsiteID returns the old "subsite_id" field's value of the SupplyCatalogSnapshot entity.
+// If the SupplyCatalogSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyCatalogSnapshotMutation) OldSubsiteID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubsiteID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubsiteID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubsiteID: %w", err)
+	}
+	return oldValue.SubsiteID, nil
+}
+
+// AddSubsiteID adds u to the "subsite_id" field.
+func (m *SupplyCatalogSnapshotMutation) AddSubsiteID(u int64) {
+	if m.addsubsite_id != nil {
+		*m.addsubsite_id += u
+	} else {
+		m.addsubsite_id = &u
+	}
+}
+
+// AddedSubsiteID returns the value that was added to the "subsite_id" field in this mutation.
+func (m *SupplyCatalogSnapshotMutation) AddedSubsiteID() (r int64, exists bool) {
+	v := m.addsubsite_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSubsiteID resets all changes to the "subsite_id" field.
+func (m *SupplyCatalogSnapshotMutation) ResetSubsiteID() {
+	m.subsite_id = nil
+	m.addsubsite_id = nil
+}
+
+// SetToken sets the "token" field.
+func (m *SupplyCatalogSnapshotMutation) SetToken(s string) {
+	m.token = &s
+}
+
+// Token returns the value of the "token" field in the mutation.
+func (m *SupplyCatalogSnapshotMutation) Token() (r string, exists bool) {
+	v := m.token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldToken returns the old "token" field's value of the SupplyCatalogSnapshot entity.
+// If the SupplyCatalogSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyCatalogSnapshotMutation) OldToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldToken: %w", err)
+	}
+	return oldValue.Token, nil
+}
+
+// ResetToken resets all changes to the "token" field.
+func (m *SupplyCatalogSnapshotMutation) ResetToken() {
+	m.token = nil
+}
+
+// SetConnectionID sets the "connection_id" field.
+func (m *SupplyCatalogSnapshotMutation) SetConnectionID(u uint64) {
+	m.connection_id = &u
+	m.addconnection_id = nil
+}
+
+// ConnectionID returns the value of the "connection_id" field in the mutation.
+func (m *SupplyCatalogSnapshotMutation) ConnectionID() (r uint64, exists bool) {
+	v := m.connection_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConnectionID returns the old "connection_id" field's value of the SupplyCatalogSnapshot entity.
+// If the SupplyCatalogSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyCatalogSnapshotMutation) OldConnectionID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConnectionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConnectionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConnectionID: %w", err)
+	}
+	return oldValue.ConnectionID, nil
+}
+
+// AddConnectionID adds u to the "connection_id" field.
+func (m *SupplyCatalogSnapshotMutation) AddConnectionID(u int64) {
+	if m.addconnection_id != nil {
+		*m.addconnection_id += u
+	} else {
+		m.addconnection_id = &u
+	}
+}
+
+// AddedConnectionID returns the value that was added to the "connection_id" field in this mutation.
+func (m *SupplyCatalogSnapshotMutation) AddedConnectionID() (r int64, exists bool) {
+	v := m.addconnection_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetConnectionID resets all changes to the "connection_id" field.
+func (m *SupplyCatalogSnapshotMutation) ResetConnectionID() {
+	m.connection_id = nil
+	m.addconnection_id = nil
+}
+
+// SetIdentity sets the "identity" field.
+func (m *SupplyCatalogSnapshotMutation) SetIdentity(s string) {
+	m.identity = &s
+}
+
+// Identity returns the value of the "identity" field in the mutation.
+func (m *SupplyCatalogSnapshotMutation) Identity() (r string, exists bool) {
+	v := m.identity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIdentity returns the old "identity" field's value of the SupplyCatalogSnapshot entity.
+// If the SupplyCatalogSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyCatalogSnapshotMutation) OldIdentity(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIdentity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIdentity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIdentity: %w", err)
+	}
+	return oldValue.Identity, nil
+}
+
+// ResetIdentity resets all changes to the "identity" field.
+func (m *SupplyCatalogSnapshotMutation) ResetIdentity() {
+	m.identity = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *SupplyCatalogSnapshotMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *SupplyCatalogSnapshotMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the SupplyCatalogSnapshot entity.
+// If the SupplyCatalogSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyCatalogSnapshotMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *SupplyCatalogSnapshotMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetLeaseToken sets the "lease_token" field.
+func (m *SupplyCatalogSnapshotMutation) SetLeaseToken(s string) {
+	m.lease_token = &s
+}
+
+// LeaseToken returns the value of the "lease_token" field in the mutation.
+func (m *SupplyCatalogSnapshotMutation) LeaseToken() (r string, exists bool) {
+	v := m.lease_token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLeaseToken returns the old "lease_token" field's value of the SupplyCatalogSnapshot entity.
+// If the SupplyCatalogSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyCatalogSnapshotMutation) OldLeaseToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLeaseToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLeaseToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLeaseToken: %w", err)
+	}
+	return oldValue.LeaseToken, nil
+}
+
+// ResetLeaseToken resets all changes to the "lease_token" field.
+func (m *SupplyCatalogSnapshotMutation) ResetLeaseToken() {
+	m.lease_token = nil
+}
+
+// SetLeaseUntil sets the "lease_until" field.
+func (m *SupplyCatalogSnapshotMutation) SetLeaseUntil(i int64) {
+	m.lease_until = &i
+	m.addlease_until = nil
+}
+
+// LeaseUntil returns the value of the "lease_until" field in the mutation.
+func (m *SupplyCatalogSnapshotMutation) LeaseUntil() (r int64, exists bool) {
+	v := m.lease_until
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLeaseUntil returns the old "lease_until" field's value of the SupplyCatalogSnapshot entity.
+// If the SupplyCatalogSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyCatalogSnapshotMutation) OldLeaseUntil(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLeaseUntil is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLeaseUntil requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLeaseUntil: %w", err)
+	}
+	return oldValue.LeaseUntil, nil
+}
+
+// AddLeaseUntil adds i to the "lease_until" field.
+func (m *SupplyCatalogSnapshotMutation) AddLeaseUntil(i int64) {
+	if m.addlease_until != nil {
+		*m.addlease_until += i
+	} else {
+		m.addlease_until = &i
+	}
+}
+
+// AddedLeaseUntil returns the value that was added to the "lease_until" field in this mutation.
+func (m *SupplyCatalogSnapshotMutation) AddedLeaseUntil() (r int64, exists bool) {
+	v := m.addlease_until
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLeaseUntil resets all changes to the "lease_until" field.
+func (m *SupplyCatalogSnapshotMutation) ResetLeaseUntil() {
+	m.lease_until = nil
+	m.addlease_until = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *SupplyCatalogSnapshotMutation) SetExpiresAt(i int64) {
+	m.expires_at = &i
+	m.addexpires_at = nil
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *SupplyCatalogSnapshotMutation) ExpiresAt() (r int64, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the SupplyCatalogSnapshot entity.
+// If the SupplyCatalogSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyCatalogSnapshotMutation) OldExpiresAt(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// AddExpiresAt adds i to the "expires_at" field.
+func (m *SupplyCatalogSnapshotMutation) AddExpiresAt(i int64) {
+	if m.addexpires_at != nil {
+		*m.addexpires_at += i
+	} else {
+		m.addexpires_at = &i
+	}
+}
+
+// AddedExpiresAt returns the value that was added to the "expires_at" field in this mutation.
+func (m *SupplyCatalogSnapshotMutation) AddedExpiresAt() (r int64, exists bool) {
+	v := m.addexpires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *SupplyCatalogSnapshotMutation) ResetExpiresAt() {
+	m.expires_at = nil
+	m.addexpires_at = nil
+}
+
+// SetAttempts sets the "attempts" field.
+func (m *SupplyCatalogSnapshotMutation) SetAttempts(i int) {
+	m.attempts = &i
+	m.addattempts = nil
+}
+
+// Attempts returns the value of the "attempts" field in the mutation.
+func (m *SupplyCatalogSnapshotMutation) Attempts() (r int, exists bool) {
+	v := m.attempts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAttempts returns the old "attempts" field's value of the SupplyCatalogSnapshot entity.
+// If the SupplyCatalogSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyCatalogSnapshotMutation) OldAttempts(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAttempts is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAttempts requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAttempts: %w", err)
+	}
+	return oldValue.Attempts, nil
+}
+
+// AddAttempts adds i to the "attempts" field.
+func (m *SupplyCatalogSnapshotMutation) AddAttempts(i int) {
+	if m.addattempts != nil {
+		*m.addattempts += i
+	} else {
+		m.addattempts = &i
+	}
+}
+
+// AddedAttempts returns the value that was added to the "attempts" field in this mutation.
+func (m *SupplyCatalogSnapshotMutation) AddedAttempts() (r int, exists bool) {
+	v := m.addattempts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAttempts resets all changes to the "attempts" field.
+func (m *SupplyCatalogSnapshotMutation) ResetAttempts() {
+	m.attempts = nil
+	m.addattempts = nil
+}
+
+// SetLoadedCount sets the "loaded_count" field.
+func (m *SupplyCatalogSnapshotMutation) SetLoadedCount(i int) {
+	m.loaded_count = &i
+	m.addloaded_count = nil
+}
+
+// LoadedCount returns the value of the "loaded_count" field in the mutation.
+func (m *SupplyCatalogSnapshotMutation) LoadedCount() (r int, exists bool) {
+	v := m.loaded_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLoadedCount returns the old "loaded_count" field's value of the SupplyCatalogSnapshot entity.
+// If the SupplyCatalogSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyCatalogSnapshotMutation) OldLoadedCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLoadedCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLoadedCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLoadedCount: %w", err)
+	}
+	return oldValue.LoadedCount, nil
+}
+
+// AddLoadedCount adds i to the "loaded_count" field.
+func (m *SupplyCatalogSnapshotMutation) AddLoadedCount(i int) {
+	if m.addloaded_count != nil {
+		*m.addloaded_count += i
+	} else {
+		m.addloaded_count = &i
+	}
+}
+
+// AddedLoadedCount returns the value that was added to the "loaded_count" field in this mutation.
+func (m *SupplyCatalogSnapshotMutation) AddedLoadedCount() (r int, exists bool) {
+	v := m.addloaded_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLoadedCount resets all changes to the "loaded_count" field.
+func (m *SupplyCatalogSnapshotMutation) ResetLoadedCount() {
+	m.loaded_count = nil
+	m.addloaded_count = nil
+}
+
+// SetMessage sets the "message" field.
+func (m *SupplyCatalogSnapshotMutation) SetMessage(s string) {
+	m.message = &s
+}
+
+// Message returns the value of the "message" field in the mutation.
+func (m *SupplyCatalogSnapshotMutation) Message() (r string, exists bool) {
+	v := m.message
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMessage returns the old "message" field's value of the SupplyCatalogSnapshot entity.
+// If the SupplyCatalogSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyCatalogSnapshotMutation) OldMessage(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMessage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMessage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMessage: %w", err)
+	}
+	return oldValue.Message, nil
+}
+
+// ResetMessage resets all changes to the "message" field.
+func (m *SupplyCatalogSnapshotMutation) ResetMessage() {
+	m.message = nil
+}
+
+// SetPayload sets the "payload" field.
+func (m *SupplyCatalogSnapshotMutation) SetPayload(jm json.RawMessage) {
+	m.payload = &jm
+	m.appendpayload = nil
+}
+
+// Payload returns the value of the "payload" field in the mutation.
+func (m *SupplyCatalogSnapshotMutation) Payload() (r json.RawMessage, exists bool) {
+	v := m.payload
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPayload returns the old "payload" field's value of the SupplyCatalogSnapshot entity.
+// If the SupplyCatalogSnapshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyCatalogSnapshotMutation) OldPayload(ctx context.Context) (v json.RawMessage, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPayload is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPayload requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPayload: %w", err)
+	}
+	return oldValue.Payload, nil
+}
+
+// AppendPayload adds jm to the "payload" field.
+func (m *SupplyCatalogSnapshotMutation) AppendPayload(jm json.RawMessage) {
+	m.appendpayload = append(m.appendpayload, jm...)
+}
+
+// AppendedPayload returns the list of values that were appended to the "payload" field in this mutation.
+func (m *SupplyCatalogSnapshotMutation) AppendedPayload() (json.RawMessage, bool) {
+	if len(m.appendpayload) == 0 {
+		return nil, false
+	}
+	return m.appendpayload, true
+}
+
+// ClearPayload clears the value of the "payload" field.
+func (m *SupplyCatalogSnapshotMutation) ClearPayload() {
+	m.payload = nil
+	m.appendpayload = nil
+	m.clearedFields[supplycatalogsnapshot.FieldPayload] = struct{}{}
+}
+
+// PayloadCleared returns if the "payload" field was cleared in this mutation.
+func (m *SupplyCatalogSnapshotMutation) PayloadCleared() bool {
+	_, ok := m.clearedFields[supplycatalogsnapshot.FieldPayload]
+	return ok
+}
+
+// ResetPayload resets all changes to the "payload" field.
+func (m *SupplyCatalogSnapshotMutation) ResetPayload() {
+	m.payload = nil
+	m.appendpayload = nil
+	delete(m.clearedFields, supplycatalogsnapshot.FieldPayload)
+}
+
+// Where appends a list predicates to the SupplyCatalogSnapshotMutation builder.
+func (m *SupplyCatalogSnapshotMutation) Where(ps ...predicate.SupplyCatalogSnapshot) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SupplyCatalogSnapshotMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SupplyCatalogSnapshotMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SupplyCatalogSnapshot, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SupplyCatalogSnapshotMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SupplyCatalogSnapshotMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SupplyCatalogSnapshot).
+func (m *SupplyCatalogSnapshotMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SupplyCatalogSnapshotMutation) Fields() []string {
+	fields := make([]string, 0, 14)
+	if m.created_at != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldUpdatedAt)
+	}
+	if m.subsite_id != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldSubsiteID)
+	}
+	if m.token != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldToken)
+	}
+	if m.connection_id != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldConnectionID)
+	}
+	if m.identity != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldIdentity)
+	}
+	if m.status != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldStatus)
+	}
+	if m.lease_token != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldLeaseToken)
+	}
+	if m.lease_until != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldLeaseUntil)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldExpiresAt)
+	}
+	if m.attempts != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldAttempts)
+	}
+	if m.loaded_count != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldLoadedCount)
+	}
+	if m.message != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldMessage)
+	}
+	if m.payload != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldPayload)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SupplyCatalogSnapshotMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case supplycatalogsnapshot.FieldCreatedAt:
+		return m.CreatedAt()
+	case supplycatalogsnapshot.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case supplycatalogsnapshot.FieldSubsiteID:
+		return m.SubsiteID()
+	case supplycatalogsnapshot.FieldToken:
+		return m.Token()
+	case supplycatalogsnapshot.FieldConnectionID:
+		return m.ConnectionID()
+	case supplycatalogsnapshot.FieldIdentity:
+		return m.Identity()
+	case supplycatalogsnapshot.FieldStatus:
+		return m.Status()
+	case supplycatalogsnapshot.FieldLeaseToken:
+		return m.LeaseToken()
+	case supplycatalogsnapshot.FieldLeaseUntil:
+		return m.LeaseUntil()
+	case supplycatalogsnapshot.FieldExpiresAt:
+		return m.ExpiresAt()
+	case supplycatalogsnapshot.FieldAttempts:
+		return m.Attempts()
+	case supplycatalogsnapshot.FieldLoadedCount:
+		return m.LoadedCount()
+	case supplycatalogsnapshot.FieldMessage:
+		return m.Message()
+	case supplycatalogsnapshot.FieldPayload:
+		return m.Payload()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SupplyCatalogSnapshotMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case supplycatalogsnapshot.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case supplycatalogsnapshot.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case supplycatalogsnapshot.FieldSubsiteID:
+		return m.OldSubsiteID(ctx)
+	case supplycatalogsnapshot.FieldToken:
+		return m.OldToken(ctx)
+	case supplycatalogsnapshot.FieldConnectionID:
+		return m.OldConnectionID(ctx)
+	case supplycatalogsnapshot.FieldIdentity:
+		return m.OldIdentity(ctx)
+	case supplycatalogsnapshot.FieldStatus:
+		return m.OldStatus(ctx)
+	case supplycatalogsnapshot.FieldLeaseToken:
+		return m.OldLeaseToken(ctx)
+	case supplycatalogsnapshot.FieldLeaseUntil:
+		return m.OldLeaseUntil(ctx)
+	case supplycatalogsnapshot.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case supplycatalogsnapshot.FieldAttempts:
+		return m.OldAttempts(ctx)
+	case supplycatalogsnapshot.FieldLoadedCount:
+		return m.OldLoadedCount(ctx)
+	case supplycatalogsnapshot.FieldMessage:
+		return m.OldMessage(ctx)
+	case supplycatalogsnapshot.FieldPayload:
+		return m.OldPayload(ctx)
+	}
+	return nil, fmt.Errorf("unknown SupplyCatalogSnapshot field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SupplyCatalogSnapshotMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case supplycatalogsnapshot.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case supplycatalogsnapshot.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case supplycatalogsnapshot.FieldSubsiteID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubsiteID(v)
+		return nil
+	case supplycatalogsnapshot.FieldToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetToken(v)
+		return nil
+	case supplycatalogsnapshot.FieldConnectionID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConnectionID(v)
+		return nil
+	case supplycatalogsnapshot.FieldIdentity:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIdentity(v)
+		return nil
+	case supplycatalogsnapshot.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case supplycatalogsnapshot.FieldLeaseToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLeaseToken(v)
+		return nil
+	case supplycatalogsnapshot.FieldLeaseUntil:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLeaseUntil(v)
+		return nil
+	case supplycatalogsnapshot.FieldExpiresAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case supplycatalogsnapshot.FieldAttempts:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAttempts(v)
+		return nil
+	case supplycatalogsnapshot.FieldLoadedCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLoadedCount(v)
+		return nil
+	case supplycatalogsnapshot.FieldMessage:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMessage(v)
+		return nil
+	case supplycatalogsnapshot.FieldPayload:
+		v, ok := value.(json.RawMessage)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPayload(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SupplyCatalogSnapshot field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SupplyCatalogSnapshotMutation) AddedFields() []string {
+	var fields []string
+	if m.addsubsite_id != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldSubsiteID)
+	}
+	if m.addconnection_id != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldConnectionID)
+	}
+	if m.addlease_until != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldLeaseUntil)
+	}
+	if m.addexpires_at != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldExpiresAt)
+	}
+	if m.addattempts != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldAttempts)
+	}
+	if m.addloaded_count != nil {
+		fields = append(fields, supplycatalogsnapshot.FieldLoadedCount)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SupplyCatalogSnapshotMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case supplycatalogsnapshot.FieldSubsiteID:
+		return m.AddedSubsiteID()
+	case supplycatalogsnapshot.FieldConnectionID:
+		return m.AddedConnectionID()
+	case supplycatalogsnapshot.FieldLeaseUntil:
+		return m.AddedLeaseUntil()
+	case supplycatalogsnapshot.FieldExpiresAt:
+		return m.AddedExpiresAt()
+	case supplycatalogsnapshot.FieldAttempts:
+		return m.AddedAttempts()
+	case supplycatalogsnapshot.FieldLoadedCount:
+		return m.AddedLoadedCount()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SupplyCatalogSnapshotMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case supplycatalogsnapshot.FieldSubsiteID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSubsiteID(v)
+		return nil
+	case supplycatalogsnapshot.FieldConnectionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddConnectionID(v)
+		return nil
+	case supplycatalogsnapshot.FieldLeaseUntil:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLeaseUntil(v)
+		return nil
+	case supplycatalogsnapshot.FieldExpiresAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddExpiresAt(v)
+		return nil
+	case supplycatalogsnapshot.FieldAttempts:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAttempts(v)
+		return nil
+	case supplycatalogsnapshot.FieldLoadedCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLoadedCount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SupplyCatalogSnapshot numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SupplyCatalogSnapshotMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(supplycatalogsnapshot.FieldPayload) {
+		fields = append(fields, supplycatalogsnapshot.FieldPayload)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SupplyCatalogSnapshotMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SupplyCatalogSnapshotMutation) ClearField(name string) error {
+	switch name {
+	case supplycatalogsnapshot.FieldPayload:
+		m.ClearPayload()
+		return nil
+	}
+	return fmt.Errorf("unknown SupplyCatalogSnapshot nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SupplyCatalogSnapshotMutation) ResetField(name string) error {
+	switch name {
+	case supplycatalogsnapshot.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case supplycatalogsnapshot.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case supplycatalogsnapshot.FieldSubsiteID:
+		m.ResetSubsiteID()
+		return nil
+	case supplycatalogsnapshot.FieldToken:
+		m.ResetToken()
+		return nil
+	case supplycatalogsnapshot.FieldConnectionID:
+		m.ResetConnectionID()
+		return nil
+	case supplycatalogsnapshot.FieldIdentity:
+		m.ResetIdentity()
+		return nil
+	case supplycatalogsnapshot.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case supplycatalogsnapshot.FieldLeaseToken:
+		m.ResetLeaseToken()
+		return nil
+	case supplycatalogsnapshot.FieldLeaseUntil:
+		m.ResetLeaseUntil()
+		return nil
+	case supplycatalogsnapshot.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case supplycatalogsnapshot.FieldAttempts:
+		m.ResetAttempts()
+		return nil
+	case supplycatalogsnapshot.FieldLoadedCount:
+		m.ResetLoadedCount()
+		return nil
+	case supplycatalogsnapshot.FieldMessage:
+		m.ResetMessage()
+		return nil
+	case supplycatalogsnapshot.FieldPayload:
+		m.ResetPayload()
+		return nil
+	}
+	return fmt.Errorf("unknown SupplyCatalogSnapshot field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SupplyCatalogSnapshotMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SupplyCatalogSnapshotMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SupplyCatalogSnapshotMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SupplyCatalogSnapshotMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SupplyCatalogSnapshotMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SupplyCatalogSnapshotMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SupplyCatalogSnapshotMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown SupplyCatalogSnapshot unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SupplyCatalogSnapshotMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown SupplyCatalogSnapshot edge %s", name)
 }
 
 // SupplyConnectionMutation represents an operation that mutates the SupplyConnection nodes in the graph.

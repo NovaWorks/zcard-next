@@ -15,6 +15,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplysynctask"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/httpx"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -23,8 +24,9 @@ import (
 // AdminSupplyService 管理面货源服务。
 type AdminSupplyService struct {
 	adminv1.UnimplementedAdminSupplyServiceServer
-	repo *SupplyRepoImpl
-	sync *SyncService
+	repo           *SupplyRepoImpl
+	sync           *SyncService
+	adapterFactory func(string, string, adapter.Credentials, []int) (adapter.Adapter, error)
 }
 
 // NewAdminSupplyService 构造。

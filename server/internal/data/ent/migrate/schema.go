@@ -281,7 +281,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
 		{Name: "parent_id", Type: field.TypeUint64, Nullable: true},
-		{Name: "name", Type: field.TypeString, Size: 60},
+		{Name: "name", Type: field.TypeString, Size: 100},
 		{Name: "icon", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "hide", Type: field.TypeBool, Default: false},
 		{Name: "sort", Type: field.TypeInt32, Default: 0},
@@ -1693,6 +1693,15 @@ var (
 		{Name: "upstream_source_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "upstream_product_code", Type: field.TypeString, Nullable: true, Size: 128},
 		{Name: "upstream_synced_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "auto_listing", Type: field.TypeBool, Default: false},
+		{Name: "listing_reason", Type: field.TypeString, Size: 40, Default: ""},
+		{Name: "listing_restore_status", Type: field.TypeInt8, Default: 1},
+		{Name: "listing_changed_at", Type: field.TypeInt64, Default: 0},
+		{Name: "listing_observed_at", Type: field.TypeInt64, Default: 0},
+		{Name: "listing_zero_since", Type: field.TypeInt64, Default: 0},
+		{Name: "listing_last_stock", Type: field.TypeInt32, Default: -2},
+		{Name: "listing_restocked", Type: field.TypeBool, Default: false},
+		{Name: "listing_message", Type: field.TypeString, Size: 200, Default: ""},
 		{Name: "is_locked", Type: field.TypeBool, Default: false},
 		{Name: "lock_version", Type: field.TypeInt64, Default: 0},
 		{Name: "locked_by", Type: field.TypeUint64, Default: 0},
@@ -2405,6 +2414,47 @@ var (
 			},
 		},
 	}
+	// SupplyCatalogSnapshotsColumns holds the columns for the "supply_catalog_snapshots" table.
+	SupplyCatalogSnapshotsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "token", Type: field.TypeString, Unique: true, Size: 36},
+		{Name: "connection_id", Type: field.TypeUint64},
+		{Name: "identity", Type: field.TypeString, Size: 64},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "pending"},
+		{Name: "lease_token", Type: field.TypeString, Default: ""},
+		{Name: "lease_until", Type: field.TypeInt64, Default: 0},
+		{Name: "expires_at", Type: field.TypeInt64},
+		{Name: "attempts", Type: field.TypeInt, Default: 0},
+		{Name: "loaded_count", Type: field.TypeInt, Default: 0},
+		{Name: "message", Type: field.TypeString, Size: 500, Default: ""},
+		{Name: "payload", Type: field.TypeJSON, Nullable: true},
+	}
+	// SupplyCatalogSnapshotsTable holds the schema information for the "supply_catalog_snapshots" table.
+	SupplyCatalogSnapshotsTable = &schema.Table{
+		Name:       "supply_catalog_snapshots",
+		Columns:    SupplyCatalogSnapshotsColumns,
+		PrimaryKey: []*schema.Column{SupplyCatalogSnapshotsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "supplycatalogsnapshot_connection_id_subsite_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{SupplyCatalogSnapshotsColumns[5], SupplyCatalogSnapshotsColumns[3], SupplyCatalogSnapshotsColumns[1]},
+			},
+			{
+				Name:    "supplycatalogsnapshot_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{SupplyCatalogSnapshotsColumns[10]},
+			},
+			{
+				Name:    "supplycatalogsnapshot_status_lease_until",
+				Unique:  false,
+				Columns: []*schema.Column{SupplyCatalogSnapshotsColumns[7], SupplyCatalogSnapshotsColumns[9]},
+			},
+		},
+	}
 	// SupplyConnectionsColumns holds the columns for the "supply_connections" table.
 	SupplyConnectionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
@@ -3025,6 +3075,7 @@ var (
 		SupplierAccountsTable,
 		SupplierLedgerEntriesTable,
 		SupplierProductPricesTable,
+		SupplyCatalogSnapshotsTable,
 		SupplyConnectionsTable,
 		SupplyImportItemsTable,
 		SupplyMappingsTable,

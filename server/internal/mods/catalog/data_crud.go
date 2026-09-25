@@ -32,6 +32,12 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 	q := data.Client(ctx, r.data).Product.Query().
 		Where(product.SubsiteID(tc.SubsiteID), product.StatusGTE(0)).
 		Order(ent.Asc(product.FieldSort), ent.Desc(product.FieldID))
+	if f.AutoListing != nil {
+		q.Where(product.AutoListing(*f.AutoListing))
+	}
+	if f.RestockedOnly {
+		q.Where(product.Status(0), product.ListingRestocked(true))
+	}
 	if f.IsLocked != nil {
 		q = q.Where(product.IsLocked(*f.IsLocked))
 	}
@@ -68,6 +74,9 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 			st = 0
 		}
 		q = q.Where(product.Status(st))
+	}
+	if f.Inventory != "" || f.RestockedOnly {
+		return r.listInventory(ctx, q, f)
 	}
 	// 先按货源计算库存，再筛选和分页；未知/不限库存不计入缺货。
 	if f.LowStockThreshold > 0 || f.OutOfStockOnly {
@@ -297,7 +306,11 @@ func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.
 		q.SetSort(in.Sort)
 	}
 	if in.Status >= 0 {
-		q.SetStatus(in.Status)
+		if in.Status != current.Status {
+			data.ManualListing(q, in.Status)
+		} else {
+			q.SetStatus(in.Status)
+		}
 	}
 	if in.PointsRequiredSet {
 		q.SetPointsRequired(in.PointsRequired) // 含 0=移出积分商城（PUT 全量语义）
@@ -392,6 +405,10 @@ func (r *ProductRepoImpl) ListCategories(ctx context.Context) ([]*ent.Category, 
 
 // CreateCategory 创建分类。
 func (r *ProductRepoImpl) CreateCategory(ctx context.Context, name string, parentID uint64, icon string, sort int32) (*ent.Category, error) {
+	if err := data.ValidateCategoryName(name); err != nil {
+		return nil, err
+	}
+	name = strings.TrimSpace(name)
 	tc := tenancy.FromContext(ctx)
 	// 环状校验
 	if parentID > 0 {
@@ -413,6 +430,12 @@ func (r *ProductRepoImpl) CreateCategory(ctx context.Context, name string, paren
 // sort nil=不变；parentId nil=不变（0=置顶级；>0=指定父，防环：
 // 不能把分类设为自身或自身的后代，否则树成环）。
 func (r *ProductRepoImpl) updateCategory(ctx context.Context, id uint64, name string, icon *string, hide *bool, sort *int32, parentID *int64) (*ent.Category, error) {
+	if name != "" {
+		if err := data.ValidateCategoryName(name); err != nil {
+			return nil, err
+		}
+		name = strings.TrimSpace(name)
+	}
 	client := data.Client(ctx, r.data)
 	if _, err := client.Category.Query().Where(category.ID(id), category.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).Only(ctx); err != nil {
 		return nil, err
@@ -607,7 +630,8 @@ func ToAdminPB(p *ent.Product) *adminv1.AdminProduct {
 		PointsRequired:   p.PointsRequired,
 		HasDirectContent: len(p.DirectContent) > 0,
 		IsRecommend:      p.IsRecommend,
-		IsLocked:         p.IsLocked, LockVersion: p.LockVersion, LockedBy: p.LockedBy, LockedAt: productLockedAt(p),
+		AutoListing:      p.AutoListing, ListingReason: p.ListingReason, ListingMessage: p.ListingMessage, ListingRestocked: p.ListingRestocked, ListingObservedAt: p.ListingObservedAt / 1000,
+		IsLocked: p.IsLocked, LockVersion: p.LockVersion, LockedBy: p.LockedBy, LockedAt: productLockedAt(p),
 	}
 	if !p.CreatedAt.IsZero() {
 		out.CreatedAt = p.CreatedAt.Unix()
@@ -792,7 +816,16 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 		upd.SetPrice(in.Price)
 	}
 	// 两个调用方（collect 同步/交互导入）恒发送显式状态：镜像上游可售性
-	upd.SetStatus(in.Status)
+	if !existing.AutoListing {
+		if existing.Status == 2 && in.Status == 1 {
+			upd.SetStatus(2)
+		} else {
+			upd.SetStatus(in.Status)
+		}
+		if in.Status == 0 && existing.Status > 0 {
+			upd.SetListingReason("upstream_unavailable").SetListingRestoreStatus(existing.Status)
+		}
+	}
 	if !existing.CategoryProtected || in.CategoryProtected {
 		if in.CategoryID > 0 {
 			upd.SetCategoryID(in.CategoryID)
@@ -980,7 +1013,11 @@ func (r *ProductRepoImpl) UpdateUpstreamStatus(ctx context.Context, connectionID
 		} else if local {
 			return nil
 		}
-		if e := c.Product.UpdateOneID(p.ID).SetStatus(status).SetUpstreamSyncedAt(time.Now().UTC()).Exec(ctx); e != nil {
+		upd := c.Product.UpdateOneID(p.ID).SetStatus(status).SetUpstreamSyncedAt(time.Now().UTC())
+		if status == 0 && p.Status > 0 {
+			upd.SetListingReason("upstream_unavailable").SetListingRestoreStatus(p.Status).SetListingMessage("上游停售或商品已不存在，需人工核实")
+		}
+		if e := upd.Exec(ctx); e != nil {
 			return e
 		}
 		changed = true

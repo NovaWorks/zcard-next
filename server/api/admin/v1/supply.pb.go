@@ -1607,7 +1607,10 @@ func (x *CreateSyncTaskRequest) GetForceReprice() bool {
 type PreviewProductsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ConnectionId  uint64                 `protobuf:"varint,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
-	QuoteCode     string                 `protobuf:"bytes,2,opt,name=quote_code,json=quoteCode,proto3" json:"quote_code,omitempty"` // 非空时仅返回该商品，并实时获取账号单件报价（含各规格）
+	QuoteCode     string                 `protobuf:"bytes,2,opt,name=quote_code,json=quoteCode,proto3" json:"quote_code,omitempty"`    // 非空时仅返回该商品，并实时获取账号单件报价（含各规格）
+	Async         bool                   `protobuf:"varint,3,opt,name=async,proto3" json:"async,omitempty"`                            // 后台加载目录，短轮询读取状态
+	SnapshotId    string                 `protobuf:"bytes,4,opt,name=snapshot_id,json=snapshotId,proto3" json:"snapshot_id,omitempty"` // 已加载目录凭证，报价与导入均复用
+	Refresh       bool                   `protobuf:"varint,5,opt,name=refresh,proto3" json:"refresh,omitempty"`                        // 明确重试或刷新；不覆盖其他窗口持有的快照
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1654,6 +1657,27 @@ func (x *PreviewProductsRequest) GetQuoteCode() string {
 		return x.QuoteCode
 	}
 	return ""
+}
+
+func (x *PreviewProductsRequest) GetAsync() bool {
+	if x != nil {
+		return x.Async
+	}
+	return false
+}
+
+func (x *PreviewProductsRequest) GetSnapshotId() string {
+	if x != nil {
+		return x.SnapshotId
+	}
+	return ""
+}
+
+func (x *PreviewProductsRequest) GetRefresh() bool {
+	if x != nil {
+		return x.Refresh
+	}
+	return false
 }
 
 type PreviewProduct struct {
@@ -1876,6 +1900,11 @@ type PreviewProductsReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Categories    []*PreviewCategory     `protobuf:"bytes,1,rep,name=categories,proto3" json:"categories,omitempty"`
 	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	SnapshotId    string                 `protobuf:"bytes,3,opt,name=snapshot_id,json=snapshotId,proto3" json:"snapshot_id,omitempty"`
+	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"` // pending | loading | ready | failed
+	Message       string                 `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
+	LoadedCount   int32                  `protobuf:"varint,6,opt,name=loaded_count,json=loadedCount,proto3" json:"loaded_count,omitempty"`
+	ExpiresAt     int64                  `protobuf:"varint,7,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1924,6 +1953,41 @@ func (x *PreviewProductsReply) GetTotal() int32 {
 	return 0
 }
 
+func (x *PreviewProductsReply) GetSnapshotId() string {
+	if x != nil {
+		return x.SnapshotId
+	}
+	return ""
+}
+
+func (x *PreviewProductsReply) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *PreviewProductsReply) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *PreviewProductsReply) GetLoadedCount() int32 {
+	if x != nil {
+		return x.LoadedCount
+	}
+	return 0
+}
+
+func (x *PreviewProductsReply) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
+}
+
 type ImportProductsRequest struct {
 	state                  protoimpl.MessageState `protogen:"open.v1"`
 	ConnectionId           uint64                 `protobuf:"varint,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
@@ -1938,7 +2002,8 @@ type ImportProductsRequest struct {
 	SaveCategoryRules      bool                   `protobuf:"varint,12,opt,name=save_category_rules,json=saveCategoryRules,proto3" json:"save_category_rules,omitempty"`
 	SelectedCategoriesOnly bool                   `protobuf:"varint,13,opt,name=selected_categories_only,json=selectedCategoriesOnly,proto3" json:"selected_categories_only,omitempty"` // 不修改整个上游分类的默认映射
 	RequestKey             string                 `protobuf:"bytes,9,opt,name=request_key,json=requestKey,proto3" json:"request_key,omitempty"`                                         // 同一次提交/网络重试使用同一键
-	CategoryDrafts         []*ImportCategoryDraft `protobuf:"bytes,8,rep,name=category_drafts,json=categoryDrafts,proto3" json:"category_drafts,omitempty"`                             // 仅在提交时创建，限所选商品涉及分类
+	SnapshotId             string                 `protobuf:"bytes,14,opt,name=snapshot_id,json=snapshotId,proto3" json:"snapshot_id,omitempty"`
+	CategoryDrafts         []*ImportCategoryDraft `protobuf:"bytes,8,rep,name=category_drafts,json=categoryDrafts,proto3" json:"category_drafts,omitempty"` // 仅在提交时创建，限所选商品涉及分类
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -2053,6 +2118,13 @@ func (x *ImportProductsRequest) GetSelectedCategoriesOnly() bool {
 func (x *ImportProductsRequest) GetRequestKey() string {
 	if x != nil {
 		return x.RequestKey
+	}
+	return ""
+}
+
+func (x *ImportProductsRequest) GetSnapshotId() string {
+	if x != nil {
+		return x.SnapshotId
 	}
 	return ""
 }
@@ -3174,11 +3246,15 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\rconnection_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\fconnectionId\x12\x12\n" +
 	"\x04mode\x18\x02 \x01(\tR\x04mode\x12\x14\n" +
 	"\x05scope\x18\x03 \x01(\tR\x05scope\x12#\n" +
-	"\rforce_reprice\x18\x04 \x01(\bR\fforceReprice\"a\n" +
+	"\rforce_reprice\x18\x04 \x01(\bR\fforceReprice\"\xb2\x01\n" +
 	"\x16PreviewProductsRequest\x12(\n" +
 	"\rconnection_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\fconnectionId\x12\x1d\n" +
 	"\n" +
-	"quote_code\x18\x02 \x01(\tR\tquoteCode\"\x9e\x04\n" +
+	"quote_code\x18\x02 \x01(\tR\tquoteCode\x12\x14\n" +
+	"\x05async\x18\x03 \x01(\bR\x05async\x12\x1f\n" +
+	"\vsnapshot_id\x18\x04 \x01(\tR\n" +
+	"snapshotId\x12\x18\n" +
+	"\arefresh\x18\x05 \x01(\bR\arefresh\"\x9e\x04\n" +
 	"\x0ePreviewProduct\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
@@ -3200,12 +3276,19 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x0fPreviewCategory\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12>\n" +
-	"\bproducts\x18\x03 \x03(\v2\".zcard.api.admin.v1.PreviewProductR\bproducts\"q\n" +
+	"\bproducts\x18\x03 \x03(\v2\".zcard.api.admin.v1.PreviewProductR\bproducts\"\x86\x02\n" +
 	"\x14PreviewProductsReply\x12C\n" +
 	"\n" +
 	"categories\x18\x01 \x03(\v2#.zcard.api.admin.v1.PreviewCategoryR\n" +
 	"categories\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\"\xfc\x06\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\x12\x1f\n" +
+	"\vsnapshot_id\x18\x03 \x01(\tR\n" +
+	"snapshotId\x12\x16\n" +
+	"\x06status\x18\x04 \x01(\tR\x06status\x12\x18\n" +
+	"\amessage\x18\x05 \x01(\tR\amessage\x12!\n" +
+	"\floaded_count\x18\x06 \x01(\x05R\vloadedCount\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\a \x01(\x03R\texpiresAt\"\x9d\a\n" +
 	"\x15ImportProductsRequest\x12(\n" +
 	"\rconnection_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\fconnectionId\x12\x19\n" +
 	"\x05codes\x18\x02 \x03(\tB\x03\xe0A\x02R\x05codes\x12!\n" +
@@ -3220,7 +3303,9 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x13save_category_rules\x18\f \x01(\bR\x11saveCategoryRules\x128\n" +
 	"\x18selected_categories_only\x18\r \x01(\bR\x16selectedCategoriesOnly\x12\x1f\n" +
 	"\vrequest_key\x18\t \x01(\tR\n" +
-	"requestKey\x12P\n" +
+	"requestKey\x12\x1f\n" +
+	"\vsnapshot_id\x18\x0e \x01(\tR\n" +
+	"snapshotId\x12P\n" +
 	"\x0fcategory_drafts\x18\b \x03(\v2'.zcard.api.admin.v1.ImportCategoryDraftR\x0ecategoryDrafts\x1a>\n" +
 	"\x10CategoryMapEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +

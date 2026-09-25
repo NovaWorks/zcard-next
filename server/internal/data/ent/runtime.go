@@ -82,6 +82,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplycatalogsnapshot"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyimportitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
@@ -2054,16 +2055,56 @@ func init() {
 	productDescUpstreamProductCode := productFields[27].Descriptor()
 	// product.UpstreamProductCodeValidator is a validator for the "upstream_product_code" field. It is called by the builders before save.
 	product.UpstreamProductCodeValidator = productDescUpstreamProductCode.Validators[0].(func(string) error)
+	// productDescAutoListing is the schema descriptor for auto_listing field.
+	productDescAutoListing := productFields[29].Descriptor()
+	// product.DefaultAutoListing holds the default value on creation for the auto_listing field.
+	product.DefaultAutoListing = productDescAutoListing.Default.(bool)
+	// productDescListingReason is the schema descriptor for listing_reason field.
+	productDescListingReason := productFields[30].Descriptor()
+	// product.DefaultListingReason holds the default value on creation for the listing_reason field.
+	product.DefaultListingReason = productDescListingReason.Default.(string)
+	// product.ListingReasonValidator is a validator for the "listing_reason" field. It is called by the builders before save.
+	product.ListingReasonValidator = productDescListingReason.Validators[0].(func(string) error)
+	// productDescListingRestoreStatus is the schema descriptor for listing_restore_status field.
+	productDescListingRestoreStatus := productFields[31].Descriptor()
+	// product.DefaultListingRestoreStatus holds the default value on creation for the listing_restore_status field.
+	product.DefaultListingRestoreStatus = productDescListingRestoreStatus.Default.(int8)
+	// productDescListingChangedAt is the schema descriptor for listing_changed_at field.
+	productDescListingChangedAt := productFields[32].Descriptor()
+	// product.DefaultListingChangedAt holds the default value on creation for the listing_changed_at field.
+	product.DefaultListingChangedAt = productDescListingChangedAt.Default.(int64)
+	// productDescListingObservedAt is the schema descriptor for listing_observed_at field.
+	productDescListingObservedAt := productFields[33].Descriptor()
+	// product.DefaultListingObservedAt holds the default value on creation for the listing_observed_at field.
+	product.DefaultListingObservedAt = productDescListingObservedAt.Default.(int64)
+	// productDescListingZeroSince is the schema descriptor for listing_zero_since field.
+	productDescListingZeroSince := productFields[34].Descriptor()
+	// product.DefaultListingZeroSince holds the default value on creation for the listing_zero_since field.
+	product.DefaultListingZeroSince = productDescListingZeroSince.Default.(int64)
+	// productDescListingLastStock is the schema descriptor for listing_last_stock field.
+	productDescListingLastStock := productFields[35].Descriptor()
+	// product.DefaultListingLastStock holds the default value on creation for the listing_last_stock field.
+	product.DefaultListingLastStock = productDescListingLastStock.Default.(int32)
+	// productDescListingRestocked is the schema descriptor for listing_restocked field.
+	productDescListingRestocked := productFields[36].Descriptor()
+	// product.DefaultListingRestocked holds the default value on creation for the listing_restocked field.
+	product.DefaultListingRestocked = productDescListingRestocked.Default.(bool)
+	// productDescListingMessage is the schema descriptor for listing_message field.
+	productDescListingMessage := productFields[37].Descriptor()
+	// product.DefaultListingMessage holds the default value on creation for the listing_message field.
+	product.DefaultListingMessage = productDescListingMessage.Default.(string)
+	// product.ListingMessageValidator is a validator for the "listing_message" field. It is called by the builders before save.
+	product.ListingMessageValidator = productDescListingMessage.Validators[0].(func(string) error)
 	// productDescIsLocked is the schema descriptor for is_locked field.
-	productDescIsLocked := productFields[29].Descriptor()
+	productDescIsLocked := productFields[38].Descriptor()
 	// product.DefaultIsLocked holds the default value on creation for the is_locked field.
 	product.DefaultIsLocked = productDescIsLocked.Default.(bool)
 	// productDescLockVersion is the schema descriptor for lock_version field.
-	productDescLockVersion := productFields[30].Descriptor()
+	productDescLockVersion := productFields[39].Descriptor()
 	// product.DefaultLockVersion holds the default value on creation for the lock_version field.
 	product.DefaultLockVersion = productDescLockVersion.Default.(int64)
 	// productDescLockedBy is the schema descriptor for locked_by field.
-	productDescLockedBy := productFields[31].Descriptor()
+	productDescLockedBy := productFields[40].Descriptor()
 	// product.DefaultLockedBy holds the default value on creation for the locked_by field.
 	product.DefaultLockedBy = productDescLockedBy.Default.(uint64)
 	productcontentbatchMixin := schema.ProductContentBatch{}.Mixin()
@@ -2823,6 +2864,63 @@ func init() {
 	supplierproductpriceDescDiscountBps := supplierproductpriceFields[7].Descriptor()
 	// supplierproductprice.DefaultDiscountBps holds the default value on creation for the discount_bps field.
 	supplierproductprice.DefaultDiscountBps = supplierproductpriceDescDiscountBps.Default.(int32)
+	supplycatalogsnapshotMixin := schema.SupplyCatalogSnapshot{}.Mixin()
+	supplycatalogsnapshotMixinFields0 := supplycatalogsnapshotMixin[0].Fields()
+	_ = supplycatalogsnapshotMixinFields0
+	supplycatalogsnapshotMixinFields1 := supplycatalogsnapshotMixin[1].Fields()
+	_ = supplycatalogsnapshotMixinFields1
+	supplycatalogsnapshotFields := schema.SupplyCatalogSnapshot{}.Fields()
+	_ = supplycatalogsnapshotFields
+	// supplycatalogsnapshotDescCreatedAt is the schema descriptor for created_at field.
+	supplycatalogsnapshotDescCreatedAt := supplycatalogsnapshotMixinFields0[0].Descriptor()
+	// supplycatalogsnapshot.DefaultCreatedAt holds the default value on creation for the created_at field.
+	supplycatalogsnapshot.DefaultCreatedAt = supplycatalogsnapshotDescCreatedAt.Default.(func() time.Time)
+	// supplycatalogsnapshotDescUpdatedAt is the schema descriptor for updated_at field.
+	supplycatalogsnapshotDescUpdatedAt := supplycatalogsnapshotMixinFields0[1].Descriptor()
+	// supplycatalogsnapshot.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	supplycatalogsnapshot.DefaultUpdatedAt = supplycatalogsnapshotDescUpdatedAt.Default.(func() time.Time)
+	// supplycatalogsnapshot.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	supplycatalogsnapshot.UpdateDefaultUpdatedAt = supplycatalogsnapshotDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// supplycatalogsnapshotDescSubsiteID is the schema descriptor for subsite_id field.
+	supplycatalogsnapshotDescSubsiteID := supplycatalogsnapshotMixinFields1[0].Descriptor()
+	// supplycatalogsnapshot.DefaultSubsiteID holds the default value on creation for the subsite_id field.
+	supplycatalogsnapshot.DefaultSubsiteID = supplycatalogsnapshotDescSubsiteID.Default.(uint64)
+	// supplycatalogsnapshotDescToken is the schema descriptor for token field.
+	supplycatalogsnapshotDescToken := supplycatalogsnapshotFields[1].Descriptor()
+	// supplycatalogsnapshot.TokenValidator is a validator for the "token" field. It is called by the builders before save.
+	supplycatalogsnapshot.TokenValidator = supplycatalogsnapshotDescToken.Validators[0].(func(string) error)
+	// supplycatalogsnapshotDescIdentity is the schema descriptor for identity field.
+	supplycatalogsnapshotDescIdentity := supplycatalogsnapshotFields[3].Descriptor()
+	// supplycatalogsnapshot.IdentityValidator is a validator for the "identity" field. It is called by the builders before save.
+	supplycatalogsnapshot.IdentityValidator = supplycatalogsnapshotDescIdentity.Validators[0].(func(string) error)
+	// supplycatalogsnapshotDescStatus is the schema descriptor for status field.
+	supplycatalogsnapshotDescStatus := supplycatalogsnapshotFields[4].Descriptor()
+	// supplycatalogsnapshot.DefaultStatus holds the default value on creation for the status field.
+	supplycatalogsnapshot.DefaultStatus = supplycatalogsnapshotDescStatus.Default.(string)
+	// supplycatalogsnapshot.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	supplycatalogsnapshot.StatusValidator = supplycatalogsnapshotDescStatus.Validators[0].(func(string) error)
+	// supplycatalogsnapshotDescLeaseToken is the schema descriptor for lease_token field.
+	supplycatalogsnapshotDescLeaseToken := supplycatalogsnapshotFields[5].Descriptor()
+	// supplycatalogsnapshot.DefaultLeaseToken holds the default value on creation for the lease_token field.
+	supplycatalogsnapshot.DefaultLeaseToken = supplycatalogsnapshotDescLeaseToken.Default.(string)
+	// supplycatalogsnapshotDescLeaseUntil is the schema descriptor for lease_until field.
+	supplycatalogsnapshotDescLeaseUntil := supplycatalogsnapshotFields[6].Descriptor()
+	// supplycatalogsnapshot.DefaultLeaseUntil holds the default value on creation for the lease_until field.
+	supplycatalogsnapshot.DefaultLeaseUntil = supplycatalogsnapshotDescLeaseUntil.Default.(int64)
+	// supplycatalogsnapshotDescAttempts is the schema descriptor for attempts field.
+	supplycatalogsnapshotDescAttempts := supplycatalogsnapshotFields[8].Descriptor()
+	// supplycatalogsnapshot.DefaultAttempts holds the default value on creation for the attempts field.
+	supplycatalogsnapshot.DefaultAttempts = supplycatalogsnapshotDescAttempts.Default.(int)
+	// supplycatalogsnapshotDescLoadedCount is the schema descriptor for loaded_count field.
+	supplycatalogsnapshotDescLoadedCount := supplycatalogsnapshotFields[9].Descriptor()
+	// supplycatalogsnapshot.DefaultLoadedCount holds the default value on creation for the loaded_count field.
+	supplycatalogsnapshot.DefaultLoadedCount = supplycatalogsnapshotDescLoadedCount.Default.(int)
+	// supplycatalogsnapshotDescMessage is the schema descriptor for message field.
+	supplycatalogsnapshotDescMessage := supplycatalogsnapshotFields[10].Descriptor()
+	// supplycatalogsnapshot.DefaultMessage holds the default value on creation for the message field.
+	supplycatalogsnapshot.DefaultMessage = supplycatalogsnapshotDescMessage.Default.(string)
+	// supplycatalogsnapshot.MessageValidator is a validator for the "message" field. It is called by the builders before save.
+	supplycatalogsnapshot.MessageValidator = supplycatalogsnapshotDescMessage.Validators[0].(func(string) error)
 	supplyconnectionMixin := schema.SupplyConnection{}.Mixin()
 	supplyconnectionMixinFields0 := supplyconnectionMixin[0].Fields()
 	_ = supplyconnectionMixinFields0

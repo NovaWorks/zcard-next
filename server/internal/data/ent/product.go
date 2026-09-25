@@ -80,6 +80,24 @@ type Product struct {
 	UpstreamProductCode string `json:"upstream_product_code,omitempty"`
 	// UpstreamSyncedAt holds the value of the "upstream_synced_at" field.
 	UpstreamSyncedAt time.Time `json:"upstream_synced_at,omitempty"`
+	// AutoListing holds the value of the "auto_listing" field.
+	AutoListing bool `json:"auto_listing,omitempty"`
+	// ListingReason holds the value of the "listing_reason" field.
+	ListingReason string `json:"listing_reason,omitempty"`
+	// ListingRestoreStatus holds the value of the "listing_restore_status" field.
+	ListingRestoreStatus int8 `json:"listing_restore_status,omitempty"`
+	// ListingChangedAt holds the value of the "listing_changed_at" field.
+	ListingChangedAt int64 `json:"listing_changed_at,omitempty"`
+	// ListingObservedAt holds the value of the "listing_observed_at" field.
+	ListingObservedAt int64 `json:"listing_observed_at,omitempty"`
+	// ListingZeroSince holds the value of the "listing_zero_since" field.
+	ListingZeroSince int64 `json:"listing_zero_since,omitempty"`
+	// ListingLastStock holds the value of the "listing_last_stock" field.
+	ListingLastStock int32 `json:"listing_last_stock,omitempty"`
+	// ListingRestocked holds the value of the "listing_restocked" field.
+	ListingRestocked bool `json:"listing_restocked,omitempty"`
+	// ListingMessage holds the value of the "listing_message" field.
+	ListingMessage string `json:"listing_message,omitempty"`
 	// IsLocked holds the value of the "is_locked" field.
 	IsLocked bool `json:"is_locked,omitempty"`
 	// LockVersion holds the value of the "lock_version" field.
@@ -130,11 +148,11 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig:
 			values[i] = new([]byte)
-		case product.FieldCategoryProtected, product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend, product.FieldIsLocked:
+		case product.FieldCategoryProtected, product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend, product.FieldAutoListing, product.FieldListingRestocked, product.FieldIsLocked:
 			values[i] = new(sql.NullBool)
-		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldManualStock, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID, product.FieldLockVersion, product.FieldLockedBy:
+		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldManualStock, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID, product.FieldListingRestoreStatus, product.FieldListingChangedAt, product.FieldListingObservedAt, product.FieldListingZeroSince, product.FieldListingLastStock, product.FieldLockVersion, product.FieldLockedBy:
 			values[i] = new(sql.NullInt64)
-		case product.FieldName, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldFulfillmentMode, product.FieldDeliveryMode, product.FieldUpstreamProductCode:
+		case product.FieldName, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldFulfillmentMode, product.FieldDeliveryMode, product.FieldUpstreamProductCode, product.FieldListingReason, product.FieldListingMessage:
 			values[i] = new(sql.NullString)
 		case product.FieldCreatedAt, product.FieldUpdatedAt, product.FieldUpstreamSyncedAt, product.FieldLockedAt:
 			values[i] = new(sql.NullTime)
@@ -351,6 +369,60 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpstreamSyncedAt = value.Time
 			}
+		case product.FieldAutoListing:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field auto_listing", values[i])
+			} else if value.Valid {
+				_m.AutoListing = value.Bool
+			}
+		case product.FieldListingReason:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field listing_reason", values[i])
+			} else if value.Valid {
+				_m.ListingReason = value.String
+			}
+		case product.FieldListingRestoreStatus:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field listing_restore_status", values[i])
+			} else if value.Valid {
+				_m.ListingRestoreStatus = int8(value.Int64)
+			}
+		case product.FieldListingChangedAt:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field listing_changed_at", values[i])
+			} else if value.Valid {
+				_m.ListingChangedAt = value.Int64
+			}
+		case product.FieldListingObservedAt:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field listing_observed_at", values[i])
+			} else if value.Valid {
+				_m.ListingObservedAt = value.Int64
+			}
+		case product.FieldListingZeroSince:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field listing_zero_since", values[i])
+			} else if value.Valid {
+				_m.ListingZeroSince = value.Int64
+			}
+		case product.FieldListingLastStock:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field listing_last_stock", values[i])
+			} else if value.Valid {
+				_m.ListingLastStock = int32(value.Int64)
+			}
+		case product.FieldListingRestocked:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field listing_restocked", values[i])
+			} else if value.Valid {
+				_m.ListingRestocked = value.Bool
+			}
+		case product.FieldListingMessage:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field listing_message", values[i])
+			} else if value.Valid {
+				_m.ListingMessage = value.String
+			}
 		case product.FieldIsLocked:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field is_locked", values[i])
@@ -514,6 +586,33 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("upstream_synced_at=")
 	builder.WriteString(_m.UpstreamSyncedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("auto_listing=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AutoListing))
+	builder.WriteString(", ")
+	builder.WriteString("listing_reason=")
+	builder.WriteString(_m.ListingReason)
+	builder.WriteString(", ")
+	builder.WriteString("listing_restore_status=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ListingRestoreStatus))
+	builder.WriteString(", ")
+	builder.WriteString("listing_changed_at=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ListingChangedAt))
+	builder.WriteString(", ")
+	builder.WriteString("listing_observed_at=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ListingObservedAt))
+	builder.WriteString(", ")
+	builder.WriteString("listing_zero_since=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ListingZeroSince))
+	builder.WriteString(", ")
+	builder.WriteString("listing_last_stock=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ListingLastStock))
+	builder.WriteString(", ")
+	builder.WriteString("listing_restocked=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ListingRestocked))
+	builder.WriteString(", ")
+	builder.WriteString("listing_message=")
+	builder.WriteString(_m.ListingMessage)
 	builder.WriteString(", ")
 	builder.WriteString("is_locked=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsLocked))

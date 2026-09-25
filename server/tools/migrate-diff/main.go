@@ -124,7 +124,7 @@ func main() {
 									if raw, ok := v.C.Default.(*atlasschema.RawExpr); ok {
 										literal := strings.Trim(raw.X, "() ")
 										_, number := strconv.ParseFloat(literal, 64)
-										if literal == "true" || literal == "false" || number == nil {
+										if literal == "true" || literal == "false" || literal == "''" || number == nil {
 											v.C.Default = &atlasschema.Literal{V: literal}
 										}
 									}
@@ -133,7 +133,11 @@ func main() {
 								// Extending an enum is additive: existing values retain their order.
 								before, bok := v.From.Type.Type.(*atlasschema.EnumType)
 								after, aok := v.To.Type.Type.(*atlasschema.EnumType)
-								if !bok || !aok || len(after.Values) < len(before.Values) || !slices.Equal(before.Values, after.Values[:len(before.Values)]) || v.Change != atlasschema.ChangeType {
+								oldString, oldOK := v.From.Type.Type.(*atlasschema.StringType)
+								newString, newOK := v.To.Type.Type.(*atlasschema.StringType)
+								widerString := oldOK && newOK && oldString.T == newString.T && oldString.Size > 0 && newString.Size >= oldString.Size
+								widerEnum := bok && aok && len(after.Values) >= len(before.Values) && slices.Equal(before.Values, after.Values[:len(before.Values)])
+								if (!widerString && !widerEnum) || v.Change != atlasschema.ChangeType {
 									return nil, fmt.Errorf("additive migration refuses modifying %s.%s", c.T.Name, v.To.Name)
 								}
 							case *atlasschema.AddIndex:
