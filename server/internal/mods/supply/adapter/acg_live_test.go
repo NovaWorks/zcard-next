@@ -9,6 +9,7 @@ package adapter
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -105,5 +106,32 @@ func TestAcgLiveCatalog(t *testing.T) {
 		}
 		t.Logf("普通库存: %s = %d", p.Name, st)
 		break
+	}
+}
+
+// Explicit sample list only: never fetch the full catalog or place orders.
+func TestAcgLiveQuoteAndStockSamples(t *testing.T) {
+	codes := os.Getenv("ZCARD_LIVE_PRODUCT_CODES")
+	if codes == "" {
+		t.Skip("未设置只读商品样本")
+	}
+	a, _ := liveAcgAdapter(t)
+	for _, code := range strings.Split(codes, ",") {
+		code = strings.TrimSpace(code)
+		if code == "" {
+			continue
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		p, err := a.QuoteProduct(ctx, &Product{ID: code, IsActive: true})
+		if err != nil {
+			cancel()
+			t.Fatalf("样本 %s 报价失败: %v", code, err)
+		}
+		n, err := a.GetStock(ctx, code, "")
+		cancel()
+		if err != nil || p.Price <= 0 || n < -1 {
+			t.Fatalf("样本 %s stock=%d err=%v", code, n, err)
+		}
+		t.Logf("样本 %s 单价=%d分 规格=%d 库存=%d", code, p.Price, len(p.SKUs), n)
 	}
 }

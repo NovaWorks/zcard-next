@@ -191,11 +191,17 @@ func (t *transport) tryOnce(ctx context.Context, method, full string, headers ma
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		code, msg := parseErrorPayload(respBody)
+		if resp.StatusCode == http.StatusNotFound && isStockRead(ctx) && strings.HasSuffix(full, "/shared/commodity/valuation") && (len(respBody) == 0 || (!looksLikeJSON(respBody) && stockRouteMissing(respBody))) {
+			code = "quote_route_missing"
+		}
 		return nil, &httpError{Status: resp.StatusCode, Code: code, Message: msg, RetryAfter: parseRetryAfter(resp.Header.Get("Retry-After"))}
 	}
 	// 2xx 但响应体非 JSON：疑似 WAF/Cloudflare/登录页拦截（三协议响应均为 JSON；
 	// 空体放行——zcard ping 等端点允许无体）。归一化为 429 口径参与重试与限流判定。
 	if !looksLikeJSON(respBody) {
+		if isStockRead(ctx) && strings.HasSuffix(full, "/shared/commodity/valuation") && stockRouteMissing(respBody) {
+			return nil, &httpError{Status: http.StatusNotFound, Code: "quote_route_missing"}
+		}
 		if isStockRead(ctx) && (strings.HasSuffix(full, "/shared/commodity/stock") || strings.HasSuffix(full, "/shared/commodity/item") || strings.HasSuffix(full, "/shared/commodity/inventory")) && stockRouteMissing(respBody) {
 			return nil, &httpError{Status: http.StatusNotFound, Code: "stock_route_missing"}
 		}

@@ -3,6 +3,7 @@ package adapter
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -45,9 +46,13 @@ func (a *acgFakaAdapter) accountQuote(ctx context.Context, code, sku string) (in
 	if err := json.Unmarshal(raw, &reply); err != nil {
 		return 0, err
 	}
-	value := string(reply.Price)
+	return parseAccountPrice(reply.Price)
+}
+
+func parseAccountPrice(raw json.RawMessage) (int64, error) {
+	value := string(raw)
 	if len(value) > 0 && value[0] == '"' {
-		if err := json.Unmarshal(reply.Price, &value); err != nil {
+		if err := json.Unmarshal(raw, &value); err != nil {
 			return 0, err
 		}
 	}
@@ -64,7 +69,7 @@ func (a *acgFakaAdapter) accountQuote(ctx context.Context, code, sku string) (in
 func (a *acgFakaAdapter) QuoteProduct(ctx context.Context, p *Product) (*Product, error) {
 	ctx, cancelQuote := context.WithTimeout(ctx, 60*time.Second)
 	defer cancelQuote()
-	// Inventory supplies the complete SKU shape, never the account sale price.
+	// Prefer valuation. Only a proven missing route enables old inventory pricing.
 	readCtx, cancel := context.WithTimeout(stockReadContext(ctx), 10*time.Second)
 	inv, err := a.fetchInventory(readCtx, p.ID)
 	cancel()
@@ -82,12 +87,21 @@ func (a *acgFakaAdapter) QuoteProduct(ctx context.Context, p *Product) (*Product
 	if err != nil {
 		return nil, err
 	}
-	if len(p.SKUs) > 0 && len(combos) == 0 {
-		return nil, fmt.Errorf("上游规格报价不完整")
+	available := make(map[string]bool, len(combos))
+	for _, combo := range combos {
+		available[combo.Code] = true
+	}
+	for _, sku := range p.SKUs {
+		if !available[sku.ID] {
+			return nil, fmt.Errorf("上游规格报价不完整，请刷新目录后重试")
+		}
 	}
 	out := *p
 	out.SKUs = nil
 	out.Price = 0
+	legacy := a.legacyQuote.Load()
+	var legacyPrices map[string]int64
+	modernQuoted := false
 	quote := func(sku string) (int64, error) {
 		// Bound per-combination traffic, including small catalogs on fast gateways.
 		timer := time.NewTimer(100 * time.Millisecond)
@@ -97,7 +111,35 @@ func (a *acgFakaAdapter) QuoteProduct(ctx context.Context, p *Product) (*Product
 			return 0, ctx.Err()
 		case <-timer.C:
 		}
-		return a.accountQuote(ctx, p.ID, sku)
+		if !legacy {
+			value, err := a.accountQuote(ctx, p.ID, sku)
+			var he *httpError
+			if err == nil {
+				modernQuoted = true
+				return value, nil
+			}
+			if modernQuoted || !errors.As(err, &he) || he.Code != "quote_route_missing" {
+				return 0, err
+			}
+			legacy = true
+			a.legacyQuote.Store(true)
+		}
+		if legacyPrices == nil {
+			var err error
+			legacyPrices, err = legacyAccountPrices(inv)
+			if err != nil {
+				return 0, err
+			}
+		}
+		fields, err := AcgSpecFormFields(sku)
+		if err != nil {
+			return 0, err
+		}
+		value, ok := legacyPrices[fields["race"]]
+		if !ok {
+			return 0, fmt.Errorf("上游规格账号报价不完整")
+		}
+		return value, nil
 	}
 	if len(combos) == 0 {
 		out.Price, err = quote("")

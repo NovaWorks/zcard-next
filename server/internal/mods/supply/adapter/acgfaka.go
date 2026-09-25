@@ -26,11 +26,12 @@ import (
 
 // acgFakaAdapter acg-faka 协议适配器。
 type acgFakaAdapter struct {
-	protocol   string
-	creds      Credentials
-	t          *transport
-	stockProbe sync.Mutex
-	stockMode  atomic.Int32
+	protocol    string
+	creds       Credentials
+	t           *transport
+	stockProbe  sync.Mutex
+	stockMode   atomic.Int32
+	legacyQuote atomic.Bool // Only set after an explicit missing valuation route.
 }
 
 func newAcgFaka(baseURL string, creds Credentials, retryIntervals []int) (Adapter, error) {
@@ -301,16 +302,16 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 // acgInventory /shared/commodity/inventory 响应（参数 sharedCode 驼峰）：
 // 单品库存/发货方式/预选状态/价格 + 规格 INI 原文（标准站 items 已直出 config，
 // 导入/报价也用它确认完整规格，再逐规格调用 valuation）。
-// is_category 站点间类型不定（int/bool 混用——tghao 实测 bool）→ any 兼容，
-// 仅调试用不参与逻辑。
+// is_category 站点间类型不定（int/bool 混用）；旧版报价使用 raw 严格校验。
 type acgInventory struct {
-	Count        FlexNum `json:"count"`
-	DeliveryWay  int     `json:"delivery_way"`
-	DraftStatus  int     `json:"draft_status"`
-	Price        FlexNum `json:"price"`
-	FactoryPrice FlexNum `json:"factory_price"` // inventory 参考价，不能代替 valuation 的最终账号报价
-	Config       string  `json:"config"`        // INI 文本
-	IsCategory   any     `json:"is_category"`
+	raw          json.RawMessage // Preserve field presence for strict legacy account quotes.
+	Count        FlexNum         `json:"count"`
+	DeliveryWay  int             `json:"delivery_way"`
+	DraftStatus  int             `json:"draft_status"`
+	Price        FlexNum         `json:"price"`
+	FactoryPrice FlexNum         `json:"factory_price"` // Only the strict legacy path may use this as an account quote.
+	Config       string          `json:"config"`        // INI 文本
+	IsCategory   any             `json:"is_category"`
 }
 
 // fetchInventory 拉单品库存与规格配置；正式报价时失败必须保留旧价。
@@ -327,6 +328,7 @@ func (a *acgFakaAdapter) fetchInventory(ctx context.Context, code string) (*acgI
 	if err := json.Unmarshal(raw, &inv); err != nil {
 		return nil, fmt.Errorf("adapter.acgfaka: 解析单品库存失败: %w", err)
 	}
+	inv.raw = raw
 	return &inv, nil
 }
 
