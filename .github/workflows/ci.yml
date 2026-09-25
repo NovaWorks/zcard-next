@@ -125,10 +125,11 @@ jobs:
           cd storefront
           pnpm install --frozen-lockfile
       - name: 类型检查、生产构建与首屏回归
+        working-directory: storefront
         run: |
-          pnpm --dir storefront type-check
-          pnpm --dir storefront build
-          node scripts/test_storefront_bootstrap.mjs
+          pnpm type-check
+          pnpm build
+          node ../scripts/test_storefront_bootstrap.mjs
 
   deployment:
     name: 部署脚本与干净 Docker 构建
