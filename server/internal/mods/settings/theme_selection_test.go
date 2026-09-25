@@ -6,6 +6,7 @@ import (
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings/port"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"strings"
 	"testing"
 )
 
@@ -20,9 +21,10 @@ func (r *themeMemoryRepo) Get(_ context.Context, g, k string) (json.RawMessage, 
 }
 func (r *themeMemoryRepo) List(_ context.Context, g string) ([]port.Item, error) {
 	out := []port.Item{}
-	for _, key := range []string{"pc_template", "mobile_template"} {
-		if v, ok := r.values["template."+key]; ok {
-			out = append(out, port.Item{Group: "template", Key: key, Value: v})
+	for name, v := range r.values {
+		group, key, _ := strings.Cut(name, ".")
+		if g == "" || group == g {
+			out = append(out, port.Item{Group: group, Key: key, Value: v})
 		}
 	}
 	return out, nil

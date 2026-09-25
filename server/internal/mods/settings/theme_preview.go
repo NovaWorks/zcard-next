@@ -157,7 +157,17 @@ func (s *AdminSettingsService) ThemeMiddleware(next http.Handler) http.Handler {
 			local := *runtime
 			local.Branding = s.storefrontBranding(r.Context())
 			runtime = &local
-			r = r.WithContext(theme.WithRuntime(r.Context(), runtime))
+			ctx := theme.WithRuntime(r.Context(), runtime)
+			config, configErr := NewStorefrontConfigService(s.uc.repo).GetPublicConfig(ctx, nil)
+			if configErr != nil {
+				http.Error(w, "店铺配置暂时无法读取，请稍后重试", http.StatusServiceUnavailable)
+				return
+			}
+			runtime.PublicConfig = &theme.PublicConfig{Entries: []theme.ConfigEntry{}}
+			for _, entry := range config.Entries {
+				runtime.PublicConfig.Entries = append(runtime.PublicConfig.Entries, theme.ConfigEntry{Key: entry.Key, ValueJSON: entry.ValueJson})
+			}
+			r = r.WithContext(ctx)
 		}
 		next.ServeHTTP(w, r)
 	})

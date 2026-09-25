@@ -1,7 +1,7 @@
 <template>
   <div class="app" :style="appBgStyle">
     <!-- 安装页：无商城布局（头部/尾部/客服/公告全隐藏，仅渲染向导自身） -->
-    <template v-if="!isInstall">
+    <template v-if="!isInstall && shellReady">
     <!-- 顶部品牌条：主题自定义可独立关闭，不影响首页轮播。 -->
     <div v-if="brandBarEnabled" class="brand-bar">
       <span class="brand-slogan">🎁 {{ siteName }} · 自动发货 秒速到账</span>
@@ -82,18 +82,25 @@
 
     <main class="main" :class="{ 'install-main': isInstall, 'home-main': route.path === '/' }">
       <!-- Suspense：路由组件 async setup（SSG 预取）在客户端水合时也能正常等待 -->
-      <router-view v-slot="{ Component, route: viewRoute }">
+      <router-view v-if="shellReady || isInstall" v-slot="{ Component, route: viewRoute }">
         <!-- 保留目录浏览状态；会员页内切换复用表单，其余详情和支付页按导航重新创建。 -->
         <KeepAlive include="Home" :max="8">
           <Suspense>
+            <template #fallback><div class="store-loading" role="status">正在加载页面…</div></template>
             <component :is="Component" :key="['/', '/member', '/posts'].includes(viewRoute.path) ? viewRoute.path : viewRoute.fullPath" />
           </Suspense>
         </KeepAlive>
       </router-view>
+      <div v-if="!shellReady && !isInstall" class="store-loading" :role="shellError ? 'alert' : 'status'" :aria-busy="shellLoading">
+        <p>{{ shellError || '正在加载店铺…' }}</p>
+        <a v-if="!shellError" href="" class="muted">加载时间较长？重新加载</a>
+        <noscript>请启用 JavaScript 后重新加载店铺。</noscript>
+        <button v-if="shellError" class="btn btn-primary" :disabled="shellLoading" @click="refreshShell">重新加载</button>
+      </div>
     </main>
 
     <!-- 页脚（安装页隐藏；页脚配置 footer.* 可覆盖关于/导航/联系/社交/备案） -->
-    <template v-if="!isInstall">
+    <template v-if="!isInstall && shellReady">
     <footer class="footer">
       <div class="footer-trust">
         <div v-for="(item, index) in footerTrust" :key="index" class="trust-item">
@@ -187,6 +194,7 @@
 
 <script setup lang="ts">
 import ThemeIcon from '@/components/ThemeIcon.vue';
+import { loadPublicConfig, publicConfig, type PublicConfig } from './config';
 import { ref, computed, watch, onMounted, onUnmounted, provide } from 'vue';
 import { useBranding } from './branding';
 import { useRoute, useRouter } from 'vue-router';
@@ -211,17 +219,17 @@ const isInstall = computed(() => route.path === '/install');
 
 const { siteName, siteLogo, brandReady } = useBranding();
 watch([siteLogo, brandReady], () => {
-  if (!brandReady.value) return;
+  if (!brandReady.value || typeof document === 'undefined') return;
   const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
   if (icon) { icon.removeAttribute('type'); icon.href = siteLogo.value || '/zcard-icon.png'; }
-});
+}, { immediate: true });
 
 // SEO 默认 head 由 main.ts 处理（客户端拉取后更新；SSR 渲染后输出到静态 HTML）
 
 // 启动加载默认货币（i18n.base_currency → 符号/小数位；失败回退默认符号）
-initCurrency();
+if (!import.meta.env.SSR) initCurrency();
 // 登录态恢复（token 存在则拉用户名；失败静默——401 层统一处理）
-refreshAuth();
+if (!import.meta.env.SSR) refreshAuth();
 
 const year = new Date().getFullYear();
 
@@ -379,25 +387,21 @@ function openNotice() {
 // 供页面内公告入口（首页滚动公告条等）复用同一弹窗
 provide('openNotice', openNotice);
 
-onMounted(async () => {
-  // 安装页：不加载商城业务（购物车/公告/统计/回顶监听等）
-  if (isInstall.value) return;
-  brandBarEnabled.value = themeValue('theme.brand_bar_enabled', true);
-  applyFooterTrustSettings(themeValue);
-  await refreshCartAvailability();
-  window.addEventListener('focus', refreshCartAvailability);
-  captureRefCode(); // 推广归因捕获（任何页面 ?ref= 进站即记 30 天）
-  // 站点配置（service.stats_script 统计代码；SEO 配置已在 setup 顶层消费）
-  try {
-    const resp = await fetch('/api/v1/storefront/config');
-    const json = await resp.json();
+const shellReady = ref(!import.meta.env.SSR && !!publicConfig.value);
+const shellLoading = ref(false);
+const shellError = ref('');
+function applyShellConfig(json: PublicConfig) {
+    const wasMaintenance = maintenance.value;
+    const previousMaintenanceStyle = maintenanceStyle.value;
     const find = (k: string) => json?.entries?.find((e: any) => e.key === k)?.value_json;
     applyFooterTrustSettings((key, fallback) => {
       try {
-        const value = JSON.parse(find(key));
+        const value = JSON.parse(find(key) ?? 'null');
         return typeof value === 'string' ? value : fallback;
       } catch { return themeValue(key, fallback); }
     });
+    topButton.value = null;
+    navRecommend.value = [];
     // 顶部自定义按钮 {text,type,url|slug}
     const tb = find('site.top_button');
     if (tb) {
@@ -433,14 +437,14 @@ onMounted(async () => {
     if (fn) {
       try {
         const v = JSON.parse(fn);
-        if (Array.isArray(v)) footerNav.value = v.filter((x: any) => x && typeof x.text === 'string' && typeof x.url === 'string');
+        footerNav.value = Array.isArray(v) ? v.filter((x: any) => x && typeof x.text === 'string' && typeof x.url === 'string') : [];
       } catch { /* ignore */ }
     }
     const fs = find('footer.social');
     if (fs) {
       try {
         const v = JSON.parse(fs);
-        if (Array.isArray(v)) footerSocial.value = v.filter((x: any) => x && typeof x.icon === 'string' && typeof x.url === 'string');
+        footerSocial.value = Array.isArray(v) ? v.filter((x: any) => x && typeof x.icon === 'string' && typeof x.url === 'string') : [];
       } catch { /* ignore */ }
     }
     const fc = find('footer.contact');
@@ -464,20 +468,49 @@ onMounted(async () => {
     if (ms) { try { const v = JSON.parse(ms); if (v === 'banner' || v === 'modal') maintenanceStyle.value = v; } catch { /* ignore */ } }
     const mf = find('ops.maintenance_modal_freq');
     if (mf) { try { const v = JSON.parse(mf); if (v === 'every' || v === 'daily') maintenanceModalFreq.value = v; } catch { /* ignore */ } }
-    if (maintenance.value && maintenanceStyle.value === 'modal') {
+    if (maintenance.value && maintenanceStyle.value === 'modal' && (!wasMaintenance || previousMaintenanceStyle !== 'modal')) {
       if (maintenanceModalFreq.value === 'daily' && maintShownRecently()) {
         maintModalVisible.value = false; // 24 小时内已弹过：本次不再打扰
       } else {
         maintModalVisible.value = true;
       }
     }
+    if (!maintenance.value) maintModalVisible.value = false;
     const stats = find('service.stats_script');
     if (stats) {
       let script = '';
       try { script = JSON.parse(stats); } catch { script = stats; }
       if (typeof script === 'string' && script.trim()) injectStatsScript(script);
     }
-  } catch { /* 配置接口失败保留默认 */ }
+
+}
+watch(publicConfig, (config) => {
+  if (!config || import.meta.env.SSR) return;
+  applyShellConfig(config);
+  shellReady.value = true;
+  shellError.value = '';
+}, { immediate: true });
+async function refreshShell() {
+  if (shellLoading.value) return;
+  shellLoading.value = true;
+  try { await loadPublicConfig(); }
+  catch { if (!shellReady.value) shellError.value = '店铺暂时无法加载，请检查网络后重试'; }
+  finally { shellLoading.value = false; }
+}
+function resumeShell() {
+  if (document.visibilityState === 'visible' && !isInstall.value) void refreshShell();
+}
+
+onMounted(async () => {
+  if (isInstall.value) return;
+  // Store identity and footer must not wait for cart or member requests.
+  void refreshShell();
+  void refreshCartAvailability();
+  window.addEventListener('focus', refreshCartAvailability);
+  window.addEventListener('online', resumeShell);
+  document.addEventListener('visibilitychange', resumeShell);
+  captureRefCode();
+
   refreshCartState();
   window.addEventListener('scroll', onScroll);
   // 登录态：合并本地游客购物车到后端（游客加购的商品登录后自动同步；merge 内部会刷新角标）
@@ -486,15 +519,19 @@ onMounted(async () => {
   }
   // 公告：每会话首次访问自动弹出（sessionStorage 标记）
   await loadNotice();
-  if (themeValue('theme.notice_auto', true) && (noticePost.value || noticeAnnouncement.value) && !sessionStorage.getItem('zc_notice_shown')) {
-    sessionStorage.setItem('zc_notice_shown', '1');
-    noticeShow.value = true;
-  }
+  try {
+    if (themeValue('theme.notice_auto', true) && (noticePost.value || noticeAnnouncement.value) && !sessionStorage.getItem('zc_notice_shown')) {
+      sessionStorage.setItem('zc_notice_shown', '1');
+      noticeShow.value = true;
+    }
+  } catch { /* Storage restrictions must not break the storefront. */ }
   // 首页公告轮播点击 → 打开弹窗
   window.addEventListener('zcard-open-notice', openNotice);
 });
 onUnmounted(() => {
   window.removeEventListener('focus', refreshCartAvailability);
+  window.removeEventListener('online', resumeShell);
+  document.removeEventListener('visibilitychange', resumeShell);
   window.removeEventListener('scroll', onScroll);
   window.removeEventListener('zcard-open-notice', openNotice);
 });

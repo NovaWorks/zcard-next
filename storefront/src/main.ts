@@ -1,9 +1,11 @@
 import { mergeThemeConfig } from '../../packages/theme-sdk/src/index';
-mergeThemeConfig([]);
+// Seed all modules before Vue mounts.
+import { publicConfig } from './config';
+if (!publicConfig.value) mergeThemeConfig([]);
 import { ViteSSG } from 'vite-ssg';
 import App from './App.vue';
 import { routes, installRouterGuards, scrollBehavior } from './router';
-import { setActiveHead, fetchSiteSeo, applyDefaultSeo, applyVerification } from './seo';
+import { setActiveHead } from './seo';
 import './style.css';
 
 export const createApp = ViteSSG(
@@ -19,22 +21,20 @@ export const createApp = ViteSSG(
       // 守卫直接注册到 vite-ssg 的 router（不创建第二个 router——双 history 会互相干扰）
       installRouterGuards(router);
     } else {
-      // SSR：渲染前输出默认 head（站点配置拉取在 fn 的 await 中完成，早于组件渲染；
-      // 页面级 SEO 后注册会按 key 覆盖默认值）
       app.use(router);
-      return fetchSiteSeo().then((site) => {
-        applyDefaultSeo(site);
-        applyVerification(site);
-      });
+      // A distributable build has no customer identity or catalog. The Go bot
+      // renderer supplies request-time SEO; never bake build-host API errors.
+      return;
     }
   },
 );
 
-// SSG 静态化范围：默认路径 + 全部上架商品 /product/:id + 已发布文章 /posts/:slug
-// （首页/列表页直接静态；会员/支付等交互页不预渲染）
+// Release builds contain a neutral shell. Explicit fixture/site builds can also
+// emit dynamic route files; request-time data and SEO are supplied by the server.
 export async function includedRoutes(paths: string[], _routes: unknown[]) {
-  const api = import.meta.env.VITE_SSG_API || 'http://127.0.0.1:8000';
+  const api = import.meta.env.VITE_SSG_API;
   const out = paths.filter((p) => !p.includes(':'));
+  if (!api) return out;
   try {
     const [prodResp, postResp] = await Promise.all([
       fetch(`${api}/api/v1/storefront/products?page=1&page_size=200`),

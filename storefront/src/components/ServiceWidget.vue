@@ -3,6 +3,7 @@
 </template>
 
 <script setup lang="ts">
+import { loadPublicConfig } from '@/config';
 import { onMounted } from 'vue';
 
 /** 提取嵌入代码中的 <script> 内容并执行（DOMParser 提取，防 XSS 依赖后端 sanitize/管理员自配） */
@@ -27,8 +28,7 @@ function injectScript(html: string) {
 
 onMounted(async () => {
   try {
-    const resp = await fetch('/api/v1/storefront/config');
-    const json = await resp.json();
+    const json = await loadPublicConfig();
     const entry = (json?.entries || []).find((e: any) => e.key === 'service.widget_script');
     let script = '';
     if (entry) {

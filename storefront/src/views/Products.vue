@@ -1,7 +1,7 @@
 <template>
   <div class="products-layout">
     <!-- PC 左侧多级分类树（template.category_nav_style=list 时显示） -->
-    <CategoryTree v-if="navStyle !== 'grid'" :categories="categories" :show-recommended="hasRecommended" :model-value="categoryId" @update:model-value="pickCategory" />
+    <CategoryTree v-if="navStyle !== 'grid'" :categories="categories" :loading="categoriesLoading" :error="!!categoriesError" @retry="loadCategories" :show-recommended="hasRecommended" :model-value="categoryId" @update:model-value="pickCategory" />
     <div class="products-content">
       <!-- 分类导航：grid=顶部胶囊全断点；list 时 PC 左树，移动端「全部分类」折叠树（含全部层级） -->
       <div v-if="navStyle === 'grid' && (categories.length || hasRecommended)" class="card category-chips" style="margin-bottom: 12px;">
@@ -17,8 +17,8 @@
           </button>
         </div>
       </div>
-      <div v-else-if="categories.length || hasRecommended" class="card mobile-cat mobile-only" style="margin-bottom: 12px;">
-        <CategoryTree variant="panel" :categories="categories" :show-recommended="hasRecommended" :model-value="categoryId" @update:model-value="pickCategory" />
+      <div v-else-if="categories.length || hasRecommended || categoriesLoading || categoriesError" class="card mobile-cat mobile-only" style="margin-bottom: 12px;">
+        <CategoryTree variant="panel" :categories="categories" :loading="categoriesLoading" :error="!!categoriesError" @retry="loadCategories" :show-recommended="hasRecommended" :model-value="categoryId" @update:model-value="pickCategory" />
       </div>
 
       <!-- 排序 + 搜索 + 视图切换 -->
@@ -42,7 +42,9 @@
         </div>
       </div>
 
-      <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
+      <div v-if="categoriesError && navStyle === 'grid'" class="error" role="alert">分类加载失败 <button class="btn secondary" :disabled="categoriesLoading" @click="loadCategories">重试</button></div>
+      <div v-if="error" class="error" role="alert" style="margin-bottom: 12px;">{{ error }} <button class="btn secondary" :disabled="loading" @click="load">重新加载</button></div>
+      <div v-if="loading && !products.length" role="status">正在加载商品…</div>
 
       <div v-if="viewMode === 'grid'" class="grid" :class="{ 'catalog-big': bigGrid }" :style="gridStyle">
         <ProductCard v-for="p in products" :key="p.id" :p="p" mode="grid" :show-sales="showSales" :show-stock="showStock" />
@@ -50,7 +52,7 @@
       <div v-else class="list-rows">
         <ProductCard v-for="p in products" :key="p.id" :p="p" mode="list" :show-sales="showSales" :show-stock="showStock" />
       </div>
-      <div v-if="products.length === 0 && !loading" class="muted" style="margin-top: 24px; text-align: center;">暂无商品</div>
+      <div v-if="products.length === 0 && !loading && !error" class="muted" style="margin-top: 24px; text-align: center;">暂无商品</div>
 
       <!-- 分页 -->
       <div v-if="total > pageSize" class="actions" style="margin-top: 20px; justify-content: center;">
@@ -63,6 +65,8 @@
 </template>
 
 <script setup lang="ts">
+import { loadPublicConfig } from '@/config';
+import { usePageRecovery } from '@/composables/page-recovery';
 import { useStockRefresh } from '@/composables/stock-refresh';
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import CategoryIcon from '@/components/CategoryIcon.vue';
@@ -79,6 +83,8 @@ const route = useRoute();
 useCatalogScroll();
 const products = ref<Product[]>([]);
 const categories = ref<CategoryItem[]>([]);
+const categoriesLoading = ref(true);
+const categoriesError = ref('');
 const hasRecommended = ref(false);
 const keyword = ref('');
 const categoryId = ref(0);
@@ -87,7 +93,7 @@ const sort = ref('default');
 const page = ref(1);
 const pageSize = ref(20);
 const total = ref(0);
-const loading = ref(false);
+const loading = ref(true);
 const error = ref('');
 const chipsExpanded = ref(false); // 移动端 grid 胶囊：单行横滑 → 展开多行
 
@@ -106,12 +112,10 @@ const { showSales, applySalesConfig, normalizeSalesSort } = useSalesVisibility()
 const showStock = ref(true); // template.show_stock：卡片「库存」显示开关（叠加商品级 stock_visible）
 
 let appliedDefaultView = '';
+let appliedDefaultSort = '';
 async function loadTemplateSettings() {
-  applySalesConfig(null);
   try {
-    const resp = await fetch('/api/v1/storefront/config');
-    if (!resp.ok) { sort.value = normalizeSalesSort(sort.value); return; }
-    const json = await resp.json();
+    const json = await loadPublicConfig();
     applySalesConfig(json);
     const val = (k: string) => {
       const raw = json?.entries?.find((e: any) => e.key === k)?.value_json;
@@ -135,17 +139,17 @@ async function loadTemplateSettings() {
     }
     // 默认排序方式（与后台 sort_by 同值域；default=综合）
     const sb = val('template.sort_by');
-    if (['default', 'newest', 'sales', 'price_asc', 'price_desc'].includes(sb) && !route.query.sort && sb !== sort.value) {
-      sort.value = normalizeSalesSort(sb);
-      reload = true;
+    if (['default', 'newest', 'sales', 'price_asc', 'price_desc'].includes(sb) && sb !== appliedDefaultSort) {
+      appliedDefaultSort = sb;
+      if (!route.query.sort) { sort.value = normalizeSalesSort(sb); reload = true; }
     }
     if (sort.value !== normalizeSalesSort(sort.value)) {
       sort.value = normalizeSalesSort(sort.value);
       reload = true;
     }
-    if (reload) { page.value = 1; void load(); }
+    if (reload) page.value = 1;
     // 库存显示沿用原有开关。
-    if (val('template.show_stock') === false) showStock.value = false;
+    showStock.value = val('template.show_stock') !== false;
     // 分类导航样式：grid=顶部胶囊（隐藏左侧树）
     const ns = val('template.category_nav_style');
     if (ns === 'grid' || ns === 'list') navStyle.value = ns;
@@ -154,7 +158,7 @@ async function loadTemplateSettings() {
     if (typeof pr === 'number' && pr >= 2 && pr <= 8) perRow.value = Math.floor(pr);
   } catch { sort.value = normalizeSalesSort(sort.value); }
 }
-onMounted(loadTemplateSettings);
+
 
 async function refreshRecommendations() {
   const { data, error: err } = await listProducts({ recommend_only: true, page: 1, page_size: 1 });
@@ -209,9 +213,9 @@ useStockRefresh(products, () => route.path === '/products' && !loading.value, as
 });
 
 let needsRefresh = false;
-onActivated(() => {
+onActivated(async () => {
   if (needsRefresh) {
-    void loadTemplateSettings();
+    await loadTemplateSettings();
     needsRefresh = false;
     void refreshRecommendations().then(load);
     void applyListSeo();
@@ -238,15 +242,28 @@ function readRouteFilters() {
   if (typeof q.sort === 'string') sort.value = q.sort;
 }
 
-// 列表数据预取（setup 顶层：SSG 静态化列表页 + 输出 SEO head）
-{
-  readRouteFilters();
-  const { data } = await listCategories();
-  categories.value = data?.categories || [];
-  await refreshRecommendations();
-  await load();
-  await applyListSeo();
+async function loadCategories() {
+  categoriesLoading.value = true;
+  try {
+    const result = await listCategories();
+    if (result.error) { categoriesError.value = result.error; return; }
+    categories.value = result.data?.categories || [];
+    categoriesError.value = '';
+  } finally { categoriesLoading.value = false; }
 }
+onMounted(async () => {
+  await loadTemplateSettings();
+  readRouteFilters();
+  void loadCategories().then(applyListSeo);
+  if (categoryId.value === -1) await refreshRecommendations();
+  else void refreshRecommendations();
+  void load();
+});
+usePageRecovery(async () => {
+  await loadTemplateSettings();
+  await refreshRecommendations();
+  await Promise.all([loadCategories(), load(), applyListSeo()]);
+}, () => route.path === '/products' && !loading.value);
 
 /** 列表页 SEO：分类名进 title；canonical 恒为 /products（分类筛选是同一列表的
  变体，服务端静态页与爬虫视图均为 /products——水合后保持一致避免规范信号打架） */

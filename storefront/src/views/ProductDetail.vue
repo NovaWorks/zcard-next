@@ -180,6 +180,7 @@
 </template>
 
 <script setup lang="ts">
+import { loadPublicConfig } from '@/config';
 import OrderFields from '@/components/OrderFields.vue';
 import { useContentVideos } from "@/composables/useContentVideos";
 import { useFlashOffers } from '@/composables/flash-offers';
@@ -414,7 +415,7 @@ onMounted(async () => {
   const [cfg, capCfg, tplResp] = await Promise.all([
     fetchTradeConfig(),
     fetchCaptchaConfig(),
-    fetch('/api/v1/storefront/config').then((r) => r.ok ? r.json() : null).catch(() => null),
+    loadPublicConfig(true).catch(() => null),
   ]);
   captchaCfg.value = capCfg;
   trade.value = cfg;

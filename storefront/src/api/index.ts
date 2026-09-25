@@ -1,3 +1,4 @@
+import { loadPublicConfig } from '@/config';
 import { api } from './client';
 
 // ── 类型（字段名 snake_case，与 proto 一致）──
@@ -248,8 +249,7 @@ export interface CaptchaConfig {
 export async function fetchCaptchaConfig(): Promise<CaptchaConfig> {
   const def: CaptchaConfig = { login: false, register: true, order: false, reset: true };
   try {
-    const resp = await fetch('/api/v1/storefront/config');
-    const json = await resp.json();
+    const json = await loadPublicConfig(true);
     const find = (k: string) => json?.entries?.find((e: any) => e.key === k)?.value_json;
     const parse = (k: string, dflt: boolean): boolean => {
       const raw = find(k);
@@ -274,8 +274,7 @@ export interface RegisterConfig {
 }
 export async function fetchRegisterConfig(): Promise<RegisterConfig> {
   try {
-    const resp = await fetch('/api/v1/storefront/config');
-    const json = await resp.json();
+    const json = await loadPublicConfig(true);
     const find = (k: string) => json?.entries?.find((e: any) => e.key === k)?.value_json;
     let enabled = true;
     let methods: string[] = [];
@@ -447,8 +446,7 @@ export interface TradeConfig {
 /** 拉取交易设置（失败走保守默认：强制密码 + any） */
 export async function fetchTradeConfig(): Promise<TradeConfig> {
   try {
-    const resp = await fetch('/api/v1/storefront/config');
-    const json = await resp.json();
+    const json = await loadPublicConfig(true);
     const find = (k: string) => json?.entries?.find((e: any) => e.key === k)?.value_json;
     let pwdRequired = true;
     let contactMode = 'any';
@@ -566,8 +564,7 @@ export interface WithdrawConfig {
 export async function fetchWithdrawConfig(): Promise<WithdrawConfig> {
   const def: WithdrawConfig = { enabled: false, minAmountCents: 1000, feeType: 'fixed', feeValue: 0, methods: [] };
   try {
-    const resp = await fetch('/api/v1/storefront/config');
-    const json = await resp.json();
+    const json = await loadPublicConfig(true);
     const find = (k: string) => json?.entries?.find((e: any) => e.key === k)?.value_json;
     const parse = <T,>(k: string, dflt: T): T => {
       const raw = find(k);
@@ -817,8 +814,7 @@ export interface AnnouncementConfig {
 export async function fetchAnnouncement(): Promise<AnnouncementConfig> {
   const def: AnnouncementConfig = { type: "text", text: "", images: [] };
   try {
-    const resp = await fetch("/api/v1/storefront/config");
-    const json = await resp.json();
+    const json = await loadPublicConfig();
     const find = (k: string) => json?.entries?.find((e: any) => e.key === k)?.value_json;
     let type = "text";
     const typeRaw = find("ops.announcement_type");
@@ -838,7 +834,7 @@ export async function fetchAnnouncement(): Promise<AnnouncementConfig> {
           if (type === "text") {
             const readText = (key: string): string | undefined => {
               try {
-                const value = JSON.parse(find(key));
+                const value = JSON.parse(find(key) ?? 'null');
                 return typeof value === 'string' ? value : undefined;
               } catch { return undefined; }
             };

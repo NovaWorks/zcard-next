@@ -15,6 +15,8 @@ function load(file, overrides = {}) {
     if (id.includes('packages/money')) return shared;
     if (id === 'vue') return require('../admin/node_modules/vue');
     if (id.includes('theme-sdk')) return { mergeThemeConfig: x => x };
+    if (id === '../config') return { loadPublicConfig: async () => ({ entries: [] }) };
+    if (id === './read') return { readJSON: async () => { throw new Error('unexpected network call'); } };
     if (id === '@/utils/storage') return {localStg:{get:()=> 'test-token'}};
     if (id === '@/service/api') return {
       fetchSettings: async()=>({data:{items:[]}}),

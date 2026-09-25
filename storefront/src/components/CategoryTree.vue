@@ -33,7 +33,9 @@
           @select="select"
           @toggle="toggle"
         />
-        <div v-if="!tree.length" class="tree-empty muted">暂无分类</div>
+        <div v-if="loading && !tree.length" class="tree-empty muted" role="status">正在加载分类…</div>
+        <div v-else-if="error" class="tree-empty" role="alert">分类加载失败 <button class="btn secondary" type="button" :disabled="loading" @click="$emit('retry')">重试</button></div>
+        <div v-else-if="!tree.length" class="tree-empty muted">暂无分类</div>
       </div>
     </div>
   </aside>
@@ -49,6 +51,8 @@ import type { CategoryItem } from '@/api';
 const props = withDefaults(
   defineProps<{
     categories: CategoryItem[];
+    loading?: boolean;
+    error?: boolean;
     /** 当前选中分类 id（0=全部，-1=推荐；仅前端筛选值） */
     modelValue: number;
     showRecommended?: boolean;
@@ -58,6 +62,7 @@ const props = withDefaults(
 );
 const emit = defineEmits<{
   (e: 'update:modelValue', v: number): void;
+  (e: 'retry'): void;
 }>();
 
 // 跟随导航实际高度，避免平板换行或自定义站名把分类栏遮住。

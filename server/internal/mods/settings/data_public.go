@@ -34,6 +34,15 @@ func NewStorefrontConfigService(repo Repo) *StorefrontConfigService {
 // GetPublicConfig 白名单输出：DB 值优先，无值回落目录默认值；仅 PUBLIC_KEYS 键；
 // SECRET 键双保险（即使误入 PublicKeys 也不下发）。
 func (s *StorefrontConfigService) GetPublicConfig(ctx context.Context, _ *emptypb.Empty) (*storefrontv1.PublicConfig, error) {
+	// One snapshot avoids issuing a query for each public key on every page load.
+	rows, err := s.repo.List(ctx, "")
+	if err != nil {
+		return nil, errors.InternalServer("settings.CONFIG_UNAVAILABLE", "店铺配置暂时无法读取，请稍后重试")
+	}
+	stored := make(map[string]json.RawMessage, len(rows))
+	for _, row := range rows {
+		stored[row.Group+"."+row.Key] = row.Value
+	}
 	type entry struct{ key, val string }
 	var out []entry
 	for _, gname := range GroupsSorted() {
@@ -45,7 +54,7 @@ func (s *StorefrontConfigService) GetPublicConfig(ctx context.Context, _ *emptyp
 				continue
 			}
 			val, _ := g.DefaultJSON(k)
-			if raw, err := s.repo.Get(ctx, gname, k); err == nil && raw != nil {
+			if raw := stored[gname+"."+k]; raw != nil {
 				val = string(raw)
 			}
 			if isThemeKey(gname, k) {

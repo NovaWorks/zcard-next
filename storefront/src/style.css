@@ -325,3 +325,6 @@ html[data-theme-back-top="false"] .back-top { display: none !important; }
 /* Public article/product videos keep their aspect ratio and do not overflow mobile cards. */
 .pd-desc video, .post-body video { display: block; width: 100%; max-width: 100%; height: auto; max-height: 75vh; margin: 16px 0; background: #111; border-radius: 8px; }
 .video-playback-error { padding: 12px; color: #9a3412; background: #fff7ed; border-radius: 8px; font-size: 14px; }
+
+/* A neutral, stable shell replaces build-time failure/default storefront content. */
+.store-loading { min-height: 45vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 32px 16px; color: #64748b; text-align: center; }

@@ -1,7 +1,11 @@
 <template>
   <div class="home">
     <!-- Hero 轮播（公告设置 image/carousel 优先；回落横幅；无图回退渐变品牌区） -->
-    <div v-if="heroItems.length" class="hero-slider" @mouseenter="stopHero" @mouseleave="startHero">
+    <div v-if="!heroReady" class="hero-placeholder" :role="heroError ? 'alert' : 'status'">
+      <span>{{ heroError ? '店铺展示内容暂时无法加载' : '正在加载店铺内容…' }}</span>
+      <button v-if="heroError" class="feed-retry" @click="loadDecorations">重试</button>
+    </div>
+    <div v-else-if="heroItems.length" class="hero-slider" @mouseenter="stopHero" @mouseleave="startHero">
       <div class="hero-track" :style="{ transform: `translateX(-${heroIndex * 100}%)` }">
         <div v-for="item in heroItems" :key="item.key" class="hero-slide" @click="item.onClick">
           <img :src="item.img" :alt="item.title" />
@@ -42,7 +46,7 @@
     <div id="catalog" class="home-layout">
       <CategoryTree
         v-if="navStyle !== 'grid'"
-        :categories="categories" :show-recommended="hasRecommended"
+        :categories="categories" :loading="categoriesLoading" :error="!!categoriesError" @retry="loadCategories" :show-recommended="hasRecommended"
         :model-value="activeCategory"
         @update:model-value="pickCategory"
       />
@@ -74,11 +78,12 @@
             </button>
           </div>
         </div>
-        <div v-else-if="categories.length || hasRecommended" class="card mobile-cat mobile-only">
-          <CategoryTree variant="panel" :categories="categories" :show-recommended="hasRecommended" :model-value="activeCategory" @update:model-value="pickCategory" />
+        <div v-else-if="categories.length || hasRecommended || categoriesLoading || categoriesError" class="card mobile-cat mobile-only">
+          <CategoryTree variant="panel" :categories="categories" :loading="categoriesLoading" :error="!!categoriesError" @retry="loadCategories" :show-recommended="hasRecommended" :model-value="activeCategory" @update:model-value="pickCategory" />
         </div>
 
-        <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }} <button v-if="mobileCatalog" class="feed-retry" @click="load(products.length > 0)">重新加载</button></div>
+        <div v-if="navStyle === 'grid' && categoriesError" class="error" role="alert">分类加载失败 <button class="feed-retry" :disabled="categoriesLoading" @click="loadCategories">重试</button></div>
+        <div v-if="error" role="alert" class="error" style="margin-bottom: 12px;">{{ error }} <button :disabled="loading" class="feed-retry" @click="load(products.length > 0)">重新加载</button></div>
 
         <CatalogToolbar :title="sectionTitle" :sort="!showSales && sort === 'sales' ? 'default' : sort" :show-sales="showSales" :view="viewMode" :loading="loading" @sort="changeSort" @view="changeView" />
 
@@ -97,7 +102,7 @@
         </div>
 
         <!-- 分页器（首页/页码/末页 + 每页条数） -->
-        <div v-if="mobileCatalog && loading && !products.length" class="feed-status" role="status">正在加载商品…</div>
+        <div v-if="loading && !products.length" class="feed-status" role="status">正在加载商品…</div>
         <div v-if="mobileCatalog && products.length" ref="loadMoreTarget" class="feed-status" :class="{ 'is-complete': !hasMore && !loading }" :aria-busy="loading || loadingMore">
           <span v-if="loadingMore" role="status">正在加载更多商品…</span>
           <button v-else-if="error" class="feed-retry" @click="load(true)">刷新失败，点击重试</button>
@@ -134,6 +139,8 @@
 </template>
 
 <script setup lang="ts">
+import { loadPublicConfig } from '@/config';
+import { usePageRecovery } from '@/composables/page-recovery';
 import BannerStrip from '@/components/BannerStrip.vue';
 import CatalogToolbar from '@/components/CatalogToolbar.vue';
 import ThemeIcon from '@/components/ThemeIcon.vue';
@@ -157,7 +164,7 @@ const searchTerm = ref('');
 const defaultSort = ref('default');
 let appliedDefaultView = '';
 let initialized = false;
-const loading = ref(false);
+const loading = ref(true);
 const error = ref('');
 // 公告弹窗开启动词由 App.vue 提供（与导航📢公告同一弹窗；缺失时回退文章列表页）
 const openNoticeModal: () => void = inject('openNotice', () => {
@@ -168,6 +175,10 @@ const middleBanners = ref<Banner[]>([]);
 const bottomBanners = ref<Banner[]>([]);
 const latestNotice = ref<StorePost | null>(null);
 const categories = ref<CategoryItem[]>([]);
+const categoriesLoading = ref(true);
+const categoriesError = ref('');
+const heroReady = ref(false);
+const heroError = ref(false);
 const hasRecommended = ref(false); // 推荐分类仅在存在可见推荐商品时显示
 const activeCategory = ref(0);
 const viewMode = ref<'grid' | 'list'>('grid');
@@ -533,35 +544,54 @@ onDeactivated(() => {
 onMounted(async () => { startHero(); if (route.hash === '#catalog') { await nextTick(); scrollToCatalog(); } });
 onUnmounted(stopHero);
 
-// 先读取后台默认值，再应用链接中的筛选条件。
-await loadTemplateSettings();
-readRouteFilters();
-routeQueryKey = JSON.stringify(route.query);
-await Promise.all([
-  listBanners('middle').then((b) => { middleBanners.value = b?.data?.banners || []; }),
-  listBanners('bottom').then((b) => { bottomBanners.value = b?.data?.banners || []; }),
-  listBanners('top').then((b) => { banners.value = b?.data?.banners || []; }),
-  listPosts('notice', 1, 1).then((n) => { latestNotice.value = n?.data?.posts?.[0] || null; }),
-  listCategories().then((c) => { categories.value = c?.data?.categories || []; }),
-  refreshRecommendations(),
-  fetchAnnouncement().then((a) => { announcement.value = a; }),
-  // 首页默认 SEO（仅首页；页面级 SEO 由各自页面组件负责）
-  fetchSiteSeo().then((site) => {
-    applyDefaultSeo(site);
-    applyVerification(site);
-  }),
-]);
-await load();
+async function loadCategories() {
+  if (categoriesRequest) return categoriesRequest;
+  categoriesRequest = (async () => {
+    categoriesLoading.value = true;
+    try {
+      const result = await listCategories();
+      if (result.error) { categoriesError.value = result.error; return; }
+      categories.value = result.data?.categories || [];
+      categoriesError.value = '';
+    } finally { categoriesLoading.value = false; }
+  })();
+  try { await categoriesRequest; } finally { categoriesRequest = undefined; }
+}
+let categoriesRequest: Promise<void> | undefined;
+async function loadDecorations() {
+  heroError.value = false;
+  await Promise.all([
+    listBanners('middle').then(b => { if (b.data) middleBanners.value = b.data.banners || []; }),
+    listBanners('bottom').then(b => { if (b.data) bottomBanners.value = b.data.banners || []; }),
+    listBanners('top').then(b => { heroError.value = !!b.error; if (b.data) { banners.value = b.data.banners || []; heroReady.value = true; } }),
+    listPosts('notice', 1, 1).then(n => { if (n.data) latestNotice.value = n.data.posts?.[0] || null; }),
+    fetchAnnouncement().then(a => { announcement.value = a; }),
+    fetchSiteSeo().then(site => { applyDefaultSeo(site); applyVerification(site); }),
+  ]);
+}
+// Render loading/error controls immediately; optional banners must not block products.
+onMounted(async () => {
+  await loadTemplateSettings();
+  if (!catalogActive.value || route.path !== '/') return;
+  readRouteFilters();
+  routeQueryKey = JSON.stringify(route.query);
+  initialized = true;
+  void loadCategories();
+  void loadDecorations();
+  if (activeCategory.value === -1) await refreshRecommendations();
+  else void refreshRecommendations();
+  void load();
+});
+usePageRecovery(async () => {
+  await loadTemplateSettings();
+  await refreshRecommendations();
+  await Promise.all([loadCategories(), loadDecorations(), load(mobileCatalog.value)]);
+}, () => initialized && catalogActive.value && route.path === '/' && !loading.value && !loadingMore.value);
 
-initialized = true;
 // Backend defaults apply on first entry; cached user choices remain intact.
 async function loadTemplateSettings() {
-  applySalesConfig(null);
   try {
-    const apiBase = import.meta.env.SSR ? (import.meta.env.VITE_SSG_API || 'http://127.0.0.1:8000') : '';
-    const resp = await fetch(`${apiBase}/api/v1/storefront/config`);
-    if (!resp.ok) return;
-    const json = await resp.json();
+    const json = await loadPublicConfig();
     applySalesConfig(json);
     const val = (k: string) => {
       const raw = json?.entries?.find((e: any) => e.key === k)?.value_json;
@@ -580,7 +610,7 @@ async function loadTemplateSettings() {
       appliedDefaultView = nextView;
     }
     // 库存显示沿用原有开关。
-    if (val('template.show_stock') === false) showStock.value = false;
+    showStock.value = val('template.show_stock') !== false;
     // 每行商品数（2-8）：显式固定列数，替代 auto-fill 的"装几个算几个"
     const pr = val('template.per_row');
     if (typeof pr === 'number' && pr >= 2 && pr <= 8) perRow.value = Math.floor(pr);
@@ -596,13 +626,14 @@ async function loadTemplateSettings() {
     const sb = val('template.sort_by');
     if (['default', 'newest', 'sales', 'price_asc', 'price_desc'].includes(sb)) defaultSort.value = normalizeSalesSort(sb);
     // 顶部横幅开关：关闭时 Hero 回退品牌渐变区（公告图片轮播不受影响）
-    if (val('promo.top_banner_enabled') === false) topBannerEnabled.value = false;
+    topBannerEnabled.value = val('promo.top_banner_enabled') !== false;
   } catch { /* 配置拉取失败保持默认 */ }
 }
 
 </script>
 
 <style scoped>
+.hero-placeholder { min-height: 160px; display: grid; place-items: center; color: #64748b; background: #f1f5f9; border-radius: 16px; }
 .home { display: flex; flex-direction: column; gap: 16px; }
 .feed-status { align-self: center; max-width: 100%; padding: 0 12px; border-radius: 999px; background: rgba(255, 255, 255, .94); min-height: 44px; display: flex; justify-content: center; align-items: center; color: #64748b; font-size: 13px; text-align: center; }
 .feed-status.is-complete { min-height: 28px; }

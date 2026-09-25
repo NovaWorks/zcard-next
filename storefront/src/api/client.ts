@@ -1,5 +1,6 @@
 import { displayPrecision, formatCents, fromCents, toCents } from '../../../packages/money/index';
-import { mergeThemeConfig } from '../../../packages/theme-sdk/src/index';
+import { loadPublicConfig } from '../config';
+import { readJSON } from './read';
 // 前台 API 客户端：fetch 封装，金额一律「分」int64。
 // 认证（）：user realm JWT 存 localStorage，请求自动带 Bearer；
 // 401 且本地有 token → 判定过期，清 token 跳登录（游客端点 401 不误伤）。
@@ -35,6 +36,10 @@ interface ApiResult<T> {
 }
 
 async function request<T>(method: string, path: string, body?: unknown, params?: Record<string, string | number | boolean | undefined>, silent = false): Promise<ApiResult<T>> {
+  if (method === 'GET' && path === '/config') {
+    try { return { data: await loadPublicConfig(true) as T, error: null }; }
+    catch { return { data: null, error: '店铺配置加载失败，请稍后重试' }; }
+  }
   let url = `${BASE}${path}`;
   if (params) {
     const q = new URLSearchParams();
@@ -44,7 +49,13 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
     const qs = q.toString();
     if (qs) url += `?${qs}`;
   }
+  // Only these idempotent reads retry; retain member pricing through Authorization.
+  const publicRead = method === 'GET' && ['/products', '/categories', '/banners', '/posts'].includes(path);
   const token = getToken();
+  if (publicRead) {
+    try { return { data: await readJSON<T>(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} }), error: null }; }
+    catch { return { data: null, error: '加载失败，请检查网络后重试' }; }
+  }
   try {
     const res = await fetch(url, {
       method,
@@ -58,7 +69,6 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
     let json: any = null;
     try {
       json = text ? JSON.parse(text) : null;
-      if (path === '/config' && Array.isArray(json?.entries)) json.entries = mergeThemeConfig(json.entries);
     } catch {
       json = text;
     }

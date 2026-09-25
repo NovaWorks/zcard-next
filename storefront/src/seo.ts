@@ -1,3 +1,4 @@
+import { loadPublicConfig } from '@/config';
 /**
  * SEO 工具：站点级配置消费（/api/v1/storefront/config 公开下发）+ 页面级 head 声明。
  * 基于 @unhead/vue（vite-ssg 内置）：SSG 构建时输出到静态 HTML，客户端水合后动态更新。
@@ -48,12 +49,10 @@ function parseStr(raw: string | undefined, dflt = ""): string {
 
 /** 站点 SEO 配置（失败回退默认值；SSR 构建期经 VITE_SSG_API 访问，客户端同源） */
 export async function fetchSiteSeo(): Promise<SiteSeoConfig> {
-  if (cached) return cached;
+
   const def: SiteSeoConfig = { name: "商店", url: "", logo: "", seoTitle: "", seoKeywords: "", seoDesc: "", verificationGoogle: "", verificationBing: "" };
   try {
-    const apiBase = import.meta.env.SSR ? (import.meta.env.VITE_SSG_API || "http://127.0.0.1:8000") : "";
-    const resp = await fetch(`${apiBase}/api/v1/storefront/config`);
-    const json = await resp.json();
+    const json = await loadPublicConfig();
     const find = (k: string) => json?.entries?.find((e: any) => e.key === k)?.value_json;
     cached = {
       name: parseStr(find("site.name"), def.name),
@@ -67,7 +66,7 @@ export async function fetchSiteSeo(): Promise<SiteSeoConfig> {
     };
     return cached;
   } catch {
-    return def;
+    return cached || def;
   }
 }
 

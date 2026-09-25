@@ -1,3 +1,4 @@
+let configApplied = false;
 let effectiveValues: Record<string, unknown> = {};
 export interface ThemeRuntime {
   key: string;
@@ -6,6 +7,7 @@ export interface ThemeRuntime {
   values: Record<string, unknown>;
   capabilities: Record<string, boolean>;
   preview?: boolean;
+  public_config?: { entries: ConfigEntry[] };
   branding?: { name: string; logo: string };
 }
 export type ConfigEntry = { key: string; value_json: string };
@@ -22,9 +24,9 @@ export function readThemeRuntime(): ThemeRuntime | null {
 export function mergeThemeConfig(entries: ConfigEntry[]): ConfigEntry[] {
   const runtime = readThemeRuntime();
   const values = new Map(entries.map((e) => [e.key, e.value_json]));
-  for (const [key, value] of Object.entries(runtime?.values || {}))
+  for (const [key, value] of Object.entries((runtime?.preview || entries.length === 0) ? runtime?.values || {} : {}))
     values.set(key, JSON.stringify(value));
-  if (runtime?.capabilities.cart === false)
+  if (runtime?.preview && runtime.capabilities.cart === false)
     values.set("theme.nav_cart", "false");
   const result = [...values].map(([key, value_json]) => ({ key, value_json }));
   applyThemeConfig(result);
@@ -39,6 +41,7 @@ export function applyThemeConfig(entries: ConfigEntry[]) {
     } catch {}
   }
   effectiveValues = v;
+  configApplied = true;
   const root = document.documentElement;
   const numbers: [string, string, number, number][] = [
     ["theme.content_width", "--zc-content-width", 960, 1600],
@@ -51,21 +54,25 @@ export function applyThemeConfig(entries: ConfigEntry[]) {
     const n = v[key];
     if (typeof n === "number" && n >= min && n <= max)
       root.style.setProperty(css, `${n}px`);
+    else root.style.removeProperty(css);
   }
   if (
     typeof v["theme.primary_color"] === "string" &&
     /^#[a-f\d]{6}$/i.test(v["theme.primary_color"])
   )
     root.style.setProperty("--zc-primary", v["theme.primary_color"]);
+  else root.style.removeProperty("--zc-primary");
+  document.getElementById("zcard-theme-style")?.remove();
   for (const [key, attr] of [
     ["theme.nav_cart", "data-theme-cart"],
     ["theme.nav_posts", "data-theme-posts"],
     ["theme.back_top", "data-theme-back-top"],
   ]) {
     if (typeof v[key] === "boolean") root.setAttribute(attr, String(v[key]));
+    else root.removeAttribute(attr);
   }
 }
 export function themeValue<T>(key: string, fallback: T): T {
-  const v = readThemeRuntime()?.values?.[key] ?? effectiveValues[key];
+  const v = configApplied ? effectiveValues[key] : readThemeRuntime()?.values?.[key];
   return typeof v === typeof fallback ? (v as T) : fallback;
 }

@@ -111,6 +111,25 @@ jobs:
       - name: 真实金额工具回归（后台与商城）
         run: node scripts/test_money.cjs
 
+  storefront-startup:
+    name: 商城首屏与配置恢复回归
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 安装商城依赖
+        run: |
+          corepack enable
+          cd storefront
+          pnpm install --frozen-lockfile
+      - name: 类型检查、生产构建与首屏回归
+        run: |
+          pnpm --dir storefront type-check
+          pnpm --dir storefront build
+          node scripts/test_storefront_bootstrap.mjs
+
   deployment:
     name: 部署脚本与干净 Docker 构建
     runs-on: ubuntu-latest
