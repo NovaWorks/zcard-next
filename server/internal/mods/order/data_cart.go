@@ -43,7 +43,7 @@ func NewStoreCartService(d *data.Data, pricing catalogport.PricingResolver, inv 
 func mustUserClaims(ctx context.Context) (uint64, error) {
 	claims := identity.ClaimsFromContext(ctx)
 	if claims == nil {
-		return 0, errors.New("identity.UNAUTHORIZED")
+		return 0, kerrors.Unauthorized("identity.UNAUTHORIZED", "登录状态已失效，请重新登录")
 	}
 	return claims.Subject, nil
 }

@@ -43,6 +43,33 @@ func userCtx(userID uint64) context.Context {
 	return identity.WithClaims(context.Background(), &authn.Claims{Subject: userID})
 }
 
+func TestCartMissingLoginReturnsUnauthorized(t *testing.T) {
+	svc, _ := newCartEnv(t)
+	ctx := context.Background()
+	for name, run := range map[string]func() error{
+		"list": func() error { _, err := svc.ListCart(ctx, &emptypb.Empty{}); return err },
+		"add": func() error {
+			_, err := svc.AddCartItem(ctx, &storefrontv1.AddCartItemRequest{ProductId: 1, Quantity: 1})
+			return err
+		},
+		"update": func() error {
+			_, err := svc.UpdateCartItem(ctx, &storefrontv1.UpdateCartItemRequest{Id: 1, Quantity: 2})
+			return err
+		},
+		"remove": func() error {
+			_, err := svc.RemoveCartItem(ctx, &storefrontv1.RemoveCartItemRequest{Id: 1})
+			return err
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			err := kerrors.FromError(run())
+			if err == nil || err.Code != 401 || err.Reason != "identity.UNAUTHORIZED" {
+				t.Fatalf("expected auth error 401, got %v", err)
+			}
+		})
+	}
+}
+
 func TestCartAddMerge(t *testing.T) {
 	svc, d := newCartEnv(t)
 	ctx := userCtx(1)
