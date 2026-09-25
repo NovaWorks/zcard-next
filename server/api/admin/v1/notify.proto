@@ -10,7 +10,7 @@ import "google/protobuf/empty.proto";
 
 // AdminNotifyService 通知管理：模板 CRUD/测试发送、发送日志查询/重发。
 service AdminNotifyService {
-  rpc TestTelegram(google.protobuf.Empty) returns (google.protobuf.Empty) {
+  rpc TestTelegram(TestTelegramRequest) returns (TestTelegramReply) {
     option (google.api.http) = { post: "/api/v1/admin/notify/telegram/test" body: "*" };
   }
   // UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
@@ -68,6 +68,12 @@ service AdminNotifyService {
     };
   }
 }
+
+message TestTelegramRequest {
+  string chat_id = 1; // Empty retains the legacy test-all behavior.
+  int64 topic_id = 2;
+}
+message TestTelegramReply { repeated uint64 log_ids = 1; }
 
 message NotifyTemplate {
   uint64 id = 1;
@@ -129,6 +135,7 @@ message NotifyLog {
   int64 next_attempt_at = 13;
   string message_id = 14;
   bool retryable = 15;
+  int64 topic_id = 16;
 }
 
 message ListNotifyLogsReply {

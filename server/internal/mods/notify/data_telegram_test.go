@@ -13,6 +13,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notificationlog"
+	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 )
 
@@ -74,7 +75,7 @@ func TestTelegramPersistentDelivery(t *testing.T) {
 	})}
 	d := NewDispatcher(r, c)
 	for i := 0; i < 2; i++ {
-		if err := r.enqueueTelegram(ctx, 123, events.OrderPaid, 1, "paid", "body", []string{"11", "22"}); err != nil {
+		if err := r.enqueueTelegram(ctx, 123, events.OrderPaid, 1, "paid", "body", []notifyport.TelegramTarget{{ChatID: "11"}, {ChatID: "22"}}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -102,7 +103,7 @@ func TestTelegramPersistentDelivery(t *testing.T) {
 		t.Fatal(calls)
 	}
 	// Active lease excludes a job; expired lease recovers it after a crash.
-	_ = r.enqueueTelegram(ctx, 124, events.OrderPaid, 1, "paid", "body", []string{"11"})
+	_ = r.enqueueTelegram(ctx, 124, events.OrderPaid, 1, "paid", "body", []notifyport.TelegramTarget{{ChatID: "11"}})
 	_, _ = r.data.Client.NotificationLog.Update().Where(notificationlog.StatusEQ(notificationlog.StatusPending)).SetLeaseUntil(time.Now().UTC().Add(time.Minute)).Save(ctx)
 	_ = d.deliverTelegramDue(ctx)
 	if calls["11"] != 1 {
@@ -114,7 +115,7 @@ func TestTelegramPersistentDelivery(t *testing.T) {
 		t.Fatal("expired lease not recovered")
 	}
 	// Disabling stops queued deliveries.
-	_ = r.enqueueTelegram(ctx, 125, events.OrderPaid, 1, "paid", "body", []string{"11"})
+	_ = r.enqueueTelegram(ctx, 125, events.OrderPaid, 1, "paid", "body", []notifyport.TelegramTarget{{ChatID: "11"}})
 	settings.values["notify.telegram_order_enabled"] = "false"
 	_ = d.deliverTelegramDue(ctx)
 	if calls["11"] != 2 {
@@ -125,7 +126,7 @@ func TestTelegramPersistentDelivery(t *testing.T) {
 	}
 	// A rolled-back event may not leave deliverable tasks.
 	err := data.Tx(ctx, r.data, func(tx context.Context) error {
-		if e := r.enqueueTelegram(tx, 126, events.OrderPaid, 1, "paid", "body", []string{"11"}); e != nil {
+		if e := r.enqueueTelegram(tx, 126, events.OrderPaid, 1, "paid", "body", []notifyport.TelegramTarget{{ChatID: "11"}}); e != nil {
 			return e
 		}
 		return fmt.Errorf("rollback")

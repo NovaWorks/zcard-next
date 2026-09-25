@@ -2829,12 +2829,17 @@ paths:
             operationId: AdminNotifyService_TestTelegram
             requestBody:
                 content:
-                    application/json: {}
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.TestTelegramRequest'
                 required: true
             responses:
                 "200":
                     description: OK
-                    content: {}
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.TestTelegramReply'
     /api/v1/admin/notify/templates:
         get:
             tags:
@@ -10509,6 +10514,8 @@ components:
                     type: string
                 retryable:
                     type: boolean
+                topicId:
+                    type: string
         zcard.api.admin.v1.NotifyTemplate:
             type: object
             properties:
@@ -12011,6 +12018,20 @@ components:
                 redisAddr:
                     type: string
                 redisPassword:
+                    type: string
+        zcard.api.admin.v1.TestTelegramReply:
+            type: object
+            properties:
+                logIds:
+                    type: array
+                    items:
+                        type: string
+        zcard.api.admin.v1.TestTelegramRequest:
+            type: object
+            properties:
+                chatId:
+                    type: string
+                topicId:
                     type: string
         zcard.api.admin.v1.ThemePreviewReply:
             type: object

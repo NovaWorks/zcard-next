@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	"html"
 	"log/slog"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -47,16 +49,57 @@ func telegramEnabled(cfg *TelegramConfig, event string) bool {
 	}
 	return false
 }
-func telegramTargets(cfg *TelegramConfig) []string {
-	out := []string{}
-	seen := map[string]bool{}
+func telegramTargets(cfg *TelegramConfig) []notifyport.TelegramTarget {
+	if cfg.Targets != nil {
+		return cfg.Targets
+	}
+	out := []notifyport.TelegramTarget{}
+	seen := map[notifyport.TelegramTarget]bool{}
 	for _, id := range splitComma(cfg.ChatIDs) {
-		if !seen[id] {
-			out = append(out, id)
-			seen[id] = true
+		t, err := notifyport.NormalizeTelegramTarget(notifyport.TelegramTarget{ChatID: id})
+		if err == nil && !seen[t] {
+			out = append(out, t)
+			seen[t] = true
 		}
 	}
 	return out
+}
+
+func telegramDeliveryKey(eventID uint64, target notifyport.TelegramTarget) string {
+	key := fmt.Sprintf("telegram:%d:%s", eventID, target.ChatID)
+	if target.TopicID != 0 {
+		key += ":topic:" + strconv.FormatInt(target.TopicID, 10)
+	}
+	return key
+}
+
+// Missing metadata is a legacy delivery to the chat's default destination.
+func telegramLogTarget(row *ent.NotificationLog) (notifyport.TelegramTarget, error) {
+	t := notifyport.TelegramTarget{ChatID: row.Recipient}
+	if raw, ok := row.Variables["telegram_topic_id"]; ok {
+		v, ok := raw.(string)
+		if !ok {
+			return t, fmt.Errorf("通知话题记录无效，已停止发送")
+		}
+		n, err := strconv.ParseInt(v, 10, 64)
+		if err != nil || n <= 0 || n > 2147483647 {
+			return t, fmt.Errorf("通知话题记录无效，已停止发送")
+		}
+		t.TopicID = n
+	}
+	return notifyport.NormalizeTelegramTarget(t)
+}
+
+func telegramTargetEnabled(cfg *TelegramConfig, event string, target notifyport.TelegramTarget) bool {
+	if !telegramEnabled(cfg, event) {
+		return false
+	}
+	for _, t := range telegramTargets(cfg) {
+		if t == target {
+			return true
+		}
+	}
+	return false
 }
 
 // EnqueueTelegram is a DB-only transactional outbox subscriber. It never calls Telegram.
@@ -184,11 +227,15 @@ func (d *Dispatcher) EnqueueTelegram(ctx context.Context, env events.Envelope) e
 	body := strings.Join(lines, "\n")
 	return d.repo.enqueueTelegram(ctx, env.EventID, env.Type, o.ID, subject, body, targets)
 }
-func (r *NotifyRepo) enqueueTelegram(ctx context.Context, eventID uint64, event string, bizID uint64, subject, body string, targets []string) error {
+func (r *NotifyRepo) enqueueTelegram(ctx context.Context, eventID uint64, event string, bizID uint64, subject, body string, targets []notifyport.TelegramTarget) error {
 	for _, target := range targets {
-		key := fmt.Sprintf("telegram:%d:%s", eventID, target)
-		err := data.Client(ctx, r.data).NotificationLog.Create().SetDeliveryKey(key).SetEventType(event).SetBizType("order").SetBizID(bizID).
-			SetChannel(notificationlog.ChannelTelegram).SetRecipient(target).SetSubject(subject).SetBody(body).
+		key := telegramDeliveryKey(eventID, target)
+		vars := map[string]any{}
+		if target.TopicID != 0 {
+			vars["telegram_topic_id"] = strconv.FormatInt(target.TopicID, 10)
+		}
+		err := data.Client(ctx, r.data).NotificationLog.Create().SetVariables(vars).SetDeliveryKey(key).SetEventType(event).SetBizType("order").SetBizID(bizID).
+			SetChannel(notificationlog.ChannelTelegram).SetRecipient(target.ChatID).SetSubject(subject).SetBody(body).
 			SetNextAttemptAt(time.Now().UTC()).OnConflict(sql.ConflictColumns(notificationlog.FieldDeliveryKey)).DoNothing().Exec(ctx)
 		if err != nil && !errors.Is(err, dbsql.ErrNoRows) {
 			return err
@@ -230,23 +277,21 @@ func (d *Dispatcher) deliverTelegramDue(ctx context.Context) error {
 		cfg, configErr := c.tgConfig(ctx)
 		var sendErr error
 		var messageID string
-		permitted := false
-		if configErr == nil && telegramEnabled(cfg, row.EventType) {
-			for _, id := range telegramTargets(cfg) {
-				if id == row.Recipient {
-					permitted = true
-				}
-			}
-		}
+		target, targetErr := telegramLogTarget(row)
 		status := notificationlog.StatusSent
 		if configErr != nil {
 			sendErr = configErr
-		} else if !permitted {
+		} else if targetErr != nil {
+			sendErr = &TelegramError{Permanent: true, Detail: targetErr.Error()}
+		} else if !telegramTargetEnabled(cfg, row.EventType, target) {
 			status = notificationlog.StatusSkipped
 		} else {
-			messageID, sendErr = c.sendResult(ctx, cfg.BotToken, row.Recipient, row.Subject+"\n"+row.Body)
+			messageID, sendErr = c.sendResult(ctx, cfg.BotToken, target.ChatID, row.Subject+"\n"+row.Body, target.TopicID)
 		}
 		update := client.NotificationLog.Update().Where(notificationlog.ID(row.ID), notificationlog.LeaseUntilEQ(lease), notificationlog.StatusEQ(notificationlog.StatusPending)).ClearLeaseUntil().ClearNextAttemptAt().SetMessageID(messageID).SetErrorMessage("")
+		if status == notificationlog.StatusSkipped {
+			update.SetErrorMessage("通知已关闭或原接收位置已移除，未改投其他话题")
+		}
 		if sendErr != nil {
 			status = notificationlog.StatusFailed
 			delay := time.Duration(1<<min(row.Attempts, 8)) * 30 * time.Second

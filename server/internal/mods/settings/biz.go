@@ -128,7 +128,7 @@ func GetStruct[T any](ctx context.Context, uc *SettingsUsecase, group, key strin
 func SanitizeGroup(items []port.Item) []port.Item {
 	out := make([]port.Item, 0, len(items))
 	for _, it := range items {
-		if IsSecret(it.Group, it.Key) {
+		if IsSecret(it.Group, it.Key) && !(it.Group == "notify" && it.Key == "telegram_bot_token" && string(it.Value) == `""`) {
 			out = append(out, port.Item{Group: it.Group, Key: it.Key, Value: json.RawMessage(`"****"`)})
 			continue
 		}

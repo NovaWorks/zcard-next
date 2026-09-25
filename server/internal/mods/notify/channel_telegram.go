@@ -30,7 +30,8 @@ type TelegramConfig struct {
 	Enabled      bool     `json:"enabled"`
 	BotToken     string   `json:"bot_token"`
 	// ChatIDs 管理员群/频道（逗号分隔；告警与群发多目标）
-	ChatIDs string `json:"chat_ids"`
+	ChatIDs string                      `json:"chat_ids"`
+	Targets []notifyport.TelegramTarget `json:"targets"`
 }
 
 // TelegramChannel Telegram bot 通道。
@@ -62,9 +63,7 @@ func (c *TelegramChannel) tgConfig(ctx context.Context) (*TelegramConfig, error)
 		if err = json.Unmarshal(raw, cfg); err != nil {
 			return nil, fmt.Errorf("Telegram 配置格式错误")
 		}
-		return cfg, nil
-	}
-	if err = json.Unmarshal(raw, &cfg.Enabled); err != nil {
+	} else if err = json.Unmarshal(raw, &cfg.Enabled); err != nil {
 		return nil, fmt.Errorf("Telegram 配置格式错误")
 	}
 	for key, dest := range map[string]any{"telegram_bot_token": &cfg.BotToken, "telegram_chat_ids": &cfg.ChatIDs, "telegram_order_enabled": &cfg.OrderEnabled, "telegram_events": &cfg.Events} {
@@ -74,6 +73,29 @@ func (c *TelegramChannel) tgConfig(ctx context.Context) (*TelegramConfig, error)
 		}
 		if len(raw) > 0 && json.Unmarshal(raw, dest) != nil {
 			return nil, fmt.Errorf("Telegram 配置格式错误")
+		}
+	}
+	// Saving the new form must not discard the token from the legacy object.
+	if cfg.BotToken == "" {
+		legacyRaw, readErr := c.settings.GetJSON(ctx, "notify", "telegram")
+		if readErr != nil {
+			return nil, readErr
+		}
+		if len(legacyRaw) > 0 {
+			var legacy TelegramConfig
+			if json.Unmarshal(legacyRaw, &legacy) == nil {
+				cfg.BotToken = legacy.BotToken
+			}
+		}
+	}
+	raw, err = c.settings.GetJSON(ctx, "notify", "telegram_targets")
+	if err != nil {
+		return nil, err
+	}
+	if len(raw) > 0 && string(bytes.TrimSpace(raw)) != "null" {
+		cfg.Targets, err = notifyport.ParseTelegramTargets(raw)
+		if err != nil {
+			return nil, err
 		}
 	}
 	return cfg, nil
@@ -93,20 +115,18 @@ func (c *TelegramChannel) Deliver(ctx context.Context, msg notifyport.Message) e
 	if cfg == nil || !cfg.Enabled || cfg.BotToken == "" {
 		return ErrSkipped
 	}
-	targets := []string{}
+	targets := []notifyport.TelegramTarget{}
 	if id := trimSpace(msg.Recipient); id != "" {
-		targets = append(targets, id)
+		targets = append(targets, notifyport.TelegramTarget{ChatID: id})
 	} else {
-		for _, id := range splitComma(cfg.ChatIDs) {
-			targets = append(targets, id)
-		}
+		targets = telegramTargets(cfg)
 	}
 	if len(targets) == 0 {
 		return ErrSkipped
 	}
 	var lastErr error
-	for _, chatID := range targets {
-		if err := c.sendOne(ctx, cfg.BotToken, chatID, msg.Subject+"\n"+msg.Body); err != nil {
+	for _, target := range targets {
+		if _, err := c.sendResult(ctx, cfg.BotToken, target.ChatID, msg.Subject+"\n"+msg.Body, target.TopicID); err != nil {
 			lastErr = err
 		}
 	}
@@ -128,12 +148,16 @@ type TelegramError struct {
 }
 
 func (e *TelegramError) Error() string { return fmt.Sprintf("Telegram (%d): %s", e.Code, e.Detail) }
-func (c *TelegramChannel) sendResult(ctx context.Context, token, chatID, text string) (string, error) {
-	payload, err := json.Marshal(map[string]string{
+func (c *TelegramChannel) sendResult(ctx context.Context, token, chatID, text string, topicIDs ...int64) (string, error) {
+	params := map[string]any{
 		"chat_id":    chatID,
 		"text":       text,
 		"parse_mode": "HTML",
-	})
+	}
+	if len(topicIDs) > 0 && topicIDs[0] != 0 {
+		params["message_thread_id"] = topicIDs[0]
+	}
+	payload, err := json.Marshal(params)
 	if err != nil {
 		return "", err
 	}
@@ -176,7 +200,7 @@ func (c *TelegramChannel) sendResult(ctx context.Context, token, chatID, text st
 	}
 	return "", &TelegramError{Code: code, Permanent: code >= 400 && code < 500 && code != 429,
 		RetryAfter: time.Duration(min(max(result.Parameters.RetryAfter, 0), 86400)) * time.Second,
-		Detail:     truncateStr(strings.ReplaceAll(result.Description, token, "[redacted]"), 200)}
+		Detail:     telegramFailureDetail(code, strings.ReplaceAll(result.Description, token, "[redacted]"))}
 }
 
 func splitComma(s string) []string {
@@ -204,4 +228,22 @@ func truncateStr(s string, n int) string {
 		return s[:n]
 	}
 	return s
+}
+
+func telegramFailureDetail(code int, description string) string {
+	lower := strings.ToLower(description)
+	switch {
+	case code == 401:
+		return "Bot Token 无效，请重新检查机器人配置"
+	case strings.Contains(lower, "message thread not found"):
+		return "指定话题不存在或不可用，请检查 Chat ID 和 Topic ID；未改投群主聊天"
+	case strings.Contains(lower, "topic_closed"):
+		return "指定话题已关闭，请在 Telegram 中重新开启后重试"
+	case strings.Contains(lower, "chat not found"):
+		return "接收位置不可用，请检查 Chat ID、机器人是否已加入群，或接收人是否已发送 /start"
+	case code == 403:
+		return "机器人没有发送权限或已被移除，请检查目标群或接收人的权限"
+	default:
+		return truncateStr(description, 200)
+	}
 }

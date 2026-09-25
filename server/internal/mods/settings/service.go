@@ -6,6 +6,7 @@ package settings
 import (
 	"context"
 	"encoding/json"
+	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/adminpath"
 	"regexp"
 	"sort"
@@ -42,7 +43,7 @@ func (s *AdminSettingsService) ListSettings(ctx context.Context, req *adminv1.Li
 	if err != nil {
 		return nil, errors.InternalServer("settings.LIST_FAILED", "读取设置失败")
 	}
-	items = withDefaults(req.GetGroup(), items)
+	items = withDefaults(req.GetGroup(), telegramLegacyDefaults(items))
 	items = SanitizeGroup(items)
 	reply := &adminv1.ListSettingsReply{Items: make([]*adminv1.Setting, 0, len(items))}
 	for _, it := range items {
@@ -113,6 +114,10 @@ func (s *AdminSettingsService) validateSettingValue(ctx context.Context, group, 
 				if id = strings.TrimSpace(id); id != "" && (len(id) > 64 || !regexp.MustCompile(`^(-?[0-9]+|@[A-Za-z0-9_]{5,})$`).MatchString(id)) {
 					return invalid()
 				}
+			}
+		case "telegram_targets":
+			if _, err := notifyport.ParseTelegramTargets(value); err != nil {
+				return errors.BadRequest("settings.INVALID_VALUE", err.Error())
 			}
 		case "telegram_events":
 			var v []string

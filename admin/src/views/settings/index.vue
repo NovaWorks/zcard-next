@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import AccountSecurity from "@/components/security/account-security.vue";
-import { ref, reactive, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { ref, reactive, onMounted, onBeforeUnmount } from "vue";
+import { useRoute, onBeforeRouteLeave } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { fetchSettings, updateSettings, listCurrencies, fetchTemplates } from "@/service/api";
 import type { TemplateItem } from "@/service/api";
 import { NCheckbox, NCheckboxGroup, NRadioButton, NRadioGroup, NSpace, NTabs as OuterTabs, NTabPane as OuterTabPane } from "naive-ui";
 import { checkAuth } from "@/directives";
 import { resolveMediaUrl } from "@/utils/media";
-import TelegramDelivery from "./components/telegram-delivery.vue";
+import TelegramSettings from "./components/telegram-settings.vue";
 import CurrencyTab from "./components/currency-tab.vue";
 import TopButtonField from "./components/top-button-field.vue";
 import GiftTiersField from "./components/gift-tiers-field.vue";
@@ -32,7 +32,38 @@ const saving = ref(false);
 const announcementEditor = ref<any | null>(null);
 // 已修改键集合（"group.key"）；驱动底部保存按钮可用态与批量提交。
 const dirtyKeys = ref(new Set<string>());
-const hasDirty = () => dirtyKeys.value.size > 0;
+const telegramDirty = ref(false);
+const telegramSaving = ref(false);
+const hasDirty = () => dirtyKeys.value.size > 0 || telegramDirty.value;
+let switching = false;
+async function switchGroup(group: string) {
+  if (switching || loading.value || saving.value || telegramSaving.value || group === activeGroup.value) return;
+  switching = true;
+  try {
+    if (hasDirty() && !(await confirmDiscard())) return;
+    telegramDirty.value = false;
+    activeGroup.value = group;
+    await loadSettings();
+  } finally { switching = false; }
+}
+async function switchOuter(tab: string) {
+  if (switching || loading.value || saving.value || telegramSaving.value || tab === outerTab.value) return;
+  switching = true;
+  try {
+    if (hasDirty()) {
+      if (!(await confirmDiscard())) return;
+      telegramDirty.value = false;
+      await loadSettings();
+    }
+    outerTab.value = tab;
+  } finally { switching = false; }
+}
+function beforeUnload(event: BeforeUnloadEvent) {
+  if (hasDirty()) { event.preventDefault(); event.returnValue = ''; }
+}
+onMounted(() => window.addEventListener('beforeunload', beforeUnload));
+onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
+onBeforeRouteLeave(async () => !saving.value && !telegramSaving.value && (!hasDirty() || await confirmDiscard()));
 // 货币下拉选项（i18n.base_currency 联动）；无权限/失败时为空 → 回退文本输入。
 const currencyOptions = ref<{ label: string; value: string }[]>([]);
 // 可用模板清单（template 组主题弹窗数据源）；无权限/失败时为空 → 弹窗显示安装入口。
@@ -44,7 +75,7 @@ const groups = [
   { key: "promo", label: "推荐位" },
   { key: "footer", label: "页脚配置" },
   { key: "trade", label: "交易" },
-  { key: "ticket", label: "工单" },
+  { key: "ticket", label: "工单 / TG订单通知" },
   { key: "security", label: "安全" },
   { key: "ops", label: "运维" },
   { key: "recharge", label: "充值" },
@@ -53,7 +84,7 @@ const groups = [
   { key: "withdraw", label: "提现" },
   { key: "affiliate", label: "分销设置" },
   { key: "supply", label: "货源" },
-  { key: "notify", label: "邮件短信与 Telegram" },
+  { key: "notify", label: "邮件短信" },
   { key: "service", label: "客户代码" },
   { key: "i18n", label: "语言货币" },
 ];
@@ -80,14 +111,11 @@ function linkListOf(item: any) {
 // ── 多选类设置键：渲染 checkbox 勾选（数组值；其余 options 键为单选）──
 const MULTI_KEYS: Record<string, string[]> = {
   security: ["register_method"],
-  notify: ["telegram_events"],
 };
 
 // ── 输入框占位提示（大厂模式：标签保持简短，填写说明放进框内 placeholder）──
 const INPUT_PLACEHOLDERS: Record<string, Record<string, string>> = {
   notify: {
-    telegram_chat_ids: "商家个人或管理群 Chat ID，多个用英文逗号分隔；最多 20 个",
-    telegram_bot_token: "从 @BotFather 获取；留空保留原 Token",
     sms_sign: "阿里云/腾讯云填签名名称；七牛填签名 ID",
     sms_sdk_app_id: "腾讯云必填，其余通道忽略",
     sms_template_code: "阿里云/腾讯云/七牛均需填写",
@@ -271,10 +299,6 @@ function setVal(item: any, val: any) {
 }
 
 async function loadSettings() {
-  if (hasDirty()) {
-    const ok = await confirmDiscard();
-    if (!ok) return;
-  }
   loading.value = true;
   items.value = [];
   dirtyKeys.value.clear();
@@ -282,7 +306,8 @@ async function loadSettings() {
     const { data, error } = await fetchSettings(activeGroup.value);
     if (!error && data) {
       items.value = ((data as any).items || []).filter(
-        (item: any) => item.group !== "template" || !THEME_APPEARANCE_KEYS.has(item.key),
+        (item: any) => (item.group !== "template" || !THEME_APPEARANCE_KEYS.has(item.key)) &&
+          (item.group !== "notify" || (item.key !== "telegram" && !item.key.startsWith("telegram_"))),
       );
     }
   } finally {
@@ -322,7 +347,7 @@ async function loadCurrencies() {
 
 // 表单级保存：一次提交本组全部已修改项（后端单事务原子写入）。
 async function saveAll() {
-  if (!hasDirty()) return;
+  if (!dirtyKeys.value.size) return;
   saving.value = true;
   try {
     const pending = items.value
@@ -349,9 +374,9 @@ onMounted(() => {
 <template>
   <div class="min-h-500px">
     <NCard title="系统设置">
-      <OuterTabs v-model:value="outerTab" type="line">
+      <OuterTabs :value="outerTab" type="line" @update:value="switchOuter">
         <OuterTabPane name="settings" tab="参数设置">
-          <NTabs v-model:value="activeGroup" type="line" @update:value="loadSettings">
+          <NTabs :value="activeGroup" type="line" @update:value="switchGroup">
             <NTabPane v-for="g in groups" :key="g.key" :name="g.key" :tab="g.label" />
           </NTabs>
 
@@ -377,6 +402,7 @@ onMounted(() => {
               PC 和手机共用一个响应式主题。背景图、分类样式、商品布局和库存/销量显示统一在「主题自定义」中设置，修改或删除后点击「发布生效」。切换主题请点击「管理主题」；评价等业务开关仍在系统设置中管理。
             </div>
 
+            <h3 v-if="activeGroup === 'ticket'" class="mt-16px font-600">工单设置</h3>
             <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form" :class="{ 'settings-form-wide': ['ops', 'recharge', 'supplier_recharge'].includes(activeGroup) }">
               <NFormItem v-for="item in items" :key="item.key" :label="labelOf(item)">
                 <div class="flex w-full items-center gap-8px">
@@ -502,19 +528,19 @@ onMounted(() => {
               </NFormItem>
             </NForm>
 
-            <TelegramDelivery v-if="activeGroup === 'notify'" :unsaved="hasDirty()" />
             <div class="mt-24px flex items-center justify-end gap-8px border-t pt-16px max-w-760px">
-              <span v-if="hasDirty()" class="text-12px text-gray-400">{{ dirtyKeys.size }} 项修改未保存</span>
+              <span v-if="dirtyKeys.size" class="text-12px text-gray-400">{{ dirtyKeys.size }} 项修改未保存</span>
               <NButton
                 v-auth="'settings:update'"
                 type="primary"
                 :loading="saving"
-                :disabled="!hasDirty()"
+                :disabled="!dirtyKeys.size"
                 @click="saveAll"
               >
-                保存更改
+                {{ activeGroup === 'ticket' ? '保存工单设置' : '保存更改' }}
               </NButton>
             </div>
+            <TelegramSettings v-if="activeGroup === 'ticket'" @dirty="telegramDirty = $event" @busy="telegramSaving = $event" />
           </template>
         </OuterTabPane>
         <OuterTabPane v-if="checkAuth('settings:currency_read')" name="currency" tab="货币">

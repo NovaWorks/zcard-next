@@ -6,6 +6,7 @@ import (
 	"context"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notificationlog"
+	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	"github.com/go-kratos/kratos/v3/errors"
 	"time"
 
@@ -82,8 +83,9 @@ func (s *AdminNotifyService) ListLogs(ctx context.Context, req *adminv1.ListNoti
 	}
 	reply := &adminv1.ListNotifyLogsReply{Total: int64(total), Page: int32(page), PageSize: int32(size)}
 	for _, l := range rows {
+		target, _ := telegramLogTarget(l)
 		reply.Logs = append(reply.Logs, &adminv1.NotifyLog{
-			Id: l.ID, EventType: l.EventType, BizType: l.BizType, BizId: l.BizID,
+			Id: l.ID, TopicId: target.TopicID, EventType: l.EventType, BizType: l.BizType, BizId: l.BizID,
 			Channel: string(l.Channel), Recipient: l.Recipient, Locale: l.Locale,
 			Subject: l.Subject, Status: string(l.Status), ErrorMessage: l.ErrorMessage,
 			CreatedAt: l.CreatedAt.Unix(), Attempts: int32(l.Attempts), NextAttemptAt: timeOrZero(l.NextAttemptAt), MessageId: l.MessageID, Retryable: l.DeliveryKey != nil && l.Channel == notificationlog.ChannelTelegram && l.Status == notificationlog.StatusFailed,
@@ -94,6 +96,22 @@ func (s *AdminNotifyService) ListLogs(ctx context.Context, req *adminv1.ListNoti
 
 // ResendLog 重发（原变量重投）。
 func (s *AdminNotifyService) ResendLog(ctx context.Context, req *adminv1.ResendNotifyLogRequest) (*emptypb.Empty, error) {
+	row, err := data.Client(ctx, s.repo.data).NotificationLog.Get(ctx, req.GetId())
+	if err != nil {
+		return nil, errors.NotFound("notify.NOT_FOUND", "发送记录不存在")
+	}
+	c := s.disp.telegram()
+	if c == nil {
+		return nil, errors.BadRequest("notify.NOT_CONFIGURED", "Telegram 通道未配置")
+	}
+	cfg, err := c.tgConfig(ctx)
+	if err != nil {
+		return nil, errors.BadRequest("notify.NOT_CONFIGURED", "Telegram 配置读取失败")
+	}
+	target, err := telegramLogTarget(row)
+	if err != nil || !telegramTargetEnabled(cfg, row.EventType, target) {
+		return nil, errors.BadRequest("notify.TARGET_REMOVED", "通知已关闭或原接收位置已移除，请核对原 Chat ID 和 Topic ID")
+	}
 	n, err := data.Client(ctx, s.repo.data).NotificationLog.Update().Where(notificationlog.ID(req.GetId()), notificationlog.ChannelEQ(notificationlog.ChannelTelegram), notificationlog.DeliveryKeyNotNil(), notificationlog.StatusEQ(notificationlog.StatusFailed)).
 		SetStatus(notificationlog.StatusPending).SetAttempts(0).ClearLeaseUntil().SetNextAttemptAt(time.Now().UTC()).Save(ctx)
 	if err != nil {
@@ -294,7 +312,7 @@ func timeOrZero(v *time.Time) int64 {
 	}
 	return v.Unix()
 }
-func (s *AdminNotifyService) TestTelegram(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+func (s *AdminNotifyService) TestTelegram(ctx context.Context, req *adminv1.TestTelegramRequest) (*adminv1.TestTelegramReply, error) {
 	c := s.disp.telegram()
 	if c == nil {
 		return nil, errors.BadRequest("notify.NOT_CONFIGURED", "Telegram 通道未配置")
@@ -306,11 +324,30 @@ func (s *AdminNotifyService) TestTelegram(ctx context.Context, _ *emptypb.Empty)
 	if !telegramEnabled(cfg, "telegram.test") || len(telegramTargets(cfg)) == 0 {
 		return nil, errors.BadRequest("notify.NOT_CONFIGURED", "请先保存并启用 Telegram 通道、订单通知、Token 和接收 Chat ID")
 	}
+	targets := telegramTargets(cfg)
+	if req.GetChatId() != "" || req.GetTopicId() != 0 {
+		target, err := notifyport.NormalizeTelegramTarget(notifyport.TelegramTarget{ChatID: req.GetChatId(), TopicID: req.GetTopicId()})
+		if err != nil || !telegramTargetEnabled(cfg, "telegram.test", target) {
+			return nil, errors.BadRequest("notify.INVALID_TARGET", "请先保存该接收位置，再发送测试消息")
+		}
+		targets = []notifyport.TelegramTarget{target}
+	}
+	eventID := uint64(time.Now().UnixNano())
+	reply := &adminv1.TestTelegramReply{}
 	err = data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
-		return s.repo.enqueueTelegram(ctx, uint64(time.Now().UnixNano()), "telegram.test", 0, "Telegram 订单通知测试", "这是一条管理员主动发送的测试消息。正式通知包含订单号、商品摘要、金额与订单入口，不包含卡密或查询密码。", telegramTargets(cfg))
+		if err := s.repo.enqueueTelegram(ctx, eventID, "telegram.test", 0, "Telegram 订单通知测试", "这是一条管理员主动发送的测试消息。正式通知包含订单号、商品摘要、金额与订单入口，不包含卡密或查询密码。", targets); err != nil {
+			return err
+		}
+		keys := make([]string, 0, len(targets))
+		for _, target := range targets {
+			keys = append(keys, telegramDeliveryKey(eventID, target))
+		}
+		ids, err := data.Client(ctx, s.repo.data).NotificationLog.Query().Where(notificationlog.DeliveryKeyIn(keys...)).IDs(ctx)
+		reply.LogIds = ids
+		return err
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &emptypb.Empty{}, nil
+	return reply, nil
 }

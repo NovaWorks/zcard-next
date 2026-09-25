@@ -27,7 +27,7 @@ type GroupDef struct {
 
 // groups 全部分组目录（ 清裁）。
 var groups = map[string]*GroupDef{
-	"ticket": {Name: "ticket", Desc: "工单", Labels: map[string]string{"urgent_fee": "加急费（分，0 为免费）"}, Defaults: map[string]any{"urgent_fee": 0}},
+	"ticket": {Name: "ticket", Desc: "工单 / TG订单通知", Labels: map[string]string{"urgent_fee": "加急费（分，0 为免费）"}, Defaults: map[string]any{"urgent_fee": 0}},
 	"site": {
 		Name: "site", Desc: "站点基础",
 		Labels: map[string]string{
@@ -318,12 +318,12 @@ var groups = map[string]*GroupDef{
 		},
 	},
 	"notify": {
-		Name: "notify", Desc: "邮件短信与 Telegram",
+		Name: "notify", Desc: "邮件短信",
 		Labels: map[string]string{
 			"telegram_enabled": "Telegram 通知通道", "telegram_order_enabled": "Telegram 主站订单通知",
 			"telegram_bot_token": "Telegram Bot Token", "telegram_chat_ids": "Telegram 接收 Chat ID",
-			"telegram_events": "Telegram 订单通知事件",
-			"smtp_host":       "SMTP 服务器", "smtp_port": "SMTP 端口", "smtp_user": "SMTP 用户名",
+			"telegram_events": "Telegram 订单通知事件", "telegram_targets": "Telegram 接收位置",
+			"smtp_host": "SMTP 服务器", "smtp_port": "SMTP 端口", "smtp_user": "SMTP 用户名",
 			"smtp_password": "SMTP 密码", "smtp_name": "发件人名称",
 			"sms_provider": "短信服务商", "sms_key": "短信 AccessKey",
 			"sms_secret":            "短信 SecretKey",
@@ -339,7 +339,7 @@ var groups = map[string]*GroupDef{
 		},
 		Defaults: map[string]any{
 			"telegram_enabled": false, "telegram_order_enabled": false,
-			"telegram_bot_token": "", "telegram_chat_ids": "", "telegram_events": []string{"order.paid"},
+			"telegram_targets": nil, "telegram_bot_token": "", "telegram_chat_ids": "", "telegram_events": []string{"order.paid"},
 			"smtp_host":      "",
 			"smtp_port":      465,
 			"smtp_user":      "",

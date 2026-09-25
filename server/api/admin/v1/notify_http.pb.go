@@ -46,7 +46,7 @@ type AdminNotifyServiceHTTPServer interface {
 	PreviewTemplate(context.Context, *PreviewTemplateRequest) (*PreviewTemplateReply, error)
 	// ResendLog ResendLog 重发失败日志（原变量重投）。
 	ResendLog(context.Context, *ResendNotifyLogRequest) (*emptypb.Empty, error)
-	TestTelegram(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	TestTelegram(context.Context, *TestTelegramRequest) (*TestTelegramReply, error)
 	// UpsertTemplate UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
 	UpsertTemplate(context.Context, *UpsertNotifyTemplateRequest) (*NotifyTemplate, error)
 }
@@ -67,19 +67,19 @@ func RegisterAdminNotifyServiceHTTPServer(s *http.Server, srv AdminNotifyService
 
 func _AdminNotifyService_TestTelegram0_HTTP_Handler(srv AdminNotifyServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in emptypb.Empty
+		var in TestTelegramRequest
 		if err := ctx.Bind(&in); err != nil {
 			return err
 		}
 		http.SetOperation(ctx, OperationAdminNotifyServiceTestTelegram)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.TestTelegram(ctx, req.(*emptypb.Empty))
+			return srv.TestTelegram(ctx, req.(*TestTelegramRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
 			return err
 		}
-		reply := out.(*emptypb.Empty)
+		reply := out.(*TestTelegramReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -278,7 +278,7 @@ type AdminNotifyServiceHTTPClient interface {
 	PreviewTemplate(ctx context.Context, req *PreviewTemplateRequest, opts ...http.CallOption) (rsp *PreviewTemplateReply, err error)
 	// ResendLog ResendLog 重发失败日志（原变量重投）。
 	ResendLog(ctx context.Context, req *ResendNotifyLogRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
-	TestTelegram(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	TestTelegram(ctx context.Context, req *TestTelegramRequest, opts ...http.CallOption) (rsp *TestTelegramReply, err error)
 	// UpsertTemplate UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
 	UpsertTemplate(ctx context.Context, req *UpsertNotifyTemplateRequest, opts ...http.CallOption) (rsp *NotifyTemplate, err error)
 }
@@ -432,8 +432,8 @@ func (c *AdminNotifyServiceHTTPClientImpl) ResendLog(ctx context.Context, in *Re
 	return &out, nil
 }
 
-func (c *AdminNotifyServiceHTTPClientImpl) TestTelegram(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*emptypb.Empty, error) {
-	var out emptypb.Empty
+func (c *AdminNotifyServiceHTTPClientImpl) TestTelegram(ctx context.Context, in *TestTelegramRequest, opts ...http.CallOption) (*TestTelegramReply, error) {
+	var out TestTelegramReply
 	pattern := "/api/v1/admin/notify/telegram/test"
 	path := http.BuildPath(pattern, in)
 	opts = append([]http.CallOption{
