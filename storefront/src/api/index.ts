@@ -597,6 +597,9 @@ export interface LevelBrief {
 }
 
 export interface MyLevelReply {
+  source?: string;
+  has_referral_level?: boolean;
+  private_level?: boolean;
   levels?: LevelBrief[];
   recharged_cents: number;
   consumed_cents: number;
@@ -926,4 +929,9 @@ export interface PaymentQuoteRequest {
 }
 export function quotePayment(body: PaymentQuoteRequest) {
   return api.post<PaymentQuote>('/payment/quote', body);
+}
+
+export interface InviteBenefit { valid: boolean; has_benefit: boolean; level?: LevelBrief }
+export function getInviteBenefit(code: string) {
+  return api.get<InviteBenefit>(`/member-level/invite-benefit?code=${encodeURIComponent(code)}`);
 }

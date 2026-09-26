@@ -6,7 +6,7 @@ import { NButton, NInput, NInputNumber, NTag, NPopconfirm, NDataTable, NCard, NS
 import type { DataTableColumns } from "naive-ui";
 import { fetchUsers, setUserStatus, fetchUserDetail, createUser, resetUserPassword } from "@/service/api";
 import { fetchWalletBalance, adjustWalletBalance } from "@/service/api/wallet";
-import { grantCoupon, fetchCoupons,fetchMemberLevels,assignUserLevel } from "@/service/api/marketing";
+import { grantCoupon, fetchCoupons,fetchMemberLevels,assignUserLevel,configureInviteLevel } from "@/service/api/marketing";
 import { checkAuth } from "@/directives";
 import TablePager from "@/components/common/table-pager.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
@@ -31,10 +31,50 @@ const query = reactive({
 const showDetail = ref(false);
 const detailUser = ref<any>(null);
 const detailLoading = ref(false);
-const showLevel = ref(false),levelSaving=ref(false);
-const levelOptions=ref<{label:string;value:number}[]>([]),selectedLevel=ref(0),levelReason=ref('');
-async function openLevel(){const {data,error}=await fetchMemberLevels();if(error)return;levelOptions.value=[{label:'自动计算等级',value:0},...((data as any)?.levels || []).filter((l:any)=>l.enabled&&l.acquire_mode==='manual').map((l:any)=>({label:l.name,value:Number(l.id)}))];selectedLevel.value=Number(detailUser.value?.user.manual_level_id || 0);levelReason.value='';showLevel.value=true;}
-async function saveLevel(){if(!levelReason.value.trim()||levelSaving.value)return;levelSaving.value=true;try{const id=detailUser.value.user.id;const {error}=await assignUserLevel(id,selectedLevel.value,levelReason.value);if(!error){showLevel.value=false;await openDetail({id});await load();window.$message?.success('用户等级已调整，仅影响新订单')}}finally{levelSaving.value=false}}
+const showLevel = ref(false);
+const levelSaving = ref(false);
+const levelLoading = ref(false);
+const editingInvite = ref(false);
+const levelOptions = ref<{ label: string; value: number }[]>([]);
+const selectedLevel = ref(0);
+const levelReason = ref('');
+const levelSourceText: Record<string, string> = { manual: '后台指定', referral: '推荐注册赠送', auto: '自动计算', none: '普通会员' };
+async function openLevel(invite = false) {
+  if (levelLoading.value) return;
+  levelLoading.value = true;
+  try {
+    const { data, error } = await fetchMemberLevels();
+    if (error) return;
+    editingInvite.value = invite;
+    levelOptions.value = [
+      { label: invite ? '关闭赠送（已获赠客户不受影响）' : '取消人工指定（保留推荐资格，恢复自动计算）', value: 0 },
+      ...(!invite && Number(detailUser.value.user.referral_level_id) > 0 ? [{ label: '撤销推荐资格并恢复自动计算', value: -1 }] : []),
+      ...((data as any)?.levels || []).filter((l: any) => l.enabled).map((l: any) => ({
+        label: l.name + (checkAuth('memberlevel:view_discount') ? ` · ${l.discount > 0 && l.discount < 10000 ? `${Number((l.discount / 1000).toFixed(2))} 折` : '原价'}` : ''),
+        value: Number(l.id)
+      }))
+    ];
+    selectedLevel.value = Number(invite ? detailUser.value.user.invite_level_id || 0 : detailUser.value.user.manual_level_id || 0);
+    levelReason.value = '';
+    showLevel.value = true;
+  } finally { levelLoading.value = false; }
+}
+async function saveLevel() {
+  if (!levelReason.value.trim() || levelSaving.value) return;
+  levelSaving.value = true;
+  try {
+    const id = detailUser.value.user.id;
+    const result = editingInvite.value
+      ? await configureInviteLevel(id, selectedLevel.value, levelReason.value.trim())
+      : await assignUserLevel(id, Math.max(0, selectedLevel.value), levelReason.value.trim(), selectedLevel.value === -1);
+    if (!result.error) {
+      showLevel.value = false;
+      await openDetail({ id });
+      await load();
+      window.$message?.success(editingInvite.value ? '推荐赠送配置已保存，仅影响之后注册的客户' : '客户等级已修改，已有订单金额不变');
+    }
+  } finally { levelSaving.value = false; }
+}
 const canCreate = () => checkAuth("identity:user_create");
 const canResetPwd = () => checkAuth("identity:user_reset_pwd");
 
@@ -338,8 +378,18 @@ onMounted(load);
       </div>
     </NCard>
 
-    <NModal v-model:show="showLevel" preset="dialog" title="调整用户等级">
-      <NForm label-placement="top"><NFormItem label="等级来源"><NSelect v-model:value="selectedLevel" :options="levelOptions" /></NFormItem><NFormItem label="调整原因（必填）"><NInput v-model:value="levelReason" :maxlength="180" /></NFormItem><p>人工指定优先于自动升级；选择自动计算将取消人工指定。已有订单金额不变。</p></NForm><template #action><NButton :loading="levelSaving" :disabled="!levelReason.trim()" @click="saveLevel">保存</NButton></template>
+    <NModal v-model:show="showLevel" preset="dialog" style="width: 520px; max-width: calc(100vw - 32px)" :title="editingInvite ? '推荐注册赠送等级' : '修改客户等级'" :mask-closable="!levelSaving" :closable="!levelSaving">
+      <NForm label-placement="top">
+        <NFormItem :label="editingInvite ? '该客户邀请新人时赠送的等级' : '该客户的会员等级'">
+          <NSelect v-model:value="selectedLevel" :options="levelOptions" :disabled="levelSaving" />
+        </NFormItem>
+        <NFormItem label="调整原因" required>
+          <NInput v-model:value="levelReason" :maxlength="160" placeholder="请输入本次调整原因" :disabled="levelSaving" />
+        </NFormItem>
+        <p v-if="editingInvite">新客户通过此用户的推荐码注册后，立即获得所选等级。修改或关闭赠送不会改变已注册客户的等级，也不会改变此用户自己的等级。</p>
+        <p v-else>后台指定优先于推荐等级和自动升级。取消人工指定会恢复正常计算，并不一定降为普通会员。已有订单金额不变。</p>
+      </NForm>
+      <template #action><NButton :loading="levelSaving" :disabled="!levelReason.trim()" type="primary" @click="saveLevel">保存</NButton></template>
     </NModal>
     <NModal v-model:show="showDetail" preset="card" title="用户详情" style="width: 960px; max-width: 96vw">
       <div v-if="detailLoading" class="py-40px text-center">加载中…</div>
@@ -354,10 +404,18 @@ onMounted(load);
             </NTag>
           </NDescriptionsItem>
           <NDescriptionsItem label="会员等级">
-            <NButton v-if="checkAuth('memberlevel:assign')" size="tiny" class="mr-8px" @click="openLevel">调整等级</NButton>
-            <span class="text-12px opacity-60">{{detailUser.user.manual_level_id ? '人工指定' : '自动计算'}}</span>
+            <NButton v-if="checkAuth('memberlevel:assign') && checkAuth('memberlevel:read')" size="tiny" class="mr-8px" :loading="levelLoading" @click="openLevel(false)">修改等级</NButton>
+            <span class="text-12px opacity-60">{{ levelSourceText[detailUser.user.level_source] || (detailUser.user.manual_level_id ? '后台指定' : '自动计算') }}</span>
             <NTag v-if="detailUser.user.level_id" size="small" type="warning" :bordered="false">{{ detailUser.user.level_name || `#${detailUser.user.level_id}` }}</NTag>
             <template v-else>-</template>
+          </NDescriptionsItem>
+          <NDescriptionsItem label="注册获赠等级" :span="2">{{ detailUser.user.referral_level_name || '无' }}</NDescriptionsItem>
+          <NDescriptionsItem label="推荐注册赠送" :span="3">
+            <NSpace align="center">
+              <span>{{ detailUser.user.invite_level_name || '未开启' }}</span>
+              <NButton v-if="checkAuth('memberlevel:invite') && checkAuth('memberlevel:read')" size="small" :loading="levelLoading" @click="openLevel(true)">设置赠送等级</NButton>
+              <span v-if="detailUser.user.promo_code">推荐码：{{ detailUser.user.promo_code }}</span>
+            </NSpace>
           </NDescriptionsItem>
           <NDescriptionsItem label="钱包余额"><b>{{ fenToYuan(detailUser.user.balance_cents ?? 0) }}</b></NDescriptionsItem>
           <NDescriptionsItem label="积分"><b>{{ detailUser.user.points ?? 0 }}</b></NDescriptionsItem>

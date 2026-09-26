@@ -20,7 +20,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StoreMemberLevelService_GetMyLevel_FullMethodName = "/zcard.api.storefront.v1.StoreMemberLevelService/GetMyLevel"
+	StoreMemberLevelService_GetInviteBenefit_FullMethodName = "/zcard.api.storefront.v1.StoreMemberLevelService/GetInviteBenefit"
+	StoreMemberLevelService_GetMyLevel_FullMethodName       = "/zcard.api.storefront.v1.StoreMemberLevelService/GetMyLevel"
 )
 
 // StoreMemberLevelServiceClient is the client API for StoreMemberLevelService service.
@@ -29,6 +30,7 @@ const (
 //
 // StoreMemberLevelService 会员等级(：等级进度 + 积分产生）。
 type StoreMemberLevelServiceClient interface {
+	GetInviteBenefit(ctx context.Context, in *InviteBenefitRequest, opts ...grpc.CallOption) (*InviteBenefitReply, error)
 	// GetMyLevel 我的等级（当前等级 + 下一等级 + 升级进度 + 积分余额与产生规则）。
 	GetMyLevel(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MyLevelReply, error)
 }
@@ -39,6 +41,16 @@ type storeMemberLevelServiceClient struct {
 
 func NewStoreMemberLevelServiceClient(cc grpc.ClientConnInterface) StoreMemberLevelServiceClient {
 	return &storeMemberLevelServiceClient{cc}
+}
+
+func (c *storeMemberLevelServiceClient) GetInviteBenefit(ctx context.Context, in *InviteBenefitRequest, opts ...grpc.CallOption) (*InviteBenefitReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InviteBenefitReply)
+	err := c.cc.Invoke(ctx, StoreMemberLevelService_GetInviteBenefit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *storeMemberLevelServiceClient) GetMyLevel(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MyLevelReply, error) {
@@ -57,6 +69,7 @@ func (c *storeMemberLevelServiceClient) GetMyLevel(ctx context.Context, in *empt
 //
 // StoreMemberLevelService 会员等级(：等级进度 + 积分产生）。
 type StoreMemberLevelServiceServer interface {
+	GetInviteBenefit(context.Context, *InviteBenefitRequest) (*InviteBenefitReply, error)
 	// GetMyLevel 我的等级（当前等级 + 下一等级 + 升级进度 + 积分余额与产生规则）。
 	GetMyLevel(context.Context, *emptypb.Empty) (*MyLevelReply, error)
 	mustEmbedUnimplementedStoreMemberLevelServiceServer()
@@ -69,6 +82,9 @@ type StoreMemberLevelServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedStoreMemberLevelServiceServer struct{}
 
+func (UnimplementedStoreMemberLevelServiceServer) GetInviteBenefit(context.Context, *InviteBenefitRequest) (*InviteBenefitReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetInviteBenefit not implemented")
+}
 func (UnimplementedStoreMemberLevelServiceServer) GetMyLevel(context.Context, *emptypb.Empty) (*MyLevelReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetMyLevel not implemented")
 }
@@ -92,6 +108,24 @@ func RegisterStoreMemberLevelServiceServer(s grpc.ServiceRegistrar, srv StoreMem
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&StoreMemberLevelService_ServiceDesc, srv)
+}
+
+func _StoreMemberLevelService_GetInviteBenefit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InviteBenefitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreMemberLevelServiceServer).GetInviteBenefit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreMemberLevelService_GetInviteBenefit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreMemberLevelServiceServer).GetInviteBenefit(ctx, req.(*InviteBenefitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _StoreMemberLevelService_GetMyLevel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -119,6 +153,10 @@ var StoreMemberLevelService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.storefront.v1.StoreMemberLevelService",
 	HandlerType: (*StoreMemberLevelServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetInviteBenefit",
+			Handler:    _StoreMemberLevelService_GetInviteBenefit_Handler,
+		},
 		{
 			MethodName: "GetMyLevel",
 			Handler:    _StoreMemberLevelService_GetMyLevel_Handler,

@@ -457,6 +457,7 @@ type AssignUserLevelRequest struct {
 	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	LevelId       uint64                 `protobuf:"varint,2,opt,name=level_id,json=levelId,proto3" json:"level_id,omitempty"`
 	Reason        string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	ClearReferral bool                   `protobuf:"varint,4,opt,name=clear_referral,json=clearReferral,proto3" json:"clear_referral,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -512,6 +513,73 @@ func (x *AssignUserLevelRequest) GetReason() string {
 	return ""
 }
 
+func (x *AssignUserLevelRequest) GetClearReferral() bool {
+	if x != nil {
+		return x.ClearReferral
+	}
+	return false
+}
+
+type ConfigureInviteLevelRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	LevelId       uint64                 `protobuf:"varint,2,opt,name=level_id,json=levelId,proto3" json:"level_id,omitempty"`
+	Reason        string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfigureInviteLevelRequest) Reset() {
+	*x = ConfigureInviteLevelRequest{}
+	mi := &file_admin_v1_memberlevel_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfigureInviteLevelRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfigureInviteLevelRequest) ProtoMessage() {}
+
+func (x *ConfigureInviteLevelRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_memberlevel_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfigureInviteLevelRequest.ProtoReflect.Descriptor instead.
+func (*ConfigureInviteLevelRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_memberlevel_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ConfigureInviteLevelRequest) GetUserId() uint64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *ConfigureInviteLevelRequest) GetLevelId() uint64 {
+	if x != nil {
+		return x.LevelId
+	}
+	return 0
+}
+
+func (x *ConfigureInviteLevelRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
 var File_admin_v1_memberlevel_proto protoreflect.FileDescriptor
 
 const file_admin_v1_memberlevel_proto_rawDesc = "" +
@@ -554,12 +622,18 @@ const file_admin_v1_memberlevel_proto_rawDesc = "" +
 	"\aenabled\x18\x05 \x01(\bR\aenabled\x12(\n" +
 	"\x10points_rule_json\x18\x06 \x01(\tR\x0epointsRuleJson\"*\n" +
 	"\x18DeleteMemberLevelRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x04R\x02id\"d\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\"\x8b\x01\n" +
 	"\x16AssignUserLevelRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x19\n" +
 	"\blevel_id\x18\x02 \x01(\x04R\alevelId\x12\x16\n" +
-	"\x06reason\x18\x03 \x01(\tR\x06reason2\xc3\x05\n" +
-	"\x17AdminMemberLevelService\x12\x8c\x01\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\x12%\n" +
+	"\x0eclear_referral\x18\x04 \x01(\bR\rclearReferral\"i\n" +
+	"\x1bConfigureInviteLevelRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x19\n" +
+	"\blevel_id\x18\x02 \x01(\x04R\alevelId\x12\x16\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason2\xdc\x06\n" +
+	"\x17AdminMemberLevelService\x12\x96\x01\n" +
+	"\x14ConfigureInviteLevel\x12/.zcard.api.admin.v1.ConfigureInviteLevelRequest\x1a\x16.google.protobuf.Empty\"5\x82\xd3\xe4\x93\x02/:\x01*\x1a*/api/v1/admin/users/{user_id}/invite-level\x12\x8c\x01\n" +
 	"\x0fAssignUserLevel\x12*.zcard.api.admin.v1.AssignUserLevelRequest\x1a\x16.google.protobuf.Empty\"5\x82\xd3\xe4\x93\x02/:\x01*\x1a*/api/v1/admin/users/{user_id}/member-level\x12t\n" +
 	"\x10ListMemberLevels\x12\x16.google.protobuf.Empty\x1a#.zcard.api.admin.v1.MemberLevelList\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/admin/member-levels\x12\x8a\x01\n" +
 	"\x11CreateMemberLevel\x12,.zcard.api.admin.v1.CreateMemberLevelRequest\x1a\x1f.zcard.api.admin.v1.MemberLevel\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/admin/member-levels\x12\x8f\x01\n" +
@@ -578,30 +652,33 @@ func file_admin_v1_memberlevel_proto_rawDescGZIP() []byte {
 	return file_admin_v1_memberlevel_proto_rawDescData
 }
 
-var file_admin_v1_memberlevel_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_admin_v1_memberlevel_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_admin_v1_memberlevel_proto_goTypes = []any{
-	(*MemberLevel)(nil),              // 0: zcard.api.admin.v1.MemberLevel
-	(*MemberLevelList)(nil),          // 1: zcard.api.admin.v1.MemberLevelList
-	(*CreateMemberLevelRequest)(nil), // 2: zcard.api.admin.v1.CreateMemberLevelRequest
-	(*UpdateMemberLevelRequest)(nil), // 3: zcard.api.admin.v1.UpdateMemberLevelRequest
-	(*DeleteMemberLevelRequest)(nil), // 4: zcard.api.admin.v1.DeleteMemberLevelRequest
-	(*AssignUserLevelRequest)(nil),   // 5: zcard.api.admin.v1.AssignUserLevelRequest
-	(*emptypb.Empty)(nil),            // 6: google.protobuf.Empty
+	(*MemberLevel)(nil),                 // 0: zcard.api.admin.v1.MemberLevel
+	(*MemberLevelList)(nil),             // 1: zcard.api.admin.v1.MemberLevelList
+	(*CreateMemberLevelRequest)(nil),    // 2: zcard.api.admin.v1.CreateMemberLevelRequest
+	(*UpdateMemberLevelRequest)(nil),    // 3: zcard.api.admin.v1.UpdateMemberLevelRequest
+	(*DeleteMemberLevelRequest)(nil),    // 4: zcard.api.admin.v1.DeleteMemberLevelRequest
+	(*AssignUserLevelRequest)(nil),      // 5: zcard.api.admin.v1.AssignUserLevelRequest
+	(*ConfigureInviteLevelRequest)(nil), // 6: zcard.api.admin.v1.ConfigureInviteLevelRequest
+	(*emptypb.Empty)(nil),               // 7: google.protobuf.Empty
 }
 var file_admin_v1_memberlevel_proto_depIdxs = []int32{
 	0, // 0: zcard.api.admin.v1.MemberLevelList.levels:type_name -> zcard.api.admin.v1.MemberLevel
-	5, // 1: zcard.api.admin.v1.AdminMemberLevelService.AssignUserLevel:input_type -> zcard.api.admin.v1.AssignUserLevelRequest
-	6, // 2: zcard.api.admin.v1.AdminMemberLevelService.ListMemberLevels:input_type -> google.protobuf.Empty
-	2, // 3: zcard.api.admin.v1.AdminMemberLevelService.CreateMemberLevel:input_type -> zcard.api.admin.v1.CreateMemberLevelRequest
-	3, // 4: zcard.api.admin.v1.AdminMemberLevelService.UpdateMemberLevel:input_type -> zcard.api.admin.v1.UpdateMemberLevelRequest
-	4, // 5: zcard.api.admin.v1.AdminMemberLevelService.DeleteMemberLevel:input_type -> zcard.api.admin.v1.DeleteMemberLevelRequest
-	6, // 6: zcard.api.admin.v1.AdminMemberLevelService.AssignUserLevel:output_type -> google.protobuf.Empty
-	1, // 7: zcard.api.admin.v1.AdminMemberLevelService.ListMemberLevels:output_type -> zcard.api.admin.v1.MemberLevelList
-	0, // 8: zcard.api.admin.v1.AdminMemberLevelService.CreateMemberLevel:output_type -> zcard.api.admin.v1.MemberLevel
-	0, // 9: zcard.api.admin.v1.AdminMemberLevelService.UpdateMemberLevel:output_type -> zcard.api.admin.v1.MemberLevel
-	6, // 10: zcard.api.admin.v1.AdminMemberLevelService.DeleteMemberLevel:output_type -> google.protobuf.Empty
-	6, // [6:11] is the sub-list for method output_type
-	1, // [1:6] is the sub-list for method input_type
+	6, // 1: zcard.api.admin.v1.AdminMemberLevelService.ConfigureInviteLevel:input_type -> zcard.api.admin.v1.ConfigureInviteLevelRequest
+	5, // 2: zcard.api.admin.v1.AdminMemberLevelService.AssignUserLevel:input_type -> zcard.api.admin.v1.AssignUserLevelRequest
+	7, // 3: zcard.api.admin.v1.AdminMemberLevelService.ListMemberLevels:input_type -> google.protobuf.Empty
+	2, // 4: zcard.api.admin.v1.AdminMemberLevelService.CreateMemberLevel:input_type -> zcard.api.admin.v1.CreateMemberLevelRequest
+	3, // 5: zcard.api.admin.v1.AdminMemberLevelService.UpdateMemberLevel:input_type -> zcard.api.admin.v1.UpdateMemberLevelRequest
+	4, // 6: zcard.api.admin.v1.AdminMemberLevelService.DeleteMemberLevel:input_type -> zcard.api.admin.v1.DeleteMemberLevelRequest
+	7, // 7: zcard.api.admin.v1.AdminMemberLevelService.ConfigureInviteLevel:output_type -> google.protobuf.Empty
+	7, // 8: zcard.api.admin.v1.AdminMemberLevelService.AssignUserLevel:output_type -> google.protobuf.Empty
+	1, // 9: zcard.api.admin.v1.AdminMemberLevelService.ListMemberLevels:output_type -> zcard.api.admin.v1.MemberLevelList
+	0, // 10: zcard.api.admin.v1.AdminMemberLevelService.CreateMemberLevel:output_type -> zcard.api.admin.v1.MemberLevel
+	0, // 11: zcard.api.admin.v1.AdminMemberLevelService.UpdateMemberLevel:output_type -> zcard.api.admin.v1.MemberLevel
+	7, // 12: zcard.api.admin.v1.AdminMemberLevelService.DeleteMemberLevel:output_type -> google.protobuf.Empty
+	7, // [7:13] is the sub-list for method output_type
+	1, // [1:7] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -618,7 +695,7 @@ func file_admin_v1_memberlevel_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_memberlevel_proto_rawDesc), len(file_admin_v1_memberlevel_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

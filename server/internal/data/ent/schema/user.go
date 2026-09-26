@@ -19,6 +19,8 @@ func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("id"),
 		field.Uint64("manual_level_id").Default(0),
+		field.Uint64("referral_level_id").Default(0).Comment("注册时获赠等级，独立于邀请人的当前配置"),
+		field.Uint64("invite_level_id").Default(0).Comment("邀请新客户注册赠送的等级，0为关闭"),
 		field.String("username").MaxLen(60).Unique(),
 		field.String("email").MaxLen(255).Unique().Optional().Comment("第三方登录用户可无邮箱"),
 		// 手机号（登录标识之一；手机注册通道必填——security.register_method=phone）
@@ -40,5 +42,7 @@ func (User) Fields() []ent.Field {
 func (User) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("invite_l1"),
+		index.Fields("referral_level_id"),
+		index.Fields("invite_level_id"),
 	}
 }

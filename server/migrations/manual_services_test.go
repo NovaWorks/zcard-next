@@ -6,6 +6,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/migrations"
 	"io/fs"
 	"os"
@@ -77,7 +78,7 @@ func TestManualServicesUpgradePreservesHistoricalOrders(t *testing.T) {
 			if sku.FulfillmentMode != "follow" {
 				t.Fatal("SKU default")
 			}
-			if d.Client.User.GetX(ctx, 44).ManualLevelID != 0 {
+			if d.Client.User.Query().Where(user.ID(44)).Select(user.FieldManualLevelID).OnlyX(ctx).ManualLevelID != 0 {
 				t.Fatal("user assigned automatically")
 			}
 			level := d.Client.MemberLevel.GetX(ctx, 45)

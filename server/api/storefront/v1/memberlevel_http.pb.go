@@ -18,16 +18,38 @@ var _ = new(context.Context)
 
 const _ = http.SupportPackageIsVersion3
 
+const OperationStoreMemberLevelServiceGetInviteBenefit = "/zcard.api.storefront.v1.StoreMemberLevelService/GetInviteBenefit"
 const OperationStoreMemberLevelServiceGetMyLevel = "/zcard.api.storefront.v1.StoreMemberLevelService/GetMyLevel"
 
 type StoreMemberLevelServiceHTTPServer interface {
+	GetInviteBenefit(context.Context, *InviteBenefitRequest) (*InviteBenefitReply, error)
 	// GetMyLevel GetMyLevel 我的等级（当前等级 + 下一等级 + 升级进度 + 积分余额与产生规则）。
 	GetMyLevel(context.Context, *emptypb.Empty) (*MyLevelReply, error)
 }
 
 func RegisterStoreMemberLevelServiceHTTPServer(s *http.Server, srv StoreMemberLevelServiceHTTPServer) {
 	r := s.Route("/")
+	r.Handle("GET", "/api/v1/storefront/member-level/invite-benefit", _StoreMemberLevelService_GetInviteBenefit0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/storefront/member-level", _StoreMemberLevelService_GetMyLevel0_HTTP_Handler(srv))
+}
+
+func _StoreMemberLevelService_GetInviteBenefit0_HTTP_Handler(srv StoreMemberLevelServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in InviteBenefitRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreMemberLevelServiceGetInviteBenefit)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetInviteBenefit(ctx, req.(*InviteBenefitRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*InviteBenefitReply)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _StoreMemberLevelService_GetMyLevel0_HTTP_Handler(srv StoreMemberLevelServiceHTTPServer) func(ctx http.Context) error {
@@ -50,6 +72,7 @@ func _StoreMemberLevelService_GetMyLevel0_HTTP_Handler(srv StoreMemberLevelServi
 }
 
 type StoreMemberLevelServiceHTTPClient interface {
+	GetInviteBenefit(ctx context.Context, req *InviteBenefitRequest, opts ...http.CallOption) (rsp *InviteBenefitReply, err error)
 	// GetMyLevel GetMyLevel 我的等级（当前等级 + 下一等级 + 升级进度 + 积分余额与产生规则）。
 	GetMyLevel(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *MyLevelReply, err error)
 }
@@ -60,6 +83,22 @@ type StoreMemberLevelServiceHTTPClientImpl struct {
 
 func NewStoreMemberLevelServiceHTTPClient(client *http.Client) StoreMemberLevelServiceHTTPClient {
 	return &StoreMemberLevelServiceHTTPClientImpl{client}
+}
+
+func (c *StoreMemberLevelServiceHTTPClientImpl) GetInviteBenefit(ctx context.Context, in *InviteBenefitRequest, opts ...http.CallOption) (*InviteBenefitReply, error) {
+	var out InviteBenefitReply
+	pattern := "/api/v1/storefront/member-level/invite-benefit"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationStoreMemberLevelServiceGetInviteBenefit),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // GetMyLevel GetMyLevel 我的等级（当前等级 + 下一等级 + 升级进度 + 积分余额与产生规则）。

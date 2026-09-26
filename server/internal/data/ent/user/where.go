@@ -69,6 +69,16 @@ func ManualLevelID(v uint64) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldManualLevelID, v))
 }
 
+// ReferralLevelID applies equality check predicate on the "referral_level_id" field. It's identical to ReferralLevelIDEQ.
+func ReferralLevelID(v uint64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldReferralLevelID, v))
+}
+
+// InviteLevelID applies equality check predicate on the "invite_level_id" field. It's identical to InviteLevelIDEQ.
+func InviteLevelID(v uint64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldInviteLevelID, v))
+}
+
 // Username applies equality check predicate on the "username" field. It's identical to UsernameEQ.
 func Username(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldUsername, v))
@@ -232,6 +242,86 @@ func ManualLevelIDLT(v uint64) predicate.User {
 // ManualLevelIDLTE applies the LTE predicate on the "manual_level_id" field.
 func ManualLevelIDLTE(v uint64) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldManualLevelID, v))
+}
+
+// ReferralLevelIDEQ applies the EQ predicate on the "referral_level_id" field.
+func ReferralLevelIDEQ(v uint64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldReferralLevelID, v))
+}
+
+// ReferralLevelIDNEQ applies the NEQ predicate on the "referral_level_id" field.
+func ReferralLevelIDNEQ(v uint64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldReferralLevelID, v))
+}
+
+// ReferralLevelIDIn applies the In predicate on the "referral_level_id" field.
+func ReferralLevelIDIn(vs ...uint64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldReferralLevelID, vs...))
+}
+
+// ReferralLevelIDNotIn applies the NotIn predicate on the "referral_level_id" field.
+func ReferralLevelIDNotIn(vs ...uint64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldReferralLevelID, vs...))
+}
+
+// ReferralLevelIDGT applies the GT predicate on the "referral_level_id" field.
+func ReferralLevelIDGT(v uint64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldReferralLevelID, v))
+}
+
+// ReferralLevelIDGTE applies the GTE predicate on the "referral_level_id" field.
+func ReferralLevelIDGTE(v uint64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldReferralLevelID, v))
+}
+
+// ReferralLevelIDLT applies the LT predicate on the "referral_level_id" field.
+func ReferralLevelIDLT(v uint64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldReferralLevelID, v))
+}
+
+// ReferralLevelIDLTE applies the LTE predicate on the "referral_level_id" field.
+func ReferralLevelIDLTE(v uint64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldReferralLevelID, v))
+}
+
+// InviteLevelIDEQ applies the EQ predicate on the "invite_level_id" field.
+func InviteLevelIDEQ(v uint64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldInviteLevelID, v))
+}
+
+// InviteLevelIDNEQ applies the NEQ predicate on the "invite_level_id" field.
+func InviteLevelIDNEQ(v uint64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldInviteLevelID, v))
+}
+
+// InviteLevelIDIn applies the In predicate on the "invite_level_id" field.
+func InviteLevelIDIn(vs ...uint64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldInviteLevelID, vs...))
+}
+
+// InviteLevelIDNotIn applies the NotIn predicate on the "invite_level_id" field.
+func InviteLevelIDNotIn(vs ...uint64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldInviteLevelID, vs...))
+}
+
+// InviteLevelIDGT applies the GT predicate on the "invite_level_id" field.
+func InviteLevelIDGT(v uint64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldInviteLevelID, v))
+}
+
+// InviteLevelIDGTE applies the GTE predicate on the "invite_level_id" field.
+func InviteLevelIDGTE(v uint64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldInviteLevelID, v))
+}
+
+// InviteLevelIDLT applies the LT predicate on the "invite_level_id" field.
+func InviteLevelIDLT(v uint64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldInviteLevelID, v))
+}
+
+// InviteLevelIDLTE applies the LTE predicate on the "invite_level_id" field.
+func InviteLevelIDLTE(v uint64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldInviteLevelID, v))
 }
 
 // UsernameEQ applies the EQ predicate on the "username" field.

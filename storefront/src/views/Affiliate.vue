@@ -28,6 +28,10 @@
       </div>
     </div>
 
+    <div v-if="inviteBenefit?.has_benefit" class="card" style="margin-bottom: 16px;">
+      <b>邀请注册专享</b>
+      <p>新客户通过你的推荐链接注册，即可获得{{ inviteBenefit.level?.name || '专属会员' }}待遇{{ inviteBenefit.level?.display_mode === 'public' ? `，会员价享 ${levelDiscount(inviteBenefit.level.discount)}` : '' }}。</p>
+    </div>
     <!-- 收益统计 -->
     <div class="stat-grid" v-if="my">
       <div class="card"><div class="muted">冻结中佣金</div><div class="stat-num">{{ formatMoney(my.pending_cents) }}</div></div>
@@ -126,6 +130,8 @@
 </template>
 
 <script setup lang="ts">
+import { getInviteBenefit, type InviteBenefit } from '@/api';
+import { levelDiscount } from '@/composables/member-level';
 import { ref, onMounted, nextTick } from 'vue';
 import QRCode from 'qrcode';
 import {
@@ -159,9 +165,14 @@ const withdrawError = ref('');
 const withdrawOk = ref<{ withdrawal_id: number; amount_cents: number; fee_cents: number; credited_cents: number } | null>(null);
 const withdrawing = ref(false);
 
+const inviteBenefit = ref<InviteBenefit | null>(null);
 onMounted(async () => {
   const [{ data }] = await Promise.all([myAffiliate(), loadAffiliateConfig()]);
   my.value = data;
+  if (data?.promo_code) {
+    const result = await getInviteBenefit(data.promo_code);
+    inviteBenefit.value = result.data || null;
+  }
   // 推广链接二维码（canvas 渲染；链接为空跳过）
   if (data?.invite_url) {
     await nextTick();

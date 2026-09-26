@@ -20,6 +20,10 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldManualLevelID holds the string denoting the manual_level_id field in the database.
 	FieldManualLevelID = "manual_level_id"
+	// FieldReferralLevelID holds the string denoting the referral_level_id field in the database.
+	FieldReferralLevelID = "referral_level_id"
+	// FieldInviteLevelID holds the string denoting the invite_level_id field in the database.
+	FieldInviteLevelID = "invite_level_id"
 	// FieldUsername holds the string denoting the username field in the database.
 	FieldUsername = "username"
 	// FieldEmail holds the string denoting the email field in the database.
@@ -50,6 +54,8 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldManualLevelID,
+	FieldReferralLevelID,
+	FieldInviteLevelID,
 	FieldUsername,
 	FieldEmail,
 	FieldPhone,
@@ -81,6 +87,10 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultManualLevelID holds the default value on creation for the "manual_level_id" field.
 	DefaultManualLevelID uint64
+	// DefaultReferralLevelID holds the default value on creation for the "referral_level_id" field.
+	DefaultReferralLevelID uint64
+	// DefaultInviteLevelID holds the default value on creation for the "invite_level_id" field.
+	DefaultInviteLevelID uint64
 	// UsernameValidator is a validator for the "username" field. It is called by the builders before save.
 	UsernameValidator func(string) error
 	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
@@ -141,6 +151,16 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByManualLevelID orders the results by the manual_level_id field.
 func ByManualLevelID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldManualLevelID, opts...).ToFunc()
+}
+
+// ByReferralLevelID orders the results by the referral_level_id field.
+func ByReferralLevelID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReferralLevelID, opts...).ToFunc()
+}
+
+// ByInviteLevelID orders the results by the invite_level_id field.
+func ByInviteLevelID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldInviteLevelID, opts...).ToFunc()
 }
 
 // ByUsername orders the results by the username field.

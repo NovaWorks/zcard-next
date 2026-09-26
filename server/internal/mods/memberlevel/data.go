@@ -89,7 +89,7 @@ func (r *MemberLevelRepoImpl) UpdateLevel(ctx context.Context, id uint64, name s
 			return err
 		}
 
-		if !enabled || v.AcquireMode == "auto" {
+		if !enabled {
 			if err := r.ensureUnassigned(ctx, id); err != nil {
 				return err
 			}
@@ -137,28 +137,19 @@ func (r *MemberLevelRepoImpl) effectiveLevel(ctx context.Context, userID uint64)
 	if userID == 0 {
 		return nil, nil
 	}
-	if lv, err := r.assigned(ctx, userID); err != nil || lv != nil {
-		return lv, err
-	}
-	client := data.Client(ctx, r.data)
-	levels, err := client.MemberLevel.Query().
-		Where(memberlevel.Enabled(true), memberlevel.AcquireMode("auto")).
-		Order(ent.Asc(memberlevel.FieldSort)).
-		All(ctx)
-	if err != nil || len(levels) == 0 {
-		return nil, err
-	}
-	recharged, consumed, err := r.cumulative(ctx, client, userID)
+	p, err := r.resolveProgress(ctx, userID, false)
 	if err != nil {
 		return nil, err
 	}
-	var current *ent.MemberLevel
-	for _, lv := range levels {
-		if matchLevel(lv, recharged, consumed) {
-			current = lv // sort 升序遍历，后者覆盖——保留最高命中
-		}
+	return p.Current, nil
+}
+
+// payableRate normalizes the existing zero sentinel (no discount).
+func payableRate(lv *ent.MemberLevel) int32 {
+	if lv == nil || lv.Discount <= 0 || lv.Discount >= 10000 {
+		return 10000
 	}
-	return current, nil
+	return lv.Discount
 }
 
 // cumulative 双口径累计（充值 countAsRecharge + 消费 paid+）。
@@ -213,6 +204,8 @@ func (r *MemberLevelRepoImpl) EffectiveLevelOf(ctx context.Context, userID uint6
 
 // Progress 等级进度视图（storefront GetMyLevel）。
 type Progress struct {
+	Source         string
+	HasReferral    bool
 	RechargedCents int64
 	ConsumedCents  int64
 	Current        *ent.MemberLevel // nil = 未命中任何等级
@@ -224,8 +217,25 @@ type Progress struct {
 
 // ResolveProgress 进度解析（当前级 + 下一级 + 双口径差额）。
 func (r *MemberLevelRepoImpl) ResolveProgress(ctx context.Context, userID uint64) (*Progress, error) {
-	p := &Progress{RechargeGap: -1, ConsumeGap: -1}
+	return r.resolveProgress(ctx, userID, true)
+}
+
+func (r *MemberLevelRepoImpl) resolveProgress(ctx context.Context, userID uint64, includeTotals bool) (*Progress, error) {
+	p := &Progress{RechargeGap: -1, ConsumeGap: -1, Source: "none"}
 	client := data.Client(ctx, r.data)
+	u, err := client.User.Get(ctx, userID)
+	if err != nil && !ent.IsNotFound(err) {
+		return nil, err
+	}
+	p.HasReferral = u != nil && u.ReferralLevelID > 0
+	if !includeTotals && u != nil && u.ManualLevelID > 0 {
+		lv, err := r.assigned(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+		p.Current, p.Source = lv, "manual"
+		return p, nil
+	}
 	levels, err := client.MemberLevel.Query().
 		Where(memberlevel.Enabled(true), memberlevel.AcquireMode("auto")).
 		Order(ent.Asc(memberlevel.FieldSort)).
@@ -233,15 +243,19 @@ func (r *MemberLevelRepoImpl) ResolveProgress(ctx context.Context, userID uint64
 	if err != nil {
 		return nil, err
 	}
-	recharged, consumed, err := r.cumulative(ctx, client, userID)
-	if err != nil {
-		return nil, err
+	var recharged, consumed int64
+	if includeTotals || len(levels) > 0 {
+		recharged, consumed, err = r.cumulative(ctx, client, userID)
+		if err != nil {
+			return nil, err
+		}
 	}
 	p.RechargedCents, p.ConsumedCents = recharged, consumed
 	if lv, e := r.assigned(ctx, userID); e != nil {
 		return nil, e
 	} else if lv != nil {
 		p.Current = lv
+		p.Source = "manual"
 		return p, nil
 	}
 
@@ -253,11 +267,29 @@ func (r *MemberLevelRepoImpl) ResolveProgress(ctx context.Context, userID uint64
 			lastMatched = i
 		}
 	}
-	if lastMatched >= 0 && lastMatched+1 < len(levels) {
-		p.Next = levels[lastMatched+1]
-	} else if lastMatched < 0 && len(levels) > 0 {
-		p.Next = levels[0] // 尚未入门：下一级 = 首级
+	if p.Current != nil {
+		p.Source = "auto"
 	}
+	if p.HasReferral {
+		granted, err := client.MemberLevel.Get(ctx, u.ReferralLevelID)
+		if err != nil {
+			return nil, err
+		}
+		if !granted.Enabled {
+			return nil, fmt.Errorf("推荐赠送等级已停用，请联系管理员")
+		}
+		if p.Current == nil || payableRate(granted) < payableRate(p.Current) {
+			p.Current, p.Source = granted, "referral"
+		}
+	}
+	// 保留普通用户原有升级阶梯；获赠用户只展示确实能改善会员折扣的下一档。
+	for i := lastMatched + 1; i < len(levels); i++ {
+		if !p.HasReferral || payableRate(levels[i]) < payableRate(p.Current) {
+			p.Next = levels[i]
+			break
+		}
+	}
+
 	if p.Next != nil {
 		p.RechargeGap, p.ConsumeGap, p.Percent = nextGap(p.Next, recharged, consumed)
 	}
@@ -325,4 +357,18 @@ func PointsRuleOf(lv *ent.MemberLevel) (spendCents, points int64) {
 		return 0
 	}
 	return toI64(lv.PointsRule["spend_cents"]), toI64(lv.PointsRule["points"])
+}
+
+func (r *MemberLevelRepoImpl) EffectiveState(ctx context.Context, userID uint64) (int32, uint64, string, error) {
+	if userID == 0 {
+		return 0, 0, "none", nil
+	}
+	p, err := r.resolveProgress(ctx, userID, false)
+	if err != nil {
+		return 0, 0, "none", err
+	}
+	if p.Current == nil {
+		return 0, 0, p.Source, nil
+	}
+	return p.Current.Discount, p.Current.ID, p.Source, nil
 }

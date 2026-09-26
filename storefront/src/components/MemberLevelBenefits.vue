@@ -8,11 +8,14 @@ const expanded = ref(false);
 onMounted(() => { expanded.value = matchMedia('(min-width: 768px)').matches; });
 </script>
 <template>
-  <section v-if="level.levels?.length" class="card level-benefits" aria-label="会员等级与折扣">
-    <header><div><h3>会员等级与折扣</h3><p class="muted">当前：{{ level.current?.name || '普通会员' }} · {{ level.current?.display_mode === 'contact' ? '联系客服' : levelDiscount(level.current?.discount ?? 10000) }}</p></div>
+  <section v-if="level.levels?.length || level.private_level || level.has_referral_level" class="card level-benefits" aria-label="会员等级与折扣">
+    <header><div><h3>会员等级与折扣</h3><p class="muted">当前：{{ level.current?.name || (level.private_level ? '专属会员' : '普通会员') }} · {{ level.private_level || level.current?.display_mode === 'contact' ? '联系客服' : levelDiscount(level.current?.discount ?? 10000) }}</p></div>
       <span v-if="level.next" class="muted">下一等级：{{ level.next.name }}</span></header>
+    <p v-if="level.source === 'manual'" class="muted">当前等级由后台指定。</p>
+    <p v-else-if="level.source === 'referral'" class="muted">已通过推荐注册获得会员等级，无需先满足充值或消费门槛。</p>
+    <p v-else-if="level.has_referral_level" class="muted">已保留推荐注册资格，当前自动等级的会员折扣优先适用。</p>
     <p v-if="level.next" class="next-benefit"><b>{{ level.next.name }}享 {{ level.next.display_mode === 'contact' ? '联系客服' : levelDiscount(level.next.discount) }}</b><span>{{ levelThreshold(level.next) }}</span></p>
-    <details :open="expanded" @toggle="expanded = ($event.target as HTMLDetailsElement).open">
+    <details v-if="level.levels?.length" :open="expanded" @toggle="expanded = ($event.target as HTMLDetailsElement).open">
       <summary>{{ expanded ? '收起等级列表' : `查看全部 ${level.levels.length} 个等级与折扣` }}</summary>
       <div class="level-list">
       <article v-for="item in level.levels" :key="item.id || item.name" class="level-item" :class="{ current: !!item.id && item.id === level.current?.id }">

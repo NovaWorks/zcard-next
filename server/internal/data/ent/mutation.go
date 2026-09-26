@@ -97120,30 +97120,34 @@ func (m *TicketMessageMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op                 Op
-	typ                string
-	id                 *uint64
-	created_at         *time.Time
-	updated_at         *time.Time
-	manual_level_id    *uint64
-	addmanual_level_id *int64
-	username           *string
-	email              *string
-	phone              *string
-	password_hash      *string
-	status             *user.Status
-	last_login_at      *time.Time
-	invite_l1          *uint64
-	addinvite_l1       *int64
-	invite_l2          *uint64
-	addinvite_l2       *int64
-	invite_l3          *uint64
-	addinvite_l3       *int64
-	promo_code         *string
-	clearedFields      map[string]struct{}
-	done               bool
-	oldValue           func(context.Context) (*User, error)
-	predicates         []predicate.User
+	op                   Op
+	typ                  string
+	id                   *uint64
+	created_at           *time.Time
+	updated_at           *time.Time
+	manual_level_id      *uint64
+	addmanual_level_id   *int64
+	referral_level_id    *uint64
+	addreferral_level_id *int64
+	invite_level_id      *uint64
+	addinvite_level_id   *int64
+	username             *string
+	email                *string
+	phone                *string
+	password_hash        *string
+	status               *user.Status
+	last_login_at        *time.Time
+	invite_l1            *uint64
+	addinvite_l1         *int64
+	invite_l2            *uint64
+	addinvite_l2         *int64
+	invite_l3            *uint64
+	addinvite_l3         *int64
+	promo_code           *string
+	clearedFields        map[string]struct{}
+	done                 bool
+	oldValue             func(context.Context) (*User, error)
+	predicates           []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -97376,6 +97380,118 @@ func (m *UserMutation) AddedManualLevelID() (r int64, exists bool) {
 func (m *UserMutation) ResetManualLevelID() {
 	m.manual_level_id = nil
 	m.addmanual_level_id = nil
+}
+
+// SetReferralLevelID sets the "referral_level_id" field.
+func (m *UserMutation) SetReferralLevelID(u uint64) {
+	m.referral_level_id = &u
+	m.addreferral_level_id = nil
+}
+
+// ReferralLevelID returns the value of the "referral_level_id" field in the mutation.
+func (m *UserMutation) ReferralLevelID() (r uint64, exists bool) {
+	v := m.referral_level_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReferralLevelID returns the old "referral_level_id" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldReferralLevelID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReferralLevelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReferralLevelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReferralLevelID: %w", err)
+	}
+	return oldValue.ReferralLevelID, nil
+}
+
+// AddReferralLevelID adds u to the "referral_level_id" field.
+func (m *UserMutation) AddReferralLevelID(u int64) {
+	if m.addreferral_level_id != nil {
+		*m.addreferral_level_id += u
+	} else {
+		m.addreferral_level_id = &u
+	}
+}
+
+// AddedReferralLevelID returns the value that was added to the "referral_level_id" field in this mutation.
+func (m *UserMutation) AddedReferralLevelID() (r int64, exists bool) {
+	v := m.addreferral_level_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetReferralLevelID resets all changes to the "referral_level_id" field.
+func (m *UserMutation) ResetReferralLevelID() {
+	m.referral_level_id = nil
+	m.addreferral_level_id = nil
+}
+
+// SetInviteLevelID sets the "invite_level_id" field.
+func (m *UserMutation) SetInviteLevelID(u uint64) {
+	m.invite_level_id = &u
+	m.addinvite_level_id = nil
+}
+
+// InviteLevelID returns the value of the "invite_level_id" field in the mutation.
+func (m *UserMutation) InviteLevelID() (r uint64, exists bool) {
+	v := m.invite_level_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInviteLevelID returns the old "invite_level_id" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldInviteLevelID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInviteLevelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInviteLevelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInviteLevelID: %w", err)
+	}
+	return oldValue.InviteLevelID, nil
+}
+
+// AddInviteLevelID adds u to the "invite_level_id" field.
+func (m *UserMutation) AddInviteLevelID(u int64) {
+	if m.addinvite_level_id != nil {
+		*m.addinvite_level_id += u
+	} else {
+		m.addinvite_level_id = &u
+	}
+}
+
+// AddedInviteLevelID returns the value that was added to the "invite_level_id" field in this mutation.
+func (m *UserMutation) AddedInviteLevelID() (r int64, exists bool) {
+	v := m.addinvite_level_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetInviteLevelID resets all changes to the "invite_level_id" field.
+func (m *UserMutation) ResetInviteLevelID() {
+	m.invite_level_id = nil
+	m.addinvite_level_id = nil
 }
 
 // SetUsername sets the "username" field.
@@ -97939,7 +98055,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
@@ -97948,6 +98064,12 @@ func (m *UserMutation) Fields() []string {
 	}
 	if m.manual_level_id != nil {
 		fields = append(fields, user.FieldManualLevelID)
+	}
+	if m.referral_level_id != nil {
+		fields = append(fields, user.FieldReferralLevelID)
+	}
+	if m.invite_level_id != nil {
+		fields = append(fields, user.FieldInviteLevelID)
 	}
 	if m.username != nil {
 		fields = append(fields, user.FieldUsername)
@@ -97993,6 +98115,10 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case user.FieldManualLevelID:
 		return m.ManualLevelID()
+	case user.FieldReferralLevelID:
+		return m.ReferralLevelID()
+	case user.FieldInviteLevelID:
+		return m.InviteLevelID()
 	case user.FieldUsername:
 		return m.Username()
 	case user.FieldEmail:
@@ -98028,6 +98154,10 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldUpdatedAt(ctx)
 	case user.FieldManualLevelID:
 		return m.OldManualLevelID(ctx)
+	case user.FieldReferralLevelID:
+		return m.OldReferralLevelID(ctx)
+	case user.FieldInviteLevelID:
+		return m.OldInviteLevelID(ctx)
 	case user.FieldUsername:
 		return m.OldUsername(ctx)
 	case user.FieldEmail:
@@ -98077,6 +98207,20 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetManualLevelID(v)
+		return nil
+	case user.FieldReferralLevelID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReferralLevelID(v)
+		return nil
+	case user.FieldInviteLevelID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInviteLevelID(v)
 		return nil
 	case user.FieldUsername:
 		v, ok := value.(string)
@@ -98159,6 +98303,12 @@ func (m *UserMutation) AddedFields() []string {
 	if m.addmanual_level_id != nil {
 		fields = append(fields, user.FieldManualLevelID)
 	}
+	if m.addreferral_level_id != nil {
+		fields = append(fields, user.FieldReferralLevelID)
+	}
+	if m.addinvite_level_id != nil {
+		fields = append(fields, user.FieldInviteLevelID)
+	}
 	if m.addinvite_l1 != nil {
 		fields = append(fields, user.FieldInviteL1)
 	}
@@ -98178,6 +98328,10 @@ func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case user.FieldManualLevelID:
 		return m.AddedManualLevelID()
+	case user.FieldReferralLevelID:
+		return m.AddedReferralLevelID()
+	case user.FieldInviteLevelID:
+		return m.AddedInviteLevelID()
 	case user.FieldInviteL1:
 		return m.AddedInviteL1()
 	case user.FieldInviteL2:
@@ -98199,6 +98353,20 @@ func (m *UserMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddManualLevelID(v)
+		return nil
+	case user.FieldReferralLevelID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddReferralLevelID(v)
+		return nil
+	case user.FieldInviteLevelID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddInviteLevelID(v)
 		return nil
 	case user.FieldInviteL1:
 		v, ok := value.(int64)
@@ -98307,6 +98475,12 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldManualLevelID:
 		m.ResetManualLevelID()
+		return nil
+	case user.FieldReferralLevelID:
+		m.ResetReferralLevelID()
+		return nil
+	case user.FieldInviteLevelID:
+		m.ResetInviteLevelID()
 		return nil
 	case user.FieldUsername:
 		m.ResetUsername()

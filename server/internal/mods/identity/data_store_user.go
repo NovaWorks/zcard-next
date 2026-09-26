@@ -11,11 +11,13 @@ import (
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberlevel"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellerprofile"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/captcha"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -76,38 +78,90 @@ func (r *UserRepo) Register(ctx context.Context, in RegisterInput) (*ent.User, e
 	if err != nil {
 		return nil, err
 	}
-	// 归因链解析（双格式：8 位随机推广码 或 旧数字 user_id——兼容存量链接）
-	var l1, l2, l3 uint64
-	if in.InviteCode != "" {
-		inviter := r.ResolvePromoCode(ctx, in.InviteCode)
-		if inviter == nil || inviter.ID == 0 {
-			return nil, stdErrors.New("identity.INVITER_NOT_FOUND")
+	// 注册、邀请链和获赠资格同事务写入。唯一冲突在完整回滚后重试，兼容 PostgreSQL。
+	var result *ent.User
+	for attempt := 0; attempt < 2; attempt++ {
+		err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+			c := data.Client(ctx, r.data)
+			var l1, l2, l3, granted uint64
+			if strings.TrimSpace(in.InviteCode) != "" {
+				inviter, e := r.ResolvePromoCodeChecked(ctx, in.InviteCode)
+				if e != nil {
+					return e
+				}
+				if inviter == nil {
+					return errors.BadRequest("identity.INVITER_NOT_FOUND", "推荐码无效，请检查或清空后重试")
+				}
+				// 锁顺序与后台配置一致：等级 → 推荐人；拿锁后使用当前读重新校验配置。
+				expectedLevel := inviter.InviteLevelID
+				if expectedLevel > 0 {
+					// MySQL changed-row counts cannot establish existence for a no-op update.
+					if r.data.Dialect == db.SQLite {
+						if _, e := c.MemberLevel.Update().Where(memberlevel.ID(expectedLevel)).AddSort(0).Save(ctx); e != nil {
+							return e
+						}
+					}
+					lq := c.MemberLevel.Query().Where(memberlevel.ID(expectedLevel), memberlevel.Enabled(true))
+					if r.data.Dialect != db.SQLite {
+						lq = lq.ForUpdate()
+					}
+					if _, e := lq.Only(ctx); e != nil {
+						if !ent.IsNotFound(e) {
+							return e
+						}
+						return errors.BadRequest("identity.INVITE_LEVEL_INVALID", "推荐赠送等级已失效，请联系管理员")
+					}
+				}
+				if r.data.Dialect == db.SQLite {
+					if _, e := c.User.UpdateOneID(inviter.ID).AddInviteLevelID(0).Save(ctx); e != nil {
+						return e
+					}
+				}
+				q := c.User.Query().Where(user.ID(inviter.ID))
+				if r.data.Dialect != db.SQLite {
+					q = q.ForUpdate()
+				}
+				inviter, e = q.Only(ctx)
+				if e != nil {
+					return e
+				}
+				if inviter.Status != user.StatusActive {
+					return errors.BadRequest("identity.INVITER_UNAVAILABLE", "推荐人已停用，请清空推荐码后重试")
+				}
+				if inviter.InviteLevelID != expectedLevel {
+					return errors.Conflict("identity.INVITE_CHANGED", "推荐权益已调整，请刷新后重试")
+				}
+				l1, l2, l3, granted = inviter.ID, inviter.InviteL1, inviter.InviteL2, expectedLevel
+			}
+			create := c.User.Create().SetUsername(in.Username).SetPasswordHash(hash).
+				SetStatus(user.StatusActive).SetInviteL1(l1).SetInviteL2(l2).SetInviteL3(l3).
+				SetReferralLevelID(granted).SetPromoCode(genPromoCode())
+			if in.Email != "" {
+				create.SetEmail(in.Email)
+			}
+			if in.Phone != "" {
+				create.SetPhone(in.Phone)
+			}
+			u, e := create.Save(ctx)
+			if e != nil {
+				return e
+			}
+			if granted > 0 {
+				e = c.AuditLog.Create().SetOperatorType("system").SetOperatorID(0).
+					SetAction("REGISTER").SetRoute("/api/v1/storefront/user/register").
+					SetAfter(map[string]any{"user_id": u.ID, "inviter_id": l1, "referral_level_id": granted}).Exec(ctx)
+				if e != nil {
+					return e
+				}
+			}
+			result = u
+			return nil
+		})
+		if !ent.IsConstraintError(err) {
+			return result, err
 		}
-		l1 = inviter.ID
-		l2 = inviter.InviteL1
-		l3 = inviter.InviteL2
 	}
-	create := data.Client(ctx, r.data).User.Create().
-		SetUsername(in.Username).
-		SetPasswordHash(hash).
-		SetStatus(user.StatusActive).
-		SetInviteL1(l1).SetInviteL2(l2).SetInviteL3(l3).
-		SetPromoCode(genPromoCode())
-	if in.Email != "" {
-		create.SetEmail(in.Email)
-	}
-	if in.Phone != "" {
-		create.SetPhone(in.Phone)
-	}
-	u, err := create.Save(ctx)
-	if ent.IsConstraintError(err) {
-		// 用户名冲突为主；推广码碰撞（概率极低）重试一次换码
-		u, err = create.SetPromoCode(genPromoCode()).Save(ctx)
-		if ent.IsConstraintError(err) {
-			return nil, stdErrors.New("identity.USERNAME_TAKEN")
-		}
-	}
-	return u, err
+	return nil, errors.BadRequest("identity.USERNAME_TAKEN", "用户名、邮箱或手机号已被注册")
 }
 
 // FindByUsername 按用户名查。

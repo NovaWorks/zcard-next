@@ -9,3 +9,8 @@ import "context"
 type RateResolver interface {
 	EffectiveRate(ctx context.Context, userID uint64) (rate int32, levelID uint64, err error)
 }
+
+// StateResolver also reports the source selected by the same calculation.
+type StateResolver interface {
+	EffectiveState(ctx context.Context, userID uint64) (rate int32, levelID uint64, source string, err error)
+}

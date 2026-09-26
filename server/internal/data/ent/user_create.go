@@ -64,6 +64,34 @@ func (_c *UserCreate) SetNillableManualLevelID(v *uint64) *UserCreate {
 	return _c
 }
 
+// SetReferralLevelID sets the "referral_level_id" field.
+func (_c *UserCreate) SetReferralLevelID(v uint64) *UserCreate {
+	_c.mutation.SetReferralLevelID(v)
+	return _c
+}
+
+// SetNillableReferralLevelID sets the "referral_level_id" field if the given value is not nil.
+func (_c *UserCreate) SetNillableReferralLevelID(v *uint64) *UserCreate {
+	if v != nil {
+		_c.SetReferralLevelID(*v)
+	}
+	return _c
+}
+
+// SetInviteLevelID sets the "invite_level_id" field.
+func (_c *UserCreate) SetInviteLevelID(v uint64) *UserCreate {
+	_c.mutation.SetInviteLevelID(v)
+	return _c
+}
+
+// SetNillableInviteLevelID sets the "invite_level_id" field if the given value is not nil.
+func (_c *UserCreate) SetNillableInviteLevelID(v *uint64) *UserCreate {
+	if v != nil {
+		_c.SetInviteLevelID(*v)
+	}
+	return _c
+}
+
 // SetUsername sets the "username" field.
 func (_c *UserCreate) SetUsername(v string) *UserCreate {
 	_c.mutation.SetUsername(v)
@@ -249,6 +277,14 @@ func (_c *UserCreate) defaults() {
 		v := user.DefaultManualLevelID
 		_c.mutation.SetManualLevelID(v)
 	}
+	if _, ok := _c.mutation.ReferralLevelID(); !ok {
+		v := user.DefaultReferralLevelID
+		_c.mutation.SetReferralLevelID(v)
+	}
+	if _, ok := _c.mutation.InviteLevelID(); !ok {
+		v := user.DefaultInviteLevelID
+		_c.mutation.SetInviteLevelID(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := user.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -265,6 +301,12 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.ManualLevelID(); !ok {
 		return &ValidationError{Name: "manual_level_id", err: errors.New(`ent: missing required field "User.manual_level_id"`)}
+	}
+	if _, ok := _c.mutation.ReferralLevelID(); !ok {
+		return &ValidationError{Name: "referral_level_id", err: errors.New(`ent: missing required field "User.referral_level_id"`)}
+	}
+	if _, ok := _c.mutation.InviteLevelID(); !ok {
+		return &ValidationError{Name: "invite_level_id", err: errors.New(`ent: missing required field "User.invite_level_id"`)}
 	}
 	if _, ok := _c.mutation.Username(); !ok {
 		return &ValidationError{Name: "username", err: errors.New(`ent: missing required field "User.username"`)}
@@ -346,6 +388,14 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ManualLevelID(); ok {
 		_spec.SetField(user.FieldManualLevelID, field.TypeUint64, value)
 		_node.ManualLevelID = value
+	}
+	if value, ok := _c.mutation.ReferralLevelID(); ok {
+		_spec.SetField(user.FieldReferralLevelID, field.TypeUint64, value)
+		_node.ReferralLevelID = value
+	}
+	if value, ok := _c.mutation.InviteLevelID(); ok {
+		_spec.SetField(user.FieldInviteLevelID, field.TypeUint64, value)
+		_node.InviteLevelID = value
 	}
 	if value, ok := _c.mutation.Username(); ok {
 		_spec.SetField(user.FieldUsername, field.TypeString, value)
@@ -466,6 +516,42 @@ func (u *UserUpsert) UpdateManualLevelID() *UserUpsert {
 // AddManualLevelID adds v to the "manual_level_id" field.
 func (u *UserUpsert) AddManualLevelID(v uint64) *UserUpsert {
 	u.Add(user.FieldManualLevelID, v)
+	return u
+}
+
+// SetReferralLevelID sets the "referral_level_id" field.
+func (u *UserUpsert) SetReferralLevelID(v uint64) *UserUpsert {
+	u.Set(user.FieldReferralLevelID, v)
+	return u
+}
+
+// UpdateReferralLevelID sets the "referral_level_id" field to the value that was provided on create.
+func (u *UserUpsert) UpdateReferralLevelID() *UserUpsert {
+	u.SetExcluded(user.FieldReferralLevelID)
+	return u
+}
+
+// AddReferralLevelID adds v to the "referral_level_id" field.
+func (u *UserUpsert) AddReferralLevelID(v uint64) *UserUpsert {
+	u.Add(user.FieldReferralLevelID, v)
+	return u
+}
+
+// SetInviteLevelID sets the "invite_level_id" field.
+func (u *UserUpsert) SetInviteLevelID(v uint64) *UserUpsert {
+	u.Set(user.FieldInviteLevelID, v)
+	return u
+}
+
+// UpdateInviteLevelID sets the "invite_level_id" field to the value that was provided on create.
+func (u *UserUpsert) UpdateInviteLevelID() *UserUpsert {
+	u.SetExcluded(user.FieldInviteLevelID)
+	return u
+}
+
+// AddInviteLevelID adds v to the "invite_level_id" field.
+func (u *UserUpsert) AddInviteLevelID(v uint64) *UserUpsert {
+	u.Add(user.FieldInviteLevelID, v)
 	return u
 }
 
@@ -738,6 +824,48 @@ func (u *UserUpsertOne) AddManualLevelID(v uint64) *UserUpsertOne {
 func (u *UserUpsertOne) UpdateManualLevelID() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateManualLevelID()
+	})
+}
+
+// SetReferralLevelID sets the "referral_level_id" field.
+func (u *UserUpsertOne) SetReferralLevelID(v uint64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetReferralLevelID(v)
+	})
+}
+
+// AddReferralLevelID adds v to the "referral_level_id" field.
+func (u *UserUpsertOne) AddReferralLevelID(v uint64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddReferralLevelID(v)
+	})
+}
+
+// UpdateReferralLevelID sets the "referral_level_id" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateReferralLevelID() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateReferralLevelID()
+	})
+}
+
+// SetInviteLevelID sets the "invite_level_id" field.
+func (u *UserUpsertOne) SetInviteLevelID(v uint64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetInviteLevelID(v)
+	})
+}
+
+// AddInviteLevelID adds v to the "invite_level_id" field.
+func (u *UserUpsertOne) AddInviteLevelID(v uint64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddInviteLevelID(v)
+	})
+}
+
+// UpdateInviteLevelID sets the "invite_level_id" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateInviteLevelID() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateInviteLevelID()
 	})
 }
 
@@ -1207,6 +1335,48 @@ func (u *UserUpsertBulk) AddManualLevelID(v uint64) *UserUpsertBulk {
 func (u *UserUpsertBulk) UpdateManualLevelID() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateManualLevelID()
+	})
+}
+
+// SetReferralLevelID sets the "referral_level_id" field.
+func (u *UserUpsertBulk) SetReferralLevelID(v uint64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetReferralLevelID(v)
+	})
+}
+
+// AddReferralLevelID adds v to the "referral_level_id" field.
+func (u *UserUpsertBulk) AddReferralLevelID(v uint64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddReferralLevelID(v)
+	})
+}
+
+// UpdateReferralLevelID sets the "referral_level_id" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateReferralLevelID() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateReferralLevelID()
+	})
+}
+
+// SetInviteLevelID sets the "invite_level_id" field.
+func (u *UserUpsertBulk) SetInviteLevelID(v uint64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetInviteLevelID(v)
+	})
+}
+
+// AddInviteLevelID adds v to the "invite_level_id" field.
+func (u *UserUpsertBulk) AddInviteLevelID(v uint64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddInviteLevelID(v)
+	})
+}
+
+// UpdateInviteLevelID sets the "invite_level_id" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateInviteLevelID() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateInviteLevelID()
 	})
 }
 

@@ -15,14 +15,17 @@
           <div class="lv-cur">
             <div class="muted lv-label">当前等级</div>
             <div class="lv-name-row">
-              <span class="lv-name">{{ level.current?.name || '普通会员' }}</span>
-              <span v-if="level.current?.display_mode === 'contact'" class="tag">联系客服</span><span v-if="level.current?.discount" class="tag">{{ levelDiscount(level.current.discount) }}</span>
+              <span class="lv-name">{{ level.current?.name || (level.private_level ? '专属会员' : '普通会员') }}</span>
+              <span v-if="level.private_level || level.current?.display_mode === 'contact'" class="tag">联系客服</span><span v-if="level.current?.discount" class="tag">{{ levelDiscount(level.current.discount) }}</span>
             </div>
           </div>
           <span v-if="level.next" class="lv-next">距 {{ level.next.name }} <span class="lv-arrow">›</span></span>
-          <span v-else-if="level.current?.acquire_mode === 'manual'" class="muted">由后台授予</span><span v-else class="lv-max">已满级 🏆</span>
+          <span v-else-if="level.source === 'manual'" class="muted">后台指定</span><span v-else class="muted">当前权益已生效</span>
         </div>
-        <div v-if="level.current?.acquire_mode !== 'manual'" class="lv-bar">
+        <p v-if="level.source === 'referral'" class="muted">已通过推荐注册获得会员等级，无需先满足充值或消费门槛。</p>
+        <p v-else-if="level.source === 'manual'" class="muted">当前等级由后台指定。</p>
+        <p v-else-if="level.has_referral_level" class="muted">已保留推荐注册资格，当前自动等级的会员折扣优先适用。</p>
+        <div v-if="level.progress" class="lv-bar">
           <div class="progress"><div :style="{ width: `${levelPercent}%` }"></div></div>
           <span class="lv-percent">{{ levelPercent }}%</span>
         </div>

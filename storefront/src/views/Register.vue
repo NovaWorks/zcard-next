@@ -73,7 +73,13 @@
       <div class="field">
         <label>推广码</label>
         <input class="input" v-model="inviteCode" type="text" placeholder="选填（好友的推广码，如 ABC12345）" />
-        <div v-if="inviteCode" class="muted" style="margin-top: 4px;">已通过推广链接自动填写</div>
+        <div class="muted" style="margin-top: 4px;" aria-live="polite">
+          <span v-if="benefitLoading">正在查询推荐权益…</span>
+          <span v-else-if="benefitError">{{ benefitError }}</span>
+          <span v-else-if="benefit?.has_benefit">注册成功即可获得{{ benefit.level?.name || '专属会员' }}待遇{{ benefit.level?.display_mode === 'public' ? `，会员价享 ${levelDiscount(benefit.level.discount)}` : '' }}。</span>
+          <span v-else-if="benefit?.valid">推荐码有效，将绑定邀请关系。</span>
+          <span v-else-if="benefit">推荐码无效或推荐人已停用，请检查或清空。</span>
+        </div>
       </div>
       <div v-if="error" class="error">{{ error }}</div>
       <button class="btn" style="width: 100%; margin-top: 8px;" :disabled="loading" @click="submit">
@@ -89,10 +95,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { register, sendRegisterCode, fetchRegisterConfig, fetchCaptchaConfig, type RegisterConfig, type CaptchaConfig } from '@/api';
+import { register, sendRegisterCode, fetchRegisterConfig, fetchCaptchaConfig, type RegisterConfig, type CaptchaConfig, getInviteBenefit, type InviteBenefit } from '@/api';
 import CaptchaInput from '@/components/CaptchaInput.vue';
 import { setToken } from '@/api/client';
 import { refreshAuth } from '@/auth';
+import { levelDiscount } from '@/composables/member-level';
 import { getRefCode } from '@/ref';
 
 const route = useRoute();
@@ -103,6 +110,26 @@ const email = ref('');
 const phone = ref('');
 const code = ref('');
 const inviteCode = ref('');
+const benefit = ref<InviteBenefit | null>(null);
+const benefitLoading = ref(false);
+const benefitError = ref('');
+let benefitTimer: ReturnType<typeof setTimeout> | undefined;
+let benefitVersion = 0;
+watch(inviteCode, value => {
+  const version = ++benefitVersion;
+  clearTimeout(benefitTimer);
+  benefit.value = null;
+  benefitError.value = '';
+  benefitLoading.value = !!value.trim();
+  if (!value.trim()) return;
+  benefitTimer = setTimeout(async () => {
+    const result = await getInviteBenefit(value.trim());
+    if (version !== benefitVersion) return;
+    benefitLoading.value = false;
+    if (result.error) benefitError.value = '推荐权益查询失败，可重试；注册时将再次校验。';
+    else benefit.value = result.data || null;
+  }, 300);
+});
 const error = ref('');
 const loading = ref(false);
 const cfg = ref<RegisterConfig | null>(null);
@@ -179,7 +206,7 @@ onMounted(async () => {
   cfg.value = await fetchRegisterConfig();
   captchaCfg.value = await fetchCaptchaConfig();
 });
-onUnmounted(() => { if (cdTimer) clearInterval(cdTimer); });
+onUnmounted(() => { if (cdTimer) clearInterval(cdTimer); clearTimeout(benefitTimer); benefitVersion++; });
 
 async function submit() {
   if (!username.value || !password.value) {
@@ -210,7 +237,7 @@ async function submit() {
     email: email.value.trim() || undefined,
     phone: phone.value.trim() || undefined,
     code: code.value.trim() || undefined,
-    invite_code: inviteCode.value || undefined,
+    invite_code: inviteCode.value.trim() || undefined,
     captcha_id: captchaId.value || undefined,
     captcha_code: captchaCode.value || undefined,
   });

@@ -80,6 +80,12 @@ message ResetUserPasswordRequest {
 // UserItem 前台用户（敏感字段如密码哈希绝不外发）。
 message UserItem {
   uint64 manual_level_id = 15;
+  uint64 referral_level_id = 16;
+  uint64 invite_level_id = 17;
+  string referral_level_name = 18;
+  string invite_level_name = 19;
+  string level_source = 20; // manual | referral | auto | none
+  string promo_code = 21;
   uint64 id = 1;
   string username = 2;
   string email = 3;

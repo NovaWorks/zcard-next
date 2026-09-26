@@ -55,6 +55,48 @@ func (_u *UserUpdate) AddManualLevelID(v int64) *UserUpdate {
 	return _u
 }
 
+// SetReferralLevelID sets the "referral_level_id" field.
+func (_u *UserUpdate) SetReferralLevelID(v uint64) *UserUpdate {
+	_u.mutation.ResetReferralLevelID()
+	_u.mutation.SetReferralLevelID(v)
+	return _u
+}
+
+// SetNillableReferralLevelID sets the "referral_level_id" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableReferralLevelID(v *uint64) *UserUpdate {
+	if v != nil {
+		_u.SetReferralLevelID(*v)
+	}
+	return _u
+}
+
+// AddReferralLevelID adds value to the "referral_level_id" field.
+func (_u *UserUpdate) AddReferralLevelID(v int64) *UserUpdate {
+	_u.mutation.AddReferralLevelID(v)
+	return _u
+}
+
+// SetInviteLevelID sets the "invite_level_id" field.
+func (_u *UserUpdate) SetInviteLevelID(v uint64) *UserUpdate {
+	_u.mutation.ResetInviteLevelID()
+	_u.mutation.SetInviteLevelID(v)
+	return _u
+}
+
+// SetNillableInviteLevelID sets the "invite_level_id" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableInviteLevelID(v *uint64) *UserUpdate {
+	if v != nil {
+		_u.SetInviteLevelID(*v)
+	}
+	return _u
+}
+
+// AddInviteLevelID adds value to the "invite_level_id" field.
+func (_u *UserUpdate) AddInviteLevelID(v int64) *UserUpdate {
+	_u.mutation.AddInviteLevelID(v)
+	return _u
+}
+
 // SetUsername sets the "username" field.
 func (_u *UserUpdate) SetUsername(v string) *UserUpdate {
 	_u.mutation.SetUsername(v)
@@ -361,6 +403,18 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.AddedManualLevelID(); ok {
 		_spec.AddField(user.FieldManualLevelID, field.TypeUint64, value)
 	}
+	if value, ok := _u.mutation.ReferralLevelID(); ok {
+		_spec.SetField(user.FieldReferralLevelID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedReferralLevelID(); ok {
+		_spec.AddField(user.FieldReferralLevelID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.InviteLevelID(); ok {
+		_spec.SetField(user.FieldInviteLevelID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedInviteLevelID(); ok {
+		_spec.AddField(user.FieldInviteLevelID, field.TypeUint64, value)
+	}
 	if value, ok := _u.mutation.Username(); ok {
 		_spec.SetField(user.FieldUsername, field.TypeString, value)
 	}
@@ -468,6 +522,48 @@ func (_u *UserUpdateOne) SetNillableManualLevelID(v *uint64) *UserUpdateOne {
 // AddManualLevelID adds value to the "manual_level_id" field.
 func (_u *UserUpdateOne) AddManualLevelID(v int64) *UserUpdateOne {
 	_u.mutation.AddManualLevelID(v)
+	return _u
+}
+
+// SetReferralLevelID sets the "referral_level_id" field.
+func (_u *UserUpdateOne) SetReferralLevelID(v uint64) *UserUpdateOne {
+	_u.mutation.ResetReferralLevelID()
+	_u.mutation.SetReferralLevelID(v)
+	return _u
+}
+
+// SetNillableReferralLevelID sets the "referral_level_id" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableReferralLevelID(v *uint64) *UserUpdateOne {
+	if v != nil {
+		_u.SetReferralLevelID(*v)
+	}
+	return _u
+}
+
+// AddReferralLevelID adds value to the "referral_level_id" field.
+func (_u *UserUpdateOne) AddReferralLevelID(v int64) *UserUpdateOne {
+	_u.mutation.AddReferralLevelID(v)
+	return _u
+}
+
+// SetInviteLevelID sets the "invite_level_id" field.
+func (_u *UserUpdateOne) SetInviteLevelID(v uint64) *UserUpdateOne {
+	_u.mutation.ResetInviteLevelID()
+	_u.mutation.SetInviteLevelID(v)
+	return _u
+}
+
+// SetNillableInviteLevelID sets the "invite_level_id" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableInviteLevelID(v *uint64) *UserUpdateOne {
+	if v != nil {
+		_u.SetInviteLevelID(*v)
+	}
+	return _u
+}
+
+// AddInviteLevelID adds value to the "invite_level_id" field.
+func (_u *UserUpdateOne) AddInviteLevelID(v int64) *UserUpdateOne {
+	_u.mutation.AddInviteLevelID(v)
 	return _u
 }
 
@@ -806,6 +902,18 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if value, ok := _u.mutation.AddedManualLevelID(); ok {
 		_spec.AddField(user.FieldManualLevelID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.ReferralLevelID(); ok {
+		_spec.SetField(user.FieldReferralLevelID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedReferralLevelID(); ok {
+		_spec.AddField(user.FieldReferralLevelID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.InviteLevelID(); ok {
+		_spec.SetField(user.FieldInviteLevelID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedInviteLevelID(); ok {
+		_spec.AddField(user.FieldInviteLevelID, field.TypeUint64, value)
 	}
 	if value, ok := _u.mutation.Username(); ok {
 		_spec.SetField(user.FieldUsername, field.TypeString, value)

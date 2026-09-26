@@ -2777,6 +2777,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "manual_level_id", Type: field.TypeUint64, Default: 0},
+		{Name: "referral_level_id", Type: field.TypeUint64, Default: 0},
+		{Name: "invite_level_id", Type: field.TypeUint64, Default: 0},
 		{Name: "username", Type: field.TypeString, Unique: true, Size: 60},
 		{Name: "email", Type: field.TypeString, Unique: true, Nullable: true, Size: 255},
 		{Name: "phone", Type: field.TypeString, Unique: true, Nullable: true, Size: 20},
@@ -2797,7 +2799,17 @@ var (
 			{
 				Name:    "user_invite_l1",
 				Unique:  false,
-				Columns: []*schema.Column{UsersColumns[10]},
+				Columns: []*schema.Column{UsersColumns[12]},
+			},
+			{
+				Name:    "user_referral_level_id",
+				Unique:  false,
+				Columns: []*schema.Column{UsersColumns[4]},
+			},
+			{
+				Name:    "user_invite_level_id",
+				Unique:  false,
+				Columns: []*schema.Column{UsersColumns[5]},
 			},
 		},
 	}

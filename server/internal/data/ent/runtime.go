@@ -3313,24 +3313,32 @@ func init() {
 	userDescManualLevelID := userFields[1].Descriptor()
 	// user.DefaultManualLevelID holds the default value on creation for the manual_level_id field.
 	user.DefaultManualLevelID = userDescManualLevelID.Default.(uint64)
+	// userDescReferralLevelID is the schema descriptor for referral_level_id field.
+	userDescReferralLevelID := userFields[2].Descriptor()
+	// user.DefaultReferralLevelID holds the default value on creation for the referral_level_id field.
+	user.DefaultReferralLevelID = userDescReferralLevelID.Default.(uint64)
+	// userDescInviteLevelID is the schema descriptor for invite_level_id field.
+	userDescInviteLevelID := userFields[3].Descriptor()
+	// user.DefaultInviteLevelID holds the default value on creation for the invite_level_id field.
+	user.DefaultInviteLevelID = userDescInviteLevelID.Default.(uint64)
 	// userDescUsername is the schema descriptor for username field.
-	userDescUsername := userFields[2].Descriptor()
+	userDescUsername := userFields[4].Descriptor()
 	// user.UsernameValidator is a validator for the "username" field. It is called by the builders before save.
 	user.UsernameValidator = userDescUsername.Validators[0].(func(string) error)
 	// userDescEmail is the schema descriptor for email field.
-	userDescEmail := userFields[3].Descriptor()
+	userDescEmail := userFields[5].Descriptor()
 	// user.EmailValidator is a validator for the "email" field. It is called by the builders before save.
 	user.EmailValidator = userDescEmail.Validators[0].(func(string) error)
 	// userDescPhone is the schema descriptor for phone field.
-	userDescPhone := userFields[4].Descriptor()
+	userDescPhone := userFields[6].Descriptor()
 	// user.PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
 	user.PhoneValidator = userDescPhone.Validators[0].(func(string) error)
 	// userDescPasswordHash is the schema descriptor for password_hash field.
-	userDescPasswordHash := userFields[5].Descriptor()
+	userDescPasswordHash := userFields[7].Descriptor()
 	// user.PasswordHashValidator is a validator for the "password_hash" field. It is called by the builders before save.
 	user.PasswordHashValidator = userDescPasswordHash.Validators[0].(func(string) error)
 	// userDescPromoCode is the schema descriptor for promo_code field.
-	userDescPromoCode := userFields[11].Descriptor()
+	userDescPromoCode := userFields[13].Descriptor()
 	// user.PromoCodeValidator is a validator for the "promo_code" field. It is called by the builders before save.
 	user.PromoCodeValidator = userDescPromoCode.Validators[0].(func(string) error)
 	usergroupMixin := schema.UserGroup{}.Mixin()

@@ -7,6 +7,7 @@ func init() {
 	Declare(
 		Perm{Code: "catalog:write", Desc: "按关键词分类", Domain: "catalog", AdminOnly: true, Op: "zcard.api.admin.v1.AdminCatalogService/ClassifyProducts", Method: "POST", Path: "/api/v1/admin/products/classify"},
 		Perm{Code: "memberlevel:view_discount", Desc: "查看真实等级折扣", Domain: "memberlevel", AdminOnly: true},
+		Perm{Code: "memberlevel:invite", Desc: "配置推荐注册赠送等级", Domain: "memberlevel", AdminOnly: true, Op: "zcard.api.admin.v1.AdminMemberLevelService/ConfigureInviteLevel", Method: "PUT", Path: "/api/v1/admin/users/{user_id}/invite-level"},
 		Perm{Code: "memberlevel:assign", Desc: "指定用户等级", Domain: "memberlevel", AdminOnly: true, Op: "zcard.api.admin.v1.AdminMemberLevelService/AssignUserLevel", Method: "PUT", Path: "/api/v1/admin/users/{user_id}/member-level"},
 		Perm{Code: "order:deliver", Desc: "开始处理人工服务", Domain: "fulfillment", AdminOnly: true, Op: "zcard.api.admin.v1.AdminFulfillmentService/StartService", Method: "POST", Path: "/api/v1/admin/fulfillment/{order_no}/start"},
 		// ── 在线安装（Public——仅未安装时可写；已安装 install 幂等 409）──

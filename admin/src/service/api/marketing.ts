@@ -143,4 +143,9 @@ export function deletePostCategory(id: number) {
   return request({ url: `/api/v1/admin/content/categories/${id}`, method: "delete" });
 }
 
-export function assignUserLevel(userId:number,levelId:number,reason:string){return request({url:`/api/v1/admin/users/${userId}/member-level`,method:'put',data:{level_id:levelId,reason}})}
+export function assignUserLevel(userId: number, levelId: number, reason: string, clearReferral = false) {
+  return request({ url: `/api/v1/admin/users/${userId}/member-level`, method: 'put', data: { level_id: levelId, reason, clear_referral: clearReferral } });
+}
+export function configureInviteLevel(userId: number, levelId: number, reason: string) {
+  return request({ url: `/api/v1/admin/users/${userId}/invite-level`, method: 'put', data: { level_id: levelId, reason } });
+}

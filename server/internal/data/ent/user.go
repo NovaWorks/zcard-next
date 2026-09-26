@@ -23,6 +23,10 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// ManualLevelID holds the value of the "manual_level_id" field.
 	ManualLevelID uint64 `json:"manual_level_id,omitempty"`
+	// 注册时获赠等级，独立于邀请人的当前配置
+	ReferralLevelID uint64 `json:"referral_level_id,omitempty"`
+	// 邀请新客户注册赠送的等级，0为关闭
+	InviteLevelID uint64 `json:"invite_level_id,omitempty"`
 	// Username holds the value of the "username" field.
 	Username string `json:"username,omitempty"`
 	// 第三方登录用户可无邮箱
@@ -51,7 +55,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case user.FieldID, user.FieldManualLevelID, user.FieldInviteL1, user.FieldInviteL2, user.FieldInviteL3:
+		case user.FieldID, user.FieldManualLevelID, user.FieldReferralLevelID, user.FieldInviteLevelID, user.FieldInviteL1, user.FieldInviteL2, user.FieldInviteL3:
 			values[i] = new(sql.NullInt64)
 		case user.FieldUsername, user.FieldEmail, user.FieldPhone, user.FieldPasswordHash, user.FieldStatus, user.FieldPromoCode:
 			values[i] = new(sql.NullString)
@@ -95,6 +99,18 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field manual_level_id", values[i])
 			} else if value.Valid {
 				_m.ManualLevelID = uint64(value.Int64)
+			}
+		case user.FieldReferralLevelID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field referral_level_id", values[i])
+			} else if value.Valid {
+				_m.ReferralLevelID = uint64(value.Int64)
+			}
+		case user.FieldInviteLevelID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field invite_level_id", values[i])
+			} else if value.Valid {
+				_m.InviteLevelID = uint64(value.Int64)
 			}
 		case user.FieldUsername:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -200,6 +216,12 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("manual_level_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ManualLevelID))
+	builder.WriteString(", ")
+	builder.WriteString("referral_level_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ReferralLevelID))
+	builder.WriteString(", ")
+	builder.WriteString("invite_level_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.InviteLevelID))
 	builder.WriteString(", ")
 	builder.WriteString("username=")
 	builder.WriteString(_m.Username)

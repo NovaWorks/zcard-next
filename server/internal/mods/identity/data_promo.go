@@ -6,6 +6,7 @@ package identity
 import (
 	"context"
 	"crypto/rand"
+	"strconv"
 	"strings"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -57,30 +58,37 @@ func (r *UserRepo) EnsurePromoCode(ctx context.Context, userID uint64) string {
 // 2) 纯数字 → 旧 user_id（存量链接兼容）。
 // 大小写不敏感（手抄场景）；解析失败返回 nil。
 func (r *UserRepo) ResolvePromoCode(ctx context.Context, code string) *ent.User {
+	u, _ := r.ResolvePromoCodeChecked(ctx, code)
+	return u
+}
+
+// ResolvePromoCodeChecked 保留数据库错误，避免注册时将故障误认为无权益。
+func (r *UserRepo) ResolvePromoCodeChecked(ctx context.Context, code string) (*ent.User, error) {
 	code = strings.TrimSpace(code)
-	if code == "" {
-		return nil
+	if code == "" || len(code) > 20 {
+		return nil, nil
 	}
 	client := data.Client(ctx, r.data)
-	// 随机码优先（新体系）
-	if u, err := client.User.Query().
-		Where(user.PromoCode(strings.ToUpper(code))).
-		Only(ctx); err == nil {
-		return u
+	u, err := client.User.Query().Where(user.PromoCode(strings.ToUpper(code))).Only(ctx)
+	if err == nil {
+		return u, nil
 	}
-	// 旧数字 user_id 兼容
+	if !ent.IsNotFound(err) {
+		return nil, err
+	}
 	if isAllDigits(code) {
-		var id uint64
-		for _, c := range code {
-			id = id*10 + uint64(c-'0')
-		}
-		if id > 0 {
-			if u, err := client.User.Get(ctx, id); err == nil {
-				return u
+		id, e := strconv.ParseUint(code, 10, 64)
+		if e == nil && id > 0 {
+			u, err = client.User.Get(ctx, id)
+			if err == nil {
+				return u, nil
+			}
+			if !ent.IsNotFound(err) {
+				return nil, err
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func isAllDigits(s string) bool {

@@ -270,9 +270,16 @@ func (s *AdminUserManageService) enrich(ctx context.Context, rows []*ent.User) (
 
 	// 等级:RateResolver 逐用户 + 名称字典批查
 	levelIDs := map[uint64]uint64{}
+	levelSources := map[uint64]string{}
 	for _, r := range rows {
 		lid := uint64(0)
-		if s.rate != nil {
+		if resolver, ok := s.rate.(memberlevelport.StateResolver); ok {
+			_, l, source, err := resolver.EffectiveState(ctx, r.ID)
+			if err != nil {
+				return nil, errors.InternalServer("identity.USER_LEVEL_FAILED", "读取客户等级失败")
+			}
+			lid, levelSources[r.ID] = l, source
+		} else if s.rate != nil {
 			if _, l, err := s.rate.EffectiveRate(ctx, r.ID); err == nil {
 				lid = l
 			}
@@ -281,6 +288,14 @@ func (s *AdminUserManageService) enrich(ctx context.Context, rows []*ent.User) (
 	}
 	levelNames := map[uint64]string{}
 	distinct := map[uint64]bool{}
+	for _, r := range rows {
+		if r.ReferralLevelID > 0 {
+			distinct[r.ReferralLevelID] = true
+		}
+		if r.InviteLevelID > 0 {
+			distinct[r.InviteLevelID] = true
+		}
+	}
 	for _, lid := range levelIDs {
 		if lid > 0 {
 			distinct[lid] = true
@@ -301,6 +316,9 @@ func (s *AdminUserManageService) enrich(ctx context.Context, rows []*ent.User) (
 	for _, r := range rows {
 		item := &adminv1.UserItem{
 			Id: r.ID, Username: r.Username, Email: r.Email, ManualLevelId: r.ManualLevelID,
+			ReferralLevelId: r.ReferralLevelID, InviteLevelId: r.InviteLevelID,
+			ReferralLevelName: levelNames[r.ReferralLevelID], InviteLevelName: levelNames[r.InviteLevelID],
+			PromoCode: r.PromoCode, LevelSource: "none",
 			Status: string(r.Status), CreatedAt: r.CreatedAt.Unix(),
 			BalanceCents: balances[r.ID],
 			Points:       int32(points[r.ID]),
@@ -313,6 +331,10 @@ func (s *AdminUserManageService) enrich(ctx context.Context, rows []*ent.User) (
 		if lid := levelIDs[r.ID]; lid > 0 {
 			item.LevelId = lid
 			item.LevelName = levelNames[lid]
+			item.LevelSource = levelSources[r.ID]
+			if item.LevelSource == "" {
+				item.LevelSource = "auto"
+			}
 		}
 		if st, ok := suppliers[r.ID]; ok {
 			item.IsSupplier = true

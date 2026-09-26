@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 
@@ -38,6 +40,7 @@ func (s *StoreMemberLevelService) GetMyLevel(ctx context.Context, _ *emptypb.Emp
 		return nil, errors.InternalServer("memberlevel.PROGRESS_FAILED", "等级解析失败")
 	}
 	reply := &storefrontv1.MyLevelReply{
+		Source: p.Source, HasReferralLevel: p.HasReferral, PrivateLevel: p.Current != nil && p.Current.DisplayMode == "hidden",
 		RechargedCents: p.RechargedCents,
 		ConsumedCents:  p.ConsumedCents,
 		Current:        toLevelBrief(p.Current),
@@ -48,7 +51,10 @@ func (s *StoreMemberLevelService) GetMyLevel(ctx context.Context, _ *emptypb.Emp
 			reply.Points = pts
 		}
 	}
-	if p.Next != nil && p.Next.DisplayMode == "public" {
+	if p.Current != nil && p.Current.DisplayMode != "public" {
+		reply.Next = nil
+	}
+	if reply.Next != nil && p.Next.DisplayMode == "public" {
 		reply.Progress = &storefrontv1.LevelProgress{
 			RechargeGapCents: p.RechargeGap,
 			ConsumeGapCents:  p.ConsumeGap,
@@ -87,4 +93,29 @@ func toLevelBrief(lv *ent.MemberLevel) *storefrontv1.LevelBrief {
 		}
 	}
 	return brief
+}
+
+// Preview exposes only the same public metadata as the member center.
+func (s *StoreMemberLevelService) GetInviteBenefit(ctx context.Context, req *storefrontv1.InviteBenefitRequest) (*storefrontv1.InviteBenefitReply, error) {
+	u, err := identity.NewUserRepo(s.repo.data).ResolvePromoCodeChecked(ctx, req.Code)
+	if err != nil {
+		return nil, errors.InternalServer("memberlevel.INVITE_LOOKUP_FAILED", "推荐权益查询失败，请重试")
+	}
+	reply := &storefrontv1.InviteBenefitReply{}
+	if u == nil || u.Status != user.StatusActive {
+		return reply, nil
+	}
+	reply.Valid = true
+	if u.InviteLevelID == 0 {
+		return reply, nil
+	}
+	lv, err := data.Client(ctx, s.repo.data).MemberLevel.Get(ctx, u.InviteLevelID)
+	if err != nil {
+		return nil, errors.InternalServer("memberlevel.INVITE_LOOKUP_FAILED", "推荐权益暂不可用")
+	}
+	if !lv.Enabled {
+		return reply, nil
+	}
+	reply.HasBenefit, reply.Level = true, toLevelBrief(lv)
+	return reply, nil
 }

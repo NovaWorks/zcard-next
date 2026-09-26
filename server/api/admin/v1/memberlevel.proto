@@ -9,6 +9,9 @@ import "google/protobuf/empty.proto";
 
 // AdminMemberLevelService 会员等级管理。
 service AdminMemberLevelService {
+  rpc ConfigureInviteLevel(ConfigureInviteLevelRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { put: "/api/v1/admin/users/{user_id}/invite-level" body: "*" };
+  }
   rpc AssignUserLevel(AssignUserLevelRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = { put: "/api/v1/admin/users/{user_id}/member-level" body: "*" };
   }
@@ -73,4 +76,6 @@ message DeleteMemberLevelRequest {
   uint64 id = 1;
 }
 
-message AssignUserLevelRequest { uint64 user_id = 1; uint64 level_id = 2; string reason = 3; }
+message AssignUserLevelRequest { uint64 user_id = 1; uint64 level_id = 2; string reason = 3; bool clear_referral = 4; }
+
+message ConfigureInviteLevelRequest { uint64 user_id = 1; uint64 level_id = 2; string reason = 3; }

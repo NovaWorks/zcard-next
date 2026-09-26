@@ -25,7 +25,10 @@ const (
 
 // MyLevelReply 等级进度（阈值即时评估口径：只升不降随累计值单调）。
 type MyLevelReply struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Source           string                 `protobuf:"bytes,8,opt,name=source,proto3" json:"source,omitempty"` // manual | referral | auto | none
+	HasReferralLevel bool                   `protobuf:"varint,9,opt,name=has_referral_level,json=hasReferralLevel,proto3" json:"has_referral_level,omitempty"`
+	PrivateLevel     bool                   `protobuf:"varint,10,opt,name=private_level,json=privateLevel,proto3" json:"private_level,omitempty"`
 	// 累计充值（countAsRecharge 口径：仅真实充值入账，互转/调账不计）
 	RechargedCents int64 `protobuf:"varint,1,opt,name=recharged_cents,json=rechargedCents,proto3" json:"recharged_cents,omitempty"`
 	// 累计消费（已支付及之后状态订单额）
@@ -71,6 +74,27 @@ func (x *MyLevelReply) ProtoReflect() protoreflect.Message {
 // Deprecated: Use MyLevelReply.ProtoReflect.Descriptor instead.
 func (*MyLevelReply) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_memberlevel_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *MyLevelReply) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *MyLevelReply) GetHasReferralLevel() bool {
+	if x != nil {
+		return x.HasReferralLevel
+	}
+	return false
+}
+
+func (x *MyLevelReply) GetPrivateLevel() bool {
+	if x != nil {
+		return x.PrivateLevel
+	}
+	return false
 }
 
 func (x *MyLevelReply) GetRechargedCents() int64 {
@@ -303,12 +327,120 @@ func (x *LevelProgress) GetPercent() int32 {
 	return 0
 }
 
+type InviteBenefitRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InviteBenefitRequest) Reset() {
+	*x = InviteBenefitRequest{}
+	mi := &file_storefront_v1_memberlevel_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InviteBenefitRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InviteBenefitRequest) ProtoMessage() {}
+
+func (x *InviteBenefitRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_memberlevel_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InviteBenefitRequest.ProtoReflect.Descriptor instead.
+func (*InviteBenefitRequest) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_memberlevel_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *InviteBenefitRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+type InviteBenefitReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Valid         bool                   `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
+	HasBenefit    bool                   `protobuf:"varint,2,opt,name=has_benefit,json=hasBenefit,proto3" json:"has_benefit,omitempty"`
+	Level         *LevelBrief            `protobuf:"bytes,3,opt,name=level,proto3" json:"level,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InviteBenefitReply) Reset() {
+	*x = InviteBenefitReply{}
+	mi := &file_storefront_v1_memberlevel_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InviteBenefitReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InviteBenefitReply) ProtoMessage() {}
+
+func (x *InviteBenefitReply) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_memberlevel_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InviteBenefitReply.ProtoReflect.Descriptor instead.
+func (*InviteBenefitReply) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_memberlevel_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *InviteBenefitReply) GetValid() bool {
+	if x != nil {
+		return x.Valid
+	}
+	return false
+}
+
+func (x *InviteBenefitReply) GetHasBenefit() bool {
+	if x != nil {
+		return x.HasBenefit
+	}
+	return false
+}
+
+func (x *InviteBenefitReply) GetLevel() *LevelBrief {
+	if x != nil {
+		return x.Level
+	}
+	return nil
+}
+
 var File_storefront_v1_memberlevel_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_memberlevel_proto_rawDesc = "" +
 	"\n" +
-	"\x1fstorefront/v1/memberlevel.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xef\x02\n" +
-	"\fMyLevelReply\x12'\n" +
+	"\x1fstorefront/v1/memberlevel.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xda\x03\n" +
+	"\fMyLevelReply\x12\x16\n" +
+	"\x06source\x18\b \x01(\tR\x06source\x12,\n" +
+	"\x12has_referral_level\x18\t \x01(\bR\x10hasReferralLevel\x12#\n" +
+	"\rprivate_level\x18\n" +
+	" \x01(\bR\fprivateLevel\x12'\n" +
 	"\x0frecharged_cents\x18\x01 \x01(\x03R\x0erechargedCents\x12%\n" +
 	"\x0econsumed_cents\x18\x02 \x01(\x03R\rconsumedCents\x12\x16\n" +
 	"\x06points\x18\x03 \x01(\x03R\x06points\x12=\n" +
@@ -332,8 +464,16 @@ const file_storefront_v1_memberlevel_proto_rawDesc = "" +
 	"\rLevelProgress\x12,\n" +
 	"\x12recharge_gap_cents\x18\x01 \x01(\x03R\x10rechargeGapCents\x12*\n" +
 	"\x11consume_gap_cents\x18\x02 \x01(\x03R\x0fconsumeGapCents\x12\x18\n" +
-	"\apercent\x18\x03 \x01(\x05R\apercent2\x8f\x01\n" +
-	"\x17StoreMemberLevelService\x12t\n" +
+	"\apercent\x18\x03 \x01(\x05R\apercent\"*\n" +
+	"\x14InviteBenefitRequest\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\"\x86\x01\n" +
+	"\x12InviteBenefitReply\x12\x14\n" +
+	"\x05valid\x18\x01 \x01(\bR\x05valid\x12\x1f\n" +
+	"\vhas_benefit\x18\x02 \x01(\bR\n" +
+	"hasBenefit\x129\n" +
+	"\x05level\x18\x03 \x01(\v2#.zcard.api.storefront.v1.LevelBriefR\x05level2\xb8\x02\n" +
+	"\x17StoreMemberLevelService\x12\xa6\x01\n" +
+	"\x10GetInviteBenefit\x12-.zcard.api.storefront.v1.InviteBenefitRequest\x1a+.zcard.api.storefront.v1.InviteBenefitReply\"6\x82\xd3\xe4\x93\x020\x12./api/v1/storefront/member-level/invite-benefit\x12t\n" +
 	"\n" +
 	"GetMyLevel\x12\x16.google.protobuf.Empty\x1a%.zcard.api.storefront.v1.MyLevelReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/storefront/member-levelBGZEgithub.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1b\x06proto3"
 
@@ -349,25 +489,30 @@ func file_storefront_v1_memberlevel_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_memberlevel_proto_rawDescData
 }
 
-var file_storefront_v1_memberlevel_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_storefront_v1_memberlevel_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_storefront_v1_memberlevel_proto_goTypes = []any{
-	(*MyLevelReply)(nil),  // 0: zcard.api.storefront.v1.MyLevelReply
-	(*LevelBrief)(nil),    // 1: zcard.api.storefront.v1.LevelBrief
-	(*LevelProgress)(nil), // 2: zcard.api.storefront.v1.LevelProgress
-	(*emptypb.Empty)(nil), // 3: google.protobuf.Empty
+	(*MyLevelReply)(nil),         // 0: zcard.api.storefront.v1.MyLevelReply
+	(*LevelBrief)(nil),           // 1: zcard.api.storefront.v1.LevelBrief
+	(*LevelProgress)(nil),        // 2: zcard.api.storefront.v1.LevelProgress
+	(*InviteBenefitRequest)(nil), // 3: zcard.api.storefront.v1.InviteBenefitRequest
+	(*InviteBenefitReply)(nil),   // 4: zcard.api.storefront.v1.InviteBenefitReply
+	(*emptypb.Empty)(nil),        // 5: google.protobuf.Empty
 }
 var file_storefront_v1_memberlevel_proto_depIdxs = []int32{
 	1, // 0: zcard.api.storefront.v1.MyLevelReply.current:type_name -> zcard.api.storefront.v1.LevelBrief
 	1, // 1: zcard.api.storefront.v1.MyLevelReply.next:type_name -> zcard.api.storefront.v1.LevelBrief
 	2, // 2: zcard.api.storefront.v1.MyLevelReply.progress:type_name -> zcard.api.storefront.v1.LevelProgress
 	1, // 3: zcard.api.storefront.v1.MyLevelReply.levels:type_name -> zcard.api.storefront.v1.LevelBrief
-	3, // 4: zcard.api.storefront.v1.StoreMemberLevelService.GetMyLevel:input_type -> google.protobuf.Empty
-	0, // 5: zcard.api.storefront.v1.StoreMemberLevelService.GetMyLevel:output_type -> zcard.api.storefront.v1.MyLevelReply
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	1, // 4: zcard.api.storefront.v1.InviteBenefitReply.level:type_name -> zcard.api.storefront.v1.LevelBrief
+	3, // 5: zcard.api.storefront.v1.StoreMemberLevelService.GetInviteBenefit:input_type -> zcard.api.storefront.v1.InviteBenefitRequest
+	5, // 6: zcard.api.storefront.v1.StoreMemberLevelService.GetMyLevel:input_type -> google.protobuf.Empty
+	4, // 7: zcard.api.storefront.v1.StoreMemberLevelService.GetInviteBenefit:output_type -> zcard.api.storefront.v1.InviteBenefitReply
+	0, // 8: zcard.api.storefront.v1.StoreMemberLevelService.GetMyLevel:output_type -> zcard.api.storefront.v1.MyLevelReply
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_memberlevel_proto_init() }
@@ -381,7 +526,7 @@ func file_storefront_v1_memberlevel_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_memberlevel_proto_rawDesc), len(file_storefront_v1_memberlevel_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

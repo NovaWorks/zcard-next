@@ -5409,6 +5409,27 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.UserItem'
+    /api/v1/admin/users/{userId}/invite-level:
+        put:
+            tags:
+                - AdminMemberLevelService
+            operationId: AdminMemberLevelService_ConfigureInviteLevel
+            parameters:
+                - name: userId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ConfigureInviteLevelRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/users/{userId}/member-level:
         put:
             tags:
@@ -6212,6 +6233,23 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.MyLevelReply'
+    /api/v1/storefront/member-level/invite-benefit:
+        get:
+            tags:
+                - StoreMemberLevelService
+            operationId: StoreMemberLevelService_GetInviteBenefit
+            parameters:
+                - name: code
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.InviteBenefitReply'
     /api/v1/storefront/my-orders:
         get:
             tags:
@@ -7554,6 +7592,8 @@ components:
                     type: string
                 reason:
                     type: string
+                clearReferral:
+                    type: boolean
         zcard.api.admin.v1.Balance:
             type: object
             properties:
@@ -8051,6 +8091,15 @@ components:
                 default:
                     type: string
             description: ConfigField 配置字段 schema（前端按 type 动态渲染表单）。
+        zcard.api.admin.v1.ConfigureInviteLevelRequest:
+            type: object
+            properties:
+                userId:
+                    type: string
+                levelId:
+                    type: string
+                reason:
+                    type: string
         zcard.api.admin.v1.ConfirmTOTPRequest:
             type: object
             properties:
@@ -12701,6 +12750,18 @@ components:
             properties:
                 manualLevelId:
                     type: string
+                referralLevelId:
+                    type: string
+                inviteLevelId:
+                    type: string
+                referralLevelName:
+                    type: string
+                inviteLevelName:
+                    type: string
+                levelSource:
+                    type: string
+                promoCode:
+                    type: string
                 id:
                     type: string
                 username:
@@ -13348,6 +13409,15 @@ components:
                     type: string
                 expiresAt:
                     type: string
+        zcard.api.storefront.v1.InviteBenefitReply:
+            type: object
+            properties:
+                valid:
+                    type: boolean
+                hasBenefit:
+                    type: boolean
+                level:
+                    $ref: '#/components/schemas/zcard.api.storefront.v1.LevelBrief'
         zcard.api.storefront.v1.LevelBrief:
             type: object
             properties:
@@ -13839,6 +13909,12 @@ components:
         zcard.api.storefront.v1.MyLevelReply:
             type: object
             properties:
+                source:
+                    type: string
+                hasReferralLevel:
+                    type: boolean
+                privateLevel:
+                    type: boolean
                 rechargedCents:
                     type: string
                     description: 累计充值（countAsRecharge 口径：仅真实充值入账，互转/调账不计）

@@ -9,6 +9,9 @@ import "google/protobuf/empty.proto";
 
 // StoreMemberLevelService 会员等级(：等级进度 + 积分产生）。
 service StoreMemberLevelService {
+  rpc GetInviteBenefit(InviteBenefitRequest) returns (InviteBenefitReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/member-level/invite-benefit" };
+  }
   // GetMyLevel 我的等级（当前等级 + 下一等级 + 升级进度 + 积分余额与产生规则）。
   rpc GetMyLevel(google.protobuf.Empty) returns (MyLevelReply) {
     option (google.api.http) = { get: "/api/v1/storefront/member-level" };
@@ -17,6 +20,9 @@ service StoreMemberLevelService {
 
 // MyLevelReply 等级进度（阈值即时评估口径：只升不降随累计值单调）。
 message MyLevelReply {
+  string source = 8; // manual | referral | auto | none
+  bool has_referral_level = 9;
+  bool private_level = 10;
   // 累计充值（countAsRecharge 口径：仅真实充值入账，互转/调账不计）
   int64 recharged_cents = 1;
   // 累计消费（已支付及之后状态订单额）
@@ -55,3 +61,6 @@ message LevelProgress {
   // 综合进度百分比 0-100（按已达标口径均值粗算；both_and 取较小值）
   int32 percent = 3;
 }
+
+message InviteBenefitRequest { string code = 1; }
+message InviteBenefitReply { bool valid = 1; bool has_benefit = 2; LevelBrief level = 3; }
