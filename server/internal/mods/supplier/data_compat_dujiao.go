@@ -267,7 +267,7 @@ func (h *dujiaoCompat) orderAction(w http.ResponseWriter, r *http.Request, accou
 	}
 	idNum, _ := strconv.ParseUint(idStr, 10, 64)
 	ctx := withAccount(r, account.ID)
-	o, err := h.svc.repo.GetSupplyOrder(ctx, id)
+	o, err := h.svc.repo.GetAccountSupplyOrder(ctx, account.ID, id)
 	if err != nil {
 		writeDujiaoErr(w, http.StatusNotFound, "order_not_found", "订单不存在")
 		return
@@ -278,23 +278,30 @@ func (h *dujiaoCompat) orderAction(w http.ResponseWriter, r *http.Request, accou
 	}
 	switch action {
 	case "cancel":
-		if string(o.Status) != "pending" && string(o.Status) != "paid" {
-			writeDujiaoErr(w, http.StatusConflict, "cancel_not_allowed", "已交付订单不可取消")
+		ok, err := h.svc.repo.RefundUndelivered(ctx, account.ID, o.ID)
+		if err != nil {
+			writeDujiaoErr(w, http.StatusInternalServerError, "cancel_failed", "取消失败，请稍后重试")
 			return
 		}
-		_ = h.svc.repo.LedgerEntry(ctx, o.AccountID, o.ID, "supply_refund", o.Amount,
-			"supply_order:"+o.DownstreamOrderNo+":cancel", "dujiao 兼容取消退回")
-		_ = h.svc.repo.MarkSupplyOrderRejected(ctx, o.ID)
+		if !ok {
+			writeDujiaoErr(w, http.StatusConflict, "cancel_not_allowed", "交付中或已交付订单不可取消")
+			return
+		}
 		writeDujiaoOK(w, map[string]any{
 			"order_id": idNum, "order_no": o.DownstreamOrderNo, "status": "canceled",
 		})
 	default: // 查单
+		_, refunded, err := h.svc.repo.orderPayments(ctx, account.ID, o.ID)
+		if err != nil {
+			writeDujiaoErr(w, http.StatusInternalServerError, "order_read_failed", "读取订单失败")
+			return
+		}
 		reply := map[string]any{
 			"order_id": idNum, "order_no": o.DownstreamOrderNo,
 			"status":          dujiaoStatus(string(o.Status), false),
 			"amount":          centsToYuanStr(o.Amount),
 			"currency":        "CNY",
-			"refunded_amount": "0.00",
+			"refunded_amount": centsToYuanStr(refunded),
 		}
 		if string(o.Status) == "fulfilled" {
 			if cards, err := h.svc.cardsPayloadOf(ctx, o); err == nil {

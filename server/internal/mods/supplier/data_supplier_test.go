@@ -156,7 +156,7 @@ func TestCreateSupplyOrderIdempotent(t *testing.T) {
 	if err == nil {
 		t.Fatal("重复 downstream_order_no 必须拒绝（UNIQUE）")
 	}
-	got, err := r.GetSupplyOrderByNo(ctx, "DOWN-100")
+	got, err := r.GetSupplyOrderByNo(ctx, accID, "DOWN-100")
 	if err != nil || got.ID != o1.ID {
 		t.Fatalf("按单号查不到首单: %v", err)
 	}

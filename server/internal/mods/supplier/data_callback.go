@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -72,6 +73,9 @@ func (s *SupplyAPIService) DeliverCallback(ctx context.Context, supplyOrderID ui
 	o, err := s.repo.GetSupplyOrder(ctx, supplyOrderID)
 	if err != nil {
 		return err
+	}
+	if cb.AccountID != o.AccountID || cb.DownstreamOrderNo != o.DownstreamOrderNo {
+		return errors.New("supplier.callback: 订单与回调账户不匹配")
 	}
 	// CallbackUrlGuard：http/https 均放行（下游可按环境选择）+ 私网拒绝
 	// （SSRF 校验不变；配置错误不入死信重试，提示重配）

@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -19,6 +20,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplynonce"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyorder"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 )
 
 // 哨兵错误。
@@ -248,35 +250,51 @@ func (r *SupplierRepoImpl) LedgerEntry(ctx context.Context, accountID, supplyOrd
 	if amount == 0 {
 		return fmt.Errorf("supplier: 流水金额不能为 0")
 	}
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		acc, err := r.lockAccount(ctx, accountID)
+		if err != nil {
+			return err
+		}
+		client := data.Client(ctx, r.data)
+		exists, err := client.SupplierLedgerEntry.Query().Where(supplierledgerentry.Reference(reference)).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if exists {
+			return ErrDuplicateLedger
+		}
+		if amount < 0 && (amount == math.MinInt64 || acc.BalanceCache < -amount) {
+			return ErrInsufficientBalance
+		}
+		if amount > 0 && acc.BalanceCache > math.MaxInt64-amount {
+			return errors.New("supplier.BALANCE_OVERFLOW")
+		}
+		_, err = client.SupplierLedgerEntry.Create().
+			SetAccountID(accountID).SetSupplyOrderID(supplyOrderID).SetType(typ).
+			SetAmount(amount).SetReference(reference).SetRemark(remark).Save(ctx)
+		if err != nil {
+			return err
+		}
+		return client.SupplierAccount.UpdateOneID(accountID).SetBalanceCache(acc.BalanceCache + amount).Exec(ctx)
+	})
+}
+
+// lockAccount 必须在 data.Tx 内调用；所有余额及供货订单写入按账户串行。
+func (r *SupplierRepoImpl) lockAccount(ctx context.Context, accountID uint64) (*ent.SupplierAccount, error) {
+	if accountID == 0 {
+		return nil, ErrNotFound
+	}
 	client := data.Client(ctx, r.data)
-	// 余额预校验（扣款时）：不足拒绝且不产生流水（验收：余额不足拒绝且零流水）
-	acc, err := client.SupplierAccount.Get(ctx, accountID)
-	if err != nil {
-		return err
+	q := client.SupplierAccount.Query().Where(supplieraccount.ID(accountID))
+	if r.data.Dialect == db.SQLite {
+		// SQLite 没有 FOR UPDATE，先取得写锁，避免读后升级事务的竞争。
+		if _, err := client.SupplierAccount.Update().Where(supplieraccount.ID(accountID)).AddBalanceCache(0).Save(ctx); err != nil {
+			return nil, err
+		}
+	} else {
+		q = q.ForUpdate()
 	}
-	if amount < 0 && acc.BalanceCache+amount < 0 {
-		return ErrInsufficientBalance
-	}
-	// 幂等：reference UNIQUE（重复入账拒绝——重放安全）
-	_, err = client.SupplierLedgerEntry.Create().
-		SetAccountID(accountID).
-		SetSupplyOrderID(supplyOrderID).
-		SetType(typ).
-		SetAmount(amount).
-		SetReference(reference).
-		SetRemark(remark).
-		Save(ctx)
-	if ent.IsConstraintError(err) {
-		return ErrDuplicateLedger
-	}
-	if err != nil {
-		return err
-	}
-	// balance_cache 更新（读-改-写；append-only 流水 + 可重算缓存，对账由流水重算）
-	_, err = client.SupplierAccount.UpdateOneID(accountID).
-		SetBalanceCache(acc.BalanceCache + amount).
-		Save(ctx)
-	return err
+	return q.Only(ctx)
 }
 
 // BalanceOf 账户余额（balance_cache 快照；对账由流水重算）。
@@ -366,9 +384,12 @@ func (r *SupplierRepoImpl) ListSupplyOrders(ctx context.Context, start, end time
 }
 
 // GetSupplyOrderByNo 按下游单号查（幂等返回首单）。
-func (r *SupplierRepoImpl) GetSupplyOrderByNo(ctx context.Context, downstreamOrderNo string) (*ent.SupplyOrder, error) {
+func (r *SupplierRepoImpl) GetSupplyOrderByNo(ctx context.Context, accountID uint64, downstreamOrderNo string) (*ent.SupplyOrder, error) {
+	if accountID == 0 {
+		return nil, ErrNotFound
+	}
 	o, err := data.Client(ctx, r.data).SupplyOrder.Query().
-		Where(supplyorder.DownstreamOrderNo(downstreamOrderNo)).
+		Where(supplyorder.AccountID(accountID), supplyorder.DownstreamOrderNo(downstreamOrderNo)).
 		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -379,7 +400,108 @@ func (r *SupplierRepoImpl) GetSupplyOrderByNo(ctx context.Context, downstreamOrd
 	return o, nil
 }
 
-// GetSupplyOrder 按 id 查。
+// ListAccountSupplyOrders 对外查询必须显式限制账户；内部全量查询另用 ListSupplyOrders。
+func (r *SupplierRepoImpl) ListAccountSupplyOrders(ctx context.Context, accountID uint64, start, end time.Time) ([]*ent.SupplyOrder, error) {
+	if accountID == 0 {
+		return nil, ErrNotFound
+	}
+	return data.Client(ctx, r.data).SupplyOrder.Query().Where(
+		supplyorder.AccountID(accountID), supplyorder.CreatedAtGTE(start), supplyorder.CreatedAtLT(end),
+	).Order(ent.Asc(supplyorder.FieldID)).All(ctx)
+}
+
+func (r *SupplierRepoImpl) GetAccountSupplyOrder(ctx context.Context, accountID, orderID uint64) (*ent.SupplyOrder, error) {
+	if accountID == 0 {
+		return nil, ErrNotFound
+	}
+	o, err := data.Client(ctx, r.data).SupplyOrder.Query().Where(supplyorder.AccountID(accountID), supplyorder.ID(orderID)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, ErrNotFound
+	}
+	return o, err
+}
+
+// RefundUndelivered 原子取消/退款；只退本账户、本订单实际扣款的未退余额。
+// 历史 cancel/refund 两种流水均计入，不能靠换接口或换幂等键重复入账。
+func (r *SupplierRepoImpl) RefundUndelivered(ctx context.Context, accountID, orderID uint64) (bool, error) {
+	ok := false
+	err := data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if _, err := r.lockAccount(ctx, accountID); err != nil {
+			return err
+		}
+		o, err := r.GetAccountSupplyOrder(ctx, accountID, orderID)
+		if err != nil {
+			return err
+		}
+		switch o.Status {
+		case supplyorder.StatusPending, supplyorder.StatusPaid, supplyorder.StatusRejected, supplyorder.StatusRefunded:
+		default:
+			return nil // 已交付或交付中须人工处理，卡密不能撤回。
+		}
+		// 旧版曾忽略交付状态写入失败；已有卡密快照的订单即使仍是 paid，
+		// 也不能自动退款，否则会让已拿到卡密的客户再次取回货款。
+		for _, item := range o.Items {
+			if _, delivered := item["card_ids"]; delivered {
+				return nil
+			}
+		}
+		paid, refunded, err := r.orderPayments(ctx, accountID, orderID)
+		if err != nil {
+			return err
+		}
+
+		if refunded > paid || paid > o.Amount {
+			return errors.New("supplier.INVALID_ORDER_LEDGER")
+		}
+		if remaining := paid - refunded; remaining > 0 {
+			if err := r.LedgerEntry(ctx, accountID, orderID, "supply_refund", remaining,
+				fmt.Sprintf("supply_order_id:%d:refund", orderID), "未交付订单退回"); err != nil {
+				return err
+			}
+		}
+		status := supplyorder.StatusRejected
+		if paid > 0 {
+			status = supplyorder.StatusRefunded
+		}
+		if err := data.Client(ctx, r.data).SupplyOrder.UpdateOneID(orderID).SetStatus(status).Exec(ctx); err != nil {
+			return err
+		}
+		ok = true
+		return nil
+	})
+	return ok && err == nil, err
+}
+
+// orderPayments 只汇总指定账户与订单的实付/实退流水（包括旧版幂等键）。
+func (r *SupplierRepoImpl) orderPayments(ctx context.Context, accountID, orderID uint64) (int64, int64, error) {
+	if accountID == 0 {
+		return 0, 0, ErrNotFound
+	}
+	rows, err := data.Client(ctx, r.data).SupplierLedgerEntry.Query().Where(
+		supplierledgerentry.AccountID(accountID), supplierledgerentry.SupplyOrderID(orderID),
+		supplierledgerentry.TypeIn("supply_pay", "supply_refund"),
+	).All(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	var paid, refunded int64
+	for _, row := range rows {
+		if row.Type == "supply_pay" {
+			if row.Amount >= 0 || row.Amount == math.MinInt64 || paid > math.MaxInt64+row.Amount {
+				return 0, 0, errors.New("supplier.INVALID_ORDER_LEDGER")
+			}
+			paid -= row.Amount
+		} else {
+			if row.Amount <= 0 || refunded > math.MaxInt64-row.Amount {
+				return 0, 0, errors.New("supplier.INVALID_ORDER_LEDGER")
+			}
+			refunded += row.Amount
+		}
+	}
+	return paid, refunded, nil
+}
+
+// GetSupplyOrder 内部任务/管理用途；对外接口必须用 GetAccountSupplyOrder。
 func (r *SupplierRepoImpl) GetSupplyOrder(ctx context.Context, id uint64) (*ent.SupplyOrder, error) {
 	o, err := data.Client(ctx, r.data).SupplyOrder.Get(ctx, id)
 	if err != nil {

@@ -4,7 +4,7 @@ package supplier
 //
 // 下单链路（与前台共用同一库存池——防超卖）：
 //   downstream_order_no 幂等 → 供货价核算（覆盖价 > 基础价）→ 账本扣款
-//   （幂等键 supply_order:<downID>）→ inventory.Reserve 锁卡 → MarkUsed 交付
+//   （幂等键 supply_order_id:<id>:pay）→ inventory.Reserve 锁卡 → MarkUsed 交付
 //   → 解密卡密（内存态）→ 响应 fulfillment.delivered + cards → 回调转发登记
 //
 // 余额不足/库存不足 → 明确错误码（下游可编程处理），不产生流水。
@@ -13,18 +13,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	kerrors "github.com/go-kratos/kratos/v3/errors"
+	"log/slog"
+	"math"
 	"strconv"
 	"time"
+	"unicode/utf8"
 
 	supplyv1 "github.com/NovaWorks/zcard-next/server/api/supply/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	invport "github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/id"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
-
-	"log/slog"
+	kerrors "github.com/go-kratos/kratos/v3/errors"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -218,87 +221,125 @@ type fulfillOutcome struct {
 // fulfillOrder 下单核心（协议无关）：幂等 → 供货价 → 扣款 → 锁卡 → 交付 →
 // 回调登记。items 快照带 card_ids（兼容层查单重建 payload 用）。
 func (s *SupplyAPIService) fulfillOrder(ctx context.Context, accountID, productID uint64, quantity int32, downstreamOrderNo, callbackURL, traceID string) (*fulfillOutcome, error) {
-	// 幂等：同 downstream_order_no 重复下单返回首单（已交付的从 items 快照重建卡密）
-	if existing, err := s.repo.GetSupplyOrderByNo(ctx, downstreamOrderNo); err == nil {
-		out := &fulfillOutcome{order: existing, amount: existing.Amount, delivered: string(existing.Status) == "fulfilled"}
-		if out.delivered {
-			if cards, err := s.cardsPayloadOf(ctx, existing); err == nil {
-				out.cards = cards
-			}
+	if accountID == 0 {
+		return nil, kerrors.Unauthorized("supply.UNAUTHORIZED", "未认证下游账户")
+	}
+	if quantity < 1 || productID == 0 || downstreamOrderNo == "" || utf8.RuneCountInString(downstreamOrderNo) > 64 {
+		return nil, kerrors.BadRequest("supply.INVALID_ORDER", "订单号、商品或数量非法")
+	}
+	var out *fulfillOutcome
+	notify := false
+	rejected := errors.New("supplier: rollback rejected order")
+	err := data.Tx(ctx, s.repo.data, func(txctx context.Context) error {
+		account, err := s.repo.lockAccount(txctx, accountID)
+		if err != nil {
+			return err
 		}
+		if account.Status != supplieraccount.StatusApproved {
+			return kerrors.Forbidden("supply.ACCOUNT_DISABLED", "账户未获准供货")
+		}
+		out, notify, err = s.fulfillOrderTx(txctx, accountID, productID, quantity, downstreamOrderNo, callbackURL, traceID)
+		if err == nil && out.rejected {
+			return rejected
+		}
+		return err
+	})
+	if errors.Is(err, rejected) {
 		return out, nil
 	}
-	p, err := s.reader.GetForSupply(ctx, productID)
-	if err != nil || p.Status == 0 {
-		return &fulfillOutcome{rejected: true, errCode: "product_unavailable", errMsg: "商品不可用"}, nil
+	if err != nil {
+		return nil, err
 	}
-	// 供货价（覆盖价 > 基础价）
+	// 必须提交后再入队，不能把已关闭的事务 context 交给异步回调。
+	if notify {
+		s.EnqueueCallback(ctx, out.order.ID)
+	}
+	return out, nil
+}
+
+// fulfillOrderTx 的扣款、库存、卡密快照、状态与回调登记共用同一事务。
+func (s *SupplyAPIService) fulfillOrderTx(ctx context.Context, accountID, productID uint64, quantity int32, downstreamOrderNo, callbackURL, traceID string) (*fulfillOutcome, bool, error) {
+	existing, err := s.repo.GetSupplyOrderByNo(ctx, accountID, downstreamOrderNo)
+	if err == nil {
+		if len(existing.Items) == 0 {
+			return nil, false, errors.New("supplier.INVALID_ORDER_ITEMS")
+		}
+		oldProduct, _ := parseUintAny(existing.Items[0]["product_id"])
+		oldQuantity, _ := parseUintAny(existing.Items[0]["quantity"])
+		if oldProduct != productID || oldQuantity != uint64(quantity) {
+			return nil, false, kerrors.Conflict("supply.IDEMPOTENCY_CONFLICT", "同一订单号的商品和数量不能修改")
+		}
+		out := &fulfillOutcome{order: existing, amount: existing.Amount, delivered: string(existing.Status) == "fulfilled"}
+		if out.delivered {
+			out.cards, err = s.cardsPayloadOf(ctx, existing)
+			if err != nil {
+				return nil, false, err
+			}
+		}
+		return out, false, nil
+	}
+	if !errors.Is(err, ErrNotFound) {
+		return nil, false, err
+	}
+	p, err := s.reader.GetForSupply(ctx, productID)
+	if err != nil || p.Status != 1 {
+		return &fulfillOutcome{rejected: true, errCode: "product_unavailable", errMsg: "商品不可用"}, false, nil
+	}
 	pricing, err := s.repo.LoadPricing(ctx, accountID)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	price := pricing.Price(p.ID, 0, p.CategoryID, p.Price)
+	if price <= 0 || price > math.MaxInt64/int64(quantity) {
+		return nil, false, kerrors.BadRequest("supply.INVALID_AMOUNT", "供货金额非法")
+	}
 	amount := price * int64(quantity)
-	// 建单（pending）
-	items := []map[string]any{{
-		"product_id": productID, "name": p.Name, "quantity": quantity, "unit_price": price,
-	}}
+	items := []map[string]any{{"product_id": productID, "name": p.Name, "quantity": quantity, "unit_price": price}}
 	order, err := s.repo.CreateSupplyOrder(ctx, accountID, downstreamOrderNo, items, amount)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	// 账本扣款（幂等键 supply_order:<downID>；余额不足不产生流水）
-	ref := "supply_order:" + downstreamOrderNo
-	if err := s.repo.LedgerEntry(ctx, accountID, order.ID, "supply_pay", -amount, ref, "下游下单扣款"); err != nil {
-		_ = s.repo.MarkSupplyOrderRejected(ctx, order.ID)
+	if err := s.repo.LedgerEntry(ctx, accountID, order.ID, "supply_pay", -amount, fmt.Sprintf("supply_order_id:%d:pay", order.ID), "下游下单扣款"); err != nil {
 		if errors.Is(err, ErrInsufficientBalance) {
-			return &fulfillOutcome{rejected: true, errCode: "insufficient_balance", errMsg: "供货余额不足"}, nil
+			return &fulfillOutcome{rejected: true, errCode: "insufficient_balance", errMsg: "供货余额不足"}, false, nil
 		}
-		return nil, err
+		return nil, false, err
 	}
-	_ = s.repo.MarkSupplyOrderPaid(ctx, order.ID)
-	// 锁卡（同一库存池；防超卖）
+	if err := s.repo.MarkSupplyOrderPaid(ctx, order.ID); err != nil {
+		return nil, false, err
+	}
 	res, err := s.inv.Reserve(ctx, 0, []invport.ReserveItem{{ProductID: productID, Quantity: quantity}})
-	if err != nil || len(res.Cards) < int(quantity) {
-		// 库存不足：账本退回 + rejected
-		_ = s.repo.LedgerEntry(ctx, accountID, order.ID, "supply_refund", amount, ref+":refund", "库存不足退回")
-		_ = s.repo.MarkSupplyOrderRejected(ctx, order.ID)
-		return &fulfillOutcome{rejected: true, errCode: "no_stock", errMsg: "库存不足"}, nil
+	if err != nil || res == nil || len(res.Cards) != int(quantity) {
+		return &fulfillOutcome{rejected: true, errCode: "no_stock", errMsg: "库存不足"}, false, nil
 	}
 	cardIDs := make([]uint64, 0, len(res.Cards))
 	for _, c := range res.Cards {
 		cardIDs = append(cardIDs, c.CardID)
 	}
-	// 交付：MarkUsed + 解密卡密（内存态）；失败回滚锁卡（防 reserved 泄漏）
 	if err := s.inv.MarkUsed(ctx, cardIDs, 0); err != nil {
-		if rl, ok := s.inv.(invport.CardReleaser); ok {
-			_ = rl.ReleaseCards(ctx, cardIDs)
-		}
-		return nil, err
+		return nil, false, err
 	}
 	delivered, err := s.cards.Contents(ctx, cardIDs, productID, 0)
-	if err != nil {
-		s.log.Warn("supplier.delivery_read_failed", "order_id", order.ID, "err", err)
-		if rl, ok := s.inv.(invport.CardReleaser); ok {
-			_ = rl.ReleaseCards(ctx, cardIDs)
-		}
-		// 交付失败回滚账务：退回扣款 + 订单 rejected（下游可换 request_no 重试）。
-		// 已 MarkUsed 的卡可能无法释放——卡密不可解属数据/密钥问题走人工核对，
-		// 但账必须平：不能让下游「钱扣了、货没到、查单还停在 paid」。
-		_ = s.repo.LedgerEntry(ctx, accountID, order.ID, "supply_refund", amount, ref+":refund", "交付失败退回")
-		_ = s.repo.MarkSupplyOrderRejected(ctx, order.ID)
-		return nil, errors.New("supplier.DELIVERY_FAILED")
+	if err != nil || len(delivered) != int(quantity) {
+		return nil, false, errors.New("supplier.DELIVERY_FAILED")
 	}
-	_ = s.repo.MarkSupplyOrderFulfilled(ctx, order.ID)
-	// items 快照补记 card_ids（兼容层查单重建 payload 用）
 	items[0]["card_ids"] = cardIDs
-	_ = s.repo.UpdateSupplyOrderItems(ctx, order.ID, items)
-	// 回调转发登记（T5；acg_faka 协议无回调——调用方不传 callbackURL 即可）
-	if callbackURL != "" {
-		_, _ = s.repo.CreateCallback(ctx, order.ID, accountID, downstreamOrderNo, callbackURL, traceID)
-		s.EnqueueCallback(ctx, order.ID)
+	if err := s.repo.UpdateSupplyOrderItems(ctx, order.ID, items); err != nil {
+		return nil, false, err
 	}
-	return &fulfillOutcome{order: order, amount: amount, cards: delivered, delivered: true}, nil
+	if err := s.repo.MarkSupplyOrderFulfilled(ctx, order.ID); err != nil {
+		return nil, false, err
+	}
+	order, err = s.repo.GetAccountSupplyOrder(ctx, accountID, order.ID)
+	if err != nil {
+		return nil, false, err
+	}
+	if callbackURL != "" {
+		if _, err := s.repo.CreateCallback(ctx, order.ID, accountID, downstreamOrderNo, callbackURL, traceID); err != nil {
+			return nil, false, err
+		}
+	}
+	return &fulfillOutcome{order: order, amount: amount, cards: delivered, delivered: true}, callbackURL != "", nil
 }
 
 // ListOrders 时间窗订单列表（对账数据源）。
@@ -308,7 +349,10 @@ func (s *SupplyAPIService) ListOrders(ctx context.Context, req *supplyv1.ListSup
 	if end.Before(start) || end.Sub(start) > 31*24*time.Hour {
 		return nil, kerrors.BadRequest("supply.RANGE_INVALID", "时间窗非法（或超过 31 天）")
 	}
-	rows, err := s.repo.ListSupplyOrders(ctx, start, end)
+	if SupplyAccountID(ctx) == 0 {
+		return nil, kerrors.Unauthorized("supply.UNAUTHORIZED", "未认证下游账户")
+	}
+	rows, err := s.repo.ListAccountSupplyOrders(ctx, SupplyAccountID(ctx), start, end)
 	if err != nil {
 		return nil, kerrors.InternalServer("supply.LIST_FAILED", "读取订单失败")
 	}
@@ -329,7 +373,7 @@ func (s *SupplyAPIService) GetOrder(ctx context.Context, req *supplyv1.GetSupply
 	if err != nil {
 		return nil, errors.New("supplier.INVALID_ORDER_ID")
 	}
-	o, err := s.repo.GetSupplyOrder(ctx, id)
+	o, err := s.accountOrder(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -349,41 +393,49 @@ func (s *SupplyAPIService) GetOrder(ctx context.Context, req *supplyv1.GetSupply
 	return reply, nil
 }
 
-// CancelOrder 取消（未交付：账本退回 + rejected）。
+// accountOrder 对外接口不允许缺省账户，也不区分外部订单与不存在的订单。
+func (s *SupplyAPIService) accountOrder(ctx context.Context, orderID uint64) (*ent.SupplyOrder, error) {
+	if SupplyAccountID(ctx) == 0 {
+		return nil, kerrors.Unauthorized("supply.UNAUTHORIZED", "未认证下游账户")
+	}
+	o, err := s.repo.GetAccountSupplyOrder(ctx, SupplyAccountID(ctx), orderID)
+	if errors.Is(err, ErrNotFound) {
+		return nil, kerrors.NotFound("supply.ORDER_NOT_FOUND", "订单不存在")
+	}
+	return o, err
+}
+
+// CancelOrder 未交付订单取消；与退款共用事务和实际扣款上限。
 func (s *SupplyAPIService) CancelOrder(ctx context.Context, req *supplyv1.CancelSupplyOrderRequest) (*supplyv1.CancelSupplyOrderReply, error) {
 	id, err := strconv.ParseUint(req.GetId(), 10, 64)
 	if err != nil {
 		return nil, errors.New("supplier.INVALID_ORDER_ID")
 	}
-	o, err := s.repo.GetSupplyOrder(ctx, id)
+	if _, err := s.accountOrder(ctx, id); err != nil {
+		return nil, err
+	}
+	ok, err := s.repo.RefundUndelivered(ctx, SupplyAccountID(ctx), id)
 	if err != nil {
 		return nil, err
 	}
-	if string(o.Status) != "pending" && string(o.Status) != "paid" {
-		return &supplyv1.CancelSupplyOrderReply{Ok: false}, nil // 已交付不可取消
-	}
-	_ = s.repo.LedgerEntry(ctx, o.AccountID, o.ID, "supply_refund", o.Amount, "supply_order:"+o.DownstreamOrderNo+":cancel", "取消退回")
-	_ = s.repo.MarkSupplyOrderRejected(ctx, o.ID)
-	return &supplyv1.CancelSupplyOrderReply{Ok: true}, nil
+	return &supplyv1.CancelSupplyOrderReply{Ok: ok}, nil
 }
 
-// RefundOrder 退款（已交付：账本退回；未交付：退回 + rejected）。
+// RefundOrder 已交付的卡密不可撤回，需管理员人工处理。
 func (s *SupplyAPIService) RefundOrder(ctx context.Context, req *supplyv1.RefundSupplyOrderRequest) (*supplyv1.RefundSupplyOrderReply, error) {
 	id, err := strconv.ParseUint(req.GetId(), 10, 64)
 	if err != nil {
 		return nil, errors.New("supplier.INVALID_ORDER_ID")
 	}
-	o, err := s.repo.GetSupplyOrder(ctx, id)
+	if _, err := s.accountOrder(ctx, id); err != nil {
+		return nil, err
+	}
+	ok, err := s.repo.RefundUndelivered(ctx, SupplyAccountID(ctx), id)
 	if err != nil {
 		return nil, err
 	}
-	ref := "supply_order:" + o.DownstreamOrderNo + ":refund"
-	err = s.repo.LedgerEntry(ctx, o.AccountID, o.ID, "supply_refund", o.Amount, ref, "退款")
-	if err != nil && !errors.Is(err, ErrDuplicateLedger) {
-		return &supplyv1.RefundSupplyOrderReply{Ok: false, ErrorCode: "refund_failed", ErrorMessage: err.Error()}, nil
-	}
-	if string(o.Status) != "fulfilled" {
-		_ = s.repo.MarkSupplyOrderRejected(ctx, o.ID)
+	if !ok {
+		return &supplyv1.RefundSupplyOrderReply{Ok: false, ErrorCode: "refund_not_allowed", ErrorMessage: "交付中或已交付订单需人工处理"}, nil
 	}
 	return &supplyv1.RefundSupplyOrderReply{Ok: true}, nil
 }

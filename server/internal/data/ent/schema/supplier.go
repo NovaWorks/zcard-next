@@ -85,7 +85,7 @@ func (SupplyOrder) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("id"),
 		field.Uint64("account_id"),
-		field.String("downstream_order_no").MaxLen(64).Unique().Comment("下游单号（幂等锚点）"),
+		field.String("downstream_order_no").MaxLen(64).Comment("下游单号（账户内幂等锚点）"),
 		field.JSON("items", []map[string]any{}).Comment("商品行快照（上游商品/SKU/数量/单价）"),
 		field.Int64("amount").Comment("应付（分，供货价口径）"),
 		field.Enum("status").
@@ -99,6 +99,7 @@ func (SupplyOrder) Fields() []ent.Field {
 
 func (SupplyOrder) Indexes() []ent.Index {
 	return []ent.Index{
+		index.Fields("account_id", "downstream_order_no").Unique(),
 		index.Fields("account_id", "created_at"),
 		index.Fields("status"),
 	}

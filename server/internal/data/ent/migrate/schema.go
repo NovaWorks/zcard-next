@@ -2650,7 +2650,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "account_id", Type: field.TypeUint64},
-		{Name: "downstream_order_no", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "downstream_order_no", Type: field.TypeString, Size: 64},
 		{Name: "items", Type: field.TypeJSON},
 		{Name: "amount", Type: field.TypeInt64},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "paid", "fulfilling", "fulfilled", "rejected", "refunded"}, Default: "pending"},
@@ -2664,6 +2664,11 @@ var (
 		Columns:    SupplyOrdersColumns,
 		PrimaryKey: []*schema.Column{SupplyOrdersColumns[0]},
 		Indexes: []*schema.Index{
+			{
+				Name:    "supplyorder_account_id_downstream_order_no",
+				Unique:  true,
+				Columns: []*schema.Column{SupplyOrdersColumns[3], SupplyOrdersColumns[4]},
+			},
 			{
 				Name:    "supplyorder_account_id_created_at",
 				Unique:  false,

@@ -204,7 +204,15 @@ func (h *acgCompat) valuation(w http.ResponseWriter, r *http.Request, account *e
 
 func (h *acgCompat) trade(w http.ResponseWriter, r *http.Request, account *ent.SupplierAccount, form map[string]string) {
 	code := form["shared_code"]
-	num := atoiOr(form["num"], 1)
+	quantityText := form["num"]
+	if quantityText == "" {
+		quantityText = "1"
+	}
+	num, parseErr := strconv.ParseInt(quantityText, 10, 32)
+	if parseErr != nil || num < 1 {
+		writeAcgErr(w, "购买数量非法")
+		return
+	}
 	requestNo := form["request_no"]
 	if code == "" || requestNo == "" {
 		writeAcgErr(w, "参数缺失（shared_code/request_no 必填）")
@@ -252,13 +260,13 @@ func (h *acgCompat) query(w http.ResponseWriter, r *http.Request, account *ent.S
 		return
 	}
 	ctx := withAccount(r, account.ID)
-	o, err := h.svc.repo.GetSupplyOrder(ctx, id)
+	o, err := h.svc.repo.GetAccountSupplyOrder(ctx, account.ID, id)
 	if err != nil || o.AccountID != account.ID {
 		writeAcgErr(w, "订单不存在")
 		return
 	}
 	status := 0 // 0=未完成 1=已支付
-	if string(o.Status) != "pending" && string(o.Status) != "rejected" {
+	if string(o.Status) == "paid" || string(o.Status) == "fulfilling" || string(o.Status) == "fulfilled" {
 		status = 1
 	}
 	secret := ""
