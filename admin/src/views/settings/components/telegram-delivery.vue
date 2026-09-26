@@ -150,7 +150,7 @@ onBeforeUnmount(() => {
     </NSpace>
     <p v-if="unsaved" class="mt-8px">请先保存 TG 配置，再测试或重试。</p>
     <p v-else-if="!enabled" class="mt-8px">
-      请先配置 Token 并开启通道与订单通知。
+      请先配置 Token 并开启通道及订单或低库存通知。
     </p>
     <p v-if="testNotice" class="mt-12px" role="status">{{ testNotice }}</p>
     <NAlert v-if="loadFailed" class="mt-12px" type="error"

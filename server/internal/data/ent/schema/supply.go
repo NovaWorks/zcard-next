@@ -27,6 +27,8 @@ func (SupplyConnection) Fields() []ent.Field {
 		field.Bytes("credentials").Comment("AES-256-GCM 加密凭据（结构随 driver）"),
 		field.Enum("status").Values("active", "disabled").Default("active"),
 		field.Uint64("sync_task_id").Default(0),
+		field.Int64("low_stock_scanned_at").Default(0),
+		field.String("low_stock_message").Default(""),
 		field.String("sync_lease_token").Default(""),
 		field.Int64("sync_lease_until").Default(0),
 		field.String("callback_url").MaxLen(500).Optional().Comment("本站作下游时的回调登记"),
@@ -82,6 +84,9 @@ func (SupplyMapping) Fields() []ent.Field {
 		field.Uint64("local_product_id").Optional(),
 		field.String("upstream_sku").MaxLen(64).Default(""),
 		field.Uint64("local_sku_id").Optional(),
+		field.Int64("stock_probe_after").Default(0),
+		field.Int64("stock_probe_lease").Default(0),
+		field.Int("stock_probe_failures").Default(0),
 		field.Int32("up_stock").Default(0).Comment("库存缓存（-1=无限，-2=未知）"),
 		field.Time("stock_checked_at").SchemaType(mysqlTime).Optional(),
 		field.Int32("stock_reference").Default(-2).Comment("上次成功库存，仅作展示参考"),
@@ -95,6 +100,7 @@ func (SupplyMapping) Indexes() []ent.Index {
 		// sku 用空串哨兵参与唯一索引（NULL 可重复问题同 cart_items）
 		index.Fields("connection_id", "upstream_product", "upstream_sku").Unique(),
 		index.Fields("local_product_id"),
+		index.Fields("connection_id", "stock_probe_after", "id"),
 	}
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplysynctask"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/httpx"
@@ -62,6 +63,9 @@ func (s *AdminSupplyService) CreateConnection(ctx context.Context, req *adminv1.
 		return nil, err
 	}
 	settings, err := parseConnectionSettings(req.GetSettings())
+	if err == nil {
+		err = validateLowStockPlan(settings)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -126,6 +130,9 @@ func (s *AdminSupplyService) updateConnection(ctx context.Context, req *adminv1.
 		return nil, err
 	}
 	settings, err := parseConnectionSettings(req.GetSettings())
+	if err == nil {
+		err = validateLowStockPlan(settings)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -142,6 +149,12 @@ func (s *AdminSupplyService) updateConnection(ctx context.Context, req *adminv1.
 	updated, err := s.repo.UpdateConnection(ctx, req.GetId(), upd)
 	if err != nil {
 		return nil, err
+	}
+	// Changed cadence/threshold takes effect on the next scan, without a restart.
+	if loadLowStockPlan(conn) != loadLowStockPlan(updated) {
+		if _, err := s.repo.entClient(ctx).SupplyMapping.Update().Where(supplymapping.ConnectionID(conn.ID), supplymapping.StockProbeFailures(0)).SetStockProbeAfter(0).Save(ctx); err != nil {
+			return nil, err
+		}
 	}
 	// 凭据单独更新（换 base_url 时凭据需重配：AAD 绑定 base_url）
 	if req.GetCredentials() != "" {
@@ -381,6 +394,8 @@ func (s *AdminSupplyService) ListHealth(ctx context.Context, _ *adminv1.ListHeal
 func toProtoConnection(c *ent.SupplyConnection) *adminv1.SupplyConnection {
 	p := &adminv1.SupplyConnection{
 		Id:                 c.ID,
+		LowStockScannedAt:  c.LowStockScannedAt,
+		LowStockMessage:    c.LowStockMessage,
 		Name:               c.Name,
 		Driver:             c.Driver,
 		BaseUrl:            c.BaseURL,
@@ -405,6 +420,18 @@ func toProtoConnection(c *ent.SupplyConnection) *adminv1.SupplyConnection {
 		if b, err := json.Marshal(c.Settings); err == nil {
 			p.Settings = string(b)
 		}
+	}
+	if !c.LastCollectAt.IsZero() {
+		p.LastCollectAt = c.LastCollectAt.Unix()
+	}
+	if !c.LastPriceSyncAt.IsZero() {
+		p.LastPriceSyncAt = c.LastPriceSyncAt.Unix()
+	}
+	if !c.LastStatusSyncAt.IsZero() {
+		p.LastStatusSyncAt = c.LastStatusSyncAt.Unix()
+	}
+	if !c.RateLimitUntil.IsZero() {
+		p.RateLimitUntil = c.RateLimitUntil.Unix()
 	}
 	if !c.LastPingAt.IsZero() {
 		p.LastPingAt = c.LastPingAt.Unix()

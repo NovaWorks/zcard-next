@@ -338,6 +338,7 @@ type AdminProduct struct {
 	ListingMessage       string `protobuf:"bytes,38,opt,name=listing_message,json=listingMessage,proto3" json:"listing_message,omitempty"`
 	ListingRestocked     bool   `protobuf:"varint,39,opt,name=listing_restocked,json=listingRestocked,proto3" json:"listing_restocked,omitempty"`
 	ListingObservedAt    int64  `protobuf:"varint,40,opt,name=listing_observed_at,json=listingObservedAt,proto3" json:"listing_observed_at,omitempty"`
+	LowStockMessage      string `protobuf:"bytes,41,opt,name=low_stock_message,json=lowStockMessage,proto3" json:"low_stock_message,omitempty"` // 按实际发货规格和后台阈值计算，空表示无已确认预警
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -650,6 +651,13 @@ func (x *AdminProduct) GetListingObservedAt() int64 {
 		return x.ListingObservedAt
 	}
 	return 0
+}
+
+func (x *AdminProduct) GetLowStockMessage() string {
+	if x != nil {
+		return x.LowStockMessage
+	}
+	return ""
 }
 
 type CreateProductRequest struct {
@@ -5736,7 +5744,7 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"(\n" +
 	"\x11GetProductRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\x84\v\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xb0\v\n" +
 	"\fAdminProduct\x12)\n" +
 	"\x10fulfillment_mode\x18\x1e \x01(\tR\x0ffulfillmentMode\x12&\n" +
 	"\fmanual_stock\x18\x1f \x01(\x03H\x00R\vmanualStock\x88\x01\x01\x12\x0e\n" +
@@ -5784,7 +5792,8 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x0elisting_reason\x18% \x01(\tR\rlistingReason\x12'\n" +
 	"\x0flisting_message\x18& \x01(\tR\x0elistingMessage\x12+\n" +
 	"\x11listing_restocked\x18' \x01(\bR\x10listingRestocked\x12.\n" +
-	"\x13listing_observed_at\x18( \x01(\x03R\x11listingObservedAtB\x0f\n" +
+	"\x13listing_observed_at\x18( \x01(\x03R\x11listingObservedAt\x12*\n" +
+	"\x11low_stock_message\x18) \x01(\tR\x0flowStockMessageB\x0f\n" +
 	"\r_manual_stock\"\xfd\x04\n" +
 	"\x14CreateProductRequest\x12)\n" +
 	"\x10fulfillment_mode\x18\x11 \x01(\tR\x0ffulfillmentMode\x12&\n" +

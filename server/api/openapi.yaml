@@ -7476,6 +7476,8 @@ components:
                     type: boolean
                 listingObservedAt:
                     type: string
+                lowStockMessage:
+                    type: string
             description: AdminProduct 管理面商品（含成本价等敏感字段）。
         zcard.api.admin.v1.AdminProfile:
             type: object
@@ -11854,6 +11856,10 @@ components:
                 stockMode:
                     type: string
                 settings:
+                    type: string
+                lowStockScannedAt:
+                    type: string
+                lowStockMessage:
                     type: string
                 priceMarkupAmount:
                     type: string

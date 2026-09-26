@@ -2330,6 +2330,32 @@ var (
 			},
 		},
 	}
+	// StockAlertsColumns holds the columns for the "stock_alerts" table.
+	StockAlertsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "product_id", Type: field.TypeUint64},
+		{Name: "sku_id", Type: field.TypeUint64, Default: 0},
+		{Name: "source_key", Type: field.TypeString, Size: 255},
+		{Name: "threshold", Type: field.TypeInt, Default: 0},
+		{Name: "state", Type: field.TypeInt8, Default: 0},
+		{Name: "notified_state", Type: field.TypeInt8, Default: 0},
+		{Name: "last_notified_at", Type: field.TypeInt64, Default: 0},
+	}
+	// StockAlertsTable holds the schema information for the "stock_alerts" table.
+	StockAlertsTable = &schema.Table{
+		Name:       "stock_alerts",
+		Columns:    StockAlertsColumns,
+		PrimaryKey: []*schema.Column{StockAlertsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "stockalert_product_id_sku_id",
+				Unique:  true,
+				Columns: []*schema.Column{StockAlertsColumns[3], StockAlertsColumns[4]},
+			},
+		},
+	}
 	// SupplierAccountsColumns holds the columns for the "supplier_accounts" table.
 	SupplierAccountsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
@@ -2466,6 +2492,8 @@ var (
 		{Name: "credentials", Type: field.TypeBytes},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "disabled"}, Default: "active"},
 		{Name: "sync_task_id", Type: field.TypeUint64, Default: 0},
+		{Name: "low_stock_scanned_at", Type: field.TypeInt64, Default: 0},
+		{Name: "low_stock_message", Type: field.TypeString, Default: ""},
 		{Name: "sync_lease_token", Type: field.TypeString, Default: ""},
 		{Name: "sync_lease_until", Type: field.TypeInt64, Default: 0},
 		{Name: "callback_url", Type: field.TypeString, Nullable: true, Size: 500},
@@ -2503,7 +2531,7 @@ var (
 			{
 				Name:    "supplyconnection_last_synced_at",
 				Unique:  false,
-				Columns: []*schema.Column{SupplyConnectionsColumns[23]},
+				Columns: []*schema.Column{SupplyConnectionsColumns[25]},
 			},
 		},
 	}
@@ -2558,6 +2586,9 @@ var (
 		{Name: "local_product_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "upstream_sku", Type: field.TypeString, Size: 64, Default: ""},
 		{Name: "local_sku_id", Type: field.TypeUint64, Nullable: true},
+		{Name: "stock_probe_after", Type: field.TypeInt64, Default: 0},
+		{Name: "stock_probe_lease", Type: field.TypeInt64, Default: 0},
+		{Name: "stock_probe_failures", Type: field.TypeInt, Default: 0},
 		{Name: "up_stock", Type: field.TypeInt32, Default: 0},
 		{Name: "stock_checked_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "stock_reference", Type: field.TypeInt32, Default: -2},
@@ -2579,6 +2610,11 @@ var (
 				Name:    "supplymapping_local_product_id",
 				Unique:  false,
 				Columns: []*schema.Column{SupplyMappingsColumns[7]},
+			},
+			{
+				Name:    "supplymapping_connection_id_stock_probe_after_id",
+				Unique:  false,
+				Columns: []*schema.Column{SupplyMappingsColumns[3], SupplyMappingsColumns[10], SupplyMappingsColumns[0]},
 			},
 		},
 	}
@@ -3084,6 +3120,7 @@ var (
 		SecurityAuditLogsTable,
 		SessionsTable,
 		SettingsTable,
+		StockAlertsTable,
 		SupplierAccountsTable,
 		SupplierLedgerEntriesTable,
 		SupplierProductPricesTable,

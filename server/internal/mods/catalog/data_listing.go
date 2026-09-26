@@ -50,7 +50,10 @@ func (r *ProductRepoImpl) listInventory(ctx context.Context, q *ent.ProductQuery
 			case "available":
 				match = n > 0 || n == -1
 			case "low":
-				match = n > 0 && n < int64(f.LowStockThreshold)
+				match, err = data.HasLowStock(ctx, r.data, p, f.LowStockThreshold)
+				if err != nil {
+					return nil, 0, err
+				}
 			case "empty":
 				match = n == 0
 			case "unknown":

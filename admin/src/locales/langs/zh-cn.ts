@@ -476,7 +476,7 @@ const local: App.I18n.Schema = {
     },
     supply: {
       import_max_lines: "导入最大行数",
-      low_stock_threshold: "低库存阈值",
+      low_stock_threshold: "库存低于此数量时提醒",
       sync_interval_minutes: "同步间隔（分钟）",
     },
     notify: {

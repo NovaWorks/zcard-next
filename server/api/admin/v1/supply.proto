@@ -124,6 +124,8 @@ message SupplyConnection {
   bool auto_sync_price = 13;
   string stock_mode = 14; // real | plenty
   string settings = 15; // JSON
+  int64 low_stock_scanned_at = 29;
+  string low_stock_message = 30;
   int64 price_markup_amount = 28; // 固定加价（分；与加价% 组合：×(1+%) 后再加）
   int64 last_ping_at = 16;
   bool last_ping_ok = 17;

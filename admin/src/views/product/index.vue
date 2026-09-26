@@ -440,7 +440,7 @@ function statsCell(row: any) {
       h("span", { class: "w-30px shrink-0 text-12px text-gray-400" }, label),
       value,
     ]);
-  // 库存颜色：卡密类 0=红（缺货）、≤10=橙（低库存预警）；代发/链接/兑换码 -1=不限
+  // 预警按后台阈值和实际规格计算，不能用商品合计掩盖缺货规格。
   const stockNode = row.stock_status === 'stale'
     ? h("span", { class: "text-12px", title: `上次同步：${row.stock_checked_at ? new Date(row.stock_checked_at * 1000).toLocaleString() : '未知'}。仅供参考，买家进入详情时重新查询。` }, row.stock_reference === -1 ? '上次不限' : `参考 ${row.stock_reference ?? 0} 件`)
     : stock < -1
@@ -448,10 +448,11 @@ function statsCell(row: any) {
     : stock === -1 ? h("span", {}, "不限")
     : stock <= 0
       ? h("span", { class: "font-medium text-red-500" }, "0 件")
-      : h("span", { class: stock <= 10 ? "text-orange-500" : "" }, `${stock} 件`);
+      : h("span", { class: row.low_stock_message ? "text-orange-500" : "" }, `${stock} 件`);
   return h("div", { class: "flex flex-col gap-2px py-2px" }, [
     line("库存", stockNode),
     line("已售", h("span", {}, `${sold} 件`)),
+    row.low_stock_message ? h("span", { class: "text-12px text-orange-500 max-w-180px truncate", title: row.low_stock_message }, `预警：${row.low_stock_message}`) : null,
   ]);
 }
 
@@ -1063,7 +1064,7 @@ async function saveAndContinue() {
 
 
 onMounted(() => {
-  if (route.query.low_stock === "1") {statusFilter.value=1;inventoryFilter.value="low";}
+  if (route.query.low_stock === "1") {statusFilter.value=0;inventoryFilter.value="low";}
   loadList();
   loadCategories();
   loadConnections();

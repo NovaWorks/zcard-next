@@ -83,6 +83,8 @@ func NewCron(catalogPreview *supply.AdminSupplyService, notifyDisp *notify.Dispa
 	c.AddEvery("supply.catalog_snapshots", 5*time.Second, catalogPreview.ResumeCatalogSnapshots)
 	c.AddEvery("supply.resume_tasks", 5*time.Second, supplySync.ResumeTasks)
 	c.AddEvery("supply.schedule_scan", time.Minute, supplyScheduler.Scan)
+	c.AddEvery("supply.low_stock", time.Minute, supplySync.ScanLowStock)
+	c.AddEvery("notify.low_stock", time.Minute, notifyDisp.ScanLowStock)
 	c.AddEvery("supply.sync_reap_stale", 10*time.Minute, supplyScheduler.ReapStaleTasks)
 	// ：采购巡检兜底（每 30 分钟拉 polling/submitted 单查上游；24h 卡死转人工）
 	c.AddEvery("procurement.reusable", 5*time.Second, func(ctx context.Context) {

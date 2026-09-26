@@ -30,6 +30,7 @@ const failed = ref(false);
 const saving = ref(false);
 const enabled = ref(false);
 const orderEnabled = ref(false);
+const lowStockEnabled = ref(false);
 const token = ref("");
 const savedToken = ref(false);
 const events = ref<string[]>(["order.paid"]);
@@ -46,6 +47,7 @@ const state = () =>
   JSON.stringify({
     enabled: enabled.value,
     orderEnabled: orderEnabled.value,
+    lowStockEnabled: lowStockEnabled.value,
     token: token.value,
     events: events.value,
     targets: targets.value.map((t) => ({ chat_id: t.chat_id, topic: t.topic })),
@@ -95,6 +97,8 @@ const tokenError = computed(() =>
     : "",
 );
 const validation = computed(() => {
+  if (enabled.value && lowStockEnabled.value && (!targets.value.length || (!savedToken.value && !token.value)))
+    return "启用低库存通知需要 Token 和至少一个接收位置";
   if (tokenError.value) return tokenError.value;
   if (targets.value.some((t) => chatError(t) || topicError(t)))
     return "请修正接收位置中标出的错误";
@@ -125,6 +129,7 @@ async function load() {
       values[item.key] = JSON.parse(item.value_json);
     enabled.value = values.telegram_enabled === true;
     orderEnabled.value = values.telegram_order_enabled === true;
+    lowStockEnabled.value = values.telegram_low_stock_enabled === true;
     savedToken.value = values.telegram_bot_token === "****";
     token.value = "";
     events.value = values.telegram_events || ["order.paid"];
@@ -162,6 +167,7 @@ async function save() {
     const values: Record<string, unknown> = {
       telegram_enabled: enabled.value,
       telegram_order_enabled: orderEnabled.value,
+      telegram_low_stock_enabled: lowStockEnabled.value,
       telegram_events: events.value,
       telegram_targets: targets.value.map(destination),
     };
@@ -178,7 +184,7 @@ async function save() {
       token.value = "";
       savedTargets.value = targets.value.map(destination);
       baseline.value = state();
-      window.$message?.success("TG订单通知设置已保存");
+      window.$message?.success("TG通知设置已保存");
     }
   } finally {
     saving.value = false;
@@ -188,7 +194,7 @@ onMounted(load);
 </script>
 
 <template>
-  <NCard title="TG订单通知" class="mt-24px" size="small">
+  <NCard title="TG订单与库存通知" class="mt-24px" size="small">
     <NSpin v-if="loading" />
     <NAlert v-else-if="failed" type="error" title="读取 TG 配置失败">
       已有配置未被修改。<NButton class="ml-12px" @click="load"
@@ -197,7 +203,7 @@ onMounted(load);
     </NAlert>
     <template v-else>
       <p class="mb-16px">
-        向商家个人、管理群或指定话题发送主站订单提醒。工单设置与此处分别保存。
+        向商家个人、管理群或指定话题发送主站订单与低库存提醒。工单设置与此处分别保存。
       </p>
       <NForm
         label-placement="top"
@@ -216,7 +222,13 @@ onMounted(load);
               >关闭只停止订单通知，其他 TG 告警由通道开关控制</span
             ></NFormItem
           >
+          <NFormItem label="主站低库存通知">
+            <NSwitch v-model:value="lowStockEnabled" aria-label="主站低库存通知" />
+          </NFormItem>
         </div>
+        <NAlert v-if="lowStockEnabled" type="info" :show-icon="false" class="mb-16px">
+          请在「系统设置 → 货源」开启库存预警并设置“库存低于此数量时提醒”。首次跌破阈值合并通知，持续低库存不重复发送，降至零可追加一次。恢复后再次跌破受 30 分钟冷却限制；查询失败不会当作缺货。
+        </NAlert>
         <NFormItem
           label="Bot Token"
           :validation-status="tokenError ? 'error' : undefined"
@@ -328,7 +340,7 @@ onMounted(load);
       <TelegramDelivery
         :unsaved="dirty || saving"
         :targets="savedTargets"
-        :enabled="enabled && orderEnabled && savedToken"
+        :enabled="enabled && (orderEnabled || lowStockEnabled) && savedToken"
       />
     </template>
   </NCard>

@@ -36,6 +36,12 @@ type SupplyMapping struct {
 	UpstreamSku string `json:"upstream_sku,omitempty"`
 	// LocalSkuID holds the value of the "local_sku_id" field.
 	LocalSkuID uint64 `json:"local_sku_id,omitempty"`
+	// StockProbeAfter holds the value of the "stock_probe_after" field.
+	StockProbeAfter int64 `json:"stock_probe_after,omitempty"`
+	// StockProbeLease holds the value of the "stock_probe_lease" field.
+	StockProbeLease int64 `json:"stock_probe_lease,omitempty"`
+	// StockProbeFailures holds the value of the "stock_probe_failures" field.
+	StockProbeFailures int `json:"stock_probe_failures,omitempty"`
 	// 库存缓存（-1=无限，-2=未知）
 	UpStock int32 `json:"up_stock,omitempty"`
 	// StockCheckedAt holds the value of the "stock_checked_at" field.
@@ -56,7 +62,7 @@ func (*SupplyMapping) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case supplymapping.FieldPricingOverride:
 			values[i] = new([]byte)
-		case supplymapping.FieldID, supplymapping.FieldConnectionID, supplymapping.FieldLocalCategoryID, supplymapping.FieldLocalProductID, supplymapping.FieldLocalSkuID, supplymapping.FieldUpStock, supplymapping.FieldStockReference:
+		case supplymapping.FieldID, supplymapping.FieldConnectionID, supplymapping.FieldLocalCategoryID, supplymapping.FieldLocalProductID, supplymapping.FieldLocalSkuID, supplymapping.FieldStockProbeAfter, supplymapping.FieldStockProbeLease, supplymapping.FieldStockProbeFailures, supplymapping.FieldUpStock, supplymapping.FieldStockReference:
 			values[i] = new(sql.NullInt64)
 		case supplymapping.FieldUpstreamCategory, supplymapping.FieldUpstreamProduct, supplymapping.FieldUpstreamSku:
 			values[i] = new(sql.NullString)
@@ -136,6 +142,24 @@ func (_m *SupplyMapping) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field local_sku_id", values[i])
 			} else if value.Valid {
 				_m.LocalSkuID = uint64(value.Int64)
+			}
+		case supplymapping.FieldStockProbeAfter:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field stock_probe_after", values[i])
+			} else if value.Valid {
+				_m.StockProbeAfter = value.Int64
+			}
+		case supplymapping.FieldStockProbeLease:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field stock_probe_lease", values[i])
+			} else if value.Valid {
+				_m.StockProbeLease = value.Int64
+			}
+		case supplymapping.FieldStockProbeFailures:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field stock_probe_failures", values[i])
+			} else if value.Valid {
+				_m.StockProbeFailures = int(value.Int64)
 			}
 		case supplymapping.FieldUpStock:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -231,6 +255,15 @@ func (_m *SupplyMapping) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("local_sku_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.LocalSkuID))
+	builder.WriteString(", ")
+	builder.WriteString("stock_probe_after=")
+	builder.WriteString(fmt.Sprintf("%v", _m.StockProbeAfter))
+	builder.WriteString(", ")
+	builder.WriteString("stock_probe_lease=")
+	builder.WriteString(fmt.Sprintf("%v", _m.StockProbeLease))
+	builder.WriteString(", ")
+	builder.WriteString("stock_probe_failures=")
+	builder.WriteString(fmt.Sprintf("%v", _m.StockProbeFailures))
 	builder.WriteString(", ")
 	builder.WriteString("up_stock=")
 	builder.WriteString(fmt.Sprintf("%v", _m.UpStock))

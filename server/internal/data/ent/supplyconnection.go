@@ -34,6 +34,10 @@ type SupplyConnection struct {
 	Status supplyconnection.Status `json:"status,omitempty"`
 	// SyncTaskID holds the value of the "sync_task_id" field.
 	SyncTaskID uint64 `json:"sync_task_id,omitempty"`
+	// LowStockScannedAt holds the value of the "low_stock_scanned_at" field.
+	LowStockScannedAt int64 `json:"low_stock_scanned_at,omitempty"`
+	// LowStockMessage holds the value of the "low_stock_message" field.
+	LowStockMessage string `json:"low_stock_message,omitempty"`
 	// SyncLeaseToken holds the value of the "sync_lease_token" field.
 	SyncLeaseToken string `json:"sync_lease_token,omitempty"`
 	// SyncLeaseUntil holds the value of the "sync_lease_until" field.
@@ -92,9 +96,9 @@ func (*SupplyConnection) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case supplyconnection.FieldExchangeRate, supplyconnection.FieldPriceMarkupPercent:
 			values[i] = new(sql.NullFloat64)
-		case supplyconnection.FieldID, supplyconnection.FieldSyncTaskID, supplyconnection.FieldSyncLeaseUntil, supplyconnection.FieldRetryMax, supplyconnection.FieldPriceMarkupAmount, supplyconnection.FieldBalanceCache:
+		case supplyconnection.FieldID, supplyconnection.FieldSyncTaskID, supplyconnection.FieldLowStockScannedAt, supplyconnection.FieldSyncLeaseUntil, supplyconnection.FieldRetryMax, supplyconnection.FieldPriceMarkupAmount, supplyconnection.FieldBalanceCache:
 			values[i] = new(sql.NullInt64)
-		case supplyconnection.FieldName, supplyconnection.FieldDriver, supplyconnection.FieldBaseURL, supplyconnection.FieldStatus, supplyconnection.FieldSyncLeaseToken, supplyconnection.FieldCallbackURL, supplyconnection.FieldRetryIntervals, supplyconnection.FieldPriceRoundingMode, supplyconnection.FieldStockMode, supplyconnection.FieldLastError:
+		case supplyconnection.FieldName, supplyconnection.FieldDriver, supplyconnection.FieldBaseURL, supplyconnection.FieldStatus, supplyconnection.FieldLowStockMessage, supplyconnection.FieldSyncLeaseToken, supplyconnection.FieldCallbackURL, supplyconnection.FieldRetryIntervals, supplyconnection.FieldPriceRoundingMode, supplyconnection.FieldStockMode, supplyconnection.FieldLastError:
 			values[i] = new(sql.NullString)
 		case supplyconnection.FieldCreatedAt, supplyconnection.FieldUpdatedAt, supplyconnection.FieldLastPingAt, supplyconnection.FieldLastSyncedAt, supplyconnection.FieldLastCollectAt, supplyconnection.FieldLastPriceSyncAt, supplyconnection.FieldLastStatusSyncAt, supplyconnection.FieldRateLimitUntil:
 			values[i] = new(sql.NullTime)
@@ -166,6 +170,18 @@ func (_m *SupplyConnection) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field sync_task_id", values[i])
 			} else if value.Valid {
 				_m.SyncTaskID = uint64(value.Int64)
+			}
+		case supplyconnection.FieldLowStockScannedAt:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field low_stock_scanned_at", values[i])
+			} else if value.Valid {
+				_m.LowStockScannedAt = value.Int64
+			}
+		case supplyconnection.FieldLowStockMessage:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field low_stock_message", values[i])
+			} else if value.Valid {
+				_m.LowStockMessage = value.String
 			}
 		case supplyconnection.FieldSyncLeaseToken:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -362,6 +378,12 @@ func (_m *SupplyConnection) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sync_task_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SyncTaskID))
+	builder.WriteString(", ")
+	builder.WriteString("low_stock_scanned_at=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LowStockScannedAt))
+	builder.WriteString(", ")
+	builder.WriteString("low_stock_message=")
+	builder.WriteString(_m.LowStockMessage)
 	builder.WriteString(", ")
 	builder.WriteString("sync_lease_token=")
 	builder.WriteString(_m.SyncLeaseToken)

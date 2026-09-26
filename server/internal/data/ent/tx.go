@@ -158,6 +158,8 @@ type Tx struct {
 	Session *SessionClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
+	// StockAlert is the client for interacting with the StockAlert builders.
+	StockAlert *StockAlertClient
 	// SupplierAccount is the client for interacting with the SupplierAccount builders.
 	SupplierAccount *SupplierAccountClient
 	// SupplierLedgerEntry is the client for interacting with the SupplierLedgerEntry builders.
@@ -406,6 +408,7 @@ func (tx *Tx) init() {
 	tx.SecurityAuditLog = NewSecurityAuditLogClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
+	tx.StockAlert = NewStockAlertClient(tx.config)
 	tx.SupplierAccount = NewSupplierAccountClient(tx.config)
 	tx.SupplierLedgerEntry = NewSupplierLedgerEntryClient(tx.config)
 	tx.SupplierProductPrice = NewSupplierProductPriceClient(tx.config)

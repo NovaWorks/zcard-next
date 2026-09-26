@@ -88,6 +88,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/securityauditlog"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/session"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/stockalert"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
@@ -263,6 +264,8 @@ type Client struct {
 	Session *SessionClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
+	// StockAlert is the client for interacting with the StockAlert builders.
+	StockAlert *StockAlertClient
 	// SupplierAccount is the client for interacting with the SupplierAccount builders.
 	SupplierAccount *SupplierAccountClient
 	// SupplierLedgerEntry is the client for interacting with the SupplierLedgerEntry builders.
@@ -391,6 +394,7 @@ func (c *Client) init() {
 	c.SecurityAuditLog = NewSecurityAuditLogClient(c.config)
 	c.Session = NewSessionClient(c.config)
 	c.Setting = NewSettingClient(c.config)
+	c.StockAlert = NewStockAlertClient(c.config)
 	c.SupplierAccount = NewSupplierAccountClient(c.config)
 	c.SupplierLedgerEntry = NewSupplierLedgerEntryClient(c.config)
 	c.SupplierProductPrice = NewSupplierProductPriceClient(c.config)
@@ -578,6 +582,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		SecurityAuditLog:         NewSecurityAuditLogClient(cfg),
 		Session:                  NewSessionClient(cfg),
 		Setting:                  NewSettingClient(cfg),
+		StockAlert:               NewStockAlertClient(cfg),
 		SupplierAccount:          NewSupplierAccountClient(cfg),
 		SupplierLedgerEntry:      NewSupplierLedgerEntryClient(cfg),
 		SupplierProductPrice:     NewSupplierProductPriceClient(cfg),
@@ -692,6 +697,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		SecurityAuditLog:         NewSecurityAuditLogClient(cfg),
 		Session:                  NewSessionClient(cfg),
 		Setting:                  NewSettingClient(cfg),
+		StockAlert:               NewStockAlertClient(cfg),
 		SupplierAccount:          NewSupplierAccountClient(cfg),
 		SupplierLedgerEntry:      NewSupplierLedgerEntryClient(cfg),
 		SupplierProductPrice:     NewSupplierProductPriceClient(cfg),
@@ -759,12 +765,13 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ReconciliationJob, c.RefundOrder, c.ResellerBalanceAccount,
 		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
 		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
-		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.SupplierAccount,
-		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyCatalogSnapshot,
-		c.SupplyConnection, c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce,
-		c.SupplyOrder, c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User,
-		c.UserGroup, c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog,
-		c.WalletAccount, c.WalletTransaction, c.Withdrawal,
+		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.StockAlert,
+		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
+		c.SupplyCatalogSnapshot, c.SupplyConnection, c.SupplyImportItem,
+		c.SupplyMapping, c.SupplyNonce, c.SupplyOrder, c.SupplySyncTask, c.Tag,
+		c.Ticket, c.TicketMessage, c.User, c.UserGroup, c.UserSession, c.V1IDMap,
+		c.VirtualReview, c.VisitLog, c.WalletAccount, c.WalletTransaction,
+		c.Withdrawal,
 	} {
 		n.Use(hooks...)
 	}
@@ -790,12 +797,13 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ReconciliationJob, c.RefundOrder, c.ResellerBalanceAccount,
 		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
 		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
-		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.SupplierAccount,
-		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyCatalogSnapshot,
-		c.SupplyConnection, c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce,
-		c.SupplyOrder, c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User,
-		c.UserGroup, c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog,
-		c.WalletAccount, c.WalletTransaction, c.Withdrawal,
+		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.StockAlert,
+		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
+		c.SupplyCatalogSnapshot, c.SupplyConnection, c.SupplyImportItem,
+		c.SupplyMapping, c.SupplyNonce, c.SupplyOrder, c.SupplySyncTask, c.Tag,
+		c.Ticket, c.TicketMessage, c.User, c.UserGroup, c.UserSession, c.V1IDMap,
+		c.VirtualReview, c.VisitLog, c.WalletAccount, c.WalletTransaction,
+		c.Withdrawal,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -950,6 +958,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Session.mutate(ctx, m)
 	case *SettingMutation:
 		return c.Setting.mutate(ctx, m)
+	case *StockAlertMutation:
+		return c.StockAlert.mutate(ctx, m)
 	case *SupplierAccountMutation:
 		return c.SupplierAccount.mutate(ctx, m)
 	case *SupplierLedgerEntryMutation:
@@ -10964,6 +10974,139 @@ func (c *SettingClient) mutate(ctx context.Context, m *SettingMutation) (Value, 
 	}
 }
 
+// StockAlertClient is a client for the StockAlert schema.
+type StockAlertClient struct {
+	config
+}
+
+// NewStockAlertClient returns a client for the StockAlert from the given config.
+func NewStockAlertClient(c config) *StockAlertClient {
+	return &StockAlertClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `stockalert.Hooks(f(g(h())))`.
+func (c *StockAlertClient) Use(hooks ...Hook) {
+	c.hooks.StockAlert = append(c.hooks.StockAlert, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `stockalert.Intercept(f(g(h())))`.
+func (c *StockAlertClient) Intercept(interceptors ...Interceptor) {
+	c.inters.StockAlert = append(c.inters.StockAlert, interceptors...)
+}
+
+// Create returns a builder for creating a StockAlert entity.
+func (c *StockAlertClient) Create() *StockAlertCreate {
+	mutation := newStockAlertMutation(c.config, OpCreate)
+	return &StockAlertCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of StockAlert entities.
+func (c *StockAlertClient) CreateBulk(builders ...*StockAlertCreate) *StockAlertCreateBulk {
+	return &StockAlertCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *StockAlertClient) MapCreateBulk(slice any, setFunc func(*StockAlertCreate, int)) *StockAlertCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &StockAlertCreateBulk{err: fmt.Errorf("calling to StockAlertClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*StockAlertCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &StockAlertCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for StockAlert.
+func (c *StockAlertClient) Update() *StockAlertUpdate {
+	mutation := newStockAlertMutation(c.config, OpUpdate)
+	return &StockAlertUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *StockAlertClient) UpdateOne(_m *StockAlert) *StockAlertUpdateOne {
+	mutation := newStockAlertMutation(c.config, OpUpdateOne, withStockAlert(_m))
+	return &StockAlertUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *StockAlertClient) UpdateOneID(id uint64) *StockAlertUpdateOne {
+	mutation := newStockAlertMutation(c.config, OpUpdateOne, withStockAlertID(id))
+	return &StockAlertUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for StockAlert.
+func (c *StockAlertClient) Delete() *StockAlertDelete {
+	mutation := newStockAlertMutation(c.config, OpDelete)
+	return &StockAlertDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *StockAlertClient) DeleteOne(_m *StockAlert) *StockAlertDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *StockAlertClient) DeleteOneID(id uint64) *StockAlertDeleteOne {
+	builder := c.Delete().Where(stockalert.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &StockAlertDeleteOne{builder}
+}
+
+// Query returns a query builder for StockAlert.
+func (c *StockAlertClient) Query() *StockAlertQuery {
+	return &StockAlertQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeStockAlert},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a StockAlert entity by its id.
+func (c *StockAlertClient) Get(ctx context.Context, id uint64) (*StockAlert, error) {
+	return c.Query().Where(stockalert.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *StockAlertClient) GetX(ctx context.Context, id uint64) *StockAlert {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *StockAlertClient) Hooks() []Hook {
+	return c.hooks.StockAlert
+}
+
+// Interceptors returns the client interceptors.
+func (c *StockAlertClient) Interceptors() []Interceptor {
+	return c.inters.StockAlert
+}
+
+func (c *StockAlertClient) mutate(ctx context.Context, m *StockAlertMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&StockAlertCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&StockAlertUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&StockAlertUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&StockAlertDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown StockAlert mutation op: %q", m.Op())
+	}
+}
+
 // SupplierAccountClient is a client for the SupplierAccount schema.
 type SupplierAccountClient struct {
 	config
@@ -13907,11 +14050,11 @@ type (
 		ReconciliationItem, ReconciliationJob, RefundOrder, ResellerBalanceAccount,
 		ResellerLedgerEntry, ResellerPricing, ResellerProfile, ResellerRelatedAccount,
 		ResellerSite, Review, RiskLockKey, RolePermission, SecurityAuditLog, Session,
-		Setting, SupplierAccount, SupplierLedgerEntry, SupplierProductPrice,
-		SupplyCatalogSnapshot, SupplyConnection, SupplyImportItem, SupplyMapping,
-		SupplyNonce, SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User,
-		UserGroup, UserSession, V1IDMap, VirtualReview, VisitLog, WalletAccount,
-		WalletTransaction, Withdrawal []ent.Hook
+		Setting, StockAlert, SupplierAccount, SupplierLedgerEntry,
+		SupplierProductPrice, SupplyCatalogSnapshot, SupplyConnection,
+		SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag,
+		Ticket, TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview,
+		VisitLog, WalletAccount, WalletTransaction, Withdrawal []ent.Hook
 	}
 	inters struct {
 		AdminRole, AdminUser, AffiliateCommission, AuditLog, Banner, Card, CardImport,
@@ -13928,10 +14071,10 @@ type (
 		ReconciliationItem, ReconciliationJob, RefundOrder, ResellerBalanceAccount,
 		ResellerLedgerEntry, ResellerPricing, ResellerProfile, ResellerRelatedAccount,
 		ResellerSite, Review, RiskLockKey, RolePermission, SecurityAuditLog, Session,
-		Setting, SupplierAccount, SupplierLedgerEntry, SupplierProductPrice,
-		SupplyCatalogSnapshot, SupplyConnection, SupplyImportItem, SupplyMapping,
-		SupplyNonce, SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User,
-		UserGroup, UserSession, V1IDMap, VirtualReview, VisitLog, WalletAccount,
-		WalletTransaction, Withdrawal []ent.Interceptor
+		Setting, StockAlert, SupplierAccount, SupplierLedgerEntry,
+		SupplierProductPrice, SupplyCatalogSnapshot, SupplyConnection,
+		SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag,
+		Ticket, TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview,
+		VisitLog, WalletAccount, WalletTransaction, Withdrawal []ent.Interceptor
 	}
 )

@@ -25,10 +25,11 @@ import (
 
 // TelegramConfig bot 配置（settings notify 组 telegram 键）。
 type TelegramConfig struct {
-	OrderEnabled bool     `json:"order_enabled"`
-	Events       []string `json:"events"`
-	Enabled      bool     `json:"enabled"`
-	BotToken     string   `json:"bot_token"`
+	LowStockEnabled bool     `json:"low_stock_enabled"`
+	OrderEnabled    bool     `json:"order_enabled"`
+	Events          []string `json:"events"`
+	Enabled         bool     `json:"enabled"`
+	BotToken        string   `json:"bot_token"`
 	// ChatIDs 管理员群/频道（逗号分隔；告警与群发多目标）
 	ChatIDs string                      `json:"chat_ids"`
 	Targets []notifyport.TelegramTarget `json:"targets"`
@@ -66,7 +67,7 @@ func (c *TelegramChannel) tgConfig(ctx context.Context) (*TelegramConfig, error)
 	} else if err = json.Unmarshal(raw, &cfg.Enabled); err != nil {
 		return nil, fmt.Errorf("Telegram 配置格式错误")
 	}
-	for key, dest := range map[string]any{"telegram_bot_token": &cfg.BotToken, "telegram_chat_ids": &cfg.ChatIDs, "telegram_order_enabled": &cfg.OrderEnabled, "telegram_events": &cfg.Events} {
+	for key, dest := range map[string]any{"telegram_bot_token": &cfg.BotToken, "telegram_chat_ids": &cfg.ChatIDs, "telegram_order_enabled": &cfg.OrderEnabled, "telegram_low_stock_enabled": &cfg.LowStockEnabled, "telegram_events": &cfg.Events} {
 		raw, err = c.settings.GetJSON(ctx, "notify", key)
 		if err != nil {
 			return nil, err

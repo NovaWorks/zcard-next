@@ -74,11 +74,12 @@ function rateLimitView(row: any): { label: string; type: "error" | "warning" | "
 function scheduleSummary(row: any): { on: boolean; tip: string } {
   try {
     const sch = JSON.parse(row.settings || "{}").schedule;
-    if (!sch?.enabled) return { on: false, tip: "未启用定时同步" };
+    if (!sch?.enabled && !sch?.low_stock?.enabled) return { on: false, tip: "未启用定时同步" };
     const parts: string[] = [];
-    if (sch.collect?.enabled) parts.push(`采集 ${sch.collect.interval}分钟`);
-    if (sch.price?.enabled) parts.push(`价格 ${sch.price.interval}分钟`);
-    if (sch.status?.enabled) parts.push(`状态 ${sch.status.interval}分钟`);
+    if (sch.low_stock?.enabled) parts.push(`库存≤${sch.low_stock.threshold}：${sch.low_stock.interval}分钟检查`);
+    if (sch.enabled && sch.collect?.enabled) parts.push(`采集 ${sch.collect.interval}分钟`);
+    if (sch.enabled && sch.price?.enabled) parts.push(`价格 ${sch.price.interval}分钟`);
+    if (sch.enabled && sch.status?.enabled) parts.push(`状态 ${sch.status.interval}分钟`);
     return { on: true, tip: parts.length ? `定时：${parts.join(" / ")}` : "定时总开关开（未启用任何任务）" };
   } catch {
     return { on: false, tip: "" };
@@ -449,6 +450,7 @@ const schedule = reactive({
   request_delay: 1,
   stock_concurrency: 3,
   stock_request_delay_ms: 200,
+  low_stock: { enabled: false, threshold: 10, interval: 5 },
   collect: { enabled: false, interval: 360, mode: "incremental", windows: "" },
   price: { enabled: false, interval: 30, windows: "" },
   status: { enabled: false, interval: 60, windows: "" },
@@ -492,6 +494,9 @@ function openSchedule(row: any) {
   schedule.enabled = !!s.enabled;
   schedule.request_delay = Number(s.request_delay ?? 1);
   schedule.stock_concurrency = Number(s.stock_concurrency ?? 3);
+  schedule.low_stock.enabled = s.low_stock?.enabled === true;
+  schedule.low_stock.threshold = Number(s.low_stock?.threshold ?? 10);
+  schedule.low_stock.interval = Number(s.low_stock?.interval ?? 5);
   schedule.stock_request_delay_ms = Number(s.stock_request_delay_ms ?? 200);
   const fill = (key: "collect" | "price" | "status") => {
     const src = s[key] || {};
@@ -508,7 +513,14 @@ function openSchedule(row: any) {
   showSchedule.value = true;
 }
 
+const scheduleSaving = ref(false);
+const lowStockError = computed(() => !Number.isInteger(schedule.low_stock.threshold) || schedule.low_stock.threshold < 1 || schedule.low_stock.threshold > 1000000
+  ? "库存数量须为 1–1000000 的整数" : !Number.isInteger(schedule.low_stock.interval) || schedule.low_stock.interval < 5 || schedule.low_stock.interval > 1440
+  ? "检查间隔须为 5–1440 分钟的整数" : "");
 async function submitSchedule() {
+  if (lowStockError.value || scheduleSaving.value) return;
+  scheduleSaving.value = true;
+  try {
   const parseWindows = (s: string) =>
     s.split(/[,，]/)
       .map((seg) => seg.trim())
@@ -522,6 +534,7 @@ async function submitSchedule() {
     enabled: schedule.enabled,
     request_delay: schedule.request_delay,
     stock_concurrency: schedule.stock_concurrency,
+    low_stock: { ...schedule.low_stock },
     stock_request_delay_ms: schedule.stock_request_delay_ms,
     collect: {
       enabled: schedule.collect.enabled,
@@ -538,6 +551,7 @@ async function submitSchedule() {
     showSchedule.value = false;
     load();
   }
+  } finally { scheduleSaving.value = false; }
 }
 
 // ── 响应式列集：compact 只留 名称/限流/操作；mid 去掉 ID/余额/最近采集；full 全列 ──
@@ -848,13 +862,18 @@ onMounted(load);
     </NModal>
 
     <!-- 定时计划 -->
-    <NModal v-model:show="showSchedule" preset="card" title="定时同步计划" style="width: 620px; max-width: 96vw">
+    <NModal v-model:show="showSchedule" preset="card" title="定时同步计划" style="width: 620px; max-width: 96vw" content-style="max-height: 70vh; overflow-y: auto">
       <NAlert type="info" :bordered="false" class="mb-12px">商品列表中开启的自动上下架独立运行；关闭本页定时计划不会暂停它，请在商品列表暂停自动管理。</NAlert>
+      <NAlert v-if="scheduleConn" :type="scheduleConn.rate_limit_until > Date.now() / 1000 ? 'warning' : 'info'" :show-icon="false" class="mb-12px">
+        <div>低库存检查：{{ scheduleConn.low_stock_scanned_at ? new Date(scheduleConn.low_stock_scanned_at * 1000).toLocaleString() : '尚未运行' }}</div>
+        <div>{{ scheduleConn.low_stock_message || '保存开启后在下一轮扫描开始检查，每分钟调度一次。' }}</div>
+        <div v-if="scheduleConn.status !== 'active'">此货源已停用，自动检查暂停。</div>
+      </NAlert>
       <!-- 执行状态（锚点来自连接行数据；下次 = 上次 + 间隔，窗口内生效） -->
       <div v-if="scheduleConn" class="mb-12px rounded-6px bg-gray-50 p-10px dark:bg-gray-800">
         <div class="mb-6px text-13px font-500">自动任务执行状态</div>
         <div class="flex flex-col gap-3px text-12px text-gray-600 dark:text-gray-300">
-          <div v-for="s in scheduleStatus" :key="s.label" class="flex items-center gap-8px">
+          <div v-for="s in scheduleStatus" :key="s.label" class="flex flex-wrap items-center gap-8px">
             <span class="w-70px shrink-0">{{ s.label }}</span>
             <NTag size="tiny" :type="s.on ? 'success' : 'default'" :bordered="false">{{ s.on ? "已启用" : "未启用" }}</NTag>
             <span>上次：{{ s.last }}</span>
@@ -866,8 +885,20 @@ onMounted(load);
         采集过快可能被上游封锁 IP：遇 429/WAF 拦截会自动降速并熔断冷却（界面列表可见倒计时），
         请求间隔为自适应下限。三类任务各自独立间隔，均在时间窗口内执行。保存后由系统每分钟检查到期自动派发。
       </NAlert>
-      <NForm label-placement="left" label-width="130">
-        <NFormItem label="启用定时同步">
+      <NForm label-placement="left" label-width="130" :disabled="!canWrite() || scheduleSaving">
+        <NFormItem label="低库存加速检查">
+          <NSwitch v-model:value="schedule.low_stock.enabled" aria-label="低库存加速检查" />
+        </NFormItem>
+        <NFormItem label="库存不超过" :validation-status="lowStockError ? 'error' : undefined" :feedback="lowStockError">
+          <NInputNumber v-model:value="schedule.low_stock.threshold" :min="1" :max="1000000" :precision="0" :input-props="{ 'aria-label': '加速检查库存阈值' }" class="w-full" />
+        </NFormItem>
+        <NFormItem label="检查间隔（分钟）">
+          <NInputNumber v-model:value="schedule.low_stock.interval" :min="5" :max="1440" :precision="0" :input-props="{ 'aria-label': '低库存检查间隔' }" class="w-full" />
+        </NFormItem>
+        <NAlert type="info" :show-icon="false" class="mb-16px">
+          对本货源已导入、仍由上游发货的规格全天检查，包含零库存；与下方采集、调价开关独立。查询失败会退避重试，上游限流会延后。新发现低库存后进入加速，不能代替下单时的实时校验。提醒阈值在「系统设置 → 货源」单独配置。
+        </NAlert>
+        <NFormItem label="启用常规同步">
           <NSwitch v-model:value="schedule.enabled" />
         </NFormItem>
         <NFormItem label="分页请求间隔(秒)">
@@ -915,7 +946,7 @@ onMounted(load);
       </NForm>
       <template #footer>
         <NButton size="small" class="mr-8px" @click="showSchedule = false">取消</NButton>
-        <NButton size="small" type="primary" @click="submitSchedule">保存计划</NButton>
+        <NButton size="small" type="primary" :loading="scheduleSaving" :disabled="!canWrite() || !!lowStockError" @click="submitSchedule">保存计划</NButton>
       </template>
     </NModal>
 

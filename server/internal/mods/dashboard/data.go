@@ -78,7 +78,7 @@ func NewDashboardRepoImpl(d *data.Data) *DashboardRepoImpl {
 // GetLowStockCount 库存预警商品数：上架商品（status=1）按本地/上游分别统计有限库存 < threshold。
 func (r *DashboardRepoImpl) GetLowStockCount(ctx context.Context, threshold int) (int64, error) {
 	if threshold < 1 {
-		threshold = 10
+		threshold = 5
 	}
 	subsite := tenancy.FromContext(ctx).SubsiteID
 	client := data.Client(ctx, r.data)
@@ -86,13 +86,13 @@ func (r *DashboardRepoImpl) GetLowStockCount(ctx context.Context, threshold int)
 	if err != nil {
 		return 0, err
 	}
-	stocks, err := data.ProductStocks(ctx, r.data, products)
-	if err != nil {
-		return 0, err
-	}
 	var low int64
-	for _, n := range stocks {
-		if n >= 0 && n < int64(threshold) {
+	for _, p := range products {
+		yes, err := data.HasLowStock(ctx, r.data, p, threshold)
+		if err != nil {
+			return 0, err
+		}
+		if yes {
 			low++
 		}
 	}

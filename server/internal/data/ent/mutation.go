@@ -86,6 +86,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/securityauditlog"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/session"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/stockalert"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
@@ -192,6 +193,7 @@ const (
 	TypeSecurityAuditLog         = "SecurityAuditLog"
 	TypeSession                  = "Session"
 	TypeSetting                  = "Setting"
+	TypeStockAlert               = "StockAlert"
 	TypeSupplierAccount          = "SupplierAccount"
 	TypeSupplierLedgerEntry      = "SupplierLedgerEntry"
 	TypeSupplierProductPrice     = "SupplierProductPrice"
@@ -80996,6 +80998,971 @@ func (m *SettingMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Setting edge %s", name)
 }
 
+// StockAlertMutation represents an operation that mutates the StockAlert nodes in the graph.
+type StockAlertMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *uint64
+	created_at          *time.Time
+	updated_at          *time.Time
+	product_id          *uint64
+	addproduct_id       *int64
+	sku_id              *uint64
+	addsku_id           *int64
+	source_key          *string
+	threshold           *int
+	addthreshold        *int
+	state               *int8
+	addstate            *int8
+	notified_state      *int8
+	addnotified_state   *int8
+	last_notified_at    *int64
+	addlast_notified_at *int64
+	clearedFields       map[string]struct{}
+	done                bool
+	oldValue            func(context.Context) (*StockAlert, error)
+	predicates          []predicate.StockAlert
+}
+
+var _ ent.Mutation = (*StockAlertMutation)(nil)
+
+// stockalertOption allows management of the mutation configuration using functional options.
+type stockalertOption func(*StockAlertMutation)
+
+// newStockAlertMutation creates new mutation for the StockAlert entity.
+func newStockAlertMutation(c config, op Op, opts ...stockalertOption) *StockAlertMutation {
+	m := &StockAlertMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeStockAlert,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withStockAlertID sets the ID field of the mutation.
+func withStockAlertID(id uint64) stockalertOption {
+	return func(m *StockAlertMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *StockAlert
+		)
+		m.oldValue = func(ctx context.Context) (*StockAlert, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().StockAlert.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withStockAlert sets the old StockAlert of the mutation.
+func withStockAlert(node *StockAlert) stockalertOption {
+	return func(m *StockAlertMutation) {
+		m.oldValue = func(context.Context) (*StockAlert, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m StockAlertMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m StockAlertMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of StockAlert entities.
+func (m *StockAlertMutation) SetID(id uint64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *StockAlertMutation) ID() (id uint64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *StockAlertMutation) IDs(ctx context.Context) ([]uint64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uint64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().StockAlert.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *StockAlertMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *StockAlertMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the StockAlert entity.
+// If the StockAlert object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockAlertMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *StockAlertMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *StockAlertMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *StockAlertMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the StockAlert entity.
+// If the StockAlert object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockAlertMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *StockAlertMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetProductID sets the "product_id" field.
+func (m *StockAlertMutation) SetProductID(u uint64) {
+	m.product_id = &u
+	m.addproduct_id = nil
+}
+
+// ProductID returns the value of the "product_id" field in the mutation.
+func (m *StockAlertMutation) ProductID() (r uint64, exists bool) {
+	v := m.product_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProductID returns the old "product_id" field's value of the StockAlert entity.
+// If the StockAlert object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockAlertMutation) OldProductID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProductID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProductID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProductID: %w", err)
+	}
+	return oldValue.ProductID, nil
+}
+
+// AddProductID adds u to the "product_id" field.
+func (m *StockAlertMutation) AddProductID(u int64) {
+	if m.addproduct_id != nil {
+		*m.addproduct_id += u
+	} else {
+		m.addproduct_id = &u
+	}
+}
+
+// AddedProductID returns the value that was added to the "product_id" field in this mutation.
+func (m *StockAlertMutation) AddedProductID() (r int64, exists bool) {
+	v := m.addproduct_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetProductID resets all changes to the "product_id" field.
+func (m *StockAlertMutation) ResetProductID() {
+	m.product_id = nil
+	m.addproduct_id = nil
+}
+
+// SetSkuID sets the "sku_id" field.
+func (m *StockAlertMutation) SetSkuID(u uint64) {
+	m.sku_id = &u
+	m.addsku_id = nil
+}
+
+// SkuID returns the value of the "sku_id" field in the mutation.
+func (m *StockAlertMutation) SkuID() (r uint64, exists bool) {
+	v := m.sku_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkuID returns the old "sku_id" field's value of the StockAlert entity.
+// If the StockAlert object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockAlertMutation) OldSkuID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkuID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkuID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkuID: %w", err)
+	}
+	return oldValue.SkuID, nil
+}
+
+// AddSkuID adds u to the "sku_id" field.
+func (m *StockAlertMutation) AddSkuID(u int64) {
+	if m.addsku_id != nil {
+		*m.addsku_id += u
+	} else {
+		m.addsku_id = &u
+	}
+}
+
+// AddedSkuID returns the value that was added to the "sku_id" field in this mutation.
+func (m *StockAlertMutation) AddedSkuID() (r int64, exists bool) {
+	v := m.addsku_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkuID resets all changes to the "sku_id" field.
+func (m *StockAlertMutation) ResetSkuID() {
+	m.sku_id = nil
+	m.addsku_id = nil
+}
+
+// SetSourceKey sets the "source_key" field.
+func (m *StockAlertMutation) SetSourceKey(s string) {
+	m.source_key = &s
+}
+
+// SourceKey returns the value of the "source_key" field in the mutation.
+func (m *StockAlertMutation) SourceKey() (r string, exists bool) {
+	v := m.source_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSourceKey returns the old "source_key" field's value of the StockAlert entity.
+// If the StockAlert object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockAlertMutation) OldSourceKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSourceKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSourceKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSourceKey: %w", err)
+	}
+	return oldValue.SourceKey, nil
+}
+
+// ResetSourceKey resets all changes to the "source_key" field.
+func (m *StockAlertMutation) ResetSourceKey() {
+	m.source_key = nil
+}
+
+// SetThreshold sets the "threshold" field.
+func (m *StockAlertMutation) SetThreshold(i int) {
+	m.threshold = &i
+	m.addthreshold = nil
+}
+
+// Threshold returns the value of the "threshold" field in the mutation.
+func (m *StockAlertMutation) Threshold() (r int, exists bool) {
+	v := m.threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldThreshold returns the old "threshold" field's value of the StockAlert entity.
+// If the StockAlert object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockAlertMutation) OldThreshold(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldThreshold is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldThreshold requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldThreshold: %w", err)
+	}
+	return oldValue.Threshold, nil
+}
+
+// AddThreshold adds i to the "threshold" field.
+func (m *StockAlertMutation) AddThreshold(i int) {
+	if m.addthreshold != nil {
+		*m.addthreshold += i
+	} else {
+		m.addthreshold = &i
+	}
+}
+
+// AddedThreshold returns the value that was added to the "threshold" field in this mutation.
+func (m *StockAlertMutation) AddedThreshold() (r int, exists bool) {
+	v := m.addthreshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetThreshold resets all changes to the "threshold" field.
+func (m *StockAlertMutation) ResetThreshold() {
+	m.threshold = nil
+	m.addthreshold = nil
+}
+
+// SetState sets the "state" field.
+func (m *StockAlertMutation) SetState(i int8) {
+	m.state = &i
+	m.addstate = nil
+}
+
+// State returns the value of the "state" field in the mutation.
+func (m *StockAlertMutation) State() (r int8, exists bool) {
+	v := m.state
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldState returns the old "state" field's value of the StockAlert entity.
+// If the StockAlert object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockAlertMutation) OldState(ctx context.Context) (v int8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldState is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldState requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldState: %w", err)
+	}
+	return oldValue.State, nil
+}
+
+// AddState adds i to the "state" field.
+func (m *StockAlertMutation) AddState(i int8) {
+	if m.addstate != nil {
+		*m.addstate += i
+	} else {
+		m.addstate = &i
+	}
+}
+
+// AddedState returns the value that was added to the "state" field in this mutation.
+func (m *StockAlertMutation) AddedState() (r int8, exists bool) {
+	v := m.addstate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetState resets all changes to the "state" field.
+func (m *StockAlertMutation) ResetState() {
+	m.state = nil
+	m.addstate = nil
+}
+
+// SetNotifiedState sets the "notified_state" field.
+func (m *StockAlertMutation) SetNotifiedState(i int8) {
+	m.notified_state = &i
+	m.addnotified_state = nil
+}
+
+// NotifiedState returns the value of the "notified_state" field in the mutation.
+func (m *StockAlertMutation) NotifiedState() (r int8, exists bool) {
+	v := m.notified_state
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotifiedState returns the old "notified_state" field's value of the StockAlert entity.
+// If the StockAlert object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockAlertMutation) OldNotifiedState(ctx context.Context) (v int8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotifiedState is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotifiedState requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotifiedState: %w", err)
+	}
+	return oldValue.NotifiedState, nil
+}
+
+// AddNotifiedState adds i to the "notified_state" field.
+func (m *StockAlertMutation) AddNotifiedState(i int8) {
+	if m.addnotified_state != nil {
+		*m.addnotified_state += i
+	} else {
+		m.addnotified_state = &i
+	}
+}
+
+// AddedNotifiedState returns the value that was added to the "notified_state" field in this mutation.
+func (m *StockAlertMutation) AddedNotifiedState() (r int8, exists bool) {
+	v := m.addnotified_state
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetNotifiedState resets all changes to the "notified_state" field.
+func (m *StockAlertMutation) ResetNotifiedState() {
+	m.notified_state = nil
+	m.addnotified_state = nil
+}
+
+// SetLastNotifiedAt sets the "last_notified_at" field.
+func (m *StockAlertMutation) SetLastNotifiedAt(i int64) {
+	m.last_notified_at = &i
+	m.addlast_notified_at = nil
+}
+
+// LastNotifiedAt returns the value of the "last_notified_at" field in the mutation.
+func (m *StockAlertMutation) LastNotifiedAt() (r int64, exists bool) {
+	v := m.last_notified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastNotifiedAt returns the old "last_notified_at" field's value of the StockAlert entity.
+// If the StockAlert object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *StockAlertMutation) OldLastNotifiedAt(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastNotifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastNotifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastNotifiedAt: %w", err)
+	}
+	return oldValue.LastNotifiedAt, nil
+}
+
+// AddLastNotifiedAt adds i to the "last_notified_at" field.
+func (m *StockAlertMutation) AddLastNotifiedAt(i int64) {
+	if m.addlast_notified_at != nil {
+		*m.addlast_notified_at += i
+	} else {
+		m.addlast_notified_at = &i
+	}
+}
+
+// AddedLastNotifiedAt returns the value that was added to the "last_notified_at" field in this mutation.
+func (m *StockAlertMutation) AddedLastNotifiedAt() (r int64, exists bool) {
+	v := m.addlast_notified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLastNotifiedAt resets all changes to the "last_notified_at" field.
+func (m *StockAlertMutation) ResetLastNotifiedAt() {
+	m.last_notified_at = nil
+	m.addlast_notified_at = nil
+}
+
+// Where appends a list predicates to the StockAlertMutation builder.
+func (m *StockAlertMutation) Where(ps ...predicate.StockAlert) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the StockAlertMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *StockAlertMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.StockAlert, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *StockAlertMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *StockAlertMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (StockAlert).
+func (m *StockAlertMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *StockAlertMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.created_at != nil {
+		fields = append(fields, stockalert.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, stockalert.FieldUpdatedAt)
+	}
+	if m.product_id != nil {
+		fields = append(fields, stockalert.FieldProductID)
+	}
+	if m.sku_id != nil {
+		fields = append(fields, stockalert.FieldSkuID)
+	}
+	if m.source_key != nil {
+		fields = append(fields, stockalert.FieldSourceKey)
+	}
+	if m.threshold != nil {
+		fields = append(fields, stockalert.FieldThreshold)
+	}
+	if m.state != nil {
+		fields = append(fields, stockalert.FieldState)
+	}
+	if m.notified_state != nil {
+		fields = append(fields, stockalert.FieldNotifiedState)
+	}
+	if m.last_notified_at != nil {
+		fields = append(fields, stockalert.FieldLastNotifiedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *StockAlertMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case stockalert.FieldCreatedAt:
+		return m.CreatedAt()
+	case stockalert.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case stockalert.FieldProductID:
+		return m.ProductID()
+	case stockalert.FieldSkuID:
+		return m.SkuID()
+	case stockalert.FieldSourceKey:
+		return m.SourceKey()
+	case stockalert.FieldThreshold:
+		return m.Threshold()
+	case stockalert.FieldState:
+		return m.State()
+	case stockalert.FieldNotifiedState:
+		return m.NotifiedState()
+	case stockalert.FieldLastNotifiedAt:
+		return m.LastNotifiedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *StockAlertMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case stockalert.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case stockalert.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case stockalert.FieldProductID:
+		return m.OldProductID(ctx)
+	case stockalert.FieldSkuID:
+		return m.OldSkuID(ctx)
+	case stockalert.FieldSourceKey:
+		return m.OldSourceKey(ctx)
+	case stockalert.FieldThreshold:
+		return m.OldThreshold(ctx)
+	case stockalert.FieldState:
+		return m.OldState(ctx)
+	case stockalert.FieldNotifiedState:
+		return m.OldNotifiedState(ctx)
+	case stockalert.FieldLastNotifiedAt:
+		return m.OldLastNotifiedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown StockAlert field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *StockAlertMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case stockalert.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case stockalert.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case stockalert.FieldProductID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProductID(v)
+		return nil
+	case stockalert.FieldSkuID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkuID(v)
+		return nil
+	case stockalert.FieldSourceKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSourceKey(v)
+		return nil
+	case stockalert.FieldThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetThreshold(v)
+		return nil
+	case stockalert.FieldState:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetState(v)
+		return nil
+	case stockalert.FieldNotifiedState:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotifiedState(v)
+		return nil
+	case stockalert.FieldLastNotifiedAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastNotifiedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown StockAlert field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *StockAlertMutation) AddedFields() []string {
+	var fields []string
+	if m.addproduct_id != nil {
+		fields = append(fields, stockalert.FieldProductID)
+	}
+	if m.addsku_id != nil {
+		fields = append(fields, stockalert.FieldSkuID)
+	}
+	if m.addthreshold != nil {
+		fields = append(fields, stockalert.FieldThreshold)
+	}
+	if m.addstate != nil {
+		fields = append(fields, stockalert.FieldState)
+	}
+	if m.addnotified_state != nil {
+		fields = append(fields, stockalert.FieldNotifiedState)
+	}
+	if m.addlast_notified_at != nil {
+		fields = append(fields, stockalert.FieldLastNotifiedAt)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *StockAlertMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case stockalert.FieldProductID:
+		return m.AddedProductID()
+	case stockalert.FieldSkuID:
+		return m.AddedSkuID()
+	case stockalert.FieldThreshold:
+		return m.AddedThreshold()
+	case stockalert.FieldState:
+		return m.AddedState()
+	case stockalert.FieldNotifiedState:
+		return m.AddedNotifiedState()
+	case stockalert.FieldLastNotifiedAt:
+		return m.AddedLastNotifiedAt()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *StockAlertMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case stockalert.FieldProductID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProductID(v)
+		return nil
+	case stockalert.FieldSkuID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkuID(v)
+		return nil
+	case stockalert.FieldThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddThreshold(v)
+		return nil
+	case stockalert.FieldState:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddState(v)
+		return nil
+	case stockalert.FieldNotifiedState:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddNotifiedState(v)
+		return nil
+	case stockalert.FieldLastNotifiedAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLastNotifiedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown StockAlert numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *StockAlertMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *StockAlertMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *StockAlertMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown StockAlert nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *StockAlertMutation) ResetField(name string) error {
+	switch name {
+	case stockalert.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case stockalert.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case stockalert.FieldProductID:
+		m.ResetProductID()
+		return nil
+	case stockalert.FieldSkuID:
+		m.ResetSkuID()
+		return nil
+	case stockalert.FieldSourceKey:
+		m.ResetSourceKey()
+		return nil
+	case stockalert.FieldThreshold:
+		m.ResetThreshold()
+		return nil
+	case stockalert.FieldState:
+		m.ResetState()
+		return nil
+	case stockalert.FieldNotifiedState:
+		m.ResetNotifiedState()
+		return nil
+	case stockalert.FieldLastNotifiedAt:
+		m.ResetLastNotifiedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown StockAlert field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *StockAlertMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *StockAlertMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *StockAlertMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *StockAlertMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *StockAlertMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *StockAlertMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *StockAlertMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown StockAlert unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *StockAlertMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown StockAlert edge %s", name)
+}
+
 // SupplierAccountMutation represents an operation that mutates the SupplierAccount nodes in the graph.
 type SupplierAccountMutation struct {
 	config
@@ -85488,6 +86455,9 @@ type SupplyConnectionMutation struct {
 	status                  *supplyconnection.Status
 	sync_task_id            *uint64
 	addsync_task_id         *int64
+	low_stock_scanned_at    *int64
+	addlow_stock_scanned_at *int64
+	low_stock_message       *string
 	sync_lease_token        *string
 	sync_lease_until        *int64
 	addsync_lease_until     *int64
@@ -85932,6 +86902,98 @@ func (m *SupplyConnectionMutation) AddedSyncTaskID() (r int64, exists bool) {
 func (m *SupplyConnectionMutation) ResetSyncTaskID() {
 	m.sync_task_id = nil
 	m.addsync_task_id = nil
+}
+
+// SetLowStockScannedAt sets the "low_stock_scanned_at" field.
+func (m *SupplyConnectionMutation) SetLowStockScannedAt(i int64) {
+	m.low_stock_scanned_at = &i
+	m.addlow_stock_scanned_at = nil
+}
+
+// LowStockScannedAt returns the value of the "low_stock_scanned_at" field in the mutation.
+func (m *SupplyConnectionMutation) LowStockScannedAt() (r int64, exists bool) {
+	v := m.low_stock_scanned_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLowStockScannedAt returns the old "low_stock_scanned_at" field's value of the SupplyConnection entity.
+// If the SupplyConnection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyConnectionMutation) OldLowStockScannedAt(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLowStockScannedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLowStockScannedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLowStockScannedAt: %w", err)
+	}
+	return oldValue.LowStockScannedAt, nil
+}
+
+// AddLowStockScannedAt adds i to the "low_stock_scanned_at" field.
+func (m *SupplyConnectionMutation) AddLowStockScannedAt(i int64) {
+	if m.addlow_stock_scanned_at != nil {
+		*m.addlow_stock_scanned_at += i
+	} else {
+		m.addlow_stock_scanned_at = &i
+	}
+}
+
+// AddedLowStockScannedAt returns the value that was added to the "low_stock_scanned_at" field in this mutation.
+func (m *SupplyConnectionMutation) AddedLowStockScannedAt() (r int64, exists bool) {
+	v := m.addlow_stock_scanned_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLowStockScannedAt resets all changes to the "low_stock_scanned_at" field.
+func (m *SupplyConnectionMutation) ResetLowStockScannedAt() {
+	m.low_stock_scanned_at = nil
+	m.addlow_stock_scanned_at = nil
+}
+
+// SetLowStockMessage sets the "low_stock_message" field.
+func (m *SupplyConnectionMutation) SetLowStockMessage(s string) {
+	m.low_stock_message = &s
+}
+
+// LowStockMessage returns the value of the "low_stock_message" field in the mutation.
+func (m *SupplyConnectionMutation) LowStockMessage() (r string, exists bool) {
+	v := m.low_stock_message
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLowStockMessage returns the old "low_stock_message" field's value of the SupplyConnection entity.
+// If the SupplyConnection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyConnectionMutation) OldLowStockMessage(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLowStockMessage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLowStockMessage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLowStockMessage: %w", err)
+	}
+	return oldValue.LowStockMessage, nil
+}
+
+// ResetLowStockMessage resets all changes to the "low_stock_message" field.
+func (m *SupplyConnectionMutation) ResetLowStockMessage() {
+	m.low_stock_message = nil
 }
 
 // SetSyncLeaseToken sets the "sync_lease_token" field.
@@ -87010,7 +88072,7 @@ func (m *SupplyConnectionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SupplyConnectionMutation) Fields() []string {
-	fields := make([]string, 0, 30)
+	fields := make([]string, 0, 32)
 	if m.created_at != nil {
 		fields = append(fields, supplyconnection.FieldCreatedAt)
 	}
@@ -87034,6 +88096,12 @@ func (m *SupplyConnectionMutation) Fields() []string {
 	}
 	if m.sync_task_id != nil {
 		fields = append(fields, supplyconnection.FieldSyncTaskID)
+	}
+	if m.low_stock_scanned_at != nil {
+		fields = append(fields, supplyconnection.FieldLowStockScannedAt)
+	}
+	if m.low_stock_message != nil {
+		fields = append(fields, supplyconnection.FieldLowStockMessage)
 	}
 	if m.sync_lease_token != nil {
 		fields = append(fields, supplyconnection.FieldSyncLeaseToken)
@@ -87125,6 +88193,10 @@ func (m *SupplyConnectionMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case supplyconnection.FieldSyncTaskID:
 		return m.SyncTaskID()
+	case supplyconnection.FieldLowStockScannedAt:
+		return m.LowStockScannedAt()
+	case supplyconnection.FieldLowStockMessage:
+		return m.LowStockMessage()
 	case supplyconnection.FieldSyncLeaseToken:
 		return m.SyncLeaseToken()
 	case supplyconnection.FieldSyncLeaseUntil:
@@ -87194,6 +88266,10 @@ func (m *SupplyConnectionMutation) OldField(ctx context.Context, name string) (e
 		return m.OldStatus(ctx)
 	case supplyconnection.FieldSyncTaskID:
 		return m.OldSyncTaskID(ctx)
+	case supplyconnection.FieldLowStockScannedAt:
+		return m.OldLowStockScannedAt(ctx)
+	case supplyconnection.FieldLowStockMessage:
+		return m.OldLowStockMessage(ctx)
 	case supplyconnection.FieldSyncLeaseToken:
 		return m.OldSyncLeaseToken(ctx)
 	case supplyconnection.FieldSyncLeaseUntil:
@@ -87302,6 +88378,20 @@ func (m *SupplyConnectionMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSyncTaskID(v)
+		return nil
+	case supplyconnection.FieldLowStockScannedAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLowStockScannedAt(v)
+		return nil
+	case supplyconnection.FieldLowStockMessage:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLowStockMessage(v)
 		return nil
 	case supplyconnection.FieldSyncLeaseToken:
 		v, ok := value.(string)
@@ -87468,6 +88558,9 @@ func (m *SupplyConnectionMutation) AddedFields() []string {
 	if m.addsync_task_id != nil {
 		fields = append(fields, supplyconnection.FieldSyncTaskID)
 	}
+	if m.addlow_stock_scanned_at != nil {
+		fields = append(fields, supplyconnection.FieldLowStockScannedAt)
+	}
 	if m.addsync_lease_until != nil {
 		fields = append(fields, supplyconnection.FieldSyncLeaseUntil)
 	}
@@ -87496,6 +88589,8 @@ func (m *SupplyConnectionMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case supplyconnection.FieldSyncTaskID:
 		return m.AddedSyncTaskID()
+	case supplyconnection.FieldLowStockScannedAt:
+		return m.AddedLowStockScannedAt()
 	case supplyconnection.FieldSyncLeaseUntil:
 		return m.AddedSyncLeaseUntil()
 	case supplyconnection.FieldRetryMax:
@@ -87523,6 +88618,13 @@ func (m *SupplyConnectionMutation) AddField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSyncTaskID(v)
+		return nil
+	case supplyconnection.FieldLowStockScannedAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLowStockScannedAt(v)
 		return nil
 	case supplyconnection.FieldSyncLeaseUntil:
 		v, ok := value.(int64)
@@ -87679,6 +88781,12 @@ func (m *SupplyConnectionMutation) ResetField(name string) error {
 		return nil
 	case supplyconnection.FieldSyncTaskID:
 		m.ResetSyncTaskID()
+		return nil
+	case supplyconnection.FieldLowStockScannedAt:
+		m.ResetLowStockScannedAt()
+		return nil
+	case supplyconnection.FieldLowStockMessage:
+		m.ResetLowStockMessage()
 		return nil
 	case supplyconnection.FieldSyncLeaseToken:
 		m.ResetSyncLeaseToken()
@@ -89148,33 +90256,39 @@ func (m *SupplyImportItemMutation) ResetEdge(name string) error {
 // SupplyMappingMutation represents an operation that mutates the SupplyMapping nodes in the graph.
 type SupplyMappingMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *uint64
-	created_at           *time.Time
-	updated_at           *time.Time
-	connection_id        *uint64
-	addconnection_id     *int64
-	upstream_category    *string
-	local_category_id    *uint64
-	addlocal_category_id *int64
-	upstream_product     *string
-	local_product_id     *uint64
-	addlocal_product_id  *int64
-	upstream_sku         *string
-	local_sku_id         *uint64
-	addlocal_sku_id      *int64
-	up_stock             *int32
-	addup_stock          *int32
-	stock_checked_at     *time.Time
-	stock_reference      *int32
-	addstock_reference   *int32
-	stock_reference_at   *time.Time
-	pricing_override     *map[string]interface{}
-	clearedFields        map[string]struct{}
-	done                 bool
-	oldValue             func(context.Context) (*SupplyMapping, error)
-	predicates           []predicate.SupplyMapping
+	op                      Op
+	typ                     string
+	id                      *uint64
+	created_at              *time.Time
+	updated_at              *time.Time
+	connection_id           *uint64
+	addconnection_id        *int64
+	upstream_category       *string
+	local_category_id       *uint64
+	addlocal_category_id    *int64
+	upstream_product        *string
+	local_product_id        *uint64
+	addlocal_product_id     *int64
+	upstream_sku            *string
+	local_sku_id            *uint64
+	addlocal_sku_id         *int64
+	stock_probe_after       *int64
+	addstock_probe_after    *int64
+	stock_probe_lease       *int64
+	addstock_probe_lease    *int64
+	stock_probe_failures    *int
+	addstock_probe_failures *int
+	up_stock                *int32
+	addup_stock             *int32
+	stock_checked_at        *time.Time
+	stock_reference         *int32
+	addstock_reference      *int32
+	stock_reference_at      *time.Time
+	pricing_override        *map[string]interface{}
+	clearedFields           map[string]struct{}
+	done                    bool
+	oldValue                func(context.Context) (*SupplyMapping, error)
+	predicates              []predicate.SupplyMapping
 }
 
 var _ ent.Mutation = (*SupplyMappingMutation)(nil)
@@ -89740,6 +90854,174 @@ func (m *SupplyMappingMutation) ResetLocalSkuID() {
 	delete(m.clearedFields, supplymapping.FieldLocalSkuID)
 }
 
+// SetStockProbeAfter sets the "stock_probe_after" field.
+func (m *SupplyMappingMutation) SetStockProbeAfter(i int64) {
+	m.stock_probe_after = &i
+	m.addstock_probe_after = nil
+}
+
+// StockProbeAfter returns the value of the "stock_probe_after" field in the mutation.
+func (m *SupplyMappingMutation) StockProbeAfter() (r int64, exists bool) {
+	v := m.stock_probe_after
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStockProbeAfter returns the old "stock_probe_after" field's value of the SupplyMapping entity.
+// If the SupplyMapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyMappingMutation) OldStockProbeAfter(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStockProbeAfter is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStockProbeAfter requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStockProbeAfter: %w", err)
+	}
+	return oldValue.StockProbeAfter, nil
+}
+
+// AddStockProbeAfter adds i to the "stock_probe_after" field.
+func (m *SupplyMappingMutation) AddStockProbeAfter(i int64) {
+	if m.addstock_probe_after != nil {
+		*m.addstock_probe_after += i
+	} else {
+		m.addstock_probe_after = &i
+	}
+}
+
+// AddedStockProbeAfter returns the value that was added to the "stock_probe_after" field in this mutation.
+func (m *SupplyMappingMutation) AddedStockProbeAfter() (r int64, exists bool) {
+	v := m.addstock_probe_after
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetStockProbeAfter resets all changes to the "stock_probe_after" field.
+func (m *SupplyMappingMutation) ResetStockProbeAfter() {
+	m.stock_probe_after = nil
+	m.addstock_probe_after = nil
+}
+
+// SetStockProbeLease sets the "stock_probe_lease" field.
+func (m *SupplyMappingMutation) SetStockProbeLease(i int64) {
+	m.stock_probe_lease = &i
+	m.addstock_probe_lease = nil
+}
+
+// StockProbeLease returns the value of the "stock_probe_lease" field in the mutation.
+func (m *SupplyMappingMutation) StockProbeLease() (r int64, exists bool) {
+	v := m.stock_probe_lease
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStockProbeLease returns the old "stock_probe_lease" field's value of the SupplyMapping entity.
+// If the SupplyMapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyMappingMutation) OldStockProbeLease(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStockProbeLease is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStockProbeLease requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStockProbeLease: %w", err)
+	}
+	return oldValue.StockProbeLease, nil
+}
+
+// AddStockProbeLease adds i to the "stock_probe_lease" field.
+func (m *SupplyMappingMutation) AddStockProbeLease(i int64) {
+	if m.addstock_probe_lease != nil {
+		*m.addstock_probe_lease += i
+	} else {
+		m.addstock_probe_lease = &i
+	}
+}
+
+// AddedStockProbeLease returns the value that was added to the "stock_probe_lease" field in this mutation.
+func (m *SupplyMappingMutation) AddedStockProbeLease() (r int64, exists bool) {
+	v := m.addstock_probe_lease
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetStockProbeLease resets all changes to the "stock_probe_lease" field.
+func (m *SupplyMappingMutation) ResetStockProbeLease() {
+	m.stock_probe_lease = nil
+	m.addstock_probe_lease = nil
+}
+
+// SetStockProbeFailures sets the "stock_probe_failures" field.
+func (m *SupplyMappingMutation) SetStockProbeFailures(i int) {
+	m.stock_probe_failures = &i
+	m.addstock_probe_failures = nil
+}
+
+// StockProbeFailures returns the value of the "stock_probe_failures" field in the mutation.
+func (m *SupplyMappingMutation) StockProbeFailures() (r int, exists bool) {
+	v := m.stock_probe_failures
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStockProbeFailures returns the old "stock_probe_failures" field's value of the SupplyMapping entity.
+// If the SupplyMapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyMappingMutation) OldStockProbeFailures(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStockProbeFailures is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStockProbeFailures requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStockProbeFailures: %w", err)
+	}
+	return oldValue.StockProbeFailures, nil
+}
+
+// AddStockProbeFailures adds i to the "stock_probe_failures" field.
+func (m *SupplyMappingMutation) AddStockProbeFailures(i int) {
+	if m.addstock_probe_failures != nil {
+		*m.addstock_probe_failures += i
+	} else {
+		m.addstock_probe_failures = &i
+	}
+}
+
+// AddedStockProbeFailures returns the value that was added to the "stock_probe_failures" field in this mutation.
+func (m *SupplyMappingMutation) AddedStockProbeFailures() (r int, exists bool) {
+	v := m.addstock_probe_failures
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetStockProbeFailures resets all changes to the "stock_probe_failures" field.
+func (m *SupplyMappingMutation) ResetStockProbeFailures() {
+	m.stock_probe_failures = nil
+	m.addstock_probe_failures = nil
+}
+
 // SetUpStock sets the "up_stock" field.
 func (m *SupplyMappingMutation) SetUpStock(i int32) {
 	m.up_stock = &i
@@ -90033,7 +91315,7 @@ func (m *SupplyMappingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SupplyMappingMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 17)
 	if m.created_at != nil {
 		fields = append(fields, supplymapping.FieldCreatedAt)
 	}
@@ -90060,6 +91342,15 @@ func (m *SupplyMappingMutation) Fields() []string {
 	}
 	if m.local_sku_id != nil {
 		fields = append(fields, supplymapping.FieldLocalSkuID)
+	}
+	if m.stock_probe_after != nil {
+		fields = append(fields, supplymapping.FieldStockProbeAfter)
+	}
+	if m.stock_probe_lease != nil {
+		fields = append(fields, supplymapping.FieldStockProbeLease)
+	}
+	if m.stock_probe_failures != nil {
+		fields = append(fields, supplymapping.FieldStockProbeFailures)
 	}
 	if m.up_stock != nil {
 		fields = append(fields, supplymapping.FieldUpStock)
@@ -90102,6 +91393,12 @@ func (m *SupplyMappingMutation) Field(name string) (ent.Value, bool) {
 		return m.UpstreamSku()
 	case supplymapping.FieldLocalSkuID:
 		return m.LocalSkuID()
+	case supplymapping.FieldStockProbeAfter:
+		return m.StockProbeAfter()
+	case supplymapping.FieldStockProbeLease:
+		return m.StockProbeLease()
+	case supplymapping.FieldStockProbeFailures:
+		return m.StockProbeFailures()
 	case supplymapping.FieldUpStock:
 		return m.UpStock()
 	case supplymapping.FieldStockCheckedAt:
@@ -90139,6 +91436,12 @@ func (m *SupplyMappingMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldUpstreamSku(ctx)
 	case supplymapping.FieldLocalSkuID:
 		return m.OldLocalSkuID(ctx)
+	case supplymapping.FieldStockProbeAfter:
+		return m.OldStockProbeAfter(ctx)
+	case supplymapping.FieldStockProbeLease:
+		return m.OldStockProbeLease(ctx)
+	case supplymapping.FieldStockProbeFailures:
+		return m.OldStockProbeFailures(ctx)
 	case supplymapping.FieldUpStock:
 		return m.OldUpStock(ctx)
 	case supplymapping.FieldStockCheckedAt:
@@ -90221,6 +91524,27 @@ func (m *SupplyMappingMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLocalSkuID(v)
 		return nil
+	case supplymapping.FieldStockProbeAfter:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStockProbeAfter(v)
+		return nil
+	case supplymapping.FieldStockProbeLease:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStockProbeLease(v)
+		return nil
+	case supplymapping.FieldStockProbeFailures:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStockProbeFailures(v)
+		return nil
 	case supplymapping.FieldUpStock:
 		v, ok := value.(int32)
 		if !ok {
@@ -90276,6 +91600,15 @@ func (m *SupplyMappingMutation) AddedFields() []string {
 	if m.addlocal_sku_id != nil {
 		fields = append(fields, supplymapping.FieldLocalSkuID)
 	}
+	if m.addstock_probe_after != nil {
+		fields = append(fields, supplymapping.FieldStockProbeAfter)
+	}
+	if m.addstock_probe_lease != nil {
+		fields = append(fields, supplymapping.FieldStockProbeLease)
+	}
+	if m.addstock_probe_failures != nil {
+		fields = append(fields, supplymapping.FieldStockProbeFailures)
+	}
 	if m.addup_stock != nil {
 		fields = append(fields, supplymapping.FieldUpStock)
 	}
@@ -90298,6 +91631,12 @@ func (m *SupplyMappingMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedLocalProductID()
 	case supplymapping.FieldLocalSkuID:
 		return m.AddedLocalSkuID()
+	case supplymapping.FieldStockProbeAfter:
+		return m.AddedStockProbeAfter()
+	case supplymapping.FieldStockProbeLease:
+		return m.AddedStockProbeLease()
+	case supplymapping.FieldStockProbeFailures:
+		return m.AddedStockProbeFailures()
 	case supplymapping.FieldUpStock:
 		return m.AddedUpStock()
 	case supplymapping.FieldStockReference:
@@ -90338,6 +91677,27 @@ func (m *SupplyMappingMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddLocalSkuID(v)
+		return nil
+	case supplymapping.FieldStockProbeAfter:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStockProbeAfter(v)
+		return nil
+	case supplymapping.FieldStockProbeLease:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStockProbeLease(v)
+		return nil
+	case supplymapping.FieldStockProbeFailures:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStockProbeFailures(v)
 		return nil
 	case supplymapping.FieldUpStock:
 		v, ok := value.(int32)
@@ -90451,6 +91811,15 @@ func (m *SupplyMappingMutation) ResetField(name string) error {
 		return nil
 	case supplymapping.FieldLocalSkuID:
 		m.ResetLocalSkuID()
+		return nil
+	case supplymapping.FieldStockProbeAfter:
+		m.ResetStockProbeAfter()
+		return nil
+	case supplymapping.FieldStockProbeLease:
+		m.ResetStockProbeLease()
+		return nil
+	case supplymapping.FieldStockProbeFailures:
+		m.ResetStockProbeFailures()
 		return nil
 	case supplymapping.FieldUpStock:
 		m.ResetUpStock()

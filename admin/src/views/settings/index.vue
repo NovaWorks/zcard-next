@@ -75,7 +75,7 @@ const groups = [
   { key: "promo", label: "推荐位" },
   { key: "footer", label: "页脚配置" },
   { key: "trade", label: "交易" },
-  { key: "ticket", label: "工单 / TG订单通知" },
+  { key: "ticket", label: "工单 / TG通知" },
   { key: "security", label: "安全" },
   { key: "ops", label: "运维" },
   { key: "recharge", label: "充值" },
@@ -403,7 +403,7 @@ onMounted(() => {
             </div>
 
             <h3 v-if="activeGroup === 'ticket'" class="mt-16px font-600">工单设置</h3>
-            <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form" :class="{ 'settings-form-wide': ['ops', 'recharge', 'supplier_recharge'].includes(activeGroup) }">
+            <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form" :class="{ 'settings-form-wide': ['ops', 'recharge', 'supplier_recharge'].includes(activeGroup), 'settings-form-stock': activeGroup === 'supply' }">
               <NFormItem v-for="item in items" :key="item.key" :label="labelOf(item)">
                 <div class="flex w-full items-center gap-8px">
                   <template v-if="linkListOf(item)">
@@ -498,7 +498,13 @@ onMounted(() => {
                     />
                   </template>
                   <template v-else-if="typeof getVal(item) === 'boolean'">
-                    <NSwitch :value="getVal(item)" @update:value="(v: boolean) => setVal(item, v)" />
+                    <NSwitch :value="getVal(item)" :aria-label="labelOf(item)" @update:value="(v: boolean) => setVal(item, v)" />
+                  </template>
+                  <template v-else-if="item.group === 'supply' && item.key === 'low_stock_threshold'">
+                    <div class="min-w-0 flex-1">
+                      <NInputNumber :value="getVal(item)" :min="1" :max="1000000" :precision="0" class="w-full max-w-200px" :input-props="{ 'aria-label': labelOf(item) }" @update:value="(v: number | null) => v !== null && setVal(item, v)" />
+                      <p class="mt-6px text-12px text-gray-500">按实际发货规格判断。例如设置 5：库存 0–4 件提醒，5 件不提醒。TG 推送在「工单 / TG通知」单独开启；加速检查在货源渠道的定时计划中设置。</p>
+                    </div>
                   </template>
                   <template v-else-if="typeof getVal(item) === 'number'">
                     <!-- 数字类设置：紧凑定宽输入（大厂模式——数值框不占满整行，标签后短输入即可） -->
@@ -585,7 +591,9 @@ onMounted(() => {
 .settings-form-wide { max-width: 1100px; }
 @media (max-width: 640px) {
   .settings-form-wide :deep(.n-form-item) { grid-template-columns: minmax(0, 1fr); }
-  .settings-form-wide :deep(.n-form-item-label) { justify-content: flex-start; }
+  .settings-form-stock :deep(.n-form-item) { grid-template-columns: minmax(0, 1fr); grid-template-areas: "label" "blank" "feedback"; grid-template-rows: auto auto auto; }
+  .settings-form-stock :deep(.n-form-item-label) { display: flex; text-align: left; padding-bottom: 6px; }
+  .settings-form-wide :deep(.n-form-item-label), .settings-form-stock :deep(.n-form-item-label) { justify-content: flex-start; }
 }
 /* 页脚分区说明卡（浅蓝信息底，与 naive 信息-alert 同语系） */
 .footer-map {

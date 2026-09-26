@@ -117,6 +117,41 @@ func (_u *SupplyConnectionUpdate) AddSyncTaskID(v int64) *SupplyConnectionUpdate
 	return _u
 }
 
+// SetLowStockScannedAt sets the "low_stock_scanned_at" field.
+func (_u *SupplyConnectionUpdate) SetLowStockScannedAt(v int64) *SupplyConnectionUpdate {
+	_u.mutation.ResetLowStockScannedAt()
+	_u.mutation.SetLowStockScannedAt(v)
+	return _u
+}
+
+// SetNillableLowStockScannedAt sets the "low_stock_scanned_at" field if the given value is not nil.
+func (_u *SupplyConnectionUpdate) SetNillableLowStockScannedAt(v *int64) *SupplyConnectionUpdate {
+	if v != nil {
+		_u.SetLowStockScannedAt(*v)
+	}
+	return _u
+}
+
+// AddLowStockScannedAt adds value to the "low_stock_scanned_at" field.
+func (_u *SupplyConnectionUpdate) AddLowStockScannedAt(v int64) *SupplyConnectionUpdate {
+	_u.mutation.AddLowStockScannedAt(v)
+	return _u
+}
+
+// SetLowStockMessage sets the "low_stock_message" field.
+func (_u *SupplyConnectionUpdate) SetLowStockMessage(v string) *SupplyConnectionUpdate {
+	_u.mutation.SetLowStockMessage(v)
+	return _u
+}
+
+// SetNillableLowStockMessage sets the "low_stock_message" field if the given value is not nil.
+func (_u *SupplyConnectionUpdate) SetNillableLowStockMessage(v *string) *SupplyConnectionUpdate {
+	if v != nil {
+		_u.SetLowStockMessage(*v)
+	}
+	return _u
+}
+
 // SetSyncLeaseToken sets the "sync_lease_token" field.
 func (_u *SupplyConnectionUpdate) SetSyncLeaseToken(v string) *SupplyConnectionUpdate {
 	_u.mutation.SetSyncLeaseToken(v)
@@ -633,6 +668,15 @@ func (_u *SupplyConnectionUpdate) sqlSave(ctx context.Context) (_node int, err e
 	if value, ok := _u.mutation.AddedSyncTaskID(); ok {
 		_spec.AddField(supplyconnection.FieldSyncTaskID, field.TypeUint64, value)
 	}
+	if value, ok := _u.mutation.LowStockScannedAt(); ok {
+		_spec.SetField(supplyconnection.FieldLowStockScannedAt, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedLowStockScannedAt(); ok {
+		_spec.AddField(supplyconnection.FieldLowStockScannedAt, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.LowStockMessage(); ok {
+		_spec.SetField(supplyconnection.FieldLowStockMessage, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.SyncLeaseToken(); ok {
 		_spec.SetField(supplyconnection.FieldSyncLeaseToken, field.TypeString, value)
 	}
@@ -853,6 +897,41 @@ func (_u *SupplyConnectionUpdateOne) SetNillableSyncTaskID(v *uint64) *SupplyCon
 // AddSyncTaskID adds value to the "sync_task_id" field.
 func (_u *SupplyConnectionUpdateOne) AddSyncTaskID(v int64) *SupplyConnectionUpdateOne {
 	_u.mutation.AddSyncTaskID(v)
+	return _u
+}
+
+// SetLowStockScannedAt sets the "low_stock_scanned_at" field.
+func (_u *SupplyConnectionUpdateOne) SetLowStockScannedAt(v int64) *SupplyConnectionUpdateOne {
+	_u.mutation.ResetLowStockScannedAt()
+	_u.mutation.SetLowStockScannedAt(v)
+	return _u
+}
+
+// SetNillableLowStockScannedAt sets the "low_stock_scanned_at" field if the given value is not nil.
+func (_u *SupplyConnectionUpdateOne) SetNillableLowStockScannedAt(v *int64) *SupplyConnectionUpdateOne {
+	if v != nil {
+		_u.SetLowStockScannedAt(*v)
+	}
+	return _u
+}
+
+// AddLowStockScannedAt adds value to the "low_stock_scanned_at" field.
+func (_u *SupplyConnectionUpdateOne) AddLowStockScannedAt(v int64) *SupplyConnectionUpdateOne {
+	_u.mutation.AddLowStockScannedAt(v)
+	return _u
+}
+
+// SetLowStockMessage sets the "low_stock_message" field.
+func (_u *SupplyConnectionUpdateOne) SetLowStockMessage(v string) *SupplyConnectionUpdateOne {
+	_u.mutation.SetLowStockMessage(v)
+	return _u
+}
+
+// SetNillableLowStockMessage sets the "low_stock_message" field if the given value is not nil.
+func (_u *SupplyConnectionUpdateOne) SetNillableLowStockMessage(v *string) *SupplyConnectionUpdateOne {
+	if v != nil {
+		_u.SetLowStockMessage(*v)
+	}
 	return _u
 }
 
@@ -1401,6 +1480,15 @@ func (_u *SupplyConnectionUpdateOne) sqlSave(ctx context.Context) (_node *Supply
 	}
 	if value, ok := _u.mutation.AddedSyncTaskID(); ok {
 		_spec.AddField(supplyconnection.FieldSyncTaskID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.LowStockScannedAt(); ok {
+		_spec.SetField(supplyconnection.FieldLowStockScannedAt, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedLowStockScannedAt(); ok {
+		_spec.AddField(supplyconnection.FieldLowStockScannedAt, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.LowStockMessage(); ok {
+		_spec.SetField(supplyconnection.FieldLowStockMessage, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.SyncLeaseToken(); ok {
 		_spec.SetField(supplyconnection.FieldSyncLeaseToken, field.TypeString, value)

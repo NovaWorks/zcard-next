@@ -308,19 +308,20 @@ var groups = map[string]*GroupDef{
 	"supply": {
 		Name: "supply", Desc: "货源",
 		Labels: map[string]string{
-			"import_max_lines": "导入最大行数", "low_stock_threshold": "低库存阈值",
+			"import_max_lines": "导入最大行数", "low_stock_alert_enabled": "启用库存预警", "low_stock_threshold": "库存低于此数量时提醒",
 			"sync_interval_minutes": "同步间隔（分钟）",
 		},
 		Defaults: map[string]any{
-			"import_max_lines":      100000,
-			"low_stock_threshold":   5,
-			"sync_interval_minutes": 30,
+			"import_max_lines":        100000,
+			"low_stock_threshold":     5,
+			"low_stock_alert_enabled": true,
+			"sync_interval_minutes":   30,
 		},
 	},
 	"notify": {
 		Name: "notify", Desc: "邮件短信",
 		Labels: map[string]string{
-			"telegram_enabled": "Telegram 通知通道", "telegram_order_enabled": "Telegram 主站订单通知",
+			"telegram_enabled": "Telegram 通知通道", "telegram_order_enabled": "Telegram 主站订单通知", "telegram_low_stock_enabled": "Telegram 低库存通知",
 			"telegram_bot_token": "Telegram Bot Token", "telegram_chat_ids": "Telegram 接收 Chat ID",
 			"telegram_events": "Telegram 订单通知事件", "telegram_targets": "Telegram 接收位置",
 			"smtp_host": "SMTP 服务器", "smtp_port": "SMTP 端口", "smtp_user": "SMTP 用户名",
@@ -338,7 +339,7 @@ var groups = map[string]*GroupDef{
 			"sms_provider":    {"aliyun": "阿里云短信", "tencent": "腾讯云短信", "qiniu": "七牛短信"},
 		},
 		Defaults: map[string]any{
-			"telegram_enabled": false, "telegram_order_enabled": false,
+			"telegram_enabled": false, "telegram_order_enabled": false, "telegram_low_stock_enabled": false,
 			"telegram_targets": nil, "telegram_bot_token": "", "telegram_chat_ids": "", "telegram_events": []string{"order.paid"},
 			"smtp_host":      "",
 			"smtp_port":      465,

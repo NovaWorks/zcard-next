@@ -238,6 +238,7 @@ message AdminProduct {
   string listing_message = 38;
   bool listing_restocked = 39;
   int64 listing_observed_at = 40;
+  string low_stock_message = 41; // 按实际发货规格和后台阈值计算，空表示无已确认预警
 
 }
 

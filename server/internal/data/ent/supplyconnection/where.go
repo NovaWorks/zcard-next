@@ -89,6 +89,16 @@ func SyncTaskID(v uint64) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldEQ(FieldSyncTaskID, v))
 }
 
+// LowStockScannedAt applies equality check predicate on the "low_stock_scanned_at" field. It's identical to LowStockScannedAtEQ.
+func LowStockScannedAt(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldLowStockScannedAt, v))
+}
+
+// LowStockMessage applies equality check predicate on the "low_stock_message" field. It's identical to LowStockMessageEQ.
+func LowStockMessage(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldLowStockMessage, v))
+}
+
 // SyncLeaseToken applies equality check predicate on the "sync_lease_token" field. It's identical to SyncLeaseTokenEQ.
 func SyncLeaseToken(v string) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldEQ(FieldSyncLeaseToken, v))
@@ -552,6 +562,111 @@ func SyncTaskIDLT(v uint64) predicate.SupplyConnection {
 // SyncTaskIDLTE applies the LTE predicate on the "sync_task_id" field.
 func SyncTaskIDLTE(v uint64) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldLTE(FieldSyncTaskID, v))
+}
+
+// LowStockScannedAtEQ applies the EQ predicate on the "low_stock_scanned_at" field.
+func LowStockScannedAtEQ(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldLowStockScannedAt, v))
+}
+
+// LowStockScannedAtNEQ applies the NEQ predicate on the "low_stock_scanned_at" field.
+func LowStockScannedAtNEQ(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNEQ(FieldLowStockScannedAt, v))
+}
+
+// LowStockScannedAtIn applies the In predicate on the "low_stock_scanned_at" field.
+func LowStockScannedAtIn(vs ...int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIn(FieldLowStockScannedAt, vs...))
+}
+
+// LowStockScannedAtNotIn applies the NotIn predicate on the "low_stock_scanned_at" field.
+func LowStockScannedAtNotIn(vs ...int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotIn(FieldLowStockScannedAt, vs...))
+}
+
+// LowStockScannedAtGT applies the GT predicate on the "low_stock_scanned_at" field.
+func LowStockScannedAtGT(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGT(FieldLowStockScannedAt, v))
+}
+
+// LowStockScannedAtGTE applies the GTE predicate on the "low_stock_scanned_at" field.
+func LowStockScannedAtGTE(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGTE(FieldLowStockScannedAt, v))
+}
+
+// LowStockScannedAtLT applies the LT predicate on the "low_stock_scanned_at" field.
+func LowStockScannedAtLT(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLT(FieldLowStockScannedAt, v))
+}
+
+// LowStockScannedAtLTE applies the LTE predicate on the "low_stock_scanned_at" field.
+func LowStockScannedAtLTE(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLTE(FieldLowStockScannedAt, v))
+}
+
+// LowStockMessageEQ applies the EQ predicate on the "low_stock_message" field.
+func LowStockMessageEQ(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldLowStockMessage, v))
+}
+
+// LowStockMessageNEQ applies the NEQ predicate on the "low_stock_message" field.
+func LowStockMessageNEQ(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNEQ(FieldLowStockMessage, v))
+}
+
+// LowStockMessageIn applies the In predicate on the "low_stock_message" field.
+func LowStockMessageIn(vs ...string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIn(FieldLowStockMessage, vs...))
+}
+
+// LowStockMessageNotIn applies the NotIn predicate on the "low_stock_message" field.
+func LowStockMessageNotIn(vs ...string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotIn(FieldLowStockMessage, vs...))
+}
+
+// LowStockMessageGT applies the GT predicate on the "low_stock_message" field.
+func LowStockMessageGT(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGT(FieldLowStockMessage, v))
+}
+
+// LowStockMessageGTE applies the GTE predicate on the "low_stock_message" field.
+func LowStockMessageGTE(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGTE(FieldLowStockMessage, v))
+}
+
+// LowStockMessageLT applies the LT predicate on the "low_stock_message" field.
+func LowStockMessageLT(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLT(FieldLowStockMessage, v))
+}
+
+// LowStockMessageLTE applies the LTE predicate on the "low_stock_message" field.
+func LowStockMessageLTE(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLTE(FieldLowStockMessage, v))
+}
+
+// LowStockMessageContains applies the Contains predicate on the "low_stock_message" field.
+func LowStockMessageContains(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldContains(FieldLowStockMessage, v))
+}
+
+// LowStockMessageHasPrefix applies the HasPrefix predicate on the "low_stock_message" field.
+func LowStockMessageHasPrefix(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldHasPrefix(FieldLowStockMessage, v))
+}
+
+// LowStockMessageHasSuffix applies the HasSuffix predicate on the "low_stock_message" field.
+func LowStockMessageHasSuffix(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldHasSuffix(FieldLowStockMessage, v))
+}
+
+// LowStockMessageEqualFold applies the EqualFold predicate on the "low_stock_message" field.
+func LowStockMessageEqualFold(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEqualFold(FieldLowStockMessage, v))
+}
+
+// LowStockMessageContainsFold applies the ContainsFold predicate on the "low_stock_message" field.
+func LowStockMessageContainsFold(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldContainsFold(FieldLowStockMessage, v))
 }
 
 // SyncLeaseTokenEQ applies the EQ predicate on the "sync_lease_token" field.

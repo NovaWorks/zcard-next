@@ -194,6 +194,14 @@ func (g *Gateway) CheckStock(ctx context.Context, connectionID uint64, productCo
 	stock, err := a.GetStock(ctx, productCode, skuCode)
 	if skuCode == "" {
 		g.cacheStockAt(ctx, connectionID, productCode, stock, err, started)
+	} else {
+		observed := stock
+		if err != nil {
+			observed = -2
+		}
+		cacheCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+		_ = g.repo.recordSKUStock(cacheCtx, connectionID, productCode, skuCode, observed, started)
+		cancel()
 	}
 	if err != nil {
 		return 0, err

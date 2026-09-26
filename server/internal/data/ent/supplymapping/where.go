@@ -99,6 +99,21 @@ func LocalSkuID(v uint64) predicate.SupplyMapping {
 	return predicate.SupplyMapping(sql.FieldEQ(FieldLocalSkuID, v))
 }
 
+// StockProbeAfter applies equality check predicate on the "stock_probe_after" field. It's identical to StockProbeAfterEQ.
+func StockProbeAfter(v int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldEQ(FieldStockProbeAfter, v))
+}
+
+// StockProbeLease applies equality check predicate on the "stock_probe_lease" field. It's identical to StockProbeLeaseEQ.
+func StockProbeLease(v int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldEQ(FieldStockProbeLease, v))
+}
+
+// StockProbeFailures applies equality check predicate on the "stock_probe_failures" field. It's identical to StockProbeFailuresEQ.
+func StockProbeFailures(v int) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldEQ(FieldStockProbeFailures, v))
+}
+
 // UpStock applies equality check predicate on the "up_stock" field. It's identical to UpStockEQ.
 func UpStock(v int32) predicate.SupplyMapping {
 	return predicate.SupplyMapping(sql.FieldEQ(FieldUpStock, v))
@@ -592,6 +607,126 @@ func LocalSkuIDIsNil() predicate.SupplyMapping {
 // LocalSkuIDNotNil applies the NotNil predicate on the "local_sku_id" field.
 func LocalSkuIDNotNil() predicate.SupplyMapping {
 	return predicate.SupplyMapping(sql.FieldNotNull(FieldLocalSkuID))
+}
+
+// StockProbeAfterEQ applies the EQ predicate on the "stock_probe_after" field.
+func StockProbeAfterEQ(v int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldEQ(FieldStockProbeAfter, v))
+}
+
+// StockProbeAfterNEQ applies the NEQ predicate on the "stock_probe_after" field.
+func StockProbeAfterNEQ(v int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldNEQ(FieldStockProbeAfter, v))
+}
+
+// StockProbeAfterIn applies the In predicate on the "stock_probe_after" field.
+func StockProbeAfterIn(vs ...int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldIn(FieldStockProbeAfter, vs...))
+}
+
+// StockProbeAfterNotIn applies the NotIn predicate on the "stock_probe_after" field.
+func StockProbeAfterNotIn(vs ...int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldNotIn(FieldStockProbeAfter, vs...))
+}
+
+// StockProbeAfterGT applies the GT predicate on the "stock_probe_after" field.
+func StockProbeAfterGT(v int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldGT(FieldStockProbeAfter, v))
+}
+
+// StockProbeAfterGTE applies the GTE predicate on the "stock_probe_after" field.
+func StockProbeAfterGTE(v int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldGTE(FieldStockProbeAfter, v))
+}
+
+// StockProbeAfterLT applies the LT predicate on the "stock_probe_after" field.
+func StockProbeAfterLT(v int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldLT(FieldStockProbeAfter, v))
+}
+
+// StockProbeAfterLTE applies the LTE predicate on the "stock_probe_after" field.
+func StockProbeAfterLTE(v int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldLTE(FieldStockProbeAfter, v))
+}
+
+// StockProbeLeaseEQ applies the EQ predicate on the "stock_probe_lease" field.
+func StockProbeLeaseEQ(v int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldEQ(FieldStockProbeLease, v))
+}
+
+// StockProbeLeaseNEQ applies the NEQ predicate on the "stock_probe_lease" field.
+func StockProbeLeaseNEQ(v int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldNEQ(FieldStockProbeLease, v))
+}
+
+// StockProbeLeaseIn applies the In predicate on the "stock_probe_lease" field.
+func StockProbeLeaseIn(vs ...int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldIn(FieldStockProbeLease, vs...))
+}
+
+// StockProbeLeaseNotIn applies the NotIn predicate on the "stock_probe_lease" field.
+func StockProbeLeaseNotIn(vs ...int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldNotIn(FieldStockProbeLease, vs...))
+}
+
+// StockProbeLeaseGT applies the GT predicate on the "stock_probe_lease" field.
+func StockProbeLeaseGT(v int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldGT(FieldStockProbeLease, v))
+}
+
+// StockProbeLeaseGTE applies the GTE predicate on the "stock_probe_lease" field.
+func StockProbeLeaseGTE(v int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldGTE(FieldStockProbeLease, v))
+}
+
+// StockProbeLeaseLT applies the LT predicate on the "stock_probe_lease" field.
+func StockProbeLeaseLT(v int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldLT(FieldStockProbeLease, v))
+}
+
+// StockProbeLeaseLTE applies the LTE predicate on the "stock_probe_lease" field.
+func StockProbeLeaseLTE(v int64) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldLTE(FieldStockProbeLease, v))
+}
+
+// StockProbeFailuresEQ applies the EQ predicate on the "stock_probe_failures" field.
+func StockProbeFailuresEQ(v int) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldEQ(FieldStockProbeFailures, v))
+}
+
+// StockProbeFailuresNEQ applies the NEQ predicate on the "stock_probe_failures" field.
+func StockProbeFailuresNEQ(v int) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldNEQ(FieldStockProbeFailures, v))
+}
+
+// StockProbeFailuresIn applies the In predicate on the "stock_probe_failures" field.
+func StockProbeFailuresIn(vs ...int) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldIn(FieldStockProbeFailures, vs...))
+}
+
+// StockProbeFailuresNotIn applies the NotIn predicate on the "stock_probe_failures" field.
+func StockProbeFailuresNotIn(vs ...int) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldNotIn(FieldStockProbeFailures, vs...))
+}
+
+// StockProbeFailuresGT applies the GT predicate on the "stock_probe_failures" field.
+func StockProbeFailuresGT(v int) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldGT(FieldStockProbeFailures, v))
+}
+
+// StockProbeFailuresGTE applies the GTE predicate on the "stock_probe_failures" field.
+func StockProbeFailuresGTE(v int) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldGTE(FieldStockProbeFailures, v))
+}
+
+// StockProbeFailuresLT applies the LT predicate on the "stock_probe_failures" field.
+func StockProbeFailuresLT(v int) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldLT(FieldStockProbeFailures, v))
+}
+
+// StockProbeFailuresLTE applies the LTE predicate on the "stock_probe_failures" field.
+func StockProbeFailuresLTE(v int) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldLTE(FieldStockProbeFailures, v))
 }
 
 // UpStockEQ applies the EQ predicate on the "up_stock" field.

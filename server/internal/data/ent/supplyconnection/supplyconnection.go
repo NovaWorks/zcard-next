@@ -30,6 +30,10 @@ const (
 	FieldStatus = "status"
 	// FieldSyncTaskID holds the string denoting the sync_task_id field in the database.
 	FieldSyncTaskID = "sync_task_id"
+	// FieldLowStockScannedAt holds the string denoting the low_stock_scanned_at field in the database.
+	FieldLowStockScannedAt = "low_stock_scanned_at"
+	// FieldLowStockMessage holds the string denoting the low_stock_message field in the database.
+	FieldLowStockMessage = "low_stock_message"
 	// FieldSyncLeaseToken holds the string denoting the sync_lease_token field in the database.
 	FieldSyncLeaseToken = "sync_lease_token"
 	// FieldSyncLeaseUntil holds the string denoting the sync_lease_until field in the database.
@@ -89,6 +93,8 @@ var Columns = []string{
 	FieldCredentials,
 	FieldStatus,
 	FieldSyncTaskID,
+	FieldLowStockScannedAt,
+	FieldLowStockMessage,
 	FieldSyncLeaseToken,
 	FieldSyncLeaseUntil,
 	FieldCallbackURL,
@@ -138,6 +144,10 @@ var (
 	BaseURLValidator func(string) error
 	// DefaultSyncTaskID holds the default value on creation for the "sync_task_id" field.
 	DefaultSyncTaskID uint64
+	// DefaultLowStockScannedAt holds the default value on creation for the "low_stock_scanned_at" field.
+	DefaultLowStockScannedAt int64
+	// DefaultLowStockMessage holds the default value on creation for the "low_stock_message" field.
+	DefaultLowStockMessage string
 	// DefaultSyncLeaseToken holds the default value on creation for the "sync_lease_token" field.
 	DefaultSyncLeaseToken string
 	// DefaultSyncLeaseUntil holds the default value on creation for the "sync_lease_until" field.
@@ -284,6 +294,16 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // BySyncTaskID orders the results by the sync_task_id field.
 func BySyncTaskID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSyncTaskID, opts...).ToFunc()
+}
+
+// ByLowStockScannedAt orders the results by the low_stock_scanned_at field.
+func ByLowStockScannedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLowStockScannedAt, opts...).ToFunc()
+}
+
+// ByLowStockMessage orders the results by the low_stock_message field.
+func ByLowStockMessage(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLowStockMessage, opts...).ToFunc()
 }
 
 // BySyncLeaseToken orders the results by the sync_lease_token field.

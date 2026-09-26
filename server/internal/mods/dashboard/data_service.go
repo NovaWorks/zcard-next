@@ -86,7 +86,17 @@ func (s *AdminDashboardService) GetDashboard(ctx context.Context, req *adminv1.G
 	if err != nil {
 		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "待办统计失败: "+err.Error())
 	}
-	lowStock, err := repo.GetLowStockCount(ctx, s.lowStockThreshold(ctx))
+	alertsEnabled := true
+	if s.settings != nil {
+		raw, e := s.settings.GetJSON(ctx, "supply", "low_stock_alert_enabled")
+		if e == nil && len(raw) > 0 {
+			_ = json.Unmarshal(raw, &alertsEnabled)
+		}
+	}
+	var lowStock int64
+	if alertsEnabled {
+		lowStock, err = repo.GetLowStockCount(ctx, s.lowStockThreshold(ctx))
+	}
 	if err != nil {
 		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "库存统计失败: "+err.Error())
 	}
@@ -198,18 +208,18 @@ func toStatPB(m Metric) *adminv1.DashboardStat {
 	}
 }
 
-// lowStockThreshold 库存预警阈值（settings.supply.low_stock_threshold；默认 10）。
+// lowStockThreshold 库存预警阈值（settings.supply.low_stock_threshold；默认 5）。
 func (s *AdminDashboardService) lowStockThreshold(ctx context.Context) int {
 	if s.settings == nil {
-		return 10
+		return 5
 	}
 	raw, err := s.settings.GetJSON(ctx, "supply", "low_stock_threshold")
 	if err != nil || len(raw) == 0 {
-		return 10
+		return 5
 	}
 	var v int
 	if json.Unmarshal(raw, &v) != nil || v < 1 {
-		return 10
+		return 5
 	}
 	return v
 }

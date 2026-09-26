@@ -85,6 +85,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/securityauditlog"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/session"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/stockalert"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
@@ -240,6 +241,7 @@ func checkColumn(t, c string) error {
 			securityauditlog.Table:         securityauditlog.ValidColumn,
 			session.Table:                  session.ValidColumn,
 			setting.Table:                  setting.ValidColumn,
+			stockalert.Table:               stockalert.ValidColumn,
 			supplieraccount.Table:          supplieraccount.ValidColumn,
 			supplierledgerentry.Table:      supplierledgerentry.ValidColumn,
 			supplierproductprice.Table:     supplierproductprice.ValidColumn,

@@ -10,6 +10,8 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
 	"github.com/NovaWorks/zcard-next/server/migrations"
 )
 
@@ -52,9 +54,9 @@ func TestDurableImportUpgradePreservesConnectionsAndTasks(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
-	conn := d.Client.SupplyConnection.GetX(ctx, 41)
+	conn := d.Client.SupplyConnection.Query().Where(supplyconnection.ID(41)).Select("id", "credentials", "sync_lease_token", "sync_lease_until", "settings").OnlyX(ctx)
 	task := d.Client.SupplySyncTask.GetX(ctx, 42)
-	mapping := d.Client.SupplyMapping.GetX(ctx, 43)
+	mapping := d.Client.SupplyMapping.Query().Where(supplymapping.ID(43)).Select("id", "up_stock", "pricing_override").OnlyX(ctx)
 	if string(conn.Credentials) != string([]byte{1, 2, 3, 4}) || conn.SyncLeaseToken != "" || conn.SyncLeaseUntil != 0 || len(conn.Settings) != 1 {
 		t.Fatal("connection was changed by migration")
 	}

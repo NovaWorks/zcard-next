@@ -80,12 +80,24 @@ func (s *AdminSettingsService) ListSettings(ctx context.Context, req *adminv1.Li
 // validateSettingValue 设置值业务校验（单键/批量共用）：
 // base_currency 必须存在、模板键必须在清单内。
 func (s *AdminSettingsService) validateSettingValue(ctx context.Context, group, key string, value json.RawMessage) error {
+	if group == "supply" && key == "low_stock_alert_enabled" {
+		var v *bool
+		if json.Unmarshal(value, &v) != nil || v == nil {
+			return errors.BadRequest("settings.INVALID_VALUE", "库存预警开关须为布尔值")
+		}
+	}
+	if group == "supply" && key == "low_stock_threshold" {
+		var n *int
+		if json.Unmarshal(value, &n) != nil || n == nil || *n < 1 || *n > 1000000 {
+			return errors.BadRequest("settings.INVALID_VALUE", "库存提醒阈值须为 1–1000000 的整数")
+		}
+	}
 	if group == "notify" && strings.HasPrefix(key, "telegram_") {
 		invalid := func() error {
 			return errors.BadRequest("settings.INVALID_VALUE", "Telegram 配置格式错误，请检查 Token、Chat ID 或事件选项")
 		}
 		switch key {
-		case "telegram_enabled", "telegram_order_enabled":
+		case "telegram_enabled", "telegram_order_enabled", "telegram_low_stock_enabled":
 			var v *bool
 			if json.Unmarshal(value, &v) != nil || v == nil {
 				return invalid()

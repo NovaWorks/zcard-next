@@ -184,6 +184,69 @@ func (_u *SupplyMappingUpdate) ClearLocalSkuID() *SupplyMappingUpdate {
 	return _u
 }
 
+// SetStockProbeAfter sets the "stock_probe_after" field.
+func (_u *SupplyMappingUpdate) SetStockProbeAfter(v int64) *SupplyMappingUpdate {
+	_u.mutation.ResetStockProbeAfter()
+	_u.mutation.SetStockProbeAfter(v)
+	return _u
+}
+
+// SetNillableStockProbeAfter sets the "stock_probe_after" field if the given value is not nil.
+func (_u *SupplyMappingUpdate) SetNillableStockProbeAfter(v *int64) *SupplyMappingUpdate {
+	if v != nil {
+		_u.SetStockProbeAfter(*v)
+	}
+	return _u
+}
+
+// AddStockProbeAfter adds value to the "stock_probe_after" field.
+func (_u *SupplyMappingUpdate) AddStockProbeAfter(v int64) *SupplyMappingUpdate {
+	_u.mutation.AddStockProbeAfter(v)
+	return _u
+}
+
+// SetStockProbeLease sets the "stock_probe_lease" field.
+func (_u *SupplyMappingUpdate) SetStockProbeLease(v int64) *SupplyMappingUpdate {
+	_u.mutation.ResetStockProbeLease()
+	_u.mutation.SetStockProbeLease(v)
+	return _u
+}
+
+// SetNillableStockProbeLease sets the "stock_probe_lease" field if the given value is not nil.
+func (_u *SupplyMappingUpdate) SetNillableStockProbeLease(v *int64) *SupplyMappingUpdate {
+	if v != nil {
+		_u.SetStockProbeLease(*v)
+	}
+	return _u
+}
+
+// AddStockProbeLease adds value to the "stock_probe_lease" field.
+func (_u *SupplyMappingUpdate) AddStockProbeLease(v int64) *SupplyMappingUpdate {
+	_u.mutation.AddStockProbeLease(v)
+	return _u
+}
+
+// SetStockProbeFailures sets the "stock_probe_failures" field.
+func (_u *SupplyMappingUpdate) SetStockProbeFailures(v int) *SupplyMappingUpdate {
+	_u.mutation.ResetStockProbeFailures()
+	_u.mutation.SetStockProbeFailures(v)
+	return _u
+}
+
+// SetNillableStockProbeFailures sets the "stock_probe_failures" field if the given value is not nil.
+func (_u *SupplyMappingUpdate) SetNillableStockProbeFailures(v *int) *SupplyMappingUpdate {
+	if v != nil {
+		_u.SetStockProbeFailures(*v)
+	}
+	return _u
+}
+
+// AddStockProbeFailures adds value to the "stock_probe_failures" field.
+func (_u *SupplyMappingUpdate) AddStockProbeFailures(v int) *SupplyMappingUpdate {
+	_u.mutation.AddStockProbeFailures(v)
+	return _u
+}
+
 // SetUpStock sets the "up_stock" field.
 func (_u *SupplyMappingUpdate) SetUpStock(v int32) *SupplyMappingUpdate {
 	_u.mutation.ResetUpStock()
@@ -399,6 +462,24 @@ func (_u *SupplyMappingUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if _u.mutation.LocalSkuIDCleared() {
 		_spec.ClearField(supplymapping.FieldLocalSkuID, field.TypeUint64)
 	}
+	if value, ok := _u.mutation.StockProbeAfter(); ok {
+		_spec.SetField(supplymapping.FieldStockProbeAfter, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedStockProbeAfter(); ok {
+		_spec.AddField(supplymapping.FieldStockProbeAfter, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.StockProbeLease(); ok {
+		_spec.SetField(supplymapping.FieldStockProbeLease, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedStockProbeLease(); ok {
+		_spec.AddField(supplymapping.FieldStockProbeLease, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.StockProbeFailures(); ok {
+		_spec.SetField(supplymapping.FieldStockProbeFailures, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedStockProbeFailures(); ok {
+		_spec.AddField(supplymapping.FieldStockProbeFailures, field.TypeInt, value)
+	}
 	if value, ok := _u.mutation.UpStock(); ok {
 		_spec.SetField(supplymapping.FieldUpStock, field.TypeInt32, value)
 	}
@@ -602,6 +683,69 @@ func (_u *SupplyMappingUpdateOne) AddLocalSkuID(v int64) *SupplyMappingUpdateOne
 // ClearLocalSkuID clears the value of the "local_sku_id" field.
 func (_u *SupplyMappingUpdateOne) ClearLocalSkuID() *SupplyMappingUpdateOne {
 	_u.mutation.ClearLocalSkuID()
+	return _u
+}
+
+// SetStockProbeAfter sets the "stock_probe_after" field.
+func (_u *SupplyMappingUpdateOne) SetStockProbeAfter(v int64) *SupplyMappingUpdateOne {
+	_u.mutation.ResetStockProbeAfter()
+	_u.mutation.SetStockProbeAfter(v)
+	return _u
+}
+
+// SetNillableStockProbeAfter sets the "stock_probe_after" field if the given value is not nil.
+func (_u *SupplyMappingUpdateOne) SetNillableStockProbeAfter(v *int64) *SupplyMappingUpdateOne {
+	if v != nil {
+		_u.SetStockProbeAfter(*v)
+	}
+	return _u
+}
+
+// AddStockProbeAfter adds value to the "stock_probe_after" field.
+func (_u *SupplyMappingUpdateOne) AddStockProbeAfter(v int64) *SupplyMappingUpdateOne {
+	_u.mutation.AddStockProbeAfter(v)
+	return _u
+}
+
+// SetStockProbeLease sets the "stock_probe_lease" field.
+func (_u *SupplyMappingUpdateOne) SetStockProbeLease(v int64) *SupplyMappingUpdateOne {
+	_u.mutation.ResetStockProbeLease()
+	_u.mutation.SetStockProbeLease(v)
+	return _u
+}
+
+// SetNillableStockProbeLease sets the "stock_probe_lease" field if the given value is not nil.
+func (_u *SupplyMappingUpdateOne) SetNillableStockProbeLease(v *int64) *SupplyMappingUpdateOne {
+	if v != nil {
+		_u.SetStockProbeLease(*v)
+	}
+	return _u
+}
+
+// AddStockProbeLease adds value to the "stock_probe_lease" field.
+func (_u *SupplyMappingUpdateOne) AddStockProbeLease(v int64) *SupplyMappingUpdateOne {
+	_u.mutation.AddStockProbeLease(v)
+	return _u
+}
+
+// SetStockProbeFailures sets the "stock_probe_failures" field.
+func (_u *SupplyMappingUpdateOne) SetStockProbeFailures(v int) *SupplyMappingUpdateOne {
+	_u.mutation.ResetStockProbeFailures()
+	_u.mutation.SetStockProbeFailures(v)
+	return _u
+}
+
+// SetNillableStockProbeFailures sets the "stock_probe_failures" field if the given value is not nil.
+func (_u *SupplyMappingUpdateOne) SetNillableStockProbeFailures(v *int) *SupplyMappingUpdateOne {
+	if v != nil {
+		_u.SetStockProbeFailures(*v)
+	}
+	return _u
+}
+
+// AddStockProbeFailures adds value to the "stock_probe_failures" field.
+func (_u *SupplyMappingUpdateOne) AddStockProbeFailures(v int) *SupplyMappingUpdateOne {
+	_u.mutation.AddStockProbeFailures(v)
 	return _u
 }
 
@@ -849,6 +993,24 @@ func (_u *SupplyMappingUpdateOne) sqlSave(ctx context.Context) (_node *SupplyMap
 	}
 	if _u.mutation.LocalSkuIDCleared() {
 		_spec.ClearField(supplymapping.FieldLocalSkuID, field.TypeUint64)
+	}
+	if value, ok := _u.mutation.StockProbeAfter(); ok {
+		_spec.SetField(supplymapping.FieldStockProbeAfter, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedStockProbeAfter(); ok {
+		_spec.AddField(supplymapping.FieldStockProbeAfter, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.StockProbeLease(); ok {
+		_spec.SetField(supplymapping.FieldStockProbeLease, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedStockProbeLease(); ok {
+		_spec.AddField(supplymapping.FieldStockProbeLease, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.StockProbeFailures(); ok {
+		_spec.SetField(supplymapping.FieldStockProbeFailures, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedStockProbeFailures(); ok {
+		_spec.AddField(supplymapping.FieldStockProbeFailures, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.UpStock(); ok {
 		_spec.SetField(supplymapping.FieldUpStock, field.TypeInt32, value)

@@ -91,7 +91,14 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 		var ids []uint64
 		for _, p := range candidates {
 			n := stocks[p.ID]
-			if (f.OutOfStockOnly && n == 0) || (!f.OutOfStockOnly && n >= 0 && n < int64(f.LowStockThreshold)) {
+			match := f.OutOfStockOnly && n == 0
+			if !f.OutOfStockOnly {
+				match, err = data.HasLowStock(ctx, r.data, p, f.LowStockThreshold)
+				if err != nil {
+					return nil, 0, err
+				}
+			}
+			if match {
 				ids = append(ids, p.ID)
 			}
 		}

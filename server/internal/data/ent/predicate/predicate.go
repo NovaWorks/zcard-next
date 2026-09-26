@@ -225,6 +225,9 @@ type Session func(*sql.Selector)
 // Setting is the predicate function for setting builders.
 type Setting func(*sql.Selector)
 
+// StockAlert is the predicate function for stockalert builders.
+type StockAlert func(*sql.Selector)
+
 // SupplierAccount is the predicate function for supplieraccount builders.
 type SupplierAccount func(*sql.Selector)
 

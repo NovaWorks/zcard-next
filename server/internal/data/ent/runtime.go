@@ -79,6 +79,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/securityauditlog"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/session"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/stockalert"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
@@ -2758,6 +2759,45 @@ func init() {
 	settingDescKey := settingFields[2].Descriptor()
 	// setting.KeyValidator is a validator for the "key" field. It is called by the builders before save.
 	setting.KeyValidator = settingDescKey.Validators[0].(func(string) error)
+	stockalertMixin := schema.StockAlert{}.Mixin()
+	stockalertMixinFields0 := stockalertMixin[0].Fields()
+	_ = stockalertMixinFields0
+	stockalertFields := schema.StockAlert{}.Fields()
+	_ = stockalertFields
+	// stockalertDescCreatedAt is the schema descriptor for created_at field.
+	stockalertDescCreatedAt := stockalertMixinFields0[0].Descriptor()
+	// stockalert.DefaultCreatedAt holds the default value on creation for the created_at field.
+	stockalert.DefaultCreatedAt = stockalertDescCreatedAt.Default.(func() time.Time)
+	// stockalertDescUpdatedAt is the schema descriptor for updated_at field.
+	stockalertDescUpdatedAt := stockalertMixinFields0[1].Descriptor()
+	// stockalert.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	stockalert.DefaultUpdatedAt = stockalertDescUpdatedAt.Default.(func() time.Time)
+	// stockalert.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	stockalert.UpdateDefaultUpdatedAt = stockalertDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// stockalertDescSkuID is the schema descriptor for sku_id field.
+	stockalertDescSkuID := stockalertFields[2].Descriptor()
+	// stockalert.DefaultSkuID holds the default value on creation for the sku_id field.
+	stockalert.DefaultSkuID = stockalertDescSkuID.Default.(uint64)
+	// stockalertDescSourceKey is the schema descriptor for source_key field.
+	stockalertDescSourceKey := stockalertFields[3].Descriptor()
+	// stockalert.SourceKeyValidator is a validator for the "source_key" field. It is called by the builders before save.
+	stockalert.SourceKeyValidator = stockalertDescSourceKey.Validators[0].(func(string) error)
+	// stockalertDescThreshold is the schema descriptor for threshold field.
+	stockalertDescThreshold := stockalertFields[4].Descriptor()
+	// stockalert.DefaultThreshold holds the default value on creation for the threshold field.
+	stockalert.DefaultThreshold = stockalertDescThreshold.Default.(int)
+	// stockalertDescState is the schema descriptor for state field.
+	stockalertDescState := stockalertFields[5].Descriptor()
+	// stockalert.DefaultState holds the default value on creation for the state field.
+	stockalert.DefaultState = stockalertDescState.Default.(int8)
+	// stockalertDescNotifiedState is the schema descriptor for notified_state field.
+	stockalertDescNotifiedState := stockalertFields[6].Descriptor()
+	// stockalert.DefaultNotifiedState holds the default value on creation for the notified_state field.
+	stockalert.DefaultNotifiedState = stockalertDescNotifiedState.Default.(int8)
+	// stockalertDescLastNotifiedAt is the schema descriptor for last_notified_at field.
+	stockalertDescLastNotifiedAt := stockalertFields[7].Descriptor()
+	// stockalert.DefaultLastNotifiedAt holds the default value on creation for the last_notified_at field.
+	stockalert.DefaultLastNotifiedAt = stockalertDescLastNotifiedAt.Default.(int64)
 	supplieraccountMixin := schema.SupplierAccount{}.Mixin()
 	supplieraccountMixinFields0 := supplieraccountMixin[0].Fields()
 	_ = supplieraccountMixinFields0
@@ -2952,50 +2992,58 @@ func init() {
 	supplyconnectionDescSyncTaskID := supplyconnectionFields[6].Descriptor()
 	// supplyconnection.DefaultSyncTaskID holds the default value on creation for the sync_task_id field.
 	supplyconnection.DefaultSyncTaskID = supplyconnectionDescSyncTaskID.Default.(uint64)
+	// supplyconnectionDescLowStockScannedAt is the schema descriptor for low_stock_scanned_at field.
+	supplyconnectionDescLowStockScannedAt := supplyconnectionFields[7].Descriptor()
+	// supplyconnection.DefaultLowStockScannedAt holds the default value on creation for the low_stock_scanned_at field.
+	supplyconnection.DefaultLowStockScannedAt = supplyconnectionDescLowStockScannedAt.Default.(int64)
+	// supplyconnectionDescLowStockMessage is the schema descriptor for low_stock_message field.
+	supplyconnectionDescLowStockMessage := supplyconnectionFields[8].Descriptor()
+	// supplyconnection.DefaultLowStockMessage holds the default value on creation for the low_stock_message field.
+	supplyconnection.DefaultLowStockMessage = supplyconnectionDescLowStockMessage.Default.(string)
 	// supplyconnectionDescSyncLeaseToken is the schema descriptor for sync_lease_token field.
-	supplyconnectionDescSyncLeaseToken := supplyconnectionFields[7].Descriptor()
+	supplyconnectionDescSyncLeaseToken := supplyconnectionFields[9].Descriptor()
 	// supplyconnection.DefaultSyncLeaseToken holds the default value on creation for the sync_lease_token field.
 	supplyconnection.DefaultSyncLeaseToken = supplyconnectionDescSyncLeaseToken.Default.(string)
 	// supplyconnectionDescSyncLeaseUntil is the schema descriptor for sync_lease_until field.
-	supplyconnectionDescSyncLeaseUntil := supplyconnectionFields[8].Descriptor()
+	supplyconnectionDescSyncLeaseUntil := supplyconnectionFields[10].Descriptor()
 	// supplyconnection.DefaultSyncLeaseUntil holds the default value on creation for the sync_lease_until field.
 	supplyconnection.DefaultSyncLeaseUntil = supplyconnectionDescSyncLeaseUntil.Default.(int64)
 	// supplyconnectionDescCallbackURL is the schema descriptor for callback_url field.
-	supplyconnectionDescCallbackURL := supplyconnectionFields[9].Descriptor()
+	supplyconnectionDescCallbackURL := supplyconnectionFields[11].Descriptor()
 	// supplyconnection.CallbackURLValidator is a validator for the "callback_url" field. It is called by the builders before save.
 	supplyconnection.CallbackURLValidator = supplyconnectionDescCallbackURL.Validators[0].(func(string) error)
 	// supplyconnectionDescRetryMax is the schema descriptor for retry_max field.
-	supplyconnectionDescRetryMax := supplyconnectionFields[10].Descriptor()
+	supplyconnectionDescRetryMax := supplyconnectionFields[12].Descriptor()
 	// supplyconnection.DefaultRetryMax holds the default value on creation for the retry_max field.
 	supplyconnection.DefaultRetryMax = supplyconnectionDescRetryMax.Default.(int32)
 	// supplyconnectionDescRetryIntervals is the schema descriptor for retry_intervals field.
-	supplyconnectionDescRetryIntervals := supplyconnectionFields[11].Descriptor()
+	supplyconnectionDescRetryIntervals := supplyconnectionFields[13].Descriptor()
 	// supplyconnection.DefaultRetryIntervals holds the default value on creation for the retry_intervals field.
 	supplyconnection.DefaultRetryIntervals = supplyconnectionDescRetryIntervals.Default.(string)
 	// supplyconnection.RetryIntervalsValidator is a validator for the "retry_intervals" field. It is called by the builders before save.
 	supplyconnection.RetryIntervalsValidator = supplyconnectionDescRetryIntervals.Validators[0].(func(string) error)
 	// supplyconnectionDescExchangeRate is the schema descriptor for exchange_rate field.
-	supplyconnectionDescExchangeRate := supplyconnectionFields[12].Descriptor()
+	supplyconnectionDescExchangeRate := supplyconnectionFields[14].Descriptor()
 	// supplyconnection.DefaultExchangeRate holds the default value on creation for the exchange_rate field.
 	supplyconnection.DefaultExchangeRate = supplyconnectionDescExchangeRate.Default.(float64)
 	// supplyconnectionDescPriceMarkupPercent is the schema descriptor for price_markup_percent field.
-	supplyconnectionDescPriceMarkupPercent := supplyconnectionFields[13].Descriptor()
+	supplyconnectionDescPriceMarkupPercent := supplyconnectionFields[15].Descriptor()
 	// supplyconnection.DefaultPriceMarkupPercent holds the default value on creation for the price_markup_percent field.
 	supplyconnection.DefaultPriceMarkupPercent = supplyconnectionDescPriceMarkupPercent.Default.(float64)
 	// supplyconnectionDescPriceMarkupAmount is the schema descriptor for price_markup_amount field.
-	supplyconnectionDescPriceMarkupAmount := supplyconnectionFields[14].Descriptor()
+	supplyconnectionDescPriceMarkupAmount := supplyconnectionFields[16].Descriptor()
 	// supplyconnection.DefaultPriceMarkupAmount holds the default value on creation for the price_markup_amount field.
 	supplyconnection.DefaultPriceMarkupAmount = supplyconnectionDescPriceMarkupAmount.Default.(int64)
 	// supplyconnectionDescAutoSyncPrice is the schema descriptor for auto_sync_price field.
-	supplyconnectionDescAutoSyncPrice := supplyconnectionFields[16].Descriptor()
+	supplyconnectionDescAutoSyncPrice := supplyconnectionFields[18].Descriptor()
 	// supplyconnection.DefaultAutoSyncPrice holds the default value on creation for the auto_sync_price field.
 	supplyconnection.DefaultAutoSyncPrice = supplyconnectionDescAutoSyncPrice.Default.(bool)
 	// supplyconnectionDescLastPingOk is the schema descriptor for last_ping_ok field.
-	supplyconnectionDescLastPingOk := supplyconnectionFields[20].Descriptor()
+	supplyconnectionDescLastPingOk := supplyconnectionFields[22].Descriptor()
 	// supplyconnection.DefaultLastPingOk holds the default value on creation for the last_ping_ok field.
 	supplyconnection.DefaultLastPingOk = supplyconnectionDescLastPingOk.Default.(bool)
 	// supplyconnectionDescBalanceCache is the schema descriptor for balance_cache field.
-	supplyconnectionDescBalanceCache := supplyconnectionFields[23].Descriptor()
+	supplyconnectionDescBalanceCache := supplyconnectionFields[25].Descriptor()
 	// supplyconnection.DefaultBalanceCache holds the default value on creation for the balance_cache field.
 	supplyconnection.DefaultBalanceCache = supplyconnectionDescBalanceCache.Default.(int64)
 	supplyimportitemMixin := schema.SupplyImportItem{}.Mixin()
@@ -3102,12 +3150,24 @@ func init() {
 	supplymapping.DefaultUpstreamSku = supplymappingDescUpstreamSku.Default.(string)
 	// supplymapping.UpstreamSkuValidator is a validator for the "upstream_sku" field. It is called by the builders before save.
 	supplymapping.UpstreamSkuValidator = supplymappingDescUpstreamSku.Validators[0].(func(string) error)
+	// supplymappingDescStockProbeAfter is the schema descriptor for stock_probe_after field.
+	supplymappingDescStockProbeAfter := supplymappingFields[8].Descriptor()
+	// supplymapping.DefaultStockProbeAfter holds the default value on creation for the stock_probe_after field.
+	supplymapping.DefaultStockProbeAfter = supplymappingDescStockProbeAfter.Default.(int64)
+	// supplymappingDescStockProbeLease is the schema descriptor for stock_probe_lease field.
+	supplymappingDescStockProbeLease := supplymappingFields[9].Descriptor()
+	// supplymapping.DefaultStockProbeLease holds the default value on creation for the stock_probe_lease field.
+	supplymapping.DefaultStockProbeLease = supplymappingDescStockProbeLease.Default.(int64)
+	// supplymappingDescStockProbeFailures is the schema descriptor for stock_probe_failures field.
+	supplymappingDescStockProbeFailures := supplymappingFields[10].Descriptor()
+	// supplymapping.DefaultStockProbeFailures holds the default value on creation for the stock_probe_failures field.
+	supplymapping.DefaultStockProbeFailures = supplymappingDescStockProbeFailures.Default.(int)
 	// supplymappingDescUpStock is the schema descriptor for up_stock field.
-	supplymappingDescUpStock := supplymappingFields[8].Descriptor()
+	supplymappingDescUpStock := supplymappingFields[11].Descriptor()
 	// supplymapping.DefaultUpStock holds the default value on creation for the up_stock field.
 	supplymapping.DefaultUpStock = supplymappingDescUpStock.Default.(int32)
 	// supplymappingDescStockReference is the schema descriptor for stock_reference field.
-	supplymappingDescStockReference := supplymappingFields[10].Descriptor()
+	supplymappingDescStockReference := supplymappingFields[13].Descriptor()
 	// supplymapping.DefaultStockReference holds the default value on creation for the stock_reference field.
 	supplymapping.DefaultStockReference = supplymappingDescStockReference.Default.(int32)
 	supplynonceFields := schema.SupplyNonce{}.Fields()

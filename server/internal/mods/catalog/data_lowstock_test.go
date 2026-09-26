@@ -6,7 +6,10 @@ package catalog
 import (
 	"context"
 	"fmt"
+	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
@@ -82,5 +85,25 @@ func TestListAdminLowStockSubsiteIsolation(t *testing.T) {
 	}
 	if totalSub != 1 {
 		t.Fatalf("分站低库存 total=%d, want 1", totalSub)
+	}
+}
+
+func TestLowStockFilterAndBadgeUseScarceSKU(t *testing.T) {
+	d, svc := newStatsEnv(t)
+	ctx := context.Background()
+	p := d.Client.Product.Create().SetName("multi").SetSlug("multi").SetStatus(1).SetUpstreamSourceID(1).SetUpstreamProductCode("multi").SaveX(ctx)
+	d.Client.SupplyMapping.Create().SetConnectionID(1).SetLocalProductID(p.ID).SetUpstreamProduct("multi").SetUpStock(102).SetStockCheckedAt(time.Now()).SaveX(ctx)
+	for code, n := range map[string]int32{"scarce": 2, "plenty": 100} {
+		sk := d.Client.ProductSku.Create().SetProductID(p.ID).SetName(code).SetSpecValues(map[string]string{}).SetUpstreamSkuID(code).SaveX(ctx)
+		d.Client.SupplyMapping.Create().SetConnectionID(1).SetLocalProductID(p.ID).SetLocalSkuID(sk.ID).SetUpstreamProduct("multi").SetUpstreamSku(code).SetUpStock(n).SetStockCheckedAt(time.Now()).SaveX(ctx)
+	}
+	for _, req := range []*adminv1.ListProductsRequest{{LowStockOnly: true}, {Inventory: "low"}} {
+		got, err := svc.ListProducts(ctx, req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Total != 1 || len(got.Products) != 1 || !strings.Contains(got.Products[0].LowStockMessage, "scarce：2 件") || strings.Contains(got.Products[0].LowStockMessage, "plenty") {
+			t.Fatalf("missing SKU alert: %+v", got)
+		}
 	}
 }

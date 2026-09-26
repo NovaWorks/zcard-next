@@ -36,11 +36,17 @@ func (d *Dispatcher) telegram() *TelegramChannel {
 	return c
 }
 func telegramEnabled(cfg *TelegramConfig, event string) bool {
-	if cfg == nil || !cfg.Enabled || !cfg.OrderEnabled || cfg.BotToken == "" {
+	if cfg == nil || !cfg.Enabled || cfg.BotToken == "" {
 		return false
 	}
 	if event == "telegram.test" {
-		return true
+		return cfg.OrderEnabled || cfg.LowStockEnabled
+	}
+	if event == "stock.low" {
+		return cfg.LowStockEnabled
+	}
+	if !cfg.OrderEnabled {
+		return false
 	}
 	for _, t := range cfg.Events {
 		if t == event {
@@ -275,6 +281,35 @@ func (d *Dispatcher) deliverTelegramDue(ctx context.Context) error {
 			continue
 		}
 		cfg, configErr := c.tgConfig(ctx)
+		if configErr == nil && row.EventType == "stock.low" {
+			raw, e := c.settings.GetJSON(ctx, "supply", "low_stock_alert_enabled")
+			if e != nil {
+				configErr = e
+			} else if len(raw) > 0 {
+				var enabled bool
+				if e = json.Unmarshal(raw, &enabled); e != nil {
+					configErr = e
+				} else if !enabled && cfg != nil {
+					cfg.LowStockEnabled = false
+				}
+			}
+			if threshold, ok := row.Variables["stock_threshold"].(string); ok && cfg != nil {
+				raw, e = c.settings.GetJSON(ctx, "supply", "low_stock_threshold")
+				if e != nil {
+					configErr = e
+				} else {
+					current := 5
+					if len(raw) > 0 {
+						e = json.Unmarshal(raw, &current)
+					}
+					if e != nil {
+						configErr = e
+					} else if strconv.Itoa(current) != threshold {
+						cfg.LowStockEnabled = false
+					}
+				}
+			}
+		}
 		var sendErr error
 		var messageID string
 		target, targetErr := telegramLogTarget(row)

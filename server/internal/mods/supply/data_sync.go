@@ -102,13 +102,14 @@ func toInt(v any, def int) int {
 
 // SyncService 同步执行器。
 type SyncService struct {
-	repo       *SupplyRepoImpl
-	writer     catalogport.UpstreamProductWriter
-	maintainer catalogport.UpstreamProductMaintainer // 轻量 scope + 删除对账（nil=跳过）
-	pacer      *Pacer                                // 自适应节奏器（nil=静态节流，测试用）
-	enq        queue.Enqueuer
-	outbox     events.Writer // sync.completed 发布
-	log        *slog.Logger
+	stockAdapterFactory func(*ent.SupplyConnection) (adapter.Adapter, error)
+	repo                *SupplyRepoImpl
+	writer              catalogport.UpstreamProductWriter
+	maintainer          catalogport.UpstreamProductMaintainer // 轻量 scope + 删除对账（nil=跳过）
+	pacer               *Pacer                                // 自适应节奏器（nil=静态节流，测试用）
+	enq                 queue.Enqueuer
+	outbox              events.Writer // sync.completed 发布
+	log                 *slog.Logger
 
 	// 封面采集去重缓存（url → 本地 /uploads/ 路径或完整上游 URL；mutex 保护并发任务）
 	coverMu    sync.Mutex

@@ -132,6 +132,48 @@ func (_c *SupplyMappingCreate) SetNillableLocalSkuID(v *uint64) *SupplyMappingCr
 	return _c
 }
 
+// SetStockProbeAfter sets the "stock_probe_after" field.
+func (_c *SupplyMappingCreate) SetStockProbeAfter(v int64) *SupplyMappingCreate {
+	_c.mutation.SetStockProbeAfter(v)
+	return _c
+}
+
+// SetNillableStockProbeAfter sets the "stock_probe_after" field if the given value is not nil.
+func (_c *SupplyMappingCreate) SetNillableStockProbeAfter(v *int64) *SupplyMappingCreate {
+	if v != nil {
+		_c.SetStockProbeAfter(*v)
+	}
+	return _c
+}
+
+// SetStockProbeLease sets the "stock_probe_lease" field.
+func (_c *SupplyMappingCreate) SetStockProbeLease(v int64) *SupplyMappingCreate {
+	_c.mutation.SetStockProbeLease(v)
+	return _c
+}
+
+// SetNillableStockProbeLease sets the "stock_probe_lease" field if the given value is not nil.
+func (_c *SupplyMappingCreate) SetNillableStockProbeLease(v *int64) *SupplyMappingCreate {
+	if v != nil {
+		_c.SetStockProbeLease(*v)
+	}
+	return _c
+}
+
+// SetStockProbeFailures sets the "stock_probe_failures" field.
+func (_c *SupplyMappingCreate) SetStockProbeFailures(v int) *SupplyMappingCreate {
+	_c.mutation.SetStockProbeFailures(v)
+	return _c
+}
+
+// SetNillableStockProbeFailures sets the "stock_probe_failures" field if the given value is not nil.
+func (_c *SupplyMappingCreate) SetNillableStockProbeFailures(v *int) *SupplyMappingCreate {
+	if v != nil {
+		_c.SetStockProbeFailures(*v)
+	}
+	return _c
+}
+
 // SetUpStock sets the "up_stock" field.
 func (_c *SupplyMappingCreate) SetUpStock(v int32) *SupplyMappingCreate {
 	_c.mutation.SetUpStock(v)
@@ -247,6 +289,18 @@ func (_c *SupplyMappingCreate) defaults() {
 		v := supplymapping.DefaultUpstreamSku
 		_c.mutation.SetUpstreamSku(v)
 	}
+	if _, ok := _c.mutation.StockProbeAfter(); !ok {
+		v := supplymapping.DefaultStockProbeAfter
+		_c.mutation.SetStockProbeAfter(v)
+	}
+	if _, ok := _c.mutation.StockProbeLease(); !ok {
+		v := supplymapping.DefaultStockProbeLease
+		_c.mutation.SetStockProbeLease(v)
+	}
+	if _, ok := _c.mutation.StockProbeFailures(); !ok {
+		v := supplymapping.DefaultStockProbeFailures
+		_c.mutation.SetStockProbeFailures(v)
+	}
 	if _, ok := _c.mutation.UpStock(); !ok {
 		v := supplymapping.DefaultUpStock
 		_c.mutation.SetUpStock(v)
@@ -288,6 +342,15 @@ func (_c *SupplyMappingCreate) check() error {
 		if err := supplymapping.UpstreamSkuValidator(v); err != nil {
 			return &ValidationError{Name: "upstream_sku", err: fmt.Errorf(`ent: validator failed for field "SupplyMapping.upstream_sku": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.StockProbeAfter(); !ok {
+		return &ValidationError{Name: "stock_probe_after", err: errors.New(`ent: missing required field "SupplyMapping.stock_probe_after"`)}
+	}
+	if _, ok := _c.mutation.StockProbeLease(); !ok {
+		return &ValidationError{Name: "stock_probe_lease", err: errors.New(`ent: missing required field "SupplyMapping.stock_probe_lease"`)}
+	}
+	if _, ok := _c.mutation.StockProbeFailures(); !ok {
+		return &ValidationError{Name: "stock_probe_failures", err: errors.New(`ent: missing required field "SupplyMapping.stock_probe_failures"`)}
 	}
 	if _, ok := _c.mutation.UpStock(); !ok {
 		return &ValidationError{Name: "up_stock", err: errors.New(`ent: missing required field "SupplyMapping.up_stock"`)}
@@ -363,6 +426,18 @@ func (_c *SupplyMappingCreate) createSpec() (*SupplyMapping, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.LocalSkuID(); ok {
 		_spec.SetField(supplymapping.FieldLocalSkuID, field.TypeUint64, value)
 		_node.LocalSkuID = value
+	}
+	if value, ok := _c.mutation.StockProbeAfter(); ok {
+		_spec.SetField(supplymapping.FieldStockProbeAfter, field.TypeInt64, value)
+		_node.StockProbeAfter = value
+	}
+	if value, ok := _c.mutation.StockProbeLease(); ok {
+		_spec.SetField(supplymapping.FieldStockProbeLease, field.TypeInt64, value)
+		_node.StockProbeLease = value
+	}
+	if value, ok := _c.mutation.StockProbeFailures(); ok {
+		_spec.SetField(supplymapping.FieldStockProbeFailures, field.TypeInt, value)
+		_node.StockProbeFailures = value
 	}
 	if value, ok := _c.mutation.UpStock(); ok {
 		_spec.SetField(supplymapping.FieldUpStock, field.TypeInt32, value)
@@ -577,6 +652,60 @@ func (u *SupplyMappingUpsert) AddLocalSkuID(v uint64) *SupplyMappingUpsert {
 // ClearLocalSkuID clears the value of the "local_sku_id" field.
 func (u *SupplyMappingUpsert) ClearLocalSkuID() *SupplyMappingUpsert {
 	u.SetNull(supplymapping.FieldLocalSkuID)
+	return u
+}
+
+// SetStockProbeAfter sets the "stock_probe_after" field.
+func (u *SupplyMappingUpsert) SetStockProbeAfter(v int64) *SupplyMappingUpsert {
+	u.Set(supplymapping.FieldStockProbeAfter, v)
+	return u
+}
+
+// UpdateStockProbeAfter sets the "stock_probe_after" field to the value that was provided on create.
+func (u *SupplyMappingUpsert) UpdateStockProbeAfter() *SupplyMappingUpsert {
+	u.SetExcluded(supplymapping.FieldStockProbeAfter)
+	return u
+}
+
+// AddStockProbeAfter adds v to the "stock_probe_after" field.
+func (u *SupplyMappingUpsert) AddStockProbeAfter(v int64) *SupplyMappingUpsert {
+	u.Add(supplymapping.FieldStockProbeAfter, v)
+	return u
+}
+
+// SetStockProbeLease sets the "stock_probe_lease" field.
+func (u *SupplyMappingUpsert) SetStockProbeLease(v int64) *SupplyMappingUpsert {
+	u.Set(supplymapping.FieldStockProbeLease, v)
+	return u
+}
+
+// UpdateStockProbeLease sets the "stock_probe_lease" field to the value that was provided on create.
+func (u *SupplyMappingUpsert) UpdateStockProbeLease() *SupplyMappingUpsert {
+	u.SetExcluded(supplymapping.FieldStockProbeLease)
+	return u
+}
+
+// AddStockProbeLease adds v to the "stock_probe_lease" field.
+func (u *SupplyMappingUpsert) AddStockProbeLease(v int64) *SupplyMappingUpsert {
+	u.Add(supplymapping.FieldStockProbeLease, v)
+	return u
+}
+
+// SetStockProbeFailures sets the "stock_probe_failures" field.
+func (u *SupplyMappingUpsert) SetStockProbeFailures(v int) *SupplyMappingUpsert {
+	u.Set(supplymapping.FieldStockProbeFailures, v)
+	return u
+}
+
+// UpdateStockProbeFailures sets the "stock_probe_failures" field to the value that was provided on create.
+func (u *SupplyMappingUpsert) UpdateStockProbeFailures() *SupplyMappingUpsert {
+	u.SetExcluded(supplymapping.FieldStockProbeFailures)
+	return u
+}
+
+// AddStockProbeFailures adds v to the "stock_probe_failures" field.
+func (u *SupplyMappingUpsert) AddStockProbeFailures(v int) *SupplyMappingUpsert {
+	u.Add(supplymapping.FieldStockProbeFailures, v)
 	return u
 }
 
@@ -886,6 +1015,69 @@ func (u *SupplyMappingUpsertOne) UpdateLocalSkuID() *SupplyMappingUpsertOne {
 func (u *SupplyMappingUpsertOne) ClearLocalSkuID() *SupplyMappingUpsertOne {
 	return u.Update(func(s *SupplyMappingUpsert) {
 		s.ClearLocalSkuID()
+	})
+}
+
+// SetStockProbeAfter sets the "stock_probe_after" field.
+func (u *SupplyMappingUpsertOne) SetStockProbeAfter(v int64) *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.SetStockProbeAfter(v)
+	})
+}
+
+// AddStockProbeAfter adds v to the "stock_probe_after" field.
+func (u *SupplyMappingUpsertOne) AddStockProbeAfter(v int64) *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.AddStockProbeAfter(v)
+	})
+}
+
+// UpdateStockProbeAfter sets the "stock_probe_after" field to the value that was provided on create.
+func (u *SupplyMappingUpsertOne) UpdateStockProbeAfter() *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.UpdateStockProbeAfter()
+	})
+}
+
+// SetStockProbeLease sets the "stock_probe_lease" field.
+func (u *SupplyMappingUpsertOne) SetStockProbeLease(v int64) *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.SetStockProbeLease(v)
+	})
+}
+
+// AddStockProbeLease adds v to the "stock_probe_lease" field.
+func (u *SupplyMappingUpsertOne) AddStockProbeLease(v int64) *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.AddStockProbeLease(v)
+	})
+}
+
+// UpdateStockProbeLease sets the "stock_probe_lease" field to the value that was provided on create.
+func (u *SupplyMappingUpsertOne) UpdateStockProbeLease() *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.UpdateStockProbeLease()
+	})
+}
+
+// SetStockProbeFailures sets the "stock_probe_failures" field.
+func (u *SupplyMappingUpsertOne) SetStockProbeFailures(v int) *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.SetStockProbeFailures(v)
+	})
+}
+
+// AddStockProbeFailures adds v to the "stock_probe_failures" field.
+func (u *SupplyMappingUpsertOne) AddStockProbeFailures(v int) *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.AddStockProbeFailures(v)
+	})
+}
+
+// UpdateStockProbeFailures sets the "stock_probe_failures" field to the value that was provided on create.
+func (u *SupplyMappingUpsertOne) UpdateStockProbeFailures() *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.UpdateStockProbeFailures()
 	})
 }
 
@@ -1376,6 +1568,69 @@ func (u *SupplyMappingUpsertBulk) UpdateLocalSkuID() *SupplyMappingUpsertBulk {
 func (u *SupplyMappingUpsertBulk) ClearLocalSkuID() *SupplyMappingUpsertBulk {
 	return u.Update(func(s *SupplyMappingUpsert) {
 		s.ClearLocalSkuID()
+	})
+}
+
+// SetStockProbeAfter sets the "stock_probe_after" field.
+func (u *SupplyMappingUpsertBulk) SetStockProbeAfter(v int64) *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.SetStockProbeAfter(v)
+	})
+}
+
+// AddStockProbeAfter adds v to the "stock_probe_after" field.
+func (u *SupplyMappingUpsertBulk) AddStockProbeAfter(v int64) *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.AddStockProbeAfter(v)
+	})
+}
+
+// UpdateStockProbeAfter sets the "stock_probe_after" field to the value that was provided on create.
+func (u *SupplyMappingUpsertBulk) UpdateStockProbeAfter() *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.UpdateStockProbeAfter()
+	})
+}
+
+// SetStockProbeLease sets the "stock_probe_lease" field.
+func (u *SupplyMappingUpsertBulk) SetStockProbeLease(v int64) *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.SetStockProbeLease(v)
+	})
+}
+
+// AddStockProbeLease adds v to the "stock_probe_lease" field.
+func (u *SupplyMappingUpsertBulk) AddStockProbeLease(v int64) *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.AddStockProbeLease(v)
+	})
+}
+
+// UpdateStockProbeLease sets the "stock_probe_lease" field to the value that was provided on create.
+func (u *SupplyMappingUpsertBulk) UpdateStockProbeLease() *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.UpdateStockProbeLease()
+	})
+}
+
+// SetStockProbeFailures sets the "stock_probe_failures" field.
+func (u *SupplyMappingUpsertBulk) SetStockProbeFailures(v int) *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.SetStockProbeFailures(v)
+	})
+}
+
+// AddStockProbeFailures adds v to the "stock_probe_failures" field.
+func (u *SupplyMappingUpsertBulk) AddStockProbeFailures(v int) *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.AddStockProbeFailures(v)
+	})
+}
+
+// UpdateStockProbeFailures sets the "stock_probe_failures" field to the value that was provided on create.
+func (u *SupplyMappingUpsertBulk) UpdateStockProbeFailures() *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.UpdateStockProbeFailures()
 	})
 }
 

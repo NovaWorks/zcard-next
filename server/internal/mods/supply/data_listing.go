@@ -60,8 +60,16 @@ func (s *SyncService) listingSKUStock(ctx context.Context, a adapter.Adapter, co
 			continue
 		}
 		call, stop := context.WithTimeout(bounded, 8*time.Second)
+		started := time.Now().UTC()
 		n, e := a.GetStock(call, p.ID, sk.UpstreamSkuID)
 		stop()
+		observed := n
+		if e != nil {
+			observed = -2
+		}
+		if cacheErr := s.repo.recordSKUStock(ctx, connection, p.ID, sk.UpstreamSkuID, observed, started); cacheErr != nil && !data.IsProductLocked(cacheErr) && !ent.IsNotFound(cacheErr) {
+			return cacheErr
+		}
 		if errors.Is(e, adapter.ErrRateLimited) {
 			p.Stock = -2
 			p.StockError = "货源限流，请稍后重试"

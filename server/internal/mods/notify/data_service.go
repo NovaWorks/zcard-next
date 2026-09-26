@@ -322,7 +322,7 @@ func (s *AdminNotifyService) TestTelegram(ctx context.Context, req *adminv1.Test
 		return nil, errors.BadRequest("notify.NOT_CONFIGURED", "Telegram 配置读取失败")
 	}
 	if !telegramEnabled(cfg, "telegram.test") || len(telegramTargets(cfg)) == 0 {
-		return nil, errors.BadRequest("notify.NOT_CONFIGURED", "请先保存并启用 Telegram 通道、订单通知、Token 和接收 Chat ID")
+		return nil, errors.BadRequest("notify.NOT_CONFIGURED", "请先保存并启用 Telegram 通道、订单或低库存通知、Token 和接收位置")
 	}
 	targets := telegramTargets(cfg)
 	if req.GetChatId() != "" || req.GetTopicId() != 0 {
@@ -335,7 +335,7 @@ func (s *AdminNotifyService) TestTelegram(ctx context.Context, req *adminv1.Test
 	eventID := uint64(time.Now().UnixNano())
 	reply := &adminv1.TestTelegramReply{}
 	err = data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
-		if err := s.repo.enqueueTelegram(ctx, eventID, "telegram.test", 0, "Telegram 订单通知测试", "这是一条管理员主动发送的测试消息。正式通知包含订单号、商品摘要、金额与订单入口，不包含卡密或查询密码。", targets); err != nil {
+		if err := s.repo.enqueueTelegram(ctx, eventID, "telegram.test", 0, "Telegram 通知测试", "这是一条管理员主动发送的测试消息。此测试用于核对订单和库存通知的接收位置，不包含卡密或查询密码。", targets); err != nil {
 			return err
 		}
 		keys := make([]string, 0, len(targets))

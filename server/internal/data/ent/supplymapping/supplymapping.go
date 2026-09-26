@@ -31,6 +31,12 @@ const (
 	FieldUpstreamSku = "upstream_sku"
 	// FieldLocalSkuID holds the string denoting the local_sku_id field in the database.
 	FieldLocalSkuID = "local_sku_id"
+	// FieldStockProbeAfter holds the string denoting the stock_probe_after field in the database.
+	FieldStockProbeAfter = "stock_probe_after"
+	// FieldStockProbeLease holds the string denoting the stock_probe_lease field in the database.
+	FieldStockProbeLease = "stock_probe_lease"
+	// FieldStockProbeFailures holds the string denoting the stock_probe_failures field in the database.
+	FieldStockProbeFailures = "stock_probe_failures"
 	// FieldUpStock holds the string denoting the up_stock field in the database.
 	FieldUpStock = "up_stock"
 	// FieldStockCheckedAt holds the string denoting the stock_checked_at field in the database.
@@ -57,6 +63,9 @@ var Columns = []string{
 	FieldLocalProductID,
 	FieldUpstreamSku,
 	FieldLocalSkuID,
+	FieldStockProbeAfter,
+	FieldStockProbeLease,
+	FieldStockProbeFailures,
 	FieldUpStock,
 	FieldStockCheckedAt,
 	FieldStockReference,
@@ -89,6 +98,12 @@ var (
 	DefaultUpstreamSku string
 	// UpstreamSkuValidator is a validator for the "upstream_sku" field. It is called by the builders before save.
 	UpstreamSkuValidator func(string) error
+	// DefaultStockProbeAfter holds the default value on creation for the "stock_probe_after" field.
+	DefaultStockProbeAfter int64
+	// DefaultStockProbeLease holds the default value on creation for the "stock_probe_lease" field.
+	DefaultStockProbeLease int64
+	// DefaultStockProbeFailures holds the default value on creation for the "stock_probe_failures" field.
+	DefaultStockProbeFailures int
 	// DefaultUpStock holds the default value on creation for the "up_stock" field.
 	DefaultUpStock int32
 	// DefaultStockReference holds the default value on creation for the "stock_reference" field.
@@ -146,6 +161,21 @@ func ByUpstreamSku(opts ...sql.OrderTermOption) OrderOption {
 // ByLocalSkuID orders the results by the local_sku_id field.
 func ByLocalSkuID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLocalSkuID, opts...).ToFunc()
+}
+
+// ByStockProbeAfter orders the results by the stock_probe_after field.
+func ByStockProbeAfter(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStockProbeAfter, opts...).ToFunc()
+}
+
+// ByStockProbeLease orders the results by the stock_probe_lease field.
+func ByStockProbeLease(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStockProbeLease, opts...).ToFunc()
+}
+
+// ByStockProbeFailures orders the results by the stock_probe_failures field.
+func ByStockProbeFailures(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStockProbeFailures, opts...).ToFunc()
 }
 
 // ByUpStock orders the results by the up_stock field.

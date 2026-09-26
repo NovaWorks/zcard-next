@@ -38,8 +38,10 @@ type SupplyConnection struct {
 	PriceMarkupPercent float64                `protobuf:"fixed64,11,opt,name=price_markup_percent,json=priceMarkupPercent,proto3" json:"price_markup_percent,omitempty"`
 	PriceRoundingMode  string                 `protobuf:"bytes,12,opt,name=price_rounding_mode,json=priceRoundingMode,proto3" json:"price_rounding_mode,omitempty"` // none | ceil_int | ceil_tenth
 	AutoSyncPrice      bool                   `protobuf:"varint,13,opt,name=auto_sync_price,json=autoSyncPrice,proto3" json:"auto_sync_price,omitempty"`
-	StockMode          string                 `protobuf:"bytes,14,opt,name=stock_mode,json=stockMode,proto3" json:"stock_mode,omitempty"`                            // real | plenty
-	Settings           string                 `protobuf:"bytes,15,opt,name=settings,proto3" json:"settings,omitempty"`                                               // JSON
+	StockMode          string                 `protobuf:"bytes,14,opt,name=stock_mode,json=stockMode,proto3" json:"stock_mode,omitempty"` // real | plenty
+	Settings           string                 `protobuf:"bytes,15,opt,name=settings,proto3" json:"settings,omitempty"`                    // JSON
+	LowStockScannedAt  int64                  `protobuf:"varint,29,opt,name=low_stock_scanned_at,json=lowStockScannedAt,proto3" json:"low_stock_scanned_at,omitempty"`
+	LowStockMessage    string                 `protobuf:"bytes,30,opt,name=low_stock_message,json=lowStockMessage,proto3" json:"low_stock_message,omitempty"`
 	PriceMarkupAmount  int64                  `protobuf:"varint,28,opt,name=price_markup_amount,json=priceMarkupAmount,proto3" json:"price_markup_amount,omitempty"` // 固定加价（分；与加价% 组合：×(1+%) 后再加）
 	LastPingAt         int64                  `protobuf:"varint,16,opt,name=last_ping_at,json=lastPingAt,proto3" json:"last_ping_at,omitempty"`
 	LastPingOk         bool                   `protobuf:"varint,17,opt,name=last_ping_ok,json=lastPingOk,proto3" json:"last_ping_ok,omitempty"`
@@ -189,6 +191,20 @@ func (x *SupplyConnection) GetStockMode() string {
 func (x *SupplyConnection) GetSettings() string {
 	if x != nil {
 		return x.Settings
+	}
+	return ""
+}
+
+func (x *SupplyConnection) GetLowStockScannedAt() int64 {
+	if x != nil {
+		return x.LowStockScannedAt
+	}
+	return 0
+}
+
+func (x *SupplyConnection) GetLowStockMessage() string {
+	if x != nil {
+		return x.LowStockMessage
 	}
 	return ""
 }
@@ -3076,7 +3092,7 @@ var File_admin_v1_supply_proto protoreflect.FileDescriptor
 
 const file_admin_v1_supply_proto_rawDesc = "" +
 	"\n" +
-	"\x15admin/v1/supply.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xe6\a\n" +
+	"\x15admin/v1/supply.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xc3\b\n" +
 	"\x10SupplyConnection\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
@@ -3094,7 +3110,9 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x0fauto_sync_price\x18\r \x01(\bR\rautoSyncPrice\x12\x1d\n" +
 	"\n" +
 	"stock_mode\x18\x0e \x01(\tR\tstockMode\x12\x1a\n" +
-	"\bsettings\x18\x0f \x01(\tR\bsettings\x12.\n" +
+	"\bsettings\x18\x0f \x01(\tR\bsettings\x12/\n" +
+	"\x14low_stock_scanned_at\x18\x1d \x01(\x03R\x11lowStockScannedAt\x12*\n" +
+	"\x11low_stock_message\x18\x1e \x01(\tR\x0flowStockMessage\x12.\n" +
 	"\x13price_markup_amount\x18\x1c \x01(\x03R\x11priceMarkupAmount\x12 \n" +
 	"\flast_ping_at\x18\x10 \x01(\x03R\n" +
 	"lastPingAt\x12 \n" +

@@ -5,11 +5,13 @@ package catalog
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
@@ -48,18 +50,18 @@ func (s *AdminCatalogService) lowStockThresholdFor(ctx context.Context, enabled 
 	return s.lowStockThreshold(ctx)
 }
 
-// lowStockThreshold 库存预警阈值（settings.supply.low_stock_threshold；默认 10）。
+// lowStockThreshold 库存预警阈值（settings.supply.low_stock_threshold；默认 5）。
 func (s *AdminCatalogService) lowStockThreshold(ctx context.Context) int {
 	if s.settings == nil {
-		return 10
+		return 5
 	}
 	raw, err := s.settings.GetJSON(ctx, "supply", "low_stock_threshold")
 	if err != nil || len(raw) == 0 {
-		return 10
+		return 5
 	}
 	var v int
 	if json.Unmarshal(raw, &v) != nil || v < 1 {
-		return 10
+		return 5
 	}
 	return v
 }
@@ -73,6 +75,7 @@ func (s *AdminCatalogService) fillStats(ctx context.Context, items []*adminv1.Ad
 	for _, p := range items {
 		ids = append(ids, p.Id)
 	}
+	messages := s.lowStockMessages(ctx, ids)
 	snapshots, err := s.repo.cachedStockSnapshotBatch(ctx, ids)
 	var solds map[uint64]int64
 	if s.sold != nil {
@@ -90,7 +93,53 @@ func (s *AdminCatalogService) fillStats(ctx context.Context, items []*adminv1.Ad
 			}
 		}
 		p.SoldCount = solds[p.Id]
+		p.LowStockMessage = messages[p.Id]
 	}
+}
+
+// Low-stock badges share the exact SKU-aware criterion with filtering and notifications.
+func (s *AdminCatalogService) lowStockMessages(ctx context.Context, ids []uint64) map[uint64]string {
+	out := map[uint64]string{}
+	if s.settings != nil {
+		raw, err := s.settings.GetJSON(ctx, "supply", "low_stock_alert_enabled")
+		enabled := true
+		if err != nil || len(raw) > 0 && (json.Unmarshal(raw, &enabled) != nil || !enabled) {
+			return out
+		}
+	}
+	threshold := s.lowStockThreshold(ctx)
+	rows, err := data.Client(ctx, s.repo.data).Product.Query().Where(product.IDIn(ids...), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).All(ctx)
+	if err != nil {
+		return out
+	}
+	for _, p := range rows {
+		slots, err := data.StockSlots(ctx, s.repo.data, p)
+		if err != nil {
+			continue
+		}
+		labels := []string{}
+		count := 0
+		for _, slot := range slots {
+			if slot.Quantity < 0 || slot.Quantity >= int64(threshold) {
+				continue
+			}
+			count++
+			if len(labels) < 3 {
+				name := slot.Name
+				if name == "" {
+					name = "商品"
+				}
+				labels = append(labels, fmt.Sprintf("%s：%d 件", name, slot.Quantity))
+			}
+		}
+		if count > 0 {
+			if count > len(labels) {
+				labels = append(labels, fmt.Sprintf("另有 %d 个规格", count-len(labels)))
+			}
+			out[p.ID] = strings.Join(labels, "；") + fmt.Sprintf("（低于 %d 件）", threshold)
+		}
+	}
+	return out
 }
 
 // ── 商品 ──

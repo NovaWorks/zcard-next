@@ -102,6 +102,34 @@ func (_c *SupplyConnectionCreate) SetNillableSyncTaskID(v *uint64) *SupplyConnec
 	return _c
 }
 
+// SetLowStockScannedAt sets the "low_stock_scanned_at" field.
+func (_c *SupplyConnectionCreate) SetLowStockScannedAt(v int64) *SupplyConnectionCreate {
+	_c.mutation.SetLowStockScannedAt(v)
+	return _c
+}
+
+// SetNillableLowStockScannedAt sets the "low_stock_scanned_at" field if the given value is not nil.
+func (_c *SupplyConnectionCreate) SetNillableLowStockScannedAt(v *int64) *SupplyConnectionCreate {
+	if v != nil {
+		_c.SetLowStockScannedAt(*v)
+	}
+	return _c
+}
+
+// SetLowStockMessage sets the "low_stock_message" field.
+func (_c *SupplyConnectionCreate) SetLowStockMessage(v string) *SupplyConnectionCreate {
+	_c.mutation.SetLowStockMessage(v)
+	return _c
+}
+
+// SetNillableLowStockMessage sets the "low_stock_message" field if the given value is not nil.
+func (_c *SupplyConnectionCreate) SetNillableLowStockMessage(v *string) *SupplyConnectionCreate {
+	if v != nil {
+		_c.SetLowStockMessage(*v)
+	}
+	return _c
+}
+
 // SetSyncLeaseToken sets the "sync_lease_token" field.
 func (_c *SupplyConnectionCreate) SetSyncLeaseToken(v string) *SupplyConnectionCreate {
 	_c.mutation.SetSyncLeaseToken(v)
@@ -451,6 +479,14 @@ func (_c *SupplyConnectionCreate) defaults() {
 		v := supplyconnection.DefaultSyncTaskID
 		_c.mutation.SetSyncTaskID(v)
 	}
+	if _, ok := _c.mutation.LowStockScannedAt(); !ok {
+		v := supplyconnection.DefaultLowStockScannedAt
+		_c.mutation.SetLowStockScannedAt(v)
+	}
+	if _, ok := _c.mutation.LowStockMessage(); !ok {
+		v := supplyconnection.DefaultLowStockMessage
+		_c.mutation.SetLowStockMessage(v)
+	}
 	if _, ok := _c.mutation.SyncLeaseToken(); !ok {
 		v := supplyconnection.DefaultSyncLeaseToken
 		_c.mutation.SetSyncLeaseToken(v)
@@ -546,6 +582,12 @@ func (_c *SupplyConnectionCreate) check() error {
 	}
 	if _, ok := _c.mutation.SyncTaskID(); !ok {
 		return &ValidationError{Name: "sync_task_id", err: errors.New(`ent: missing required field "SupplyConnection.sync_task_id"`)}
+	}
+	if _, ok := _c.mutation.LowStockScannedAt(); !ok {
+		return &ValidationError{Name: "low_stock_scanned_at", err: errors.New(`ent: missing required field "SupplyConnection.low_stock_scanned_at"`)}
+	}
+	if _, ok := _c.mutation.LowStockMessage(); !ok {
+		return &ValidationError{Name: "low_stock_message", err: errors.New(`ent: missing required field "SupplyConnection.low_stock_message"`)}
 	}
 	if _, ok := _c.mutation.SyncLeaseToken(); !ok {
 		return &ValidationError{Name: "sync_lease_token", err: errors.New(`ent: missing required field "SupplyConnection.sync_lease_token"`)}
@@ -667,6 +709,14 @@ func (_c *SupplyConnectionCreate) createSpec() (*SupplyConnection, *sqlgraph.Cre
 	if value, ok := _c.mutation.SyncTaskID(); ok {
 		_spec.SetField(supplyconnection.FieldSyncTaskID, field.TypeUint64, value)
 		_node.SyncTaskID = value
+	}
+	if value, ok := _c.mutation.LowStockScannedAt(); ok {
+		_spec.SetField(supplyconnection.FieldLowStockScannedAt, field.TypeInt64, value)
+		_node.LowStockScannedAt = value
+	}
+	if value, ok := _c.mutation.LowStockMessage(); ok {
+		_spec.SetField(supplyconnection.FieldLowStockMessage, field.TypeString, value)
+		_node.LowStockMessage = value
 	}
 	if value, ok := _c.mutation.SyncLeaseToken(); ok {
 		_spec.SetField(supplyconnection.FieldSyncLeaseToken, field.TypeString, value)
@@ -895,6 +945,36 @@ func (u *SupplyConnectionUpsert) UpdateSyncTaskID() *SupplyConnectionUpsert {
 // AddSyncTaskID adds v to the "sync_task_id" field.
 func (u *SupplyConnectionUpsert) AddSyncTaskID(v uint64) *SupplyConnectionUpsert {
 	u.Add(supplyconnection.FieldSyncTaskID, v)
+	return u
+}
+
+// SetLowStockScannedAt sets the "low_stock_scanned_at" field.
+func (u *SupplyConnectionUpsert) SetLowStockScannedAt(v int64) *SupplyConnectionUpsert {
+	u.Set(supplyconnection.FieldLowStockScannedAt, v)
+	return u
+}
+
+// UpdateLowStockScannedAt sets the "low_stock_scanned_at" field to the value that was provided on create.
+func (u *SupplyConnectionUpsert) UpdateLowStockScannedAt() *SupplyConnectionUpsert {
+	u.SetExcluded(supplyconnection.FieldLowStockScannedAt)
+	return u
+}
+
+// AddLowStockScannedAt adds v to the "low_stock_scanned_at" field.
+func (u *SupplyConnectionUpsert) AddLowStockScannedAt(v int64) *SupplyConnectionUpsert {
+	u.Add(supplyconnection.FieldLowStockScannedAt, v)
+	return u
+}
+
+// SetLowStockMessage sets the "low_stock_message" field.
+func (u *SupplyConnectionUpsert) SetLowStockMessage(v string) *SupplyConnectionUpsert {
+	u.Set(supplyconnection.FieldLowStockMessage, v)
+	return u
+}
+
+// UpdateLowStockMessage sets the "low_stock_message" field to the value that was provided on create.
+func (u *SupplyConnectionUpsert) UpdateLowStockMessage() *SupplyConnectionUpsert {
+	u.SetExcluded(supplyconnection.FieldLowStockMessage)
 	return u
 }
 
@@ -1411,6 +1491,41 @@ func (u *SupplyConnectionUpsertOne) AddSyncTaskID(v uint64) *SupplyConnectionUps
 func (u *SupplyConnectionUpsertOne) UpdateSyncTaskID() *SupplyConnectionUpsertOne {
 	return u.Update(func(s *SupplyConnectionUpsert) {
 		s.UpdateSyncTaskID()
+	})
+}
+
+// SetLowStockScannedAt sets the "low_stock_scanned_at" field.
+func (u *SupplyConnectionUpsertOne) SetLowStockScannedAt(v int64) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetLowStockScannedAt(v)
+	})
+}
+
+// AddLowStockScannedAt adds v to the "low_stock_scanned_at" field.
+func (u *SupplyConnectionUpsertOne) AddLowStockScannedAt(v int64) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.AddLowStockScannedAt(v)
+	})
+}
+
+// UpdateLowStockScannedAt sets the "low_stock_scanned_at" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertOne) UpdateLowStockScannedAt() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateLowStockScannedAt()
+	})
+}
+
+// SetLowStockMessage sets the "low_stock_message" field.
+func (u *SupplyConnectionUpsertOne) SetLowStockMessage(v string) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetLowStockMessage(v)
+	})
+}
+
+// UpdateLowStockMessage sets the "low_stock_message" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertOne) UpdateLowStockMessage() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateLowStockMessage()
 	})
 }
 
@@ -2153,6 +2268,41 @@ func (u *SupplyConnectionUpsertBulk) AddSyncTaskID(v uint64) *SupplyConnectionUp
 func (u *SupplyConnectionUpsertBulk) UpdateSyncTaskID() *SupplyConnectionUpsertBulk {
 	return u.Update(func(s *SupplyConnectionUpsert) {
 		s.UpdateSyncTaskID()
+	})
+}
+
+// SetLowStockScannedAt sets the "low_stock_scanned_at" field.
+func (u *SupplyConnectionUpsertBulk) SetLowStockScannedAt(v int64) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetLowStockScannedAt(v)
+	})
+}
+
+// AddLowStockScannedAt adds v to the "low_stock_scanned_at" field.
+func (u *SupplyConnectionUpsertBulk) AddLowStockScannedAt(v int64) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.AddLowStockScannedAt(v)
+	})
+}
+
+// UpdateLowStockScannedAt sets the "low_stock_scanned_at" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertBulk) UpdateLowStockScannedAt() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateLowStockScannedAt()
+	})
+}
+
+// SetLowStockMessage sets the "low_stock_message" field.
+func (u *SupplyConnectionUpsertBulk) SetLowStockMessage(v string) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetLowStockMessage(v)
+	})
+}
+
+// UpdateLowStockMessage sets the "low_stock_message" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertBulk) UpdateLowStockMessage() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateLowStockMessage()
 	})
 }
 
