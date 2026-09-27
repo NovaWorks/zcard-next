@@ -222,7 +222,7 @@
               <div class="muted" style="text-align: center; margin-top: 6px;">支付完成后余额自动到账</div>
             </div>
             <div v-else-if="rechargeQrcode" style="margin-top: 12px; text-align: center;">
-              <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(rechargeQrcode)}`" alt="支付二维码" style="width: 180px; border-radius: 10px;" />
+              <img :src="rechargeQrcode" alt="支付二维码" style="width: 180px; border-radius: 10px;" />
               <div class="muted" style="margin-top: 6px;">请使用对应 App 扫码支付，完成后余额自动到账</div>
             </div>
 
@@ -243,6 +243,7 @@
 </template>
 
 <script setup lang="ts">
+import QRCode from 'qrcode';
 import { submitPaymentForm } from "@/utils/payment-form";
 import PayChannelGrid from '@/components/PayChannelGrid.vue';
 import PaymentBreakdown from '@/components/PaymentBreakdown.vue';
@@ -454,9 +455,19 @@ async function doRecharge() {
   }
   paidQuote.value = data.quote || quote.value;
   // 支付载荷三形态（与充值/支付页同构）
-  if (data.type === 'redirect') rechargeRedirect.value = data.payload;
-  else if (data.type === 'qrcode') rechargeQrcode.value = data.payload;
-  else if (data.type === 'params') {
+  if (data.type === 'redirect') {
+    let url = data.payload;
+    try { url = JSON.parse(data.payload).url || url; } catch { /* 原文即 URL */ }
+    rechargeRedirect.value = url;
+  } else if (data.type === 'qrcode') {
+    let content = data.payload;
+    try { content = JSON.parse(data.payload).code_url || content; } catch { /* 原文即二维码内容 */ }
+    try {
+      rechargeQrcode.value = content.startsWith('https://') || content.startsWith('http://') || content.startsWith('data:image')
+        ? content
+        : await QRCode.toDataURL(content, { width: 220, margin: 1, errorCorrectionLevel: 'M' });
+    } catch { rechargeError.value = '无法生成支付二维码，请重新发起支付'; }
+  } else if (data.type === 'params') {
     try {
       const p = JSON.parse(data.payload);
       rechargeRedirect.value = p.url || '';

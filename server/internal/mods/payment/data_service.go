@@ -711,6 +711,9 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 			}
 		}
 		if !f.Success && ch.Driver != "bepusdt" {
+			if ch.Driver == "xunhupay" {
+				return ctx.String(http.StatusOK, "success")
+			}
 			return ctx.JSON(http.StatusOK, map[string]string{"status": "ignored"})
 		}
 

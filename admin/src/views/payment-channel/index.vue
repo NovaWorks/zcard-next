@@ -95,6 +95,7 @@ const driverBadges: Record<string, { char: string; bg: string; color?: string }>
   alipay: { char: "支", bg: "linear-gradient(135deg,#1677ff,#0e5fd8)", color: "#fff" },
   wechat: { char: "微", bg: "linear-gradient(135deg,#07c160,#06ad56)", color: "#fff" },
   epay: { char: "易", bg: "linear-gradient(135deg,#8b5cf6,#7c3aed)", color: "#fff" },
+  xunhupay: { char: "虎", bg: "linear-gradient(135deg,#ea580c,#c2410c)", color: "#fff" },
   bepusdt: { char: "₮", bg: "linear-gradient(135deg,#26a17b,#1d8a68)", color: "#fff" },
   epusdt: { char: "₮", bg: "linear-gradient(135deg,#26a17b,#1d8a68)", color: "#fff" },
   stripe: { char: "S", bg: "linear-gradient(135deg,#635bff,#5851ea)", color: "#fff" },

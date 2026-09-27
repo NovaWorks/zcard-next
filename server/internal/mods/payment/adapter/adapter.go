@@ -28,6 +28,7 @@ func RegisterAll(reg port.Registry) error {
 		return fmt.Errorf("payment: registry 为 nil")
 	}
 	reg.Register(NewEpay())
+	reg.Register(NewXunhupay())
 	reg.Register(NewAlipay())
 	reg.Register(NewWechat())
 	reg.Register(NewEpusdt())

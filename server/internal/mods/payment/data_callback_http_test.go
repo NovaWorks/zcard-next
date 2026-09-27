@@ -23,7 +23,7 @@ import (
 )
 
 func TestHTTPCallbackPaysAndDelivers(t *testing.T) {
-	for _, method := range []string{"POST", "GET", "JSON", "BEPUSDT"} {
+	for _, method := range []string{"POST", "GET", "JSON", "BEPUSDT", "XUNHUPAY"} {
 		t.Run(method, func(t *testing.T) { testHTTPCallbackPaysAndDelivers(t, method) })
 	}
 }
@@ -39,11 +39,17 @@ func testHTTPCallbackPaysAndDelivers(t *testing.T, method string) {
 	if method == "BEPUSDT" {
 		driver, cfg = "bepusdt", `{"api_url":"https://pay.example","api_token":"contract-test-token"}`
 	}
+	if method == "XUNHUPAY" {
+		driver, cfg = "xunhupay", `{"appid":"test-app","appsecret":"test-secret"}`
+	}
 	ch, err := repo.CreateChannel(ctx, "form gateway", "form-test", driver, cfg, 0, "fixed", true, 0, "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	o, p := seedPendingOrder(t, d, "form-test", 1000)
+	if method == "XUNHUPAY" {
+		p = d.Client.Payment.UpdateOneID(p.ID).SetChannelID(ch.ID).SetDriverSnapshot(driver).SetGatewayOrderRef("ZP-delivery").SaveX(ctx)
+	}
 	if method == "BEPUSDT" {
 		p, err = d.Client.Payment.UpdateOneID(p.ID).SetChannelID(ch.ID).SetDriverSnapshot("bepusdt").SetGatewayOrderRef("BE-delivery").Save(ctx)
 		if err != nil {
@@ -71,6 +77,9 @@ func testHTTPCallbackPaysAndDelivers(t *testing.T, method string) {
 		t.Fatal(err)
 	}
 	form := url.Values{"pid": {"1"}, "out_trade_no": {o.OrderNo}, "trade_no": {"T-form"}, "money": {"10.00"}, "trade_status": {"TRADE_SUCCESS"}, "type": {"alipay"}}
+	if method == "XUNHUPAY" {
+		form = url.Values{"appid": {"test-app"}, "trade_order_id": {p.GatewayOrderRef}, "transaction_id": {"T-form"}, "total_fee": {"10.00"}, "status": {"OD"}}
+	}
 	if method == "JSON" {
 		form = url.Values{"order_id": {o.OrderNo}, "trade_id": {"T-json"}, "amount": {"10.00"}, "status": {"2"}}
 	}
@@ -85,6 +94,11 @@ func testHTTPCallbackPaysAndDelivers(t *testing.T, method string) {
 	}
 	form.Set("sign", fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(parts, "&")+"test-secret"))))
 	form.Set("sign_type", "MD5")
+	if method == "XUNHUPAY" {
+		form.Set("hash", form.Get("sign"))
+		form.Del("sign")
+		form.Del("sign_type")
+	}
 	if method == "JSON" {
 		mac := hmac.New(sha256.New, []byte("test-secret"))
 		mac.Write([]byte(strings.Join(parts, "&")))

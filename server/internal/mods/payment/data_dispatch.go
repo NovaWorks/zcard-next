@@ -66,7 +66,7 @@ func (r *PaymentRepoImpl) dispatchPayment(ctx context.Context, p *ent.Payment, p
 		return nil, err
 	}
 	if cached != nil {
-		return cached, nil
+		return paymentForDevice(ctx, provider.Type(), cached)
 	}
 	req.IdempotencyKey = p.GatewayOrderRef
 	info, createErr := provider.CreatePayment(ctx, req)
@@ -103,5 +103,8 @@ func (r *PaymentRepoImpl) dispatchPayment(ctx context.Context, p *ent.Payment, p
 	if err != nil {
 		return nil, err
 	}
-	return info, createErr
+	if createErr != nil {
+		return nil, createErr
+	}
+	return paymentForDevice(ctx, provider.Type(), info)
 }
