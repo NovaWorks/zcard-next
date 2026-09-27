@@ -81,6 +81,13 @@ func newTransportWithClient(baseURL string, retryIntervals []int, log *slog.Logg
 	}
 }
 
+type singleAttemptKey struct{}
+
+// Non-replayable purchase endpoints must not be retried after an uncertain reply.
+func withoutRetries(ctx context.Context) context.Context {
+	return context.WithValue(ctx, singleAttemptKey{}, true)
+}
+
 // do 发送请求并返回响应体。headers 中的签名头由各协议适配器构造；
 // body 为实际发出的字节（签名哈希 === 实际字节 不变式的发送端）。
 // 重试口径（ S2 对齐 1.x UpstreamRequestException）：网络错误/5xx/429/非 JSON
@@ -98,6 +105,9 @@ func (t *transport) do(ctx context.Context, method, path string, query url.Value
 	}
 	if isStockRead(ctx) {
 		attempts = 2
+	}
+	if single, _ := ctx.Value(singleAttemptKey{}).(bool); single {
+		attempts = 1
 	}
 	for i := 0; i < attempts; i++ {
 		if i > 0 {
@@ -136,8 +146,10 @@ func (t *transport) do(ctx context.Context, method, path string, query url.Value
 		if errors.As(err, &he) && he.Status < 500 && he.Status > 0 && he.Status != http.StatusTooManyRequests {
 			return nil, err
 		}
-		t.log.Warn("adapter.http.retry",
-			"method", method, "url", httpx.RedactURL(full), "attempt", i+1, "err", err)
+		if i+1 < attempts {
+			t.log.Warn("adapter.http.retry",
+				"method", method, "url", httpx.RedactURL(full), "attempt", i+1, "err", err)
+		}
 	}
 	if isRateLimitedErr(lastErr) {
 		return nil, fmt.Errorf("%w: %v", ErrRateLimited, lastErr)

@@ -193,7 +193,7 @@ func (ProcurementOrder) Fields() []ent.Field {
 		field.Int32("retry_count").Default(0),
 		field.Time("next_retry_at").SchemaType(mysqlTime).Optional().Comment("退避重试调度"),
 		field.Time("last_poll_at").SchemaType(mysqlTime).Optional().Comment("巡检扫描锚点"),
-		field.String("dedupe_key").MaxLen(120).Unique().Comment("幂等键（order_item 派生）"),
+		field.String("dedupe_key").MaxLen(120).Unique().Comment("持久化上游请求号（新单随机生成，旧单保持原值）"),
 		field.String("trace_id").MaxLen(64).Optional(),
 		field.Text("last_error").Optional().Comment("最近失败原因（重试/审计）"),
 		field.String("upstream_refund_id").MaxLen(80).Optional().Comment("上游退款单号（退款传导回填）"),
@@ -203,7 +203,7 @@ func (ProcurementOrder) Fields() []ent.Field {
 func (ProcurementOrder) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("connection_id", "upstream_order_id"),
-		index.Fields("order_item_id"),
+		index.Fields("order_item_id").Unique(),
 		index.Fields("status", "last_poll_at"),
 	}
 }

@@ -1649,7 +1649,7 @@ var (
 			},
 			{
 				Name:    "procurementorder_order_item_id",
-				Unique:  false,
+				Unique:  true,
 				Columns: []*schema.Column{ProcurementOrdersColumns[3]},
 			},
 			{

@@ -37,7 +37,7 @@ type ProcurementOrder struct {
 	NextRetryAt time.Time `json:"next_retry_at,omitempty"`
 	// 巡检扫描锚点
 	LastPollAt time.Time `json:"last_poll_at,omitempty"`
-	// 幂等键（order_item 派生）
+	// 持久化上游请求号（新单随机生成，旧单保持原值）
 	DedupeKey string `json:"dedupe_key,omitempty"`
 	// TraceID holds the value of the "trace_id" field.
 	TraceID string `json:"trace_id,omitempty"`

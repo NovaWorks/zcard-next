@@ -122,7 +122,7 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 		return fmt.Errorf("procurement: 上游商品映射缺失，需要人工核实")
 	}
 
-	// 建单（pending；dedupe_key = order_item:N；失败策略取渠道级配置，默认自动退款）
+	// 建单并持久化随机请求号；失败策略取渠道级配置，默认自动退款。
 	failStrategy := "auto_refund"
 	if s.gw != nil {
 		if fs := s.gw.FailStrategyOf(ctx, p.UpstreamSourceID); fs != "" {
@@ -152,11 +152,20 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 		ProductCode:       p.UpstreamProductCode,
 		UpstreamSKU:       upstreamSKU,
 		Quantity:          int(quantity),
-		DownstreamOrderNo: fmt.Sprintf("order_item:%d", orderItemID),
+		DownstreamOrderNo: po.DedupeKey,
 		TraceID:           traceID,
 	})
+	// Once sent, preserve the outcome even if the caller timed out. This context
+	// only covers bounded local persistence/delivery, never another purchase.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+	defer cancel()
 	if err != nil {
 		return s.handleSubmitError(ctx, po.ID, err)
+	}
+	// Save the supplier order separately, BEFORE sealing/storing the receipt.
+	// If local receipt persistence fails, recovery can query the original order.
+	if err := s.repo.recordUpstreamOrder(ctx, po.ID, res.UpstreamOrderID); err != nil {
+		return err
 	}
 
 	switch res.Status {
@@ -205,7 +214,7 @@ func (s *ProcureService) handleSubmitError(ctx context.Context, poID uint64, err
 	// 防重键冲突（acg request_no 重复即报错）：上游可能已受理首请求（响应丢失
 	// 场景），重试永远撞墙、自动退款可能造成上游已成交却退客户款 → 立即转人工核对
 	if errors.Is(err, supplyport.ErrUpstreamDuplicate) {
-		reason := "上游防重键冲突（同键请求已被受理过，可能已成交）——需人工核对上游订单后处置"
+		reason := "采购请求编号被上游判定重复，无法确认本单是否成交；请核实原上游订单后处理，系统不会重新采购"
 		if merr := s.repo.MarkManual(ctx, poID, reason); merr != nil {
 			return merr
 		}

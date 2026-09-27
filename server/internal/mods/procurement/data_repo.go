@@ -12,6 +12,7 @@ package procurement
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"strings"
@@ -85,7 +86,10 @@ func (r *ProcureRepo) transition(ctx context.Context, id uint64, from, to string
 func (r *ProcureRepo) CreatePending(ctx context.Context, orderItemID, connectionID uint64, productCode string, quantity int32, failStrategy string, traceID string) (*ent.ProcurementOrder, error) {
 	var p *ent.ProcurementOrder
 	err := data.Tx(ctx, r.data, func(ctx context.Context) error {
-		dedupe := fmt.Sprintf("order_item:%d", orderItemID)
+		// ACG checks request_no across ALL downstream accounts and stores CHAR(19).
+		// Persist 95 random bits once; local order_item_id uniqueness independently
+		// prevents concurrent payment events from creating another purchase.
+		dedupe := rand.Text()[:19]
 		var err error
 		p, err = data.Client(ctx, r.data).ProcurementOrder.Create().
 			SetOrderItemID(orderItemID).

@@ -19,6 +19,17 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 )
 
+// Fill missing metadata without reopening a purchase completed by a callback.
+func (r *ProcureRepo) recordUpstreamOrder(ctx context.Context, id uint64, upstreamID string) error {
+	if upstreamID == "" {
+		return nil
+	}
+	_, err := data.Client(ctx, r.data).ProcurementOrder.Update().
+		Where(procurementorder.ID(id), procurementorder.Or(procurementorder.UpstreamOrderID(""), procurementorder.UpstreamOrderIDIsNil())).
+		SetUpstreamOrderID(upstreamID).Save(ctx)
+	return err
+}
+
 // Preserve the first encrypted receipt. Local delivery can be retried without buying again.
 func (r *ProcureRepo) saveReceipt(ctx context.Context, id uint64, sealed [][]byte) error {
 	return data.Tx(ctx, r.data, func(ctx context.Context) error {

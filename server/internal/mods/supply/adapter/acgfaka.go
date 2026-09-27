@@ -378,7 +378,9 @@ func (a *acgFakaAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*
 			params[k] = v
 		}
 	}
-	data, err := a.signedPost(ctx, "/shared/commodity/trade", params)
+	// A duplicate request_no returns an error, not the original receipt. Never
+	// repeat a purchase on timeout/5xx; an uncertain result needs reconciliation.
+	data, err := a.signedPost(withoutRetries(ctx), "/shared/commodity/trade", params)
 	if err != nil {
 		return nil, err
 	}
