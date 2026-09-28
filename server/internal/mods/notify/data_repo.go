@@ -263,14 +263,16 @@ func (r *NotifyRepo) ListBroadcasts(ctx context.Context, page, size int) ([]*ent
 	return rows, total, err
 }
 
-// SetBroadcastStatus 状态迁移（startedAt 非空时回填）。
-func (r *NotifyRepo) SetBroadcastStatus(ctx context.Context, id uint64, status string, startedAt time.Time) (*ent.NotifyBroadcast, error) {
-	upd := data.Client(ctx, r.data).NotifyBroadcast.UpdateOneID(id).
+// TransitionPendingBroadcast 原子抢占 pending；执行和取消竞争时仅一个调用成功。
+func (r *NotifyRepo) TransitionPendingBroadcast(ctx context.Context, id uint64, status string, startedAt time.Time) (bool, error) {
+	upd := data.Client(ctx, r.data).NotifyBroadcast.Update().
+		Where(notifybroadcast.ID(id), notifybroadcast.StatusEQ(notifybroadcast.StatusPending)).
 		SetStatus(notifybroadcast.Status(status))
 	if !startedAt.IsZero() {
 		upd.SetStartedAt(startedAt)
 	}
-	return upd.Save(ctx)
+	n, err := upd.Save(ctx)
+	return n == 1, err
 }
 
 // UpdateBroadcastProgress 进度回填（发送中可观测）。

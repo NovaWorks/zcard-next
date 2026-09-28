@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	entbase "entgo.io/ent"
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -334,7 +335,7 @@ func TestBroadcastFlow(t *testing.T) {
 	}
 	inbox := NewInboxChannel(r)
 	disp := NewDispatcher(r, inbox)
-	svc := NewBroadcastService(r, disp, nil) // enq=nil → 降级直接执行
+	svc := NewBroadcastService(r, disp, nil) // enq=nil → 进程内异步执行
 
 	// 预估：active 筛选 = 2
 	n, err := svc.EstimateAudience(ctx, "active", nil)
@@ -353,10 +354,17 @@ func TestBroadcastFlow(t *testing.T) {
 	if b.Audience != 2 {
 		t.Fatalf("覆盖人数回填错误: %d", b.Audience)
 	}
-	if err := svc.Execute(ctx, b.ID); err != nil {
+	// Create already dispatched the task. Wait for its completion instead of
+	// launching a second execution and assuming the asynchronous one has ended.
+	deadline := time.Now().Add(5 * time.Second)
+	fin, err := r.GetBroadcast(ctx, b.ID)
+	for err == nil && string(fin.Status) != "done" && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+		fin, err = r.GetBroadcast(ctx, b.ID)
+	}
+	if err != nil {
 		t.Fatal(err)
 	}
-	fin, _ := r.GetBroadcast(ctx, b.ID)
 	if string(fin.Status) != "done" || fin.SentCount != 2 || fin.FailedCount != 0 {
 		t.Fatalf("群发统计错误: %+v", fin)
 	}
@@ -387,6 +395,76 @@ func TestBroadcastFlow(t *testing.T) {
 	}
 	if b2, err = svc.Cancel(ctx, b2.ID); err != nil || string(b2.Status) != "canceled" {
 		t.Fatalf("pending 取消失败: %v", err)
+	}
+}
+
+// Force both callers to observe pending before either can update it. Repeated
+// delivery must have one owner; cancellation must not overwrite an active send.
+func TestBroadcastConcurrentTransitions(t *testing.T) {
+	for _, cancelSecond := range []bool{false, true} {
+		t.Run(fmt.Sprintf("cancel=%t", cancelSecond), func(t *testing.T) {
+			r := newNotifyRepo(t)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			u := r.data.Client.User.Create().SetUsername("recipient").SaveX(ctx)
+			b, err := r.CreateBroadcast(ctx, BroadcastInput{Title: "once", Content: "one message", Channels: []string{"inbox"}, TargetType: "specified", TargetIDs: []uint64{u.ID}}, 1)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ready, release := make(chan struct{}, 2), make(chan struct{})
+			r.data.Client.NotifyBroadcast.Use(func(next entbase.Mutator) entbase.Mutator {
+				return entbase.MutateFunc(func(ctx context.Context, m entbase.Mutation) (entbase.Value, error) {
+					if status, ok := m.Field("status"); ok && (fmt.Sprint(status) == "sending" || fmt.Sprint(status) == "canceled") {
+						ready <- struct{}{}
+						select {
+						case <-release:
+						case <-ctx.Done():
+							return nil, ctx.Err()
+						}
+					}
+					return next.Mutate(ctx, m)
+				})
+			})
+			svc := NewBroadcastService(r, NewDispatcher(r, NewInboxChannel(r)), nil)
+			results := make(chan error, 2)
+			go func() { results <- svc.Execute(ctx, b.ID) }()
+			go func() {
+				if cancelSecond {
+					_, err := svc.Cancel(ctx, b.ID)
+					results <- err
+				} else {
+					results <- svc.Execute(ctx, b.ID)
+				}
+			}()
+			for range 2 {
+				select {
+				case <-ready:
+				case <-ctx.Done():
+					<-results
+					<-results
+					t.Fatal("callers did not reach the pending transition")
+				}
+			}
+			close(release)
+			for range 2 {
+				if err := <-results; err != nil && !(cancelSecond && err == ErrBroadcastStarted) {
+					t.Error(err)
+				}
+			}
+			fin, err := r.GetBroadcast(ctx, b.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := int64(1)
+			if cancelSecond && string(fin.Status) == "canceled" {
+				want = 0
+			} else if string(fin.Status) != "done" {
+				t.Fatalf("unexpected final status: %s", fin.Status)
+			}
+			if count, err := r.UnreadCount(ctx, u.ID); err != nil || int64(count) != want || fin.SentCount != want || fin.FailedCount != 0 {
+				t.Fatalf("count=%d want=%d broadcast=%+v err=%v", count, want, fin, err)
+			}
+		})
 	}
 }
 

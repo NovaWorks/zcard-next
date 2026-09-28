@@ -100,7 +100,14 @@ func (s *BroadcastService) Cancel(ctx context.Context, id uint64) (*ent.NotifyBr
 	if string(b.Status) != "pending" {
 		return nil, ErrBroadcastStarted
 	}
-	return s.repo.SetBroadcastStatus(ctx, id, "canceled", time.Time{})
+	changed, err := s.repo.TransitionPendingBroadcast(ctx, id, "canceled", time.Time{})
+	if err != nil {
+		return nil, err
+	}
+	if !changed {
+		return nil, ErrBroadcastStarted
+	}
+	return s.repo.GetBroadcast(ctx, id)
 }
 
 // ScanDue 定时群发扫描（cron 每分钟）：到期 pending → 入队。
@@ -140,8 +147,8 @@ func (s *BroadcastService) Execute(ctx context.Context, broadcastID uint64) erro
 	if string(b.Status) != "pending" {
 		return nil
 	}
-	b, err = s.repo.SetBroadcastStatus(ctx, broadcastID, "sending", time.Now().UTC())
-	if err != nil {
+	claimed, err := s.repo.TransitionPendingBroadcast(ctx, broadcastID, "sending", time.Now().UTC())
+	if err != nil || !claimed {
 		return err
 	}
 
