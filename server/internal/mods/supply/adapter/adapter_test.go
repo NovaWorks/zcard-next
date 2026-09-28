@@ -80,6 +80,10 @@ func TestZCardAdapterParsing(t *testing.T) {
 		gotSig = r.Header.Get("X-Supply-Signature")
 		switch r.URL.Path {
 		case "/api/supply/ping":
+			if r.Method != http.MethodGet {
+				http.NotFound(w, r)
+				return
+			}
 			_, _ = w.Write([]byte(`{"ok":true,"name":"上游站","balance":12345,"currency":"CNY"}`))
 		case "/api/supply/products":
 			_, _ = w.Write([]byte(`{"items":[{"id":7,"name":"月卡","price":1000,"factory_price":500,"category_id":3,"is_active":true,"stock":99}],"total":1,"page_size":50}`))

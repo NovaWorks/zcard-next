@@ -210,6 +210,9 @@ func (s *AdminSupplyService) runCatalogSnapshot(id uint64) {
 	if err != nil {
 		failure := adapter.ClassifyImportError(err)
 		message := failure.Summary + "，请稍后重试目录加载；不会导入或修改商品"
+		if failure.Pause {
+			message = failure.Summary + "，保存后重新加载目录；不会导入或修改商品"
+		}
 		if failure.Code == "TIMEOUT" {
 			message = "上游商品目录长时间未响应（单次最多 120 秒，任务总时限 5 分钟），请稍后重试或检查服务器到上游的网络"
 		}

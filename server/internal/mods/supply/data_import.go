@@ -269,7 +269,7 @@ func (s *AdminSupplyService) adapterForConnection(ctx context.Context, connectio
 	}
 	var creds adapter.Credentials
 	if err := json.Unmarshal([]byte(credsJSON), &creds); err != nil {
-		return nil, nil, err
+		return nil, nil, adapter.ErrCredentialsInvalid
 	}
 	factory := s.adapterFactory
 	if factory == nil {

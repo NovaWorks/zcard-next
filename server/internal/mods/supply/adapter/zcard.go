@@ -23,6 +23,9 @@ type zCardAdapter struct {
 }
 
 func newZCard(baseURL string, creds Credentials, retryIntervals []int) (Adapter, error) {
+	// Accept both the site root and the Supply API URL. Keep the stored URL
+	// unchanged: encrypted credentials are bound to its exact bytes.
+	baseURL = strings.TrimSuffix(strings.TrimRight(baseURL, "/"), "/api/supply")
 	t, err := newTransport(baseURL, retryIntervals, slog.Default())
 	if err != nil {
 		return nil, err
@@ -64,14 +67,14 @@ func (a *zCardAdapter) request(ctx context.Context, method, path string, query u
 }
 
 func (a *zCardAdapter) Ping(ctx context.Context) (*PingResult, error) {
-	data, err := a.request(ctx, "POST", "/api/supply/ping", nil, nil)
+	data, err := a.request(ctx, "GET", "/api/supply/ping", nil, nil)
 	if err != nil {
 		return nil, err
 	}
 	var resp struct {
 		OK       bool   `json:"ok"`
 		Name     string `json:"name"`
-		Balance  int64  `json:"balance"`
+		Balance  *int64 `json:"balance"`
 		Currency string `json:"currency"`
 	}
 	if err := json.Unmarshal(data, &resp); err != nil {
@@ -80,7 +83,14 @@ func (a *zCardAdapter) Ping(ctx context.Context) (*PingResult, error) {
 	if !resp.OK {
 		return nil, fmt.Errorf("adapter.zcard: 上游 ping 返回 ok=false")
 	}
-	return &PingResult{SiteName: resp.Name, Balance: resp.Balance, Currency: resp.Currency}, nil
+	balance := int64(-1)
+	if resp.Balance != nil {
+		balance = *resp.Balance
+	} else if resp.Currency != "" {
+		// The server's JSON encoder omits a known zero balance.
+		balance = 0
+	}
+	return &PingResult{SiteName: resp.Name, Balance: balance, Currency: resp.Currency}, nil
 }
 
 func (a *zCardAdapter) ListCategories(ctx context.Context) ([]Category, error) {

@@ -32,8 +32,8 @@ func (s *SyncService) pingOne(ctx context.Context, conn *ent.SupplyConnection) (
 	}
 	var creds adapter.Credentials
 	if err := json.Unmarshal([]byte(credsJSON), &creds); err != nil {
-		_ = s.repo.UpdatePingResult(ctx, conn.ID, false, 0, 0, "凭据结构不合法: "+err.Error())
-		return nil, err
+		_ = s.repo.UpdatePingResult(ctx, conn.ID, false, 0, 0, adapter.ErrCredentialsInvalid.Error())
+		return nil, adapter.ErrCredentialsInvalid
 	}
 	a, err := adapter.New(conn.Driver, conn.BaseURL, creds, parseRetryIntervals(conn.RetryIntervals))
 	if err != nil {

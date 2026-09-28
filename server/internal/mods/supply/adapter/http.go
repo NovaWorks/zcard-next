@@ -246,12 +246,17 @@ func parseErrorPayload(body []byte) (code, msg string) {
 		ErrorCode    string `json:"error_code"`
 		ErrorMessage string `json:"error_message"`
 		Msg          string `json:"msg"`
+		Reason       string `json:"reason"`
+		Message      string `json:"message"`
 	}
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return "", ""
 	}
 	if payload.ErrorCode != "" {
 		return payload.ErrorCode, payload.ErrorMessage
+	}
+	if payload.Reason != "" {
+		return payload.Reason, payload.Message
 	}
 	if payload.Msg != "" {
 		return "", payload.Msg

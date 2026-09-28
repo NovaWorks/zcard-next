@@ -59,12 +59,15 @@ func (s *SupplyAPIService) Ping(ctx context.Context, _ *emptypb.Empty) (*supplyv
 		Version:    ServerVersion,
 		ServerTime: time.Now().Unix(),
 		Ok:         true,
+		Balance:    -1, // Anonymous probe: unknown, not a zero account balance.
 	}
 	if accountID := SupplyAccountID(ctx); accountID > 0 {
-		if balance, err := s.repo.BalanceOf(ctx, accountID); err == nil {
-			reply.Balance = balance
-			reply.Currency = "CNY"
+		balance, err := s.repo.BalanceOf(ctx, accountID)
+		if err != nil {
+			return nil, err
 		}
+		reply.Balance = balance
+		reply.Currency = "CNY"
 	}
 	return reply, nil
 }
