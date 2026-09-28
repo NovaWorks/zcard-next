@@ -1,4 +1,21 @@
 export default {
+  marketSave: "保存市场地址",
+  marketTitle: "应用广场",
+  marketIntro:
+    "从已信任的市场安装免费插件。市场暂时离线时，已安装插件继续在本机运行。",
+  marketOrigin: "市场地址",
+  marketRefresh: "刷新市场目录",
+  marketOffline: "市场不可用或目录校验失败，请稍后重试。已安装插件不受影响。",
+  marketConfigError: "市场配置读取或保存失败，请检查 HTTPS 地址和管理权限。",
+  marketInspectError:
+    "工件校验失败、版本已撤回或与当前核心不兼容，请刷新目录后重试。",
+  marketRevision: "目录版本",
+  marketEmpty: "暂无已发布插件",
+  marketFree: "免费",
+  marketPreview: "查看并校验安装包",
+  marketEnableHint: "首次安装后需在插件列表启用。升级会保持原启用状态。",
+  marketApprove: "我已核对插件来源、版本和权限，确认安装或升级。",
+
   title: "插件管理",
   intro: "安装可信签名插件，并管理商品扩展。插件停用不会自动解除商品限制。",
   refresh: "刷新状态",
@@ -12,7 +29,8 @@ export default {
   archive: "插件包 plugin.zplug",
   verify: "验证并预览",
   verified: "签名与兼容性验证通过",
-  badFiles: "请选择完整签名包：描述文件不超过 64 KiB、签名 64 字节、插件包不超过 8 MiB。",
+  badFiles:
+    "请选择完整签名包：描述文件不超过 64 KiB、签名 64 字节、插件包不超过 8 MiB。",
   verifyFailed: "验签或兼容性检查失败。请检查文件、宿主版本与可信公钥设置。",
   approve: "我同意授予下列插件权限",
   scopes: "插件权限",
@@ -48,7 +66,8 @@ export default {
   unknown: "请求未能确认结果。请用原操作编号查询；不要重复发起新操作。",
   operationFailed: "操作失败，请刷新查看当前实际状态。",
   operationDone: "操作已确认；以下展示最新实际状态。",
-  notFoundOperation: "暂未查到原操作。请稍后再次查询，或确认当前状态后清除本条记录。",
+  notFoundOperation:
+    "暂未查到原操作。请稍后再次查询，或确认当前状态后清除本条记录。",
   clearOperation: "已核对状态，清除记录",
   clearWarning: "清除记录不会取消服务端操作。确认已核对当前运行状态？",
   product: "商品",
@@ -62,15 +81,18 @@ export default {
   unrestricted: "此插件没有宿主购买限制",
   inactive: "插件未运行或不可用；已有规则继续阻断购买。",
   noContributions: "当前没有可用的商品扩展。下方仍保留宿主规则恢复入口。",
-  incompatible: "不支持此配置格式或控件，已禁止保存；现有购买限制不会自动解除。",
+  incompatible:
+    "不支持此配置格式或控件，已禁止保存；现有购买限制不会自动解除。",
   invalidConfig: "已保存配置不可读，已禁止覆盖。可使用独立解除操作恢复购买。",
-  exactLevels: "仅限所选有效等级，不自动包含更高等级；会员升级到未选等级后也会被拒绝。",
+  exactLevels:
+    "仅限所选有效等级，不自动包含更高等级；会员升级到未选等级后也会被拒绝。",
   chooseLevels: "选择允许的等级",
   disabledLevel: "已停用或不可用",
   save: "保存扩展设置",
   saved: "扩展设置已单独保存并生效",
   invalidSelection: "启用限制时请至少选择一个有效等级（最多 100 个）。",
-  saveFailed: "保存未确认，草稿已保留。请刷新核对权限、商品锁和服务端配置后重试。",
+  saveFailed:
+    "保存未确认，草稿已保留。请刷新核对权限、商品锁和服务端配置后重试。",
   changed: "服务端版本或配置已变化，草稿已保留。请比较后选择如何继续。",
   draft: "本地草稿",
   remote: "最新服务端设置",

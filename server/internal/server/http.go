@@ -250,6 +250,7 @@ func NewHTTPServer(
 	mediaAdminSvc.RegisterVideoUpload(srv)
 	adminv1.RegisterAdminMediaServiceHTTPServer(srv, mediaAdminSvc)
 	adminv1.RegisterAdminLicenseServiceHTTPServer(srv, licenseAdminSvc)
+	pluginAdminSvc.RegisterMarket(srv)
 	pluginAdminSvc.RegisterImport(srv)
 	adminv1.RegisterAdminPluginServiceHTTPServer(srv, pluginAdminSvc)
 	adminv1.RegisterAdminResellerServiceHTTPServer(srv, resellerAdminSvc)

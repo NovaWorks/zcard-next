@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -24,7 +25,8 @@ import (
 var privateCIDRs = mustCIDRs(
 	"127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16",
 	"169.254.0.0/16", "0.0.0.0/8", "100.64.0.0/10",
-	"::1/128", "fc00::/7", "fe80::/10",
+	"192.0.0.0/24", "192.0.2.0/24", "192.88.99.0/24", "198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "224.0.0.0/4", "240.0.0.0/4",
+	"::1/128", "fc00::/7", "fe80::/10", "::/128", "ff00::/8", "2001:db8::/32", "64:ff9b::/96", "64:ff9b:1::/48", "100::/64", "2002::/16", "2001::/32",
 )
 
 func mustCIDRs(cidrs ...string) []*net.IPNet {
@@ -45,7 +47,7 @@ var allowPrivate = os.Getenv("ZCARD_HTTPX_ALLOW_PRIVATE") == "1"
 
 // IsPrivateIP 判断 IP 是否落在私有/保留段（导出供测试与诊断）。
 func IsPrivateIP(ip net.IP) bool {
-	if ip == nil {
+	if ip == nil || !ip.IsGlobalUnicast() {
 		return true
 	}
 	if v4 := ip.To4(); v4 != nil {
@@ -98,32 +100,11 @@ func checkHost(host string) error {
 	return nil
 }
 
-// NewSafeClient 构造安全出站客户端：超时 + 重定向逐跳校验 + 连接期 IP 复核。
+// NewSafeClient preserves the legacy local-integration switch for existing
+// supplier callers. Market downloads use NewClient, which never honors it.
 func NewSafeClient(timeout time.Duration) *http.Client {
-	dialer := &net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}
-	transport := &http.Transport{
-		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			// DNS rebinding 防护：连接建立瞬间复核实际 IP
-			host, port, err := net.SplitHostPort(addr)
-			if err != nil {
-				return nil, err
-			}
-			if ip := net.ParseIP(host); ip != nil && !allowPrivate && IsPrivateIP(ip) {
-				return nil, &ErrBlockedAddress{Host: host}
-			}
-			return dialer.DialContext(ctx, network, net.JoinHostPort(host, port))
-		},
-	}
-	return &http.Client{
-		Timeout:   timeout,
-		Transport: transport,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			if len(via) >= 10 {
-				return fmt.Errorf("httpx: 重定向超过 10 跳")
-			}
-			return ValidateURL(req.URL.String())
-		},
-	}
+	c, _ := newClient(Options{Timeout: timeout, MaxResponseBytes: 32 << 20}, allowPrivate)
+	return c
 }
 
 // UserAgent 统一出站 UA（上游对接可识别来源）。
@@ -147,8 +128,19 @@ func Get(ctx context.Context, c *http.Client, rawURL string) (*http.Response, er
 
 // RedactURL 日志脱敏：去除 userinfo（凭据永不进日志，铁律 §5.7.3）。
 func RedactURL(raw string) string {
-	if u, err := url.Parse(raw); err == nil && u.User != nil {
+	if u, err := url.Parse(raw); err == nil {
 		u.User = nil
+		q := u.Query()
+		for key := range q {
+			lower := strings.ToLower(key)
+			for _, word := range []string{"token", "signature", "secret", "credential", "key", "auth"} {
+				if strings.Contains(lower, word) {
+					q.Set(key, "REDACTED")
+					break
+				}
+			}
+		}
+		u.RawQuery = q.Encode()
 		return u.String()
 	}
 	return raw

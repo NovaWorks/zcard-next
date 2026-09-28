@@ -6,6 +6,7 @@ import (
 	"math"
 	"sort"
 	"strconv"
+	"sync"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
@@ -23,6 +24,7 @@ import (
 )
 
 type Repo struct {
+	marketMu    sync.Mutex
 	data        *data.Data
 	coordinator *Coordinator
 	audit       auditport.Auditor

@@ -167,3 +167,56 @@ export const releasePluginRule = (rule: PluginRule) =>
     silentError: true,
     data: { expected_requirement_revision: rule.requirement_revision },
   });
+
+export interface MarketEntry {
+  name: string;
+  descriptor: { pluginId: string; version: string; archiveSHA256: string };
+  manifest: { scopes: string[]; core: { minInclusive: string; maxExclusive: string } };
+}
+export interface MarketCatalog {
+  catalog: { origin: string; revision: string; entries: MarketEntry[] };
+  incompatible: Record<string, string>;
+}
+const marketRoot = `${root}/plugins/market`;
+export const fetchMarketConfig = () =>
+  request<{ origin: string }>({
+    url: `${marketRoot}/config`,
+    silentError: true,
+  });
+export const saveMarketConfig = (origin: string) =>
+  request<{ origin: string }>({
+    url: `${marketRoot}/config`,
+    method: "put",
+    data: { origin },
+    silentError: true,
+  });
+export const fetchMarketCatalog = () =>
+  request<MarketCatalog>({
+    url: `${marketRoot}/catalog`,
+    timeout: 30000,
+    silentError: true,
+  });
+export const inspectMarketPlugin = (
+  origin: string,
+  version: string,
+  command: PluginCommand,
+) =>
+  request<PluginPackage>({
+    url: `${marketRoot}/inspect`,
+    method: "post",
+    data: { origin, version, command },
+    timeout: 30000,
+    silentError: true,
+  });
+export const installMarketPlugin = (
+  origin: string,
+  version: string,
+  command: PluginCommand,
+) =>
+  request<PluginOperation>({
+    url: `${marketRoot}/install`,
+    method: "post",
+    data: { origin, version, command },
+    timeout: 30000,
+    silentError: true,
+  });

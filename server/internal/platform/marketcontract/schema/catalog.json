@@ -1,0 +1,87 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "apiVersion": {
+          "const": "1"
+        },
+        "origin": {
+          "type": "string",
+          "format": "uri"
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        },
+        "issuedAt": {
+          "type": "integer"
+        },
+        "expiresAt": {
+          "type": "integer"
+        },
+        "entries": {
+          "type": "array",
+          "maxItems": 128,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "descriptor": {
+                "$ref": "../../plugincontract/schema/artifact.json"
+              },
+              "signature": {
+                "type": "string",
+                "contentEncoding": "base64"
+              },
+              "manifest": {
+                "$ref": "../../plugincontract/schema/manifest.json"
+              },
+              "artifactPath": {
+                "type": "string",
+                "pattern": "^/api/market/v1/artifacts/[0-9a-f]{64}$"
+              }
+            },
+            "required": [
+              "name",
+              "descriptor",
+              "signature",
+              "manifest",
+              "artifactPath"
+            ]
+          }
+        }
+      },
+      "required": [
+        "apiVersion",
+        "origin",
+        "revision",
+        "issuedAt",
+        "expiresAt",
+        "entries"
+      ]
+    },
+    "keyId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "signature": {
+      "type": "string",
+      "contentEncoding": "base64"
+    }
+  },
+  "required": [
+    "catalog",
+    "keyId",
+    "signature"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

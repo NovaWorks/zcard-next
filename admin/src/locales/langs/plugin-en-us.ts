@@ -1,4 +1,25 @@
 export default {
+  marketSave: "Save market origin",
+  marketTitle: "App marketplace",
+  marketIntro:
+    "Install free plugins from a trusted market. Installed plugins keep running locally when the market is offline.",
+  marketOrigin: "Market origin",
+  marketRefresh: "Refresh catalog",
+  marketOffline:
+    "The market is unavailable or catalog verification failed. Installed plugins remain available.",
+  marketConfigError:
+    "Unable to read or save the market configuration. Check the HTTPS origin and your permissions.",
+  marketInspectError:
+    "Package verification failed, the version was withdrawn, or it is incompatible. Refresh the catalog and retry.",
+  marketRevision: "Catalog revision",
+  marketEmpty: "No published plugins",
+  marketFree: "Free",
+  marketPreview: "Inspect installation package",
+  marketEnableHint:
+    "Enable a new installation in the plugin list. Upgrades preserve its enabled state.",
+  marketApprove:
+    "I checked the source, version and permissions and approve this installation or upgrade.",
+
   title: "Plugins",
   intro:
     "Install trusted signed plugins and manage product extensions. Disabling a plugin keeps purchase restrictions.",
@@ -40,8 +61,10 @@ export default {
   affected: "Affected products",
   currentSite:
     "Only products in the current site are listed below; the total may include other sites.",
-  truncated: "Showing the first 1,000 products. Use product management for the rest.",
-  impactFailed: "Unable to load impact. The operation is blocked; refresh and retry.",
+  truncated:
+    "Showing the first 1,000 products. Use product management for the rest.",
+  impactFailed:
+    "Unable to load impact. The operation is blocked; refresh and retry.",
   confirmAction: "Confirm plugin operation",
   impactWarning:
     "After disabling or uninstalling, existing restrictions remain and affected products cannot accept new orders. Release restrictions separately.",
@@ -53,7 +76,8 @@ export default {
   query: "Check original operation",
   unknown:
     "The result is unconfirmed. Query the original operation ID before starting another operation.",
-  operationFailed: "Operation failed. Refresh to inspect the actual current state.",
+  operationFailed:
+    "Operation failed. Refresh to inspect the actual current state.",
   operationDone: "Operation confirmed. Current state is shown below.",
   notFoundOperation:
     "Original operation not found yet. Query again later, or verify current state before clearing this record.",
@@ -64,9 +88,11 @@ export default {
   openProduct: "View product restrictions",
   extensions: "Plugin extensions",
   saveFirst: "Save the product to obtain its ID before configuring extensions.",
-  noRead: "Viewing extensions requires plugin read and product edit permissions.",
+  noRead:
+    "Viewing extensions requires plugin read and product edit permissions.",
   noConfigure: "Your account cannot configure plugins. Settings are read-only.",
-  locked: "The product is locked. Unlock it in product management with the appropriate permission.",
+  locked:
+    "The product is locked. Unlock it in product management with the appropriate permission.",
   restricted: "Host purchase restriction is in force",
   unrestricted: "No host purchase restriction for this plugin",
   inactive:
@@ -83,7 +109,8 @@ export default {
   disabledLevel: "Disabled or unavailable",
   save: "Save extension settings",
   saved: "Extension settings saved and applied separately",
-  invalidSelection: "Select at least one enabled level when restricting purchases (up to 100).",
+  invalidSelection:
+    "Select at least one enabled level when restricting purchases (up to 100).",
   saveFailed:
     "Save unconfirmed; draft retained. Refresh to check permissions, product locks and server configuration before retrying.",
   changed:
@@ -97,17 +124,20 @@ export default {
   releaseWarning:
     "Release only this plugin restriction on this product in the current site. This does not enable the plugin or release other rules.",
   released: "Purchase restriction released",
-  noRelease: "Releasing a restriction requires plugin:release and product edit permissions.",
+  noRelease:
+    "Releasing a restriction requires plugin:release and product edit permissions.",
   discardTitle: "Discard unsaved extension draft?",
   discard:
     "Separately saved settings remain in effect. Unsaved extension inputs will be discarded.",
-  saveDraftFirst: "Plugin extensions have an unsaved draft. Save or discard it first.",
+  saveDraftFirst:
+    "Plugin extensions have an unsaved draft. Save or discard it first.",
   packageMissing: "Signed package missing or damaged",
   runtimeFault: "Plugin runtime fault",
   expired: "Entitlement expired",
   revoked: "Entitlement revoked",
   packageIncompatible: "Plugin is incompatible with this host",
-  permissionChanged: "Permissions or site scope changed. Refresh before continuing.",
+  permissionChanged:
+    "Permissions or site scope changed. Refresh before continuing.",
   details: "Details",
   version: "Plugin version",
 };

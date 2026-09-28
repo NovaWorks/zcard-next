@@ -6,6 +6,11 @@ package authz
 func init() {
 	Declare(
 		Perm{Code: "plugin:read", Desc: "插件管理：ListPlugins", Domain: "plugin", AdminOnly: false, Op: "zcard.api.admin.v1.AdminPluginService/ListPlugins", Method: "GET", Path: "/api/v1/admin/plugins"},
+		Perm{Code: "plugin:manage", Desc: "插件市场：GetMarketConfig", Domain: "plugin", AdminOnly: true, Op: "zcard.api.admin.v1.AdminPluginService/GetMarketConfig", Method: "GET", Path: "/api/v1/admin/plugins/market/config"},
+		Perm{Code: "plugin:manage", Desc: "插件市场：SetMarketConfig", Domain: "plugin", AdminOnly: true, Op: "zcard.api.admin.v1.AdminPluginService/SetMarketConfig", Method: "PUT", Path: "/api/v1/admin/plugins/market/config"},
+		Perm{Code: "plugin:manage", Desc: "插件市场：GetMarketCatalog", Domain: "plugin", AdminOnly: true, Op: "zcard.api.admin.v1.AdminPluginService/GetMarketCatalog", Method: "GET", Path: "/api/v1/admin/plugins/market/catalog"},
+		Perm{Code: "plugin:manage", Desc: "插件市场：InspectMarketPlugin", Domain: "plugin", AdminOnly: true, Op: "zcard.api.admin.v1.AdminPluginService/InspectMarketPlugin", Method: "POST", Path: "/api/v1/admin/plugins/market/inspect"},
+		Perm{Code: "plugin:manage", Desc: "插件市场：InstallMarketPlugin", Domain: "plugin", AdminOnly: true, Op: "zcard.api.admin.v1.AdminPluginService/InstallMarketPlugin", Method: "POST", Path: "/api/v1/admin/plugins/market/install"},
 		Perm{Code: "plugin:manage", Desc: "插件管理：ImportPlugin", Domain: "plugin", AdminOnly: true, Op: "zcard.api.admin.v1.AdminPluginService/ImportPlugin", Method: "POST", Path: "/api/v1/admin/plugins/import"},
 		Perm{Code: "plugin:manage", Desc: "插件管理：InspectPlugin", Domain: "plugin", AdminOnly: true, Op: "zcard.api.admin.v1.AdminPluginService/InspectPlugin", Method: "POST", Path: "/api/v1/admin/plugins/inspect"},
 		Perm{Code: "plugin:read", Desc: "插件管理：ListContributions", Domain: "plugin", AdminOnly: false, Op: "zcard.api.admin.v1.AdminPluginService/ListContributions", Method: "GET", Path: "/api/v1/admin/plugins/contributions"},

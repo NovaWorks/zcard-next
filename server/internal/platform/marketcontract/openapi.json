@@ -1,0 +1,320 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ZCard Free Plugin Market API",
+    "version": "1"
+  },
+  "paths": {
+    "/api/market/v1/capabilities": {
+      "get": {
+        "summary": "Negotiate free distribution API v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "apiVersion": {
+                      "const": "1"
+                    },
+                    "freeDistribution": {
+                      "const": true
+                    },
+                    "maxEntries": {
+                      "const": 128
+                    },
+                    "pagination": {
+                      "const": "bounded-snapshot; client-side pages"
+                    }
+                  },
+                  "required": [
+                    "apiVersion",
+                    "freeDistribution",
+                    "maxEntries",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; never treat as an empty catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/market/v1/plugins": {
+      "get": {
+        "summary": "Full signed catalog snapshot",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "schema/catalog.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; never treat as an empty catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/market/v1/plugins/{id}": {
+      "get": {
+        "summary": "Full signed snapshot containing the requested plugin",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "schema/catalog.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; never treat as an empty catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/market/v1/plugins/{id}/versions/{version}": {
+      "get": {
+        "summary": "Immutable signed artifact descriptor and manifest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "descriptor": {
+                      "$ref": "../plugincontract/schema/artifact.json"
+                    },
+                    "signature": {
+                      "type": "string",
+                      "contentEncoding": "base64"
+                    },
+                    "manifest": {
+                      "$ref": "../plugincontract/schema/manifest.json"
+                    },
+                    "artifactPath": {
+                      "type": "string",
+                      "pattern": "^/api/market/v1/artifacts/[0-9a-f]{64}$"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "descriptor",
+                    "signature",
+                    "manifest",
+                    "artifactPath"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; never treat as an empty catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/market/v1/artifacts/{digest}": {
+      "get": {
+        "summary": "Immutable ZIP; digest and length must match signed descriptor",
+        "parameters": [
+          {
+            "name": "digest",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; never treat as an empty catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

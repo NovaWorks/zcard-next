@@ -19,6 +19,7 @@ import {
   type PluginPackage,
   type PluginStatus,
 } from "@/service/api/plugin";
+import MarketCatalog from "@/components/plugin/market-catalog.vue";
 import ProductExtensions from "@/components/plugin/product-extensions.vue";
 import { errorReason } from "@/components/plugin/schema";
 
@@ -30,6 +31,7 @@ const loading = ref(false),
   busy = ref(false),
   loadError = ref(false),
   managementAllowed = ref(false);
+const marketBusy = ref(false);
 const message = ref("");
 const storageKey = computed(
   () => `zcard.plugin.operation:${location.host}:${auth.userInfo.userId}`,
@@ -78,7 +80,7 @@ function reasonText(reason: string) {
   return names[reason] ? $t(names[reason]) : reason;
 }
 async function refresh() {
-  if (loading.value || busy.value) return;
+  if (loading.value || busy.value || marketBusy.value) return;
   loading.value = true;
   try {
     const result = await fetchPlugins();
@@ -138,7 +140,7 @@ function clearOperation() {
   });
 }
 async function apply(command: PluginCommand, files?: PluginFiles) {
-  if (busy.value || pending.value || !canManage.value) return;
+  if (busy.value || marketBusy.value || pending.value || !canManage.value) return;
   busy.value = true;
   persistPending(command.operation_id);
   const result = files ? await importPlugin(command, files) : await operatePlugin(command);
@@ -152,7 +154,7 @@ async function apply(command: PluginCommand, files?: PluginFiles) {
   }
 }
 async function confirmOperation(command: PluginCommand, files?: PluginFiles) {
-  if (busy.value || pending.value || !canManage.value) return;
+  if (busy.value || marketBusy.value || pending.value || !canManage.value) return;
   busy.value = true;
   const result = await fetchPluginImpact(command.plugin_id);
   busy.value = false;
@@ -202,7 +204,7 @@ function pick(name: keyof PluginFiles, event: Event) {
   approved.value = false;
 }
 async function verify() {
-  if (busy.value || !canManage.value) return;
+  if (busy.value || marketBusy.value || !canManage.value) return;
   const files = selected.value;
   if (
     !files.descriptor ||
@@ -289,9 +291,9 @@ async function discardProduct() {
 async function closeProduct() {
   if (await discardProduct()) product.value = undefined;
 }
-onBeforeRouteLeave(async () => !busy.value && (await discardProduct()));
+onBeforeRouteLeave(async () => !busy.value && !marketBusy.value && (await discardProduct()));
 function beforeUnload(event: BeforeUnloadEvent) {
-  if (busy.value || panel.value?.hasPending || panel.value?.saving) {
+  if (busy.value || marketBusy.value || panel.value?.hasPending || panel.value?.saving) {
     event.preventDefault();
     event.returnValue = "";
   }
@@ -320,7 +322,7 @@ onBeforeUnmount(() => {
       <NSpace class="mt-16px">
         <NButton
           type="primary"
-          :disabled="!canManage || busy || loading || !!pending"
+          :disabled="!canManage || busy || marketBusy || loading || !!pending"
           @click="openUpload()"
         >
           {{ $t("plugin.upload") }}
@@ -333,6 +335,20 @@ onBeforeUnmount(() => {
       </NSpace>
       <p v-if="!managementAllowed && !loading">{{ $t("plugin.readonly") }}</p>
     </NCard>
+    <MarketCatalog
+      v-if="canManage"
+      :plugins="plugins"
+      :disabled="busy || loading || !!pending"
+      @busy="(value) => (marketBusy = value)"
+      @pending="persistPending"
+      @done="
+        async (result) => {
+          if (result) resultMessage(result);
+          else message = $t('plugin.unknown');
+          await refresh();
+        }
+      "
+    />
     <NAlert v-if="loadError" type="error" role="alert">{{ $t("plugin.loadFailed") }}</NAlert>
     <NAlert v-if="message && !uploadOpen" type="info" role="status">{{ message }}</NAlert>
     <NCard v-if="pending" :title="$t('plugin.pending')" size="small">

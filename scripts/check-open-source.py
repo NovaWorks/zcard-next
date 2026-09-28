@@ -6,13 +6,14 @@ import sys
 PREFIX = "server/internal/data/ent/schema/"
 PRIVATE = {name + suffix + ".go" for name in (
     "tenant", "escrow", "subscription", "api_key", "api_scope",
-    "plugin_manifest", "market_supplier", "supplier_rating",
+    "plugin_manifest", "market_supplier", "supplier_rating", "market_plugin",
+    "market_version", "market_artifact", "market_catalog", "market_audit",
 ) for suffix in ("", "s")} | {"licenses.go"}
 
 
 def forbidden(path):
     parts = path.split("/")
-    return ("saas" in parts or "internal/commercial/" in path
+    return (path.startswith("market/") or "saas" in parts or "internal/commercial/" in path
             or path.startswith(PREFIX) and path[len(PREFIX):] in PRIVATE)
 
 
@@ -23,7 +24,7 @@ def self_test():
         assert not forbidden(PREFIX + name + ".go"), name
     for name in PRIVATE:
         assert forbidden(PREFIX + name), name
-    for name in ("server/internal/commercial/x.go", "saas/x.go", "server/saas/x.go"):
+    for name in ("market/go.mod", "market/web/index.html", "server/internal/commercial/x.go", "saas/x.go", "server/saas/x.go"):
         assert forbidden(name), name
     assert not forbidden("docs/licenses.go")
 
