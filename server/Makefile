@@ -78,7 +78,9 @@ run: build
 .PHONY: test
 # 全量测试（单元 + 架构守护；SQLite 线。MySQL/PG 集成线 起进 CI）
 test:
-	go test ./...
+	go test -skip '^TestP4ConcurrentGenerationsAndResourceBudget$$' ./...
+	# Keep the fixed production time budget independent of other packages' compilation/tests.
+	go test -p 1 -count=1 ./internal/mods/plugin -run '^TestP4ConcurrentGenerationsAndResourceBudget$$'
 
 .PHONY: test-integration
 # 集成线（）：真 MySQL/PG。-tags=integration + DSN 环境变量

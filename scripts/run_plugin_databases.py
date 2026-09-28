@@ -51,7 +51,15 @@ try:
                 run([*dbexec, 'createdb', '-h127.0.0.1', '-U', 'postgres', database])
             env[f'ZCARD_{suite}_{driver.upper()}_DSN'] = dsn(database)
         env['ZCARD_TEST_MYSQL_DSN' if driver == 'mysql' else 'ZCARD_TEST_PG_DSN'] = dsn('mysql' if driver == 'mysql' else 'postgres')
-    for name, cmd in [('dialects', ['go', 'test', '-count=1', '-v', './internal/mods/plugin', './internal/mods/order', './internal/mods/supplier', './migrations']), ('integration', ['make', 'test-integration'])]:
+    # Run the fixed-budget load gate after other packages stop compiling/testing.
+    # It remains mandatory and retains the production 50ms/250ms limits.
+    budget_test = '^TestP4ConcurrentGenerationsAndResourceBudget$'
+    suites = [
+        ('dialects', ['go', 'test', '-count=1', '-v', '-skip', budget_test, './internal/mods/plugin', './internal/mods/order', './internal/mods/supplier', './migrations']),
+        ('resource-budget', ['go', 'test', '-p', '1', '-count=1', '-v', './internal/mods/plugin', '-run', budget_test]),
+        ('integration', ['make', 'test-integration']),
+    ]
+    for name, cmd in suites:
         with (out / (name + '.log')).open('w') as log:
             run(cmd, cwd=root / 'server', env=env, stdout=log, stderr=subprocess.STDOUT)
         print('PASS', name, flush=True)
