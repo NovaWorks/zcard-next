@@ -15,7 +15,7 @@ func TestSupplierPricingPrecedenceAndLiveScope(t *testing.T) {
 	root := d.Client.Category.Create().SetName("邮箱").SaveX(ctx)
 	child := d.Client.Category.Create().SetName("企业邮箱").SetParentID(root.ID).SaveX(ctx)
 	p := d.Client.Product.Create().SetName("邮箱账号").SetSlug("mail").SetPrice(1000).SetCategoryID(child.ID).SaveX(ctx)
-	sku := d.Client.ProductSku.Create().SetProductID(p.ID).SetName("年卡").SetSpecValues(map[string]string{"周期":"年"}).SaveX(ctx)
+	sku := d.Client.ProductSku.Create().SetProductID(p.ID).SetName("年卡").SetSpecValues(map[string]string{"周期": "年"}).SaveX(ctx)
 	save := func(scope string, cat, pid, sid uint64, price int64, discount int32) {
 		t.Helper()
 		if err := r.UpsertPriceRule(ctx, a, pid, sid, cat, scope, price, discount); err != nil {

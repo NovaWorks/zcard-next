@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "hook": "order.pre_create.v1",
+  "pluginId": "member-purchase-gate",
+  "generation": "1",
+  "subsiteId": "0",
+  "productId": "101",
+  "skuId": "0",
+  "quantity": 1,
+  "channel": "storefront",
+  "member": {
+    "authenticated": true,
+    "effectiveLevelId": "7"
+  },
+  "config": {
+    "schemaVersion": 1,
+    "revision": "1",
+    "enabled": true,
+    "allowedLevelIds": [
+      "7",
+      "9007199254740993"
+    ]
+  }
+}

@@ -18,18 +18,7 @@ jobs:
           exit 1
       - name: 禁路径扫描（商业版目录与商业表 schema）
         run: |
-          set -e
-          # 禁路径：商业版代码目录 / SaaS 目录
-          if git ls-files | grep -qE '(^|/)internal/commercial/|(^|/)saas/'; then
-            echo "::error::检出商业版/SaaS 代码路径（internal/commercial/** 或 saas/**）——开源仓库禁止"
-            exit 1
-          fi
-          # 禁文件：商业版 12 张表的 ent schema（《商业版数据模型.md》）
-          if git ls-files 'server/internal/data/ent/schema/*' | grep -qE '(tenants|escrow|subscription|license|api_key|api_scope|installed_plugin|plugin_manifest|market_supplier|supplier_rating)s?\.go$'; then
-            echo "::error::检出商业版数据表 schema（tenants/escrow/subscription/licenses/api_keys/插件市场等）——开源仓库禁止"
-            exit 1
-          fi
-          echo "开源红线检查通过 ✓"
+          python3 scripts/check-open-source.py
   server:
     name: server（生成物校验 + 测试）
     runs-on: ubuntu-latest
@@ -94,6 +83,26 @@ jobs:
         env:
           ZCARD_TEST_PG_DSN: "postgres://postgres:pass@127.0.0.1:5432/postgres?sslmode=disable"
         run: make test-integration
+
+  plugin-databases:
+    name: 插件闭环（三方言与真实进程恢复）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - name: 冻结插件 v1 契约
+        run: sha256sum -c server/internal/platform/plugincontract/v1.sha256
+      - name: 独立数据库、事务与恢复验收
+        run: python3 scripts/run_plugin_databases.py --output /tmp/plugin-acceptance
+      - name: 保留失败证据
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-acceptance
+          path: /tmp/plugin-acceptance
 
   frontend-money:
     name: 前端金额单位回归

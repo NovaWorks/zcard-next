@@ -37,6 +37,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/plugin"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/reseller"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/seo"
@@ -92,6 +93,7 @@ func NewHTTPServer(
 	affiliateStoreSvc *affiliate.StoreAffiliateService,
 	mediaAdminSvc *media.AdminMediaService,
 	licenseAdminSvc *license.AdminLicenseService,
+	pluginAdminSvc *plugin.AdminPluginService,
 	resellerAdminSvc *reseller.AdminResellerService,
 	resellerRepo *reseller.ResellerRepo,
 	userStoreSvc *identity.StoreUserService,
@@ -140,6 +142,7 @@ func NewHTTPServer(
 	}
 	var opts = []khttp.ServerOption{
 		khttp.Filter(
+			plugin.RequestBodyLimit,
 			requestDeadlineFilter(requestTimeout),
 			corsFilter,
 			// ：租户域名解析（Filter 层——中间件拿不到 Host；最外层确保全链路继承）
@@ -247,6 +250,8 @@ func NewHTTPServer(
 	mediaAdminSvc.RegisterVideoUpload(srv)
 	adminv1.RegisterAdminMediaServiceHTTPServer(srv, mediaAdminSvc)
 	adminv1.RegisterAdminLicenseServiceHTTPServer(srv, licenseAdminSvc)
+	pluginAdminSvc.RegisterImport(srv)
+	adminv1.RegisterAdminPluginServiceHTTPServer(srv, pluginAdminSvc)
 	adminv1.RegisterAdminResellerServiceHTTPServer(srv, resellerAdminSvc)
 	storefrontv1.RegisterStoreUserServiceHTTPServer(srv, userStoreSvc)
 	storefrontv1.RegisterStoreSupplierServiceHTTPServer(srv, supplierStoreSvc)

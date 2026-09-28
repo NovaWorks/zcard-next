@@ -318,6 +318,7 @@ declare namespace App {
     };
 
     type Schema = {
+      plugin: typeof import("../locales/langs/plugin-en-us").default;
       system: {
         title: string;
         updateTitle: string;

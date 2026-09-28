@@ -35,6 +35,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/flashsale"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcard"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcardbatch"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/installedplugin"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/licenseorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryactivity"
@@ -59,6 +60,10 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pageview"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/plugindata"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pluginoperation"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pluginrequirement"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pluginrulelevelref"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointtransaction"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/post"
@@ -158,6 +163,8 @@ type Client struct {
 	Giftcard *GiftcardClient
 	// GiftcardBatch is the client for interacting with the GiftcardBatch builders.
 	GiftcardBatch *GiftcardBatchClient
+	// InstalledPlugin is the client for interacting with the InstalledPlugin builders.
+	InstalledPlugin *InstalledPluginClient
 	// LicenseOrder is the client for interacting with the LicenseOrder builders.
 	LicenseOrder *LicenseOrderClient
 	// LotteryAccount is the client for interacting with the LotteryAccount builders.
@@ -206,6 +213,14 @@ type Client struct {
 	Payment *PaymentClient
 	// PaymentChannel is the client for interacting with the PaymentChannel builders.
 	PaymentChannel *PaymentChannelClient
+	// PluginData is the client for interacting with the PluginData builders.
+	PluginData *PluginDataClient
+	// PluginOperation is the client for interacting with the PluginOperation builders.
+	PluginOperation *PluginOperationClient
+	// PluginRequirement is the client for interacting with the PluginRequirement builders.
+	PluginRequirement *PluginRequirementClient
+	// PluginRuleLevelRef is the client for interacting with the PluginRuleLevelRef builders.
+	PluginRuleLevelRef *PluginRuleLevelRefClient
 	// PointAccount is the client for interacting with the PointAccount builders.
 	PointAccount *PointAccountClient
 	// PointTransaction is the client for interacting with the PointTransaction builders.
@@ -341,6 +356,7 @@ func (c *Client) init() {
 	c.FlashSale = NewFlashSaleClient(c.config)
 	c.Giftcard = NewGiftcardClient(c.config)
 	c.GiftcardBatch = NewGiftcardBatchClient(c.config)
+	c.InstalledPlugin = NewInstalledPluginClient(c.config)
 	c.LicenseOrder = NewLicenseOrderClient(c.config)
 	c.LotteryAccount = NewLotteryAccountClient(c.config)
 	c.LotteryActivity = NewLotteryActivityClient(c.config)
@@ -365,6 +381,10 @@ func (c *Client) init() {
 	c.PageView = NewPageViewClient(c.config)
 	c.Payment = NewPaymentClient(c.config)
 	c.PaymentChannel = NewPaymentChannelClient(c.config)
+	c.PluginData = NewPluginDataClient(c.config)
+	c.PluginOperation = NewPluginOperationClient(c.config)
+	c.PluginRequirement = NewPluginRequirementClient(c.config)
+	c.PluginRuleLevelRef = NewPluginRuleLevelRefClient(c.config)
 	c.PointAccount = NewPointAccountClient(c.config)
 	c.PointTransaction = NewPointTransactionClient(c.config)
 	c.Post = NewPostClient(c.config)
@@ -529,6 +549,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		FlashSale:                NewFlashSaleClient(cfg),
 		Giftcard:                 NewGiftcardClient(cfg),
 		GiftcardBatch:            NewGiftcardBatchClient(cfg),
+		InstalledPlugin:          NewInstalledPluginClient(cfg),
 		LicenseOrder:             NewLicenseOrderClient(cfg),
 		LotteryAccount:           NewLotteryAccountClient(cfg),
 		LotteryActivity:          NewLotteryActivityClient(cfg),
@@ -553,6 +574,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PageView:                 NewPageViewClient(cfg),
 		Payment:                  NewPaymentClient(cfg),
 		PaymentChannel:           NewPaymentChannelClient(cfg),
+		PluginData:               NewPluginDataClient(cfg),
+		PluginOperation:          NewPluginOperationClient(cfg),
+		PluginRequirement:        NewPluginRequirementClient(cfg),
+		PluginRuleLevelRef:       NewPluginRuleLevelRefClient(cfg),
 		PointAccount:             NewPointAccountClient(cfg),
 		PointTransaction:         NewPointTransactionClient(cfg),
 		Post:                     NewPostClient(cfg),
@@ -644,6 +669,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		FlashSale:                NewFlashSaleClient(cfg),
 		Giftcard:                 NewGiftcardClient(cfg),
 		GiftcardBatch:            NewGiftcardBatchClient(cfg),
+		InstalledPlugin:          NewInstalledPluginClient(cfg),
 		LicenseOrder:             NewLicenseOrderClient(cfg),
 		LotteryAccount:           NewLotteryAccountClient(cfg),
 		LotteryActivity:          NewLotteryActivityClient(cfg),
@@ -668,6 +694,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PageView:                 NewPageViewClient(cfg),
 		Payment:                  NewPaymentClient(cfg),
 		PaymentChannel:           NewPaymentChannelClient(cfg),
+		PluginData:               NewPluginDataClient(cfg),
+		PluginOperation:          NewPluginOperationClient(cfg),
+		PluginRequirement:        NewPluginRequirementClient(cfg),
+		PluginRuleLevelRef:       NewPluginRuleLevelRefClient(cfg),
 		PointAccount:             NewPointAccountClient(cfg),
 		PointTransaction:         NewPointTransactionClient(cfg),
 		Post:                     NewPostClient(cfg),
@@ -753,20 +783,21 @@ func (c *Client) Use(hooks ...Hook) {
 		c.CardImport, c.CartItem, c.Category, c.CategoryProductPlacement, c.Coupon,
 		c.Currency, c.DailyStat, c.DownstreamCallback, c.EmailVerification,
 		c.ExternalIdentity, c.FailedTask, c.FlashSale, c.Giftcard, c.GiftcardBatch,
-		c.LicenseOrder, c.LotteryAccount, c.LotteryActivity, c.LotteryChanceLog,
-		c.LotteryDraw, c.LotteryPrize, c.LotteryRevision, c.Media, c.MediaCategory,
-		c.MemberLevel, c.MemberProductGroup, c.Notification, c.NotificationLog,
-		c.NotifyBroadcast, c.NotifyTemplate, c.Order, c.OrderAmountLine,
-		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.PageView,
-		c.Payment, c.PaymentChannel, c.PointAccount, c.PointTransaction, c.Post,
-		c.PostCategory, c.ProcessedEvent, c.ProcurementItem, c.ProcurementOrder,
-		c.Product, c.ProductContentBatch, c.ProductControl, c.ProductDeliverySource,
-		c.ProductSku, c.Promotion, c.RechargeOrder, c.ReconciliationItem,
-		c.ReconciliationJob, c.RefundOrder, c.ResellerBalanceAccount,
-		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
-		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
-		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.StockAlert,
-		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
+		c.InstalledPlugin, c.LicenseOrder, c.LotteryAccount, c.LotteryActivity,
+		c.LotteryChanceLog, c.LotteryDraw, c.LotteryPrize, c.LotteryRevision, c.Media,
+		c.MediaCategory, c.MemberLevel, c.MemberProductGroup, c.Notification,
+		c.NotificationLog, c.NotifyBroadcast, c.NotifyTemplate, c.Order,
+		c.OrderAmountLine, c.OrderDelivery, c.OrderItem, c.OrderStatusEvent,
+		c.OutboxEvent, c.PageView, c.Payment, c.PaymentChannel, c.PluginData,
+		c.PluginOperation, c.PluginRequirement, c.PluginRuleLevelRef, c.PointAccount,
+		c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
+		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductContentBatch,
+		c.ProductControl, c.ProductDeliverySource, c.ProductSku, c.Promotion,
+		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
+		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
+		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
+		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
+		c.StockAlert, c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
 		c.SupplyCatalogSnapshot, c.SupplyConnection, c.SupplyImportItem,
 		c.SupplyMapping, c.SupplyNonce, c.SupplyOrder, c.SupplySyncTask, c.Tag,
 		c.Ticket, c.TicketMessage, c.User, c.UserGroup, c.UserSession, c.V1IDMap,
@@ -785,20 +816,21 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.CardImport, c.CartItem, c.Category, c.CategoryProductPlacement, c.Coupon,
 		c.Currency, c.DailyStat, c.DownstreamCallback, c.EmailVerification,
 		c.ExternalIdentity, c.FailedTask, c.FlashSale, c.Giftcard, c.GiftcardBatch,
-		c.LicenseOrder, c.LotteryAccount, c.LotteryActivity, c.LotteryChanceLog,
-		c.LotteryDraw, c.LotteryPrize, c.LotteryRevision, c.Media, c.MediaCategory,
-		c.MemberLevel, c.MemberProductGroup, c.Notification, c.NotificationLog,
-		c.NotifyBroadcast, c.NotifyTemplate, c.Order, c.OrderAmountLine,
-		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.PageView,
-		c.Payment, c.PaymentChannel, c.PointAccount, c.PointTransaction, c.Post,
-		c.PostCategory, c.ProcessedEvent, c.ProcurementItem, c.ProcurementOrder,
-		c.Product, c.ProductContentBatch, c.ProductControl, c.ProductDeliverySource,
-		c.ProductSku, c.Promotion, c.RechargeOrder, c.ReconciliationItem,
-		c.ReconciliationJob, c.RefundOrder, c.ResellerBalanceAccount,
-		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
-		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
-		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.StockAlert,
-		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
+		c.InstalledPlugin, c.LicenseOrder, c.LotteryAccount, c.LotteryActivity,
+		c.LotteryChanceLog, c.LotteryDraw, c.LotteryPrize, c.LotteryRevision, c.Media,
+		c.MediaCategory, c.MemberLevel, c.MemberProductGroup, c.Notification,
+		c.NotificationLog, c.NotifyBroadcast, c.NotifyTemplate, c.Order,
+		c.OrderAmountLine, c.OrderDelivery, c.OrderItem, c.OrderStatusEvent,
+		c.OutboxEvent, c.PageView, c.Payment, c.PaymentChannel, c.PluginData,
+		c.PluginOperation, c.PluginRequirement, c.PluginRuleLevelRef, c.PointAccount,
+		c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
+		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductContentBatch,
+		c.ProductControl, c.ProductDeliverySource, c.ProductSku, c.Promotion,
+		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
+		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
+		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
+		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
+		c.StockAlert, c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
 		c.SupplyCatalogSnapshot, c.SupplyConnection, c.SupplyImportItem,
 		c.SupplyMapping, c.SupplyNonce, c.SupplyOrder, c.SupplySyncTask, c.Tag,
 		c.Ticket, c.TicketMessage, c.User, c.UserGroup, c.UserSession, c.V1IDMap,
@@ -852,6 +884,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Giftcard.mutate(ctx, m)
 	case *GiftcardBatchMutation:
 		return c.GiftcardBatch.mutate(ctx, m)
+	case *InstalledPluginMutation:
+		return c.InstalledPlugin.mutate(ctx, m)
 	case *LicenseOrderMutation:
 		return c.LicenseOrder.mutate(ctx, m)
 	case *LotteryAccountMutation:
@@ -900,6 +934,14 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Payment.mutate(ctx, m)
 	case *PaymentChannelMutation:
 		return c.PaymentChannel.mutate(ctx, m)
+	case *PluginDataMutation:
+		return c.PluginData.mutate(ctx, m)
+	case *PluginOperationMutation:
+		return c.PluginOperation.mutate(ctx, m)
+	case *PluginRequirementMutation:
+		return c.PluginRequirement.mutate(ctx, m)
+	case *PluginRuleLevelRefMutation:
+		return c.PluginRuleLevelRef.mutate(ctx, m)
 	case *PointAccountMutation:
 		return c.PointAccount.mutate(ctx, m)
 	case *PointTransactionMutation:
@@ -3682,6 +3724,139 @@ func (c *GiftcardBatchClient) mutate(ctx context.Context, m *GiftcardBatchMutati
 		return (&GiftcardBatchDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown GiftcardBatch mutation op: %q", m.Op())
+	}
+}
+
+// InstalledPluginClient is a client for the InstalledPlugin schema.
+type InstalledPluginClient struct {
+	config
+}
+
+// NewInstalledPluginClient returns a client for the InstalledPlugin from the given config.
+func NewInstalledPluginClient(c config) *InstalledPluginClient {
+	return &InstalledPluginClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `installedplugin.Hooks(f(g(h())))`.
+func (c *InstalledPluginClient) Use(hooks ...Hook) {
+	c.hooks.InstalledPlugin = append(c.hooks.InstalledPlugin, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `installedplugin.Intercept(f(g(h())))`.
+func (c *InstalledPluginClient) Intercept(interceptors ...Interceptor) {
+	c.inters.InstalledPlugin = append(c.inters.InstalledPlugin, interceptors...)
+}
+
+// Create returns a builder for creating a InstalledPlugin entity.
+func (c *InstalledPluginClient) Create() *InstalledPluginCreate {
+	mutation := newInstalledPluginMutation(c.config, OpCreate)
+	return &InstalledPluginCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of InstalledPlugin entities.
+func (c *InstalledPluginClient) CreateBulk(builders ...*InstalledPluginCreate) *InstalledPluginCreateBulk {
+	return &InstalledPluginCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *InstalledPluginClient) MapCreateBulk(slice any, setFunc func(*InstalledPluginCreate, int)) *InstalledPluginCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &InstalledPluginCreateBulk{err: fmt.Errorf("calling to InstalledPluginClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*InstalledPluginCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &InstalledPluginCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for InstalledPlugin.
+func (c *InstalledPluginClient) Update() *InstalledPluginUpdate {
+	mutation := newInstalledPluginMutation(c.config, OpUpdate)
+	return &InstalledPluginUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *InstalledPluginClient) UpdateOne(_m *InstalledPlugin) *InstalledPluginUpdateOne {
+	mutation := newInstalledPluginMutation(c.config, OpUpdateOne, withInstalledPlugin(_m))
+	return &InstalledPluginUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *InstalledPluginClient) UpdateOneID(id uint64) *InstalledPluginUpdateOne {
+	mutation := newInstalledPluginMutation(c.config, OpUpdateOne, withInstalledPluginID(id))
+	return &InstalledPluginUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for InstalledPlugin.
+func (c *InstalledPluginClient) Delete() *InstalledPluginDelete {
+	mutation := newInstalledPluginMutation(c.config, OpDelete)
+	return &InstalledPluginDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *InstalledPluginClient) DeleteOne(_m *InstalledPlugin) *InstalledPluginDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *InstalledPluginClient) DeleteOneID(id uint64) *InstalledPluginDeleteOne {
+	builder := c.Delete().Where(installedplugin.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &InstalledPluginDeleteOne{builder}
+}
+
+// Query returns a query builder for InstalledPlugin.
+func (c *InstalledPluginClient) Query() *InstalledPluginQuery {
+	return &InstalledPluginQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeInstalledPlugin},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a InstalledPlugin entity by its id.
+func (c *InstalledPluginClient) Get(ctx context.Context, id uint64) (*InstalledPlugin, error) {
+	return c.Query().Where(installedplugin.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *InstalledPluginClient) GetX(ctx context.Context, id uint64) *InstalledPlugin {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *InstalledPluginClient) Hooks() []Hook {
+	return c.hooks.InstalledPlugin
+}
+
+// Interceptors returns the client interceptors.
+func (c *InstalledPluginClient) Interceptors() []Interceptor {
+	return c.inters.InstalledPlugin
+}
+
+func (c *InstalledPluginClient) mutate(ctx context.Context, m *InstalledPluginMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&InstalledPluginCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&InstalledPluginUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&InstalledPluginUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&InstalledPluginDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown InstalledPlugin mutation op: %q", m.Op())
 	}
 }
 
@@ -7050,6 +7225,538 @@ func (c *PaymentChannelClient) mutate(ctx context.Context, m *PaymentChannelMuta
 		return (&PaymentChannelDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown PaymentChannel mutation op: %q", m.Op())
+	}
+}
+
+// PluginDataClient is a client for the PluginData schema.
+type PluginDataClient struct {
+	config
+}
+
+// NewPluginDataClient returns a client for the PluginData from the given config.
+func NewPluginDataClient(c config) *PluginDataClient {
+	return &PluginDataClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `plugindata.Hooks(f(g(h())))`.
+func (c *PluginDataClient) Use(hooks ...Hook) {
+	c.hooks.PluginData = append(c.hooks.PluginData, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `plugindata.Intercept(f(g(h())))`.
+func (c *PluginDataClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PluginData = append(c.inters.PluginData, interceptors...)
+}
+
+// Create returns a builder for creating a PluginData entity.
+func (c *PluginDataClient) Create() *PluginDataCreate {
+	mutation := newPluginDataMutation(c.config, OpCreate)
+	return &PluginDataCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PluginData entities.
+func (c *PluginDataClient) CreateBulk(builders ...*PluginDataCreate) *PluginDataCreateBulk {
+	return &PluginDataCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PluginDataClient) MapCreateBulk(slice any, setFunc func(*PluginDataCreate, int)) *PluginDataCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PluginDataCreateBulk{err: fmt.Errorf("calling to PluginDataClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PluginDataCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PluginDataCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PluginData.
+func (c *PluginDataClient) Update() *PluginDataUpdate {
+	mutation := newPluginDataMutation(c.config, OpUpdate)
+	return &PluginDataUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PluginDataClient) UpdateOne(_m *PluginData) *PluginDataUpdateOne {
+	mutation := newPluginDataMutation(c.config, OpUpdateOne, withPluginData(_m))
+	return &PluginDataUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PluginDataClient) UpdateOneID(id uint64) *PluginDataUpdateOne {
+	mutation := newPluginDataMutation(c.config, OpUpdateOne, withPluginDataID(id))
+	return &PluginDataUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PluginData.
+func (c *PluginDataClient) Delete() *PluginDataDelete {
+	mutation := newPluginDataMutation(c.config, OpDelete)
+	return &PluginDataDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PluginDataClient) DeleteOne(_m *PluginData) *PluginDataDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PluginDataClient) DeleteOneID(id uint64) *PluginDataDeleteOne {
+	builder := c.Delete().Where(plugindata.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PluginDataDeleteOne{builder}
+}
+
+// Query returns a query builder for PluginData.
+func (c *PluginDataClient) Query() *PluginDataQuery {
+	return &PluginDataQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePluginData},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PluginData entity by its id.
+func (c *PluginDataClient) Get(ctx context.Context, id uint64) (*PluginData, error) {
+	return c.Query().Where(plugindata.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PluginDataClient) GetX(ctx context.Context, id uint64) *PluginData {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PluginDataClient) Hooks() []Hook {
+	return c.hooks.PluginData
+}
+
+// Interceptors returns the client interceptors.
+func (c *PluginDataClient) Interceptors() []Interceptor {
+	return c.inters.PluginData
+}
+
+func (c *PluginDataClient) mutate(ctx context.Context, m *PluginDataMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PluginDataCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PluginDataUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PluginDataUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PluginDataDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PluginData mutation op: %q", m.Op())
+	}
+}
+
+// PluginOperationClient is a client for the PluginOperation schema.
+type PluginOperationClient struct {
+	config
+}
+
+// NewPluginOperationClient returns a client for the PluginOperation from the given config.
+func NewPluginOperationClient(c config) *PluginOperationClient {
+	return &PluginOperationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `pluginoperation.Hooks(f(g(h())))`.
+func (c *PluginOperationClient) Use(hooks ...Hook) {
+	c.hooks.PluginOperation = append(c.hooks.PluginOperation, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `pluginoperation.Intercept(f(g(h())))`.
+func (c *PluginOperationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PluginOperation = append(c.inters.PluginOperation, interceptors...)
+}
+
+// Create returns a builder for creating a PluginOperation entity.
+func (c *PluginOperationClient) Create() *PluginOperationCreate {
+	mutation := newPluginOperationMutation(c.config, OpCreate)
+	return &PluginOperationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PluginOperation entities.
+func (c *PluginOperationClient) CreateBulk(builders ...*PluginOperationCreate) *PluginOperationCreateBulk {
+	return &PluginOperationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PluginOperationClient) MapCreateBulk(slice any, setFunc func(*PluginOperationCreate, int)) *PluginOperationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PluginOperationCreateBulk{err: fmt.Errorf("calling to PluginOperationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PluginOperationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PluginOperationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PluginOperation.
+func (c *PluginOperationClient) Update() *PluginOperationUpdate {
+	mutation := newPluginOperationMutation(c.config, OpUpdate)
+	return &PluginOperationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PluginOperationClient) UpdateOne(_m *PluginOperation) *PluginOperationUpdateOne {
+	mutation := newPluginOperationMutation(c.config, OpUpdateOne, withPluginOperation(_m))
+	return &PluginOperationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PluginOperationClient) UpdateOneID(id uint64) *PluginOperationUpdateOne {
+	mutation := newPluginOperationMutation(c.config, OpUpdateOne, withPluginOperationID(id))
+	return &PluginOperationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PluginOperation.
+func (c *PluginOperationClient) Delete() *PluginOperationDelete {
+	mutation := newPluginOperationMutation(c.config, OpDelete)
+	return &PluginOperationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PluginOperationClient) DeleteOne(_m *PluginOperation) *PluginOperationDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PluginOperationClient) DeleteOneID(id uint64) *PluginOperationDeleteOne {
+	builder := c.Delete().Where(pluginoperation.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PluginOperationDeleteOne{builder}
+}
+
+// Query returns a query builder for PluginOperation.
+func (c *PluginOperationClient) Query() *PluginOperationQuery {
+	return &PluginOperationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePluginOperation},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PluginOperation entity by its id.
+func (c *PluginOperationClient) Get(ctx context.Context, id uint64) (*PluginOperation, error) {
+	return c.Query().Where(pluginoperation.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PluginOperationClient) GetX(ctx context.Context, id uint64) *PluginOperation {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PluginOperationClient) Hooks() []Hook {
+	return c.hooks.PluginOperation
+}
+
+// Interceptors returns the client interceptors.
+func (c *PluginOperationClient) Interceptors() []Interceptor {
+	return c.inters.PluginOperation
+}
+
+func (c *PluginOperationClient) mutate(ctx context.Context, m *PluginOperationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PluginOperationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PluginOperationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PluginOperationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PluginOperationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PluginOperation mutation op: %q", m.Op())
+	}
+}
+
+// PluginRequirementClient is a client for the PluginRequirement schema.
+type PluginRequirementClient struct {
+	config
+}
+
+// NewPluginRequirementClient returns a client for the PluginRequirement from the given config.
+func NewPluginRequirementClient(c config) *PluginRequirementClient {
+	return &PluginRequirementClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `pluginrequirement.Hooks(f(g(h())))`.
+func (c *PluginRequirementClient) Use(hooks ...Hook) {
+	c.hooks.PluginRequirement = append(c.hooks.PluginRequirement, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `pluginrequirement.Intercept(f(g(h())))`.
+func (c *PluginRequirementClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PluginRequirement = append(c.inters.PluginRequirement, interceptors...)
+}
+
+// Create returns a builder for creating a PluginRequirement entity.
+func (c *PluginRequirementClient) Create() *PluginRequirementCreate {
+	mutation := newPluginRequirementMutation(c.config, OpCreate)
+	return &PluginRequirementCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PluginRequirement entities.
+func (c *PluginRequirementClient) CreateBulk(builders ...*PluginRequirementCreate) *PluginRequirementCreateBulk {
+	return &PluginRequirementCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PluginRequirementClient) MapCreateBulk(slice any, setFunc func(*PluginRequirementCreate, int)) *PluginRequirementCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PluginRequirementCreateBulk{err: fmt.Errorf("calling to PluginRequirementClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PluginRequirementCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PluginRequirementCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PluginRequirement.
+func (c *PluginRequirementClient) Update() *PluginRequirementUpdate {
+	mutation := newPluginRequirementMutation(c.config, OpUpdate)
+	return &PluginRequirementUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PluginRequirementClient) UpdateOne(_m *PluginRequirement) *PluginRequirementUpdateOne {
+	mutation := newPluginRequirementMutation(c.config, OpUpdateOne, withPluginRequirement(_m))
+	return &PluginRequirementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PluginRequirementClient) UpdateOneID(id uint64) *PluginRequirementUpdateOne {
+	mutation := newPluginRequirementMutation(c.config, OpUpdateOne, withPluginRequirementID(id))
+	return &PluginRequirementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PluginRequirement.
+func (c *PluginRequirementClient) Delete() *PluginRequirementDelete {
+	mutation := newPluginRequirementMutation(c.config, OpDelete)
+	return &PluginRequirementDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PluginRequirementClient) DeleteOne(_m *PluginRequirement) *PluginRequirementDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PluginRequirementClient) DeleteOneID(id uint64) *PluginRequirementDeleteOne {
+	builder := c.Delete().Where(pluginrequirement.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PluginRequirementDeleteOne{builder}
+}
+
+// Query returns a query builder for PluginRequirement.
+func (c *PluginRequirementClient) Query() *PluginRequirementQuery {
+	return &PluginRequirementQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePluginRequirement},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PluginRequirement entity by its id.
+func (c *PluginRequirementClient) Get(ctx context.Context, id uint64) (*PluginRequirement, error) {
+	return c.Query().Where(pluginrequirement.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PluginRequirementClient) GetX(ctx context.Context, id uint64) *PluginRequirement {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PluginRequirementClient) Hooks() []Hook {
+	return c.hooks.PluginRequirement
+}
+
+// Interceptors returns the client interceptors.
+func (c *PluginRequirementClient) Interceptors() []Interceptor {
+	return c.inters.PluginRequirement
+}
+
+func (c *PluginRequirementClient) mutate(ctx context.Context, m *PluginRequirementMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PluginRequirementCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PluginRequirementUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PluginRequirementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PluginRequirementDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PluginRequirement mutation op: %q", m.Op())
+	}
+}
+
+// PluginRuleLevelRefClient is a client for the PluginRuleLevelRef schema.
+type PluginRuleLevelRefClient struct {
+	config
+}
+
+// NewPluginRuleLevelRefClient returns a client for the PluginRuleLevelRef from the given config.
+func NewPluginRuleLevelRefClient(c config) *PluginRuleLevelRefClient {
+	return &PluginRuleLevelRefClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `pluginrulelevelref.Hooks(f(g(h())))`.
+func (c *PluginRuleLevelRefClient) Use(hooks ...Hook) {
+	c.hooks.PluginRuleLevelRef = append(c.hooks.PluginRuleLevelRef, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `pluginrulelevelref.Intercept(f(g(h())))`.
+func (c *PluginRuleLevelRefClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PluginRuleLevelRef = append(c.inters.PluginRuleLevelRef, interceptors...)
+}
+
+// Create returns a builder for creating a PluginRuleLevelRef entity.
+func (c *PluginRuleLevelRefClient) Create() *PluginRuleLevelRefCreate {
+	mutation := newPluginRuleLevelRefMutation(c.config, OpCreate)
+	return &PluginRuleLevelRefCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PluginRuleLevelRef entities.
+func (c *PluginRuleLevelRefClient) CreateBulk(builders ...*PluginRuleLevelRefCreate) *PluginRuleLevelRefCreateBulk {
+	return &PluginRuleLevelRefCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PluginRuleLevelRefClient) MapCreateBulk(slice any, setFunc func(*PluginRuleLevelRefCreate, int)) *PluginRuleLevelRefCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PluginRuleLevelRefCreateBulk{err: fmt.Errorf("calling to PluginRuleLevelRefClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PluginRuleLevelRefCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PluginRuleLevelRefCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PluginRuleLevelRef.
+func (c *PluginRuleLevelRefClient) Update() *PluginRuleLevelRefUpdate {
+	mutation := newPluginRuleLevelRefMutation(c.config, OpUpdate)
+	return &PluginRuleLevelRefUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PluginRuleLevelRefClient) UpdateOne(_m *PluginRuleLevelRef) *PluginRuleLevelRefUpdateOne {
+	mutation := newPluginRuleLevelRefMutation(c.config, OpUpdateOne, withPluginRuleLevelRef(_m))
+	return &PluginRuleLevelRefUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PluginRuleLevelRefClient) UpdateOneID(id uint64) *PluginRuleLevelRefUpdateOne {
+	mutation := newPluginRuleLevelRefMutation(c.config, OpUpdateOne, withPluginRuleLevelRefID(id))
+	return &PluginRuleLevelRefUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PluginRuleLevelRef.
+func (c *PluginRuleLevelRefClient) Delete() *PluginRuleLevelRefDelete {
+	mutation := newPluginRuleLevelRefMutation(c.config, OpDelete)
+	return &PluginRuleLevelRefDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PluginRuleLevelRefClient) DeleteOne(_m *PluginRuleLevelRef) *PluginRuleLevelRefDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PluginRuleLevelRefClient) DeleteOneID(id uint64) *PluginRuleLevelRefDeleteOne {
+	builder := c.Delete().Where(pluginrulelevelref.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PluginRuleLevelRefDeleteOne{builder}
+}
+
+// Query returns a query builder for PluginRuleLevelRef.
+func (c *PluginRuleLevelRefClient) Query() *PluginRuleLevelRefQuery {
+	return &PluginRuleLevelRefQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePluginRuleLevelRef},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PluginRuleLevelRef entity by its id.
+func (c *PluginRuleLevelRefClient) Get(ctx context.Context, id uint64) (*PluginRuleLevelRef, error) {
+	return c.Query().Where(pluginrulelevelref.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PluginRuleLevelRefClient) GetX(ctx context.Context, id uint64) *PluginRuleLevelRef {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PluginRuleLevelRefClient) Hooks() []Hook {
+	return c.hooks.PluginRuleLevelRef
+}
+
+// Interceptors returns the client interceptors.
+func (c *PluginRuleLevelRefClient) Interceptors() []Interceptor {
+	return c.inters.PluginRuleLevelRef
+}
+
+func (c *PluginRuleLevelRefClient) mutate(ctx context.Context, m *PluginRuleLevelRefMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PluginRuleLevelRefCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PluginRuleLevelRefUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PluginRuleLevelRefUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PluginRuleLevelRefDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PluginRuleLevelRef mutation op: %q", m.Op())
 	}
 }
 
@@ -14039,42 +14746,46 @@ type (
 		AdminRole, AdminUser, AffiliateCommission, AuditLog, Banner, Card, CardImport,
 		CartItem, Category, CategoryProductPlacement, Coupon, Currency, DailyStat,
 		DownstreamCallback, EmailVerification, ExternalIdentity, FailedTask, FlashSale,
-		Giftcard, GiftcardBatch, LicenseOrder, LotteryAccount, LotteryActivity,
-		LotteryChanceLog, LotteryDraw, LotteryPrize, LotteryRevision, Media,
-		MediaCategory, MemberLevel, MemberProductGroup, Notification, NotificationLog,
-		NotifyBroadcast, NotifyTemplate, Order, OrderAmountLine, OrderDelivery,
-		OrderItem, OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel,
-		PointAccount, PointTransaction, Post, PostCategory, ProcessedEvent,
-		ProcurementItem, ProcurementOrder, Product, ProductContentBatch,
-		ProductControl, ProductDeliverySource, ProductSku, Promotion, RechargeOrder,
-		ReconciliationItem, ReconciliationJob, RefundOrder, ResellerBalanceAccount,
-		ResellerLedgerEntry, ResellerPricing, ResellerProfile, ResellerRelatedAccount,
-		ResellerSite, Review, RiskLockKey, RolePermission, SecurityAuditLog, Session,
-		Setting, StockAlert, SupplierAccount, SupplierLedgerEntry,
-		SupplierProductPrice, SupplyCatalogSnapshot, SupplyConnection,
-		SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag,
-		Ticket, TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview,
-		VisitLog, WalletAccount, WalletTransaction, Withdrawal []ent.Hook
+		Giftcard, GiftcardBatch, InstalledPlugin, LicenseOrder, LotteryAccount,
+		LotteryActivity, LotteryChanceLog, LotteryDraw, LotteryPrize, LotteryRevision,
+		Media, MediaCategory, MemberLevel, MemberProductGroup, Notification,
+		NotificationLog, NotifyBroadcast, NotifyTemplate, Order, OrderAmountLine,
+		OrderDelivery, OrderItem, OrderStatusEvent, OutboxEvent, PageView, Payment,
+		PaymentChannel, PluginData, PluginOperation, PluginRequirement,
+		PluginRuleLevelRef, PointAccount, PointTransaction, Post, PostCategory,
+		ProcessedEvent, ProcurementItem, ProcurementOrder, Product,
+		ProductContentBatch, ProductControl, ProductDeliverySource, ProductSku,
+		Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
+		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
+		ResellerRelatedAccount, ResellerSite, Review, RiskLockKey, RolePermission,
+		SecurityAuditLog, Session, Setting, StockAlert, SupplierAccount,
+		SupplierLedgerEntry, SupplierProductPrice, SupplyCatalogSnapshot,
+		SupplyConnection, SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder,
+		SupplySyncTask, Tag, Ticket, TicketMessage, User, UserGroup, UserSession,
+		V1IDMap, VirtualReview, VisitLog, WalletAccount, WalletTransaction,
+		Withdrawal []ent.Hook
 	}
 	inters struct {
 		AdminRole, AdminUser, AffiliateCommission, AuditLog, Banner, Card, CardImport,
 		CartItem, Category, CategoryProductPlacement, Coupon, Currency, DailyStat,
 		DownstreamCallback, EmailVerification, ExternalIdentity, FailedTask, FlashSale,
-		Giftcard, GiftcardBatch, LicenseOrder, LotteryAccount, LotteryActivity,
-		LotteryChanceLog, LotteryDraw, LotteryPrize, LotteryRevision, Media,
-		MediaCategory, MemberLevel, MemberProductGroup, Notification, NotificationLog,
-		NotifyBroadcast, NotifyTemplate, Order, OrderAmountLine, OrderDelivery,
-		OrderItem, OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel,
-		PointAccount, PointTransaction, Post, PostCategory, ProcessedEvent,
-		ProcurementItem, ProcurementOrder, Product, ProductContentBatch,
-		ProductControl, ProductDeliverySource, ProductSku, Promotion, RechargeOrder,
-		ReconciliationItem, ReconciliationJob, RefundOrder, ResellerBalanceAccount,
-		ResellerLedgerEntry, ResellerPricing, ResellerProfile, ResellerRelatedAccount,
-		ResellerSite, Review, RiskLockKey, RolePermission, SecurityAuditLog, Session,
-		Setting, StockAlert, SupplierAccount, SupplierLedgerEntry,
-		SupplierProductPrice, SupplyCatalogSnapshot, SupplyConnection,
-		SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag,
-		Ticket, TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview,
-		VisitLog, WalletAccount, WalletTransaction, Withdrawal []ent.Interceptor
+		Giftcard, GiftcardBatch, InstalledPlugin, LicenseOrder, LotteryAccount,
+		LotteryActivity, LotteryChanceLog, LotteryDraw, LotteryPrize, LotteryRevision,
+		Media, MediaCategory, MemberLevel, MemberProductGroup, Notification,
+		NotificationLog, NotifyBroadcast, NotifyTemplate, Order, OrderAmountLine,
+		OrderDelivery, OrderItem, OrderStatusEvent, OutboxEvent, PageView, Payment,
+		PaymentChannel, PluginData, PluginOperation, PluginRequirement,
+		PluginRuleLevelRef, PointAccount, PointTransaction, Post, PostCategory,
+		ProcessedEvent, ProcurementItem, ProcurementOrder, Product,
+		ProductContentBatch, ProductControl, ProductDeliverySource, ProductSku,
+		Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
+		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
+		ResellerRelatedAccount, ResellerSite, Review, RiskLockKey, RolePermission,
+		SecurityAuditLog, Session, Setting, StockAlert, SupplierAccount,
+		SupplierLedgerEntry, SupplierProductPrice, SupplyCatalogSnapshot,
+		SupplyConnection, SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder,
+		SupplySyncTask, Tag, Ticket, TicketMessage, User, UserGroup, UserSession,
+		V1IDMap, VirtualReview, VisitLog, WalletAccount, WalletTransaction,
+		Withdrawal []ent.Interceptor
 	}
 )

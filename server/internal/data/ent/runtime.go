@@ -25,6 +25,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/flashsale"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcard"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcardbatch"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/installedplugin"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/licenseorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryactivity"
@@ -49,6 +50,10 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pageview"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/plugindata"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pluginoperation"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pluginrequirement"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pluginrulelevelref"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointtransaction"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/post"
@@ -760,6 +765,63 @@ func init() {
 	giftcardbatchDescName := giftcardbatchFields[3].Descriptor()
 	// giftcardbatch.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	giftcardbatch.NameValidator = giftcardbatchDescName.Validators[0].(func(string) error)
+	installedpluginMixin := schema.InstalledPlugin{}.Mixin()
+	installedpluginMixinFields0 := installedpluginMixin[0].Fields()
+	_ = installedpluginMixinFields0
+	installedpluginFields := schema.InstalledPlugin{}.Fields()
+	_ = installedpluginFields
+	// installedpluginDescCreatedAt is the schema descriptor for created_at field.
+	installedpluginDescCreatedAt := installedpluginMixinFields0[0].Descriptor()
+	// installedplugin.DefaultCreatedAt holds the default value on creation for the created_at field.
+	installedplugin.DefaultCreatedAt = installedpluginDescCreatedAt.Default.(func() time.Time)
+	// installedpluginDescUpdatedAt is the schema descriptor for updated_at field.
+	installedpluginDescUpdatedAt := installedpluginMixinFields0[1].Descriptor()
+	// installedplugin.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	installedplugin.DefaultUpdatedAt = installedpluginDescUpdatedAt.Default.(func() time.Time)
+	// installedplugin.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	installedplugin.UpdateDefaultUpdatedAt = installedpluginDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// installedpluginDescPluginID is the schema descriptor for plugin_id field.
+	installedpluginDescPluginID := installedpluginFields[1].Descriptor()
+	// installedplugin.PluginIDValidator is a validator for the "plugin_id" field. It is called by the builders before save.
+	installedplugin.PluginIDValidator = installedpluginDescPluginID.Validators[0].(func(string) error)
+	// installedpluginDescDesiredEnabled is the schema descriptor for desired_enabled field.
+	installedpluginDescDesiredEnabled := installedpluginFields[2].Descriptor()
+	// installedplugin.DefaultDesiredEnabled holds the default value on creation for the desired_enabled field.
+	installedplugin.DefaultDesiredEnabled = installedpluginDescDesiredEnabled.Default.(bool)
+	// installedpluginDescDesiredGeneration is the schema descriptor for desired_generation field.
+	installedpluginDescDesiredGeneration := installedpluginFields[3].Descriptor()
+	// installedplugin.DefaultDesiredGeneration holds the default value on creation for the desired_generation field.
+	installedplugin.DefaultDesiredGeneration = installedpluginDescDesiredGeneration.Default.(int64)
+	// installedplugin.DesiredGenerationValidator is a validator for the "desired_generation" field. It is called by the builders before save.
+	installedplugin.DesiredGenerationValidator = installedpluginDescDesiredGeneration.Validators[0].(func(int64) error)
+	// installedpluginDescObservedGeneration is the schema descriptor for observed_generation field.
+	installedpluginDescObservedGeneration := installedpluginFields[4].Descriptor()
+	// installedplugin.DefaultObservedGeneration holds the default value on creation for the observed_generation field.
+	installedplugin.DefaultObservedGeneration = installedpluginDescObservedGeneration.Default.(int64)
+	// installedplugin.ObservedGenerationValidator is a validator for the "observed_generation" field. It is called by the builders before save.
+	installedplugin.ObservedGenerationValidator = installedpluginDescObservedGeneration.Validators[0].(func(int64) error)
+	// installedpluginDescDesiredDigest is the schema descriptor for desired_digest field.
+	installedpluginDescDesiredDigest := installedpluginFields[5].Descriptor()
+	// installedplugin.DefaultDesiredDigest holds the default value on creation for the desired_digest field.
+	installedplugin.DefaultDesiredDigest = installedpluginDescDesiredDigest.Default.(string)
+	// installedplugin.DesiredDigestValidator is a validator for the "desired_digest" field. It is called by the builders before save.
+	installedplugin.DesiredDigestValidator = installedpluginDescDesiredDigest.Validators[0].(func(string) error)
+	// installedpluginDescObservedDigest is the schema descriptor for observed_digest field.
+	installedpluginDescObservedDigest := installedpluginFields[6].Descriptor()
+	// installedplugin.DefaultObservedDigest holds the default value on creation for the observed_digest field.
+	installedplugin.DefaultObservedDigest = installedpluginDescObservedDigest.Default.(string)
+	// installedplugin.ObservedDigestValidator is a validator for the "observed_digest" field. It is called by the builders before save.
+	installedplugin.ObservedDigestValidator = installedpluginDescObservedDigest.Validators[0].(func(string) error)
+	// installedpluginDescCurrentOperationID is the schema descriptor for current_operation_id field.
+	installedpluginDescCurrentOperationID := installedpluginFields[9].Descriptor()
+	// installedplugin.DefaultCurrentOperationID holds the default value on creation for the current_operation_id field.
+	installedplugin.DefaultCurrentOperationID = installedpluginDescCurrentOperationID.Default.(string)
+	// installedplugin.CurrentOperationIDValidator is a validator for the "current_operation_id" field. It is called by the builders before save.
+	installedplugin.CurrentOperationIDValidator = installedpluginDescCurrentOperationID.Validators[0].(func(string) error)
+	// installedpluginDescUninstalled is the schema descriptor for uninstalled field.
+	installedpluginDescUninstalled := installedpluginFields[10].Descriptor()
+	// installedplugin.DefaultUninstalled holds the default value on creation for the uninstalled field.
+	installedplugin.DefaultUninstalled = installedpluginDescUninstalled.Default.(bool)
 	licenseorderMixin := schema.LicenseOrder{}.Mixin()
 	licenseorderMixinFields0 := licenseorderMixin[0].Fields()
 	_ = licenseorderMixinFields0
@@ -1446,16 +1508,20 @@ func init() {
 	orderDescIdempotencyKey := orderFields[26].Descriptor()
 	// order.IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
 	order.IdempotencyKeyValidator = orderDescIdempotencyKey.Validators[0].(func(string) error)
+	// orderDescRequestFingerprint is the schema descriptor for request_fingerprint field.
+	orderDescRequestFingerprint := orderFields[27].Descriptor()
+	// order.RequestFingerprintValidator is a validator for the "request_fingerprint" field. It is called by the builders before save.
+	order.RequestFingerprintValidator = orderDescRequestFingerprint.Validators[0].(func(string) error)
 	// orderDescExpiryAttempts is the schema descriptor for expiry_attempts field.
-	orderDescExpiryAttempts := orderFields[32].Descriptor()
+	orderDescExpiryAttempts := orderFields[34].Descriptor()
 	// order.DefaultExpiryAttempts holds the default value on creation for the expiry_attempts field.
 	order.DefaultExpiryAttempts = orderDescExpiryAttempts.Default.(int32)
 	// orderDescExpiryReview is the schema descriptor for expiry_review field.
-	orderDescExpiryReview := orderFields[33].Descriptor()
+	orderDescExpiryReview := orderFields[35].Descriptor()
 	// order.DefaultExpiryReview holds the default value on creation for the expiry_review field.
 	order.DefaultExpiryReview = orderDescExpiryReview.Default.(bool)
 	// orderDescExpiryReason is the schema descriptor for expiry_reason field.
-	orderDescExpiryReason := orderFields[34].Descriptor()
+	orderDescExpiryReason := orderFields[36].Descriptor()
 	// order.DefaultExpiryReason holds the default value on creation for the expiry_reason field.
 	order.DefaultExpiryReason = orderDescExpiryReason.Default.(string)
 	// order.ExpiryReasonValidator is a validator for the "expiry_reason" field. It is called by the builders before save.
@@ -1789,6 +1855,135 @@ func init() {
 	paymentchannel.DefaultIcon = paymentchannelDescIcon.Default.(string)
 	// paymentchannel.IconValidator is a validator for the "icon" field. It is called by the builders before save.
 	paymentchannel.IconValidator = paymentchannelDescIcon.Validators[0].(func(string) error)
+	plugindataMixin := schema.PluginData{}.Mixin()
+	plugindataMixinFields0 := plugindataMixin[0].Fields()
+	_ = plugindataMixinFields0
+	plugindataFields := schema.PluginData{}.Fields()
+	_ = plugindataFields
+	// plugindataDescCreatedAt is the schema descriptor for created_at field.
+	plugindataDescCreatedAt := plugindataMixinFields0[0].Descriptor()
+	// plugindata.DefaultCreatedAt holds the default value on creation for the created_at field.
+	plugindata.DefaultCreatedAt = plugindataDescCreatedAt.Default.(func() time.Time)
+	// plugindataDescUpdatedAt is the schema descriptor for updated_at field.
+	plugindataDescUpdatedAt := plugindataMixinFields0[1].Descriptor()
+	// plugindata.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	plugindata.DefaultUpdatedAt = plugindataDescUpdatedAt.Default.(func() time.Time)
+	// plugindata.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	plugindata.UpdateDefaultUpdatedAt = plugindataDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// plugindataDescPluginID is the schema descriptor for plugin_id field.
+	plugindataDescPluginID := plugindataFields[1].Descriptor()
+	// plugindata.PluginIDValidator is a validator for the "plugin_id" field. It is called by the builders before save.
+	plugindata.PluginIDValidator = plugindataDescPluginID.Validators[0].(func(string) error)
+	// plugindataDescEntityType is the schema descriptor for entity_type field.
+	plugindataDescEntityType := plugindataFields[3].Descriptor()
+	// plugindata.EntityTypeValidator is a validator for the "entity_type" field. It is called by the builders before save.
+	plugindata.EntityTypeValidator = plugindataDescEntityType.Validators[0].(func(string) error)
+	// plugindataDescKey is the schema descriptor for key field.
+	plugindataDescKey := plugindataFields[5].Descriptor()
+	// plugindata.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	plugindata.KeyValidator = plugindataDescKey.Validators[0].(func(string) error)
+	// plugindataDescSchemaVersion is the schema descriptor for schema_version field.
+	plugindataDescSchemaVersion := plugindataFields[7].Descriptor()
+	// plugindata.DefaultSchemaVersion holds the default value on creation for the schema_version field.
+	plugindata.DefaultSchemaVersion = plugindataDescSchemaVersion.Default.(int)
+	// plugindataDescRevision is the schema descriptor for revision field.
+	plugindataDescRevision := plugindataFields[8].Descriptor()
+	// plugindata.DefaultRevision holds the default value on creation for the revision field.
+	plugindata.DefaultRevision = plugindataDescRevision.Default.(int64)
+	// plugindata.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	plugindata.RevisionValidator = plugindataDescRevision.Validators[0].(func(int64) error)
+	pluginoperationMixin := schema.PluginOperation{}.Mixin()
+	pluginoperationMixinFields0 := pluginoperationMixin[0].Fields()
+	_ = pluginoperationMixinFields0
+	pluginoperationFields := schema.PluginOperation{}.Fields()
+	_ = pluginoperationFields
+	// pluginoperationDescCreatedAt is the schema descriptor for created_at field.
+	pluginoperationDescCreatedAt := pluginoperationMixinFields0[0].Descriptor()
+	// pluginoperation.DefaultCreatedAt holds the default value on creation for the created_at field.
+	pluginoperation.DefaultCreatedAt = pluginoperationDescCreatedAt.Default.(func() time.Time)
+	// pluginoperationDescUpdatedAt is the schema descriptor for updated_at field.
+	pluginoperationDescUpdatedAt := pluginoperationMixinFields0[1].Descriptor()
+	// pluginoperation.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	pluginoperation.DefaultUpdatedAt = pluginoperationDescUpdatedAt.Default.(func() time.Time)
+	// pluginoperation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	pluginoperation.UpdateDefaultUpdatedAt = pluginoperationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// pluginoperationDescOperationID is the schema descriptor for operation_id field.
+	pluginoperationDescOperationID := pluginoperationFields[1].Descriptor()
+	// pluginoperation.OperationIDValidator is a validator for the "operation_id" field. It is called by the builders before save.
+	pluginoperation.OperationIDValidator = pluginoperationDescOperationID.Validators[0].(func(string) error)
+	// pluginoperationDescPluginID is the schema descriptor for plugin_id field.
+	pluginoperationDescPluginID := pluginoperationFields[2].Descriptor()
+	// pluginoperation.PluginIDValidator is a validator for the "plugin_id" field. It is called by the builders before save.
+	pluginoperation.PluginIDValidator = pluginoperationDescPluginID.Validators[0].(func(string) error)
+	// pluginoperationDescAction is the schema descriptor for action field.
+	pluginoperationDescAction := pluginoperationFields[3].Descriptor()
+	// pluginoperation.ActionValidator is a validator for the "action" field. It is called by the builders before save.
+	pluginoperation.ActionValidator = pluginoperationDescAction.Validators[0].(func(string) error)
+	// pluginoperationDescRequestSha256 is the schema descriptor for request_sha256 field.
+	pluginoperationDescRequestSha256 := pluginoperationFields[4].Descriptor()
+	// pluginoperation.RequestSha256Validator is a validator for the "request_sha256" field. It is called by the builders before save.
+	pluginoperation.RequestSha256Validator = pluginoperationDescRequestSha256.Validators[0].(func(string) error)
+	// pluginoperationDescExpectedGeneration is the schema descriptor for expected_generation field.
+	pluginoperationDescExpectedGeneration := pluginoperationFields[7].Descriptor()
+	// pluginoperation.ExpectedGenerationValidator is a validator for the "expected_generation" field. It is called by the builders before save.
+	pluginoperation.ExpectedGenerationValidator = pluginoperationDescExpectedGeneration.Validators[0].(func(int64) error)
+	// pluginoperationDescTargetGeneration is the schema descriptor for target_generation field.
+	pluginoperationDescTargetGeneration := pluginoperationFields[8].Descriptor()
+	// pluginoperation.DefaultTargetGeneration holds the default value on creation for the target_generation field.
+	pluginoperation.DefaultTargetGeneration = pluginoperationDescTargetGeneration.Default.(int64)
+	// pluginoperation.TargetGenerationValidator is a validator for the "target_generation" field. It is called by the builders before save.
+	pluginoperation.TargetGenerationValidator = pluginoperationDescTargetGeneration.Validators[0].(func(int64) error)
+	// pluginoperationDescTargetDigest is the schema descriptor for target_digest field.
+	pluginoperationDescTargetDigest := pluginoperationFields[9].Descriptor()
+	// pluginoperation.DefaultTargetDigest holds the default value on creation for the target_digest field.
+	pluginoperation.DefaultTargetDigest = pluginoperationDescTargetDigest.Default.(string)
+	// pluginoperation.TargetDigestValidator is a validator for the "target_digest" field. It is called by the builders before save.
+	pluginoperation.TargetDigestValidator = pluginoperationDescTargetDigest.Validators[0].(func(string) error)
+	// pluginoperationDescPhase is the schema descriptor for phase field.
+	pluginoperationDescPhase := pluginoperationFields[11].Descriptor()
+	// pluginoperation.PhaseValidator is a validator for the "phase" field. It is called by the builders before save.
+	pluginoperation.PhaseValidator = pluginoperationDescPhase.Validators[0].(func(string) error)
+	// pluginoperationDescFailureCode is the schema descriptor for failure_code field.
+	pluginoperationDescFailureCode := pluginoperationFields[12].Descriptor()
+	// pluginoperation.DefaultFailureCode holds the default value on creation for the failure_code field.
+	pluginoperation.DefaultFailureCode = pluginoperationDescFailureCode.Default.(string)
+	// pluginoperation.FailureCodeValidator is a validator for the "failure_code" field. It is called by the builders before save.
+	pluginoperation.FailureCodeValidator = pluginoperationDescFailureCode.Validators[0].(func(string) error)
+	pluginrequirementMixin := schema.PluginRequirement{}.Mixin()
+	pluginrequirementMixinFields0 := pluginrequirementMixin[0].Fields()
+	_ = pluginrequirementMixinFields0
+	pluginrequirementFields := schema.PluginRequirement{}.Fields()
+	_ = pluginrequirementFields
+	// pluginrequirementDescCreatedAt is the schema descriptor for created_at field.
+	pluginrequirementDescCreatedAt := pluginrequirementMixinFields0[0].Descriptor()
+	// pluginrequirement.DefaultCreatedAt holds the default value on creation for the created_at field.
+	pluginrequirement.DefaultCreatedAt = pluginrequirementDescCreatedAt.Default.(func() time.Time)
+	// pluginrequirementDescUpdatedAt is the schema descriptor for updated_at field.
+	pluginrequirementDescUpdatedAt := pluginrequirementMixinFields0[1].Descriptor()
+	// pluginrequirement.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	pluginrequirement.DefaultUpdatedAt = pluginrequirementDescUpdatedAt.Default.(func() time.Time)
+	// pluginrequirement.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	pluginrequirement.UpdateDefaultUpdatedAt = pluginrequirementDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// pluginrequirementDescPluginID is the schema descriptor for plugin_id field.
+	pluginrequirementDescPluginID := pluginrequirementFields[1].Descriptor()
+	// pluginrequirement.PluginIDValidator is a validator for the "plugin_id" field. It is called by the builders before save.
+	pluginrequirement.PluginIDValidator = pluginrequirementDescPluginID.Validators[0].(func(string) error)
+	// pluginrequirementDescRequired is the schema descriptor for required field.
+	pluginrequirementDescRequired := pluginrequirementFields[4].Descriptor()
+	// pluginrequirement.DefaultRequired holds the default value on creation for the required field.
+	pluginrequirement.DefaultRequired = pluginrequirementDescRequired.Default.(bool)
+	// pluginrequirementDescRevision is the schema descriptor for revision field.
+	pluginrequirementDescRevision := pluginrequirementFields[5].Descriptor()
+	// pluginrequirement.DefaultRevision holds the default value on creation for the revision field.
+	pluginrequirement.DefaultRevision = pluginrequirementDescRevision.Default.(int64)
+	// pluginrequirement.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
+	pluginrequirement.RevisionValidator = pluginrequirementDescRevision.Validators[0].(func(int64) error)
+	pluginrulelevelrefFields := schema.PluginRuleLevelRef{}.Fields()
+	_ = pluginrulelevelrefFields
+	// pluginrulelevelrefDescPluginID is the schema descriptor for plugin_id field.
+	pluginrulelevelrefDescPluginID := pluginrulelevelrefFields[1].Descriptor()
+	// pluginrulelevelref.PluginIDValidator is a validator for the "plugin_id" field. It is called by the builders before save.
+	pluginrulelevelref.PluginIDValidator = pluginrulelevelrefDescPluginID.Validators[0].(func(string) error)
 	pointaccountFields := schema.PointAccount{}.Fields()
 	_ = pointaccountFields
 	// pointaccountDescBalance is the schema descriptor for balance field.
@@ -2104,8 +2299,14 @@ func init() {
 	productDescLockVersion := productFields[39].Descriptor()
 	// product.DefaultLockVersion holds the default value on creation for the lock_version field.
 	product.DefaultLockVersion = productDescLockVersion.Default.(int64)
+	// productDescPluginRuleRevision is the schema descriptor for plugin_rule_revision field.
+	productDescPluginRuleRevision := productFields[40].Descriptor()
+	// product.DefaultPluginRuleRevision holds the default value on creation for the plugin_rule_revision field.
+	product.DefaultPluginRuleRevision = productDescPluginRuleRevision.Default.(int64)
+	// product.PluginRuleRevisionValidator is a validator for the "plugin_rule_revision" field. It is called by the builders before save.
+	product.PluginRuleRevisionValidator = productDescPluginRuleRevision.Validators[0].(func(int64) error)
 	// productDescLockedBy is the schema descriptor for locked_by field.
-	productDescLockedBy := productFields[40].Descriptor()
+	productDescLockedBy := productFields[41].Descriptor()
 	// product.DefaultLockedBy holds the default value on creation for the locked_by field.
 	product.DefaultLockedBy = productDescLockedBy.Default.(uint64)
 	productcontentbatchMixin := schema.ProductContentBatch{}.Mixin()

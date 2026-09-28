@@ -424,6 +424,26 @@ func (_c *OrderCreate) SetNillableIdempotencyKey(v *string) *OrderCreate {
 	return _c
 }
 
+// SetRequestFingerprint sets the "request_fingerprint" field.
+func (_c *OrderCreate) SetRequestFingerprint(v string) *OrderCreate {
+	_c.mutation.SetRequestFingerprint(v)
+	return _c
+}
+
+// SetNillableRequestFingerprint sets the "request_fingerprint" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableRequestFingerprint(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetRequestFingerprint(*v)
+	}
+	return _c
+}
+
+// SetPluginDecisions sets the "plugin_decisions" field.
+func (_c *OrderCreate) SetPluginDecisions(v []map[string]interface{}) *OrderCreate {
+	_c.mutation.SetPluginDecisions(v)
+	return _c
+}
+
 // SetPaidAt sets the "paid_at" field.
 func (_c *OrderCreate) SetPaidAt(v time.Time) *OrderCreate {
 	_c.mutation.SetPaidAt(v)
@@ -809,6 +829,11 @@ func (_c *OrderCreate) check() error {
 			return &ValidationError{Name: "idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Order.idempotency_key": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.RequestFingerprint(); ok {
+		if err := order.RequestFingerprintValidator(v); err != nil {
+			return &ValidationError{Name: "request_fingerprint", err: fmt.Errorf(`ent: validator failed for field "Order.request_fingerprint": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.ExpiryAttempts(); !ok {
 		return &ValidationError{Name: "expiry_attempts", err: errors.New(`ent: missing required field "Order.expiry_attempts"`)}
 	}
@@ -975,6 +1000,14 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IdempotencyKey(); ok {
 		_spec.SetField(order.FieldIdempotencyKey, field.TypeString, value)
 		_node.IdempotencyKey = value
+	}
+	if value, ok := _c.mutation.RequestFingerprint(); ok {
+		_spec.SetField(order.FieldRequestFingerprint, field.TypeString, value)
+		_node.RequestFingerprint = value
+	}
+	if value, ok := _c.mutation.PluginDecisions(); ok {
+		_spec.SetField(order.FieldPluginDecisions, field.TypeJSON, value)
+		_node.PluginDecisions = value
 	}
 	if value, ok := _c.mutation.PaidAt(); ok {
 		_spec.SetField(order.FieldPaidAt, field.TypeTime, value)
@@ -1699,6 +1732,42 @@ func (u *OrderUpsert) UpdateIdempotencyKey() *OrderUpsert {
 // ClearIdempotencyKey clears the value of the "idempotency_key" field.
 func (u *OrderUpsert) ClearIdempotencyKey() *OrderUpsert {
 	u.SetNull(order.FieldIdempotencyKey)
+	return u
+}
+
+// SetRequestFingerprint sets the "request_fingerprint" field.
+func (u *OrderUpsert) SetRequestFingerprint(v string) *OrderUpsert {
+	u.Set(order.FieldRequestFingerprint, v)
+	return u
+}
+
+// UpdateRequestFingerprint sets the "request_fingerprint" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateRequestFingerprint() *OrderUpsert {
+	u.SetExcluded(order.FieldRequestFingerprint)
+	return u
+}
+
+// ClearRequestFingerprint clears the value of the "request_fingerprint" field.
+func (u *OrderUpsert) ClearRequestFingerprint() *OrderUpsert {
+	u.SetNull(order.FieldRequestFingerprint)
+	return u
+}
+
+// SetPluginDecisions sets the "plugin_decisions" field.
+func (u *OrderUpsert) SetPluginDecisions(v []map[string]interface{}) *OrderUpsert {
+	u.Set(order.FieldPluginDecisions, v)
+	return u
+}
+
+// UpdatePluginDecisions sets the "plugin_decisions" field to the value that was provided on create.
+func (u *OrderUpsert) UpdatePluginDecisions() *OrderUpsert {
+	u.SetExcluded(order.FieldPluginDecisions)
+	return u
+}
+
+// ClearPluginDecisions clears the value of the "plugin_decisions" field.
+func (u *OrderUpsert) ClearPluginDecisions() *OrderUpsert {
+	u.SetNull(order.FieldPluginDecisions)
 	return u
 }
 
@@ -2519,6 +2588,48 @@ func (u *OrderUpsertOne) UpdateIdempotencyKey() *OrderUpsertOne {
 func (u *OrderUpsertOne) ClearIdempotencyKey() *OrderUpsertOne {
 	return u.Update(func(s *OrderUpsert) {
 		s.ClearIdempotencyKey()
+	})
+}
+
+// SetRequestFingerprint sets the "request_fingerprint" field.
+func (u *OrderUpsertOne) SetRequestFingerprint(v string) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetRequestFingerprint(v)
+	})
+}
+
+// UpdateRequestFingerprint sets the "request_fingerprint" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateRequestFingerprint() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateRequestFingerprint()
+	})
+}
+
+// ClearRequestFingerprint clears the value of the "request_fingerprint" field.
+func (u *OrderUpsertOne) ClearRequestFingerprint() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearRequestFingerprint()
+	})
+}
+
+// SetPluginDecisions sets the "plugin_decisions" field.
+func (u *OrderUpsertOne) SetPluginDecisions(v []map[string]interface{}) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetPluginDecisions(v)
+	})
+}
+
+// UpdatePluginDecisions sets the "plugin_decisions" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdatePluginDecisions() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdatePluginDecisions()
+	})
+}
+
+// ClearPluginDecisions clears the value of the "plugin_decisions" field.
+func (u *OrderUpsertOne) ClearPluginDecisions() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearPluginDecisions()
 	})
 }
 
@@ -3527,6 +3638,48 @@ func (u *OrderUpsertBulk) UpdateIdempotencyKey() *OrderUpsertBulk {
 func (u *OrderUpsertBulk) ClearIdempotencyKey() *OrderUpsertBulk {
 	return u.Update(func(s *OrderUpsert) {
 		s.ClearIdempotencyKey()
+	})
+}
+
+// SetRequestFingerprint sets the "request_fingerprint" field.
+func (u *OrderUpsertBulk) SetRequestFingerprint(v string) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetRequestFingerprint(v)
+	})
+}
+
+// UpdateRequestFingerprint sets the "request_fingerprint" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateRequestFingerprint() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateRequestFingerprint()
+	})
+}
+
+// ClearRequestFingerprint clears the value of the "request_fingerprint" field.
+func (u *OrderUpsertBulk) ClearRequestFingerprint() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearRequestFingerprint()
+	})
+}
+
+// SetPluginDecisions sets the "plugin_decisions" field.
+func (u *OrderUpsertBulk) SetPluginDecisions(v []map[string]interface{}) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetPluginDecisions(v)
+	})
+}
+
+// UpdatePluginDecisions sets the "plugin_decisions" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdatePluginDecisions() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdatePluginDecisions()
+	})
+}
+
+// ClearPluginDecisions clears the value of the "plugin_decisions" field.
+func (u *OrderUpsertBulk) ClearPluginDecisions() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearPluginDecisions()
 	})
 }
 

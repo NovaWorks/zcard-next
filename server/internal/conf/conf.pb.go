@@ -177,6 +177,10 @@ type Data struct {
 	Redis *Data_Redis `protobuf:"bytes,2,opt,name=redis,proto3" json:"redis,omitempty"`
 	// 工作进程模式（worker）独立队列并发度
 	WorkerConcurrency int32 `protobuf:"varint,3,opt,name=worker_concurrency,json=workerConcurrency,proto3" json:"worker_concurrency,omitempty"`
+	// Stable instance data root; resolved relative to the configuration directory.
+	PluginDataDir string `protobuf:"bytes,4,opt,name=plugin_data_dir,json=pluginDataDir,proto3" json:"plugin_data_dir,omitempty"`
+	// Explicit Ed25519 public trust keys, standard base64; no development keys by default.
+	PluginTrustedKeys map[string]string `protobuf:"bytes,5,rep,name=plugin_trusted_keys,json=pluginTrustedKeys,proto3" json:"plugin_trusted_keys,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -230,6 +234,20 @@ func (x *Data) GetWorkerConcurrency() int32 {
 		return x.WorkerConcurrency
 	}
 	return 0
+}
+
+func (x *Data) GetPluginDataDir() string {
+	if x != nil {
+		return x.PluginDataDir
+	}
+	return ""
+}
+
+func (x *Data) GetPluginTrustedKeys() map[string]string {
+	if x != nil {
+		return x.PluginTrustedKeys
+	}
+	return nil
 }
 
 // 四把钥匙解耦（铁律 §4.11.6）：env 注入优先，此处仅作兜底。
@@ -714,11 +732,13 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\x92\x04\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xd9\x05\n" +
 	"\x04Data\x125\n" +
 	"\bdatabase\x18\x01 \x01(\v2\x19.zcard.conf.Data.DatabaseR\bdatabase\x12,\n" +
 	"\x05redis\x18\x02 \x01(\v2\x16.zcard.conf.Data.RedisR\x05redis\x12-\n" +
-	"\x12worker_concurrency\x18\x03 \x01(\x05R\x11workerConcurrency\x1a\xad\x01\n" +
+	"\x12worker_concurrency\x18\x03 \x01(\x05R\x11workerConcurrency\x12&\n" +
+	"\x0fplugin_data_dir\x18\x04 \x01(\tR\rpluginDataDir\x12W\n" +
+	"\x13plugin_trusted_keys\x18\x05 \x03(\v2'.zcard.conf.Data.PluginTrustedKeysEntryR\x11pluginTrustedKeys\x1a\xad\x01\n" +
 	"\bDatabase\x12\x16\n" +
 	"\x06driver\x18\x01 \x01(\tR\x06driver\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x12$\n" +
@@ -730,7 +750,10 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x0e\n" +
 	"\x02db\x18\x03 \x01(\x05R\x02db\x12<\n" +
 	"\fread_timeout\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\vreadTimeout\x12>\n" +
-	"\rwrite_timeout\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\fwriteTimeout\"\x86\x01\n" +
+	"\rwrite_timeout\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\fwriteTimeout\x1aD\n" +
+	"\x16PluginTrustedKeysEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x86\x01\n" +
 	"\bSecurity\x12\"\n" +
 	"\rjwt_admin_key\x18\x01 \x01(\tR\vjwtAdminKey\x12 \n" +
 	"\fjwt_user_key\x18\x02 \x01(\tR\n" +
@@ -757,7 +780,7 @@ func file_conf_conf_proto_rawDescGZIP() []byte {
 	return file_conf_conf_proto_rawDescData
 }
 
-var file_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_conf_conf_proto_goTypes = []any{
 	(*Bootstrap)(nil),           // 0: zcard.conf.Bootstrap
 	(*Server)(nil),              // 1: zcard.conf.Server
@@ -769,7 +792,8 @@ var file_conf_conf_proto_goTypes = []any{
 	(*Server_GRPC)(nil),         // 7: zcard.conf.Server.GRPC
 	(*Data_Database)(nil),       // 8: zcard.conf.Data.Database
 	(*Data_Redis)(nil),          // 9: zcard.conf.Data.Redis
-	(*durationpb.Duration)(nil), // 10: google.protobuf.Duration
+	nil,                         // 10: zcard.conf.Data.PluginTrustedKeysEntry
+	(*durationpb.Duration)(nil), // 11: google.protobuf.Duration
 }
 var file_conf_conf_proto_depIdxs = []int32{
 	1,  // 0: zcard.conf.Bootstrap.server:type_name -> zcard.conf.Server
@@ -781,15 +805,16 @@ var file_conf_conf_proto_depIdxs = []int32{
 	7,  // 6: zcard.conf.Server.grpc:type_name -> zcard.conf.Server.GRPC
 	8,  // 7: zcard.conf.Data.database:type_name -> zcard.conf.Data.Database
 	9,  // 8: zcard.conf.Data.redis:type_name -> zcard.conf.Data.Redis
-	10, // 9: zcard.conf.Server.HTTP.timeout:type_name -> google.protobuf.Duration
-	10, // 10: zcard.conf.Server.GRPC.timeout:type_name -> google.protobuf.Duration
-	10, // 11: zcard.conf.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
-	10, // 12: zcard.conf.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
-	13, // [13:13] is the sub-list for method output_type
-	13, // [13:13] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	10, // 9: zcard.conf.Data.plugin_trusted_keys:type_name -> zcard.conf.Data.PluginTrustedKeysEntry
+	11, // 10: zcard.conf.Server.HTTP.timeout:type_name -> google.protobuf.Duration
+	11, // 11: zcard.conf.Server.GRPC.timeout:type_name -> google.protobuf.Duration
+	11, // 12: zcard.conf.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
+	11, // 13: zcard.conf.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_conf_conf_proto_init() }
@@ -803,7 +828,7 @@ func file_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_conf_conf_proto_rawDesc), len(file_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

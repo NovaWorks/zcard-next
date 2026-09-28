@@ -190,6 +190,11 @@ func IdempotencyKey(v string) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldIdempotencyKey, v))
 }
 
+// RequestFingerprint applies equality check predicate on the "request_fingerprint" field. It's identical to RequestFingerprintEQ.
+func RequestFingerprint(v string) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldRequestFingerprint, v))
+}
+
 // PaidAt applies equality check predicate on the "paid_at" field. It's identical to PaidAtEQ.
 func PaidAt(v time.Time) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldPaidAt, v))
@@ -1773,6 +1778,91 @@ func IdempotencyKeyEqualFold(v string) predicate.Order {
 // IdempotencyKeyContainsFold applies the ContainsFold predicate on the "idempotency_key" field.
 func IdempotencyKeyContainsFold(v string) predicate.Order {
 	return predicate.Order(sql.FieldContainsFold(FieldIdempotencyKey, v))
+}
+
+// RequestFingerprintEQ applies the EQ predicate on the "request_fingerprint" field.
+func RequestFingerprintEQ(v string) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldRequestFingerprint, v))
+}
+
+// RequestFingerprintNEQ applies the NEQ predicate on the "request_fingerprint" field.
+func RequestFingerprintNEQ(v string) predicate.Order {
+	return predicate.Order(sql.FieldNEQ(FieldRequestFingerprint, v))
+}
+
+// RequestFingerprintIn applies the In predicate on the "request_fingerprint" field.
+func RequestFingerprintIn(vs ...string) predicate.Order {
+	return predicate.Order(sql.FieldIn(FieldRequestFingerprint, vs...))
+}
+
+// RequestFingerprintNotIn applies the NotIn predicate on the "request_fingerprint" field.
+func RequestFingerprintNotIn(vs ...string) predicate.Order {
+	return predicate.Order(sql.FieldNotIn(FieldRequestFingerprint, vs...))
+}
+
+// RequestFingerprintGT applies the GT predicate on the "request_fingerprint" field.
+func RequestFingerprintGT(v string) predicate.Order {
+	return predicate.Order(sql.FieldGT(FieldRequestFingerprint, v))
+}
+
+// RequestFingerprintGTE applies the GTE predicate on the "request_fingerprint" field.
+func RequestFingerprintGTE(v string) predicate.Order {
+	return predicate.Order(sql.FieldGTE(FieldRequestFingerprint, v))
+}
+
+// RequestFingerprintLT applies the LT predicate on the "request_fingerprint" field.
+func RequestFingerprintLT(v string) predicate.Order {
+	return predicate.Order(sql.FieldLT(FieldRequestFingerprint, v))
+}
+
+// RequestFingerprintLTE applies the LTE predicate on the "request_fingerprint" field.
+func RequestFingerprintLTE(v string) predicate.Order {
+	return predicate.Order(sql.FieldLTE(FieldRequestFingerprint, v))
+}
+
+// RequestFingerprintContains applies the Contains predicate on the "request_fingerprint" field.
+func RequestFingerprintContains(v string) predicate.Order {
+	return predicate.Order(sql.FieldContains(FieldRequestFingerprint, v))
+}
+
+// RequestFingerprintHasPrefix applies the HasPrefix predicate on the "request_fingerprint" field.
+func RequestFingerprintHasPrefix(v string) predicate.Order {
+	return predicate.Order(sql.FieldHasPrefix(FieldRequestFingerprint, v))
+}
+
+// RequestFingerprintHasSuffix applies the HasSuffix predicate on the "request_fingerprint" field.
+func RequestFingerprintHasSuffix(v string) predicate.Order {
+	return predicate.Order(sql.FieldHasSuffix(FieldRequestFingerprint, v))
+}
+
+// RequestFingerprintIsNil applies the IsNil predicate on the "request_fingerprint" field.
+func RequestFingerprintIsNil() predicate.Order {
+	return predicate.Order(sql.FieldIsNull(FieldRequestFingerprint))
+}
+
+// RequestFingerprintNotNil applies the NotNil predicate on the "request_fingerprint" field.
+func RequestFingerprintNotNil() predicate.Order {
+	return predicate.Order(sql.FieldNotNull(FieldRequestFingerprint))
+}
+
+// RequestFingerprintEqualFold applies the EqualFold predicate on the "request_fingerprint" field.
+func RequestFingerprintEqualFold(v string) predicate.Order {
+	return predicate.Order(sql.FieldEqualFold(FieldRequestFingerprint, v))
+}
+
+// RequestFingerprintContainsFold applies the ContainsFold predicate on the "request_fingerprint" field.
+func RequestFingerprintContainsFold(v string) predicate.Order {
+	return predicate.Order(sql.FieldContainsFold(FieldRequestFingerprint, v))
+}
+
+// PluginDecisionsIsNil applies the IsNil predicate on the "plugin_decisions" field.
+func PluginDecisionsIsNil() predicate.Order {
+	return predicate.Order(sql.FieldIsNull(FieldPluginDecisions))
+}
+
+// PluginDecisionsNotNil applies the NotNil predicate on the "plugin_decisions" field.
+func PluginDecisionsNotNil() predicate.Order {
+	return predicate.Order(sql.FieldNotNull(FieldPluginDecisions))
 }
 
 // PaidAtEQ applies the EQ predicate on the "paid_at" field.

@@ -743,6 +743,27 @@ func (_u *ProductUpdate) AddLockVersion(v int64) *ProductUpdate {
 	return _u
 }
 
+// SetPluginRuleRevision sets the "plugin_rule_revision" field.
+func (_u *ProductUpdate) SetPluginRuleRevision(v int64) *ProductUpdate {
+	_u.mutation.ResetPluginRuleRevision()
+	_u.mutation.SetPluginRuleRevision(v)
+	return _u
+}
+
+// SetNillablePluginRuleRevision sets the "plugin_rule_revision" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillablePluginRuleRevision(v *int64) *ProductUpdate {
+	if v != nil {
+		_u.SetPluginRuleRevision(*v)
+	}
+	return _u
+}
+
+// AddPluginRuleRevision adds value to the "plugin_rule_revision" field.
+func (_u *ProductUpdate) AddPluginRuleRevision(v int64) *ProductUpdate {
+	_u.mutation.AddPluginRuleRevision(v)
+	return _u
+}
+
 // SetLockedBy sets the "locked_by" field.
 func (_u *ProductUpdate) SetLockedBy(v uint64) *ProductUpdate {
 	_u.mutation.ResetLockedBy()
@@ -937,6 +958,11 @@ func (_u *ProductUpdate) check() error {
 	if v, ok := _u.mutation.ListingMessage(); ok {
 		if err := product.ListingMessageValidator(v); err != nil {
 			return &ValidationError{Name: "listing_message", err: fmt.Errorf(`ent: validator failed for field "Product.listing_message": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PluginRuleRevision(); ok {
+		if err := product.PluginRuleRevisionValidator(v); err != nil {
+			return &ValidationError{Name: "plugin_rule_revision", err: fmt.Errorf(`ent: validator failed for field "Product.plugin_rule_revision": %w`, err)}
 		}
 	}
 	return nil
@@ -1159,6 +1185,12 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedLockVersion(); ok {
 		_spec.AddField(product.FieldLockVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.PluginRuleRevision(); ok {
+		_spec.SetField(product.FieldPluginRuleRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPluginRuleRevision(); ok {
+		_spec.AddField(product.FieldPluginRuleRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.LockedBy(); ok {
 		_spec.SetField(product.FieldLockedBy, field.TypeUint64, value)
@@ -1994,6 +2026,27 @@ func (_u *ProductUpdateOne) AddLockVersion(v int64) *ProductUpdateOne {
 	return _u
 }
 
+// SetPluginRuleRevision sets the "plugin_rule_revision" field.
+func (_u *ProductUpdateOne) SetPluginRuleRevision(v int64) *ProductUpdateOne {
+	_u.mutation.ResetPluginRuleRevision()
+	_u.mutation.SetPluginRuleRevision(v)
+	return _u
+}
+
+// SetNillablePluginRuleRevision sets the "plugin_rule_revision" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillablePluginRuleRevision(v *int64) *ProductUpdateOne {
+	if v != nil {
+		_u.SetPluginRuleRevision(*v)
+	}
+	return _u
+}
+
+// AddPluginRuleRevision adds value to the "plugin_rule_revision" field.
+func (_u *ProductUpdateOne) AddPluginRuleRevision(v int64) *ProductUpdateOne {
+	_u.mutation.AddPluginRuleRevision(v)
+	return _u
+}
+
 // SetLockedBy sets the "locked_by" field.
 func (_u *ProductUpdateOne) SetLockedBy(v uint64) *ProductUpdateOne {
 	_u.mutation.ResetLockedBy()
@@ -2201,6 +2254,11 @@ func (_u *ProductUpdateOne) check() error {
 	if v, ok := _u.mutation.ListingMessage(); ok {
 		if err := product.ListingMessageValidator(v); err != nil {
 			return &ValidationError{Name: "listing_message", err: fmt.Errorf(`ent: validator failed for field "Product.listing_message": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PluginRuleRevision(); ok {
+		if err := product.PluginRuleRevisionValidator(v); err != nil {
+			return &ValidationError{Name: "plugin_rule_revision", err: fmt.Errorf(`ent: validator failed for field "Product.plugin_rule_revision": %w`, err)}
 		}
 	}
 	return nil
@@ -2440,6 +2498,12 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if value, ok := _u.mutation.AddedLockVersion(); ok {
 		_spec.AddField(product.FieldLockVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.PluginRuleRevision(); ok {
+		_spec.SetField(product.FieldPluginRuleRevision, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPluginRuleRevision(); ok {
+		_spec.AddField(product.FieldPluginRuleRevision, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.LockedBy(); ok {
 		_spec.SetField(product.FieldLockedBy, field.TypeUint64, value)

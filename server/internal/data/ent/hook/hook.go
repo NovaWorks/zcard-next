@@ -249,6 +249,18 @@ func (f GiftcardBatchFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.GiftcardBatchMutation", m)
 }
 
+// The InstalledPluginFunc type is an adapter to allow the use of ordinary
+// function as InstalledPlugin mutator.
+type InstalledPluginFunc func(context.Context, *ent.InstalledPluginMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f InstalledPluginFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.InstalledPluginMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InstalledPluginMutation", m)
+}
+
 // The LicenseOrderFunc type is an adapter to allow the use of ordinary
 // function as LicenseOrder mutator.
 type LicenseOrderFunc func(context.Context, *ent.LicenseOrderMutation) (ent.Value, error)
@@ -535,6 +547,54 @@ func (f PaymentChannelFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PaymentChannelMutation", m)
+}
+
+// The PluginDataFunc type is an adapter to allow the use of ordinary
+// function as PluginData mutator.
+type PluginDataFunc func(context.Context, *ent.PluginDataMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PluginDataFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PluginDataMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PluginDataMutation", m)
+}
+
+// The PluginOperationFunc type is an adapter to allow the use of ordinary
+// function as PluginOperation mutator.
+type PluginOperationFunc func(context.Context, *ent.PluginOperationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PluginOperationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PluginOperationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PluginOperationMutation", m)
+}
+
+// The PluginRequirementFunc type is an adapter to allow the use of ordinary
+// function as PluginRequirement mutator.
+type PluginRequirementFunc func(context.Context, *ent.PluginRequirementMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PluginRequirementFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PluginRequirementMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PluginRequirementMutation", m)
+}
+
+// The PluginRuleLevelRefFunc type is an adapter to allow the use of ordinary
+// function as PluginRuleLevelRef mutator.
+type PluginRuleLevelRefFunc func(context.Context, *ent.PluginRuleLevelRefMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PluginRuleLevelRefFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PluginRuleLevelRefMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PluginRuleLevelRefMutation", m)
 }
 
 // The PointAccountFunc type is an adapter to allow the use of ordinary

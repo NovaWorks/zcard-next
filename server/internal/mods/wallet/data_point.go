@@ -7,8 +7,8 @@ package wallet
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"strings"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
@@ -136,21 +136,17 @@ func (r *WalletRepoImpl) GetPoints(ctx context.Context, userID uint64) (int64, e
 // CumulativeRecharge 累计充值（countAsRecharge 口径：仅 type=recharge 入账流水；
 // 等级阈值消费——互转/调账/佣金/退款均不计，防刷）。
 func (r *WalletRepoImpl) CumulativeRecharge(ctx context.Context, userID uint64) (int64, error) {
-	sum, err := data.Client(ctx, r.data).WalletTransaction.Query().
-		Where(
-			wallettransaction.UserID(userID),
-			wallettransaction.Direction("in"),
-			wallettransaction.TypeEQ("recharge"),
-		).
-		Aggregate(ent.Sum(wallettransaction.FieldAmount)).Int(ctx)
-	// SUM 空集返回 NULL（scan 失败）——口径为 0
+	var rows []struct {
+		Total sql.NullInt64 `json:"total"`
+	}
+	err := data.Client(ctx, r.data).WalletTransaction.Query().Where(wallettransaction.UserID(userID), wallettransaction.Direction("in"), wallettransaction.TypeEQ("recharge")).Aggregate(ent.As(ent.Sum(wallettransaction.FieldAmount), "total")).Scan(ctx, &rows)
 	if err != nil {
-		if strings.Contains(err.Error(), "NULL") || strings.Contains(err.Error(), "Scan") {
-			return 0, nil
-		}
 		return 0, err
 	}
-	return int64(sum), nil
+	if len(rows) == 0 || !rows[0].Total.Valid {
+		return 0, nil
+	}
+	return rows[0].Total.Int64, nil
 }
 
 // RebuildPoints 积分重算（对账函数——测试断言口径）。

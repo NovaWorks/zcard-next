@@ -32,6 +32,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/flashsale"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcard"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcardbatch"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/installedplugin"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/licenseorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryactivity"
@@ -56,6 +57,10 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pageview"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/plugindata"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pluginoperation"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pluginrequirement"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pluginrulelevelref"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointtransaction"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/post"
@@ -188,6 +193,7 @@ func checkColumn(t, c string) error {
 			flashsale.Table:                flashsale.ValidColumn,
 			giftcard.Table:                 giftcard.ValidColumn,
 			giftcardbatch.Table:            giftcardbatch.ValidColumn,
+			installedplugin.Table:          installedplugin.ValidColumn,
 			licenseorder.Table:             licenseorder.ValidColumn,
 			lotteryaccount.Table:           lotteryaccount.ValidColumn,
 			lotteryactivity.Table:          lotteryactivity.ValidColumn,
@@ -212,6 +218,10 @@ func checkColumn(t, c string) error {
 			pageview.Table:                 pageview.ValidColumn,
 			payment.Table:                  payment.ValidColumn,
 			paymentchannel.Table:           paymentchannel.ValidColumn,
+			plugindata.Table:               plugindata.ValidColumn,
+			pluginoperation.Table:          pluginoperation.ValidColumn,
+			pluginrequirement.Table:        pluginrequirement.ValidColumn,
+			pluginrulelevelref.Table:       pluginrulelevelref.ValidColumn,
 			pointaccount.Table:             pointaccount.ValidColumn,
 			pointtransaction.Table:         pointtransaction.ValidColumn,
 			post.Table:                     post.ValidColumn,

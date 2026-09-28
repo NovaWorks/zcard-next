@@ -1,0 +1,113 @@
+export default {
+  title: "Plugins",
+  intro:
+    "Install trusted signed plugins and manage product extensions. Disabling a plugin keeps purchase restrictions.",
+  refresh: "Refresh status",
+  loading: "Loading…",
+  loadFailed: "Loading failed. Content may be stale; please retry.",
+  empty: "No plugins installed",
+  readonly:
+    "Installation and lifecycle changes require a main-site instance administrator with plugin management permission.",
+  upload: "Upload signed package",
+  descriptor: "Descriptor file (descriptor.json)",
+  signature: "Signature file (signature.ed25519)",
+  archive: "Plugin archive (plugin.zplug)",
+  verify: "Verify and preview",
+  verified: "Signature and compatibility verified",
+  badFiles:
+    "Select all three files: descriptor up to 64 KiB, signature exactly 64 bytes, archive up to 8 MiB.",
+  verifyFailed:
+    "Signature or compatibility check failed. Check the files, host version and trusted keys.",
+  approve: "I approve the plugin permissions listed below",
+  scopes: "Plugin permissions",
+  newScopes: "New permissions",
+  import: "Install without activating",
+  enable: "Activate",
+  upgrade: "Upgrade",
+  rollback: "Roll back",
+  disable: "Disable",
+  uninstall: "Uninstall (keep rules)",
+  active: "Active",
+  disabled: "Disabled / staged",
+  uninstalled: "Uninstalled; rules retained",
+  failed: "Unavailable",
+  pending: "Awaiting confirmation",
+  desired: "Desired package",
+  observed: "Confirmed package (see runtime state above)",
+  generation: "Generation",
+  phase: "Operation phase",
+  impact: "Products with retained restrictions",
+  affected: "Affected products",
+  currentSite:
+    "Only products in the current site are listed below; the total may include other sites.",
+  truncated: "Showing the first 1,000 products. Use product management for the rest.",
+  impactFailed: "Unable to load impact. The operation is blocked; refresh and retry.",
+  confirmAction: "Confirm plugin operation",
+  impactWarning:
+    "After disabling or uninstalling, existing restrictions remain and affected products cannot accept new orders. Release restrictions separately.",
+  switchWarning:
+    "This changes purchase validation for the affected products. Preparation failures keep the previous runtime.",
+  confirm: "Confirm",
+  cancel: "Cancel",
+  operation: "Operation ID",
+  query: "Check original operation",
+  unknown:
+    "The result is unconfirmed. Query the original operation ID before starting another operation.",
+  operationFailed: "Operation failed. Refresh to inspect the actual current state.",
+  operationDone: "Operation confirmed. Current state is shown below.",
+  notFoundOperation:
+    "Original operation not found yet. Query again later, or verify current state before clearing this record.",
+  clearOperation: "State checked; clear record",
+  clearWarning:
+    "Clearing this record does not cancel the server operation. Have you verified the current runtime state?",
+  product: "Product",
+  openProduct: "View product restrictions",
+  extensions: "Plugin extensions",
+  saveFirst: "Save the product to obtain its ID before configuring extensions.",
+  noRead: "Viewing extensions requires plugin read and product edit permissions.",
+  noConfigure: "Your account cannot configure plugins. Settings are read-only.",
+  locked: "The product is locked. Unlock it in product management with the appropriate permission.",
+  restricted: "Host purchase restriction is in force",
+  unrestricted: "No host purchase restriction for this plugin",
+  inactive:
+    "The plugin is inactive or unavailable. Existing restrictions continue to block purchases.",
+  noContributions:
+    "No product extensions are available. Host rule recovery remains accessible below.",
+  incompatible:
+    "Unsupported configuration schema or control. Saving is blocked; existing purchase restrictions remain.",
+  invalidConfig:
+    "Stored configuration is unreadable. Overwriting is blocked; use the separate release action to restore purchases.",
+  exactLevels:
+    "Only selected effective levels qualify. Higher levels are not included automatically; upgrading to an unselected level also denies access.",
+  chooseLevels: "Select allowed levels",
+  disabledLevel: "Disabled or unavailable",
+  save: "Save extension settings",
+  saved: "Extension settings saved and applied separately",
+  invalidSelection: "Select at least one enabled level when restricting purchases (up to 100).",
+  saveFailed:
+    "Save unconfirmed; draft retained. Refresh to check permissions, product locks and server configuration before retrying.",
+  changed:
+    "Server version or configuration changed. Your draft is retained; compare before continuing.",
+  draft: "Local draft",
+  remote: "Latest server settings",
+  useRemote: "Use server settings",
+  keepDraft: "Continue draft on latest version",
+  release: "Release purchase restriction",
+  releaseConfirm: "Confirm product restriction release",
+  releaseWarning:
+    "Release only this plugin restriction on this product in the current site. This does not enable the plugin or release other rules.",
+  released: "Purchase restriction released",
+  noRelease: "Releasing a restriction requires plugin:release and product edit permissions.",
+  discardTitle: "Discard unsaved extension draft?",
+  discard:
+    "Separately saved settings remain in effect. Unsaved extension inputs will be discarded.",
+  saveDraftFirst: "Plugin extensions have an unsaved draft. Save or discard it first.",
+  packageMissing: "Signed package missing or damaged",
+  runtimeFault: "Plugin runtime fault",
+  expired: "Entitlement expired",
+  revoked: "Entitlement revoked",
+  packageIncompatible: "Plugin is incompatible with this host",
+  permissionChanged: "Permissions or site scope changed. Refresh before continuing.",
+  details: "Details",
+  version: "Plugin version",
+};

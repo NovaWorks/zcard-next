@@ -39,6 +39,12 @@ data:
     read_timeout: 0.2s
     write_timeout: 0.2s
   worker_concurrency: 5
+  # 插件工件、实例锁与订单幂等密钥的持久化根；相对路径基于 -conf 目录。
+  # 空值依次使用 ZCARD_PLUGIN_DATA_DIR、配置目录同级 data；Docker 应挂载整个目录。
+  plugin_data_dir: ""
+  # 仅填写受信任的 Ed25519 公钥（标准 base64）；默认不信任任何包。
+  # 免费签名插件支持单进程 all 模式热加载；修改信任公钥后需重启宿主。
+  plugin_trusted_keys: {}
 
 security:
   # 四把钥匙解耦（§4.11.6）：生产经 env 注入（ZCARD_JWT_ADMIN_KEY / ZCARD_JWT_USER_KEY

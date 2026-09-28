@@ -231,6 +231,8 @@ func (h *acgCompat) trade(w http.ResponseWriter, r *http.Request, account *ent.S
 	}
 	if out.rejected {
 		switch out.errCode {
+		case "SUPPLY_RESTRICTED":
+			writeAcgErr(w, "当前资格不可购买（SUPPLY_RESTRICTED）")
 		case "insufficient_balance":
 			writeAcgErr(w, "余额不足")
 		case "no_stock":

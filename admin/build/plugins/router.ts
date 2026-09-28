@@ -37,6 +37,11 @@ export function setupElegantRouter() {
         i18nKey: `route.${key}` as App.I18n.I18nKey,
       };
 
+      if (key === "plugin") {
+        meta.icon = "mdi:puzzle-outline";
+        meta.order = 10.5;
+      }
+
       if (constantRoutes.includes(key)) {
         meta.constant = true;
       }

@@ -153,6 +153,17 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'plugin',
+    path: '/plugin',
+    component: 'layout.base$view.plugin',
+    meta: {
+      title: 'plugin',
+      i18nKey: 'route.plugin',
+      icon: 'mdi:puzzle-outline',
+      order: 10.5
+    }
+  },
+  {
     name: 'product',
     path: '/product',
     component: 'layout.base$view.product',

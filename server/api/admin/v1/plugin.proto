@@ -1,0 +1,62 @@
+syntax = "proto3";
+package zcard.api.admin.v1;
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+// Instance-side administration only. Runtime execution is introduced in P2.
+service AdminPluginService {
+ rpc ListPlugins(google.protobuf.Empty) returns (ListPluginsReply) { option (google.api.http) = {get:"/api/v1/admin/plugins"}; }
+ // ImportPlugin is registered as authenticated multipart HTTP by the adapter.
+ rpc InspectPlugin(ImportPluginRequest) returns (PluginPackageReply);
+ rpc ImportPlugin(ImportPluginRequest) returns (PluginOperationReply);
+ rpc ListContributions(ProductPluginRequest) returns (PluginContributionsReply) { option (google.api.http) = {get:"/api/v1/admin/plugins/contributions"}; }
+ rpc GetOperation(PluginOperationRequest) returns (PluginOperationReply) { option (google.api.http) = {get:"/api/v1/admin/plugins/operations/{operation_id}"}; }
+ rpc GetPlugin(PluginRequest) returns (PluginStatusReply) { option (google.api.http) = {get:"/api/v1/admin/plugins/{plugin_id}"}; }
+ rpc OperatePlugin(OperatePluginRequest) returns (PluginOperationReply) { option (google.api.http) = {post:"/api/v1/admin/plugins/{plugin_id}/operations" body:"*"}; }
+ rpc GetImpact(PluginRequest) returns (PluginImpactReply) { option (google.api.http) = {get:"/api/v1/admin/plugins/{plugin_id}/impact"}; }
+ rpc ListProductRules(ProductPluginRequest) returns (ListProductRulesReply) { option (google.api.http) = {get:"/api/v1/admin/products/{product_id}/plugin-rules"}; }
+ rpc GetProductRule(ProductPluginRequest) returns (ProductPluginRule) { option (google.api.http) = {get:"/api/v1/admin/products/{product_id}/plugin-rules/{plugin_id}"}; }
+ rpc SaveProductRule(SaveProductRuleRequest) returns (ProductPluginRule) { option (google.api.http) = {put:"/api/v1/admin/products/{product_id}/plugin-rules/{plugin_id}" body:"*"}; }
+ rpc ReleaseProductRule(ReleaseProductRuleRequest) returns (ProductPluginRule) { option (google.api.http) = {post:"/api/v1/admin/products/{product_id}/plugin-rules/{plugin_id}/release" body:"*"}; }
+ rpc GetProductSchema(ProductPluginRequest) returns (PluginSchemaReply) { option (google.api.http) = {get:"/api/v1/admin/products/{product_id}/plugin-schema/{plugin_id}"}; }
+ rpc ListLevelOptions(ProductPluginRequest) returns (PluginLevelOptionsReply) { option (google.api.http) = {get:"/api/v1/admin/products/{product_id}/plugin-level-options"}; }
+}
+message PluginRequest { string plugin_id=1; }
+message ProductPluginRequest { string product_id=1; string plugin_id=2; }
+message PluginOperationRequest { string operation_id=1; }
+message OperatePluginRequest {
+ string plugin_id=1; string operation_id=2; string action=3; string target_digest=4;
+ string expected_generation=5; repeated string approved_scopes=6;
+}
+message ImportPluginRequest { OperatePluginRequest command=1; bytes descriptor_json=2; bytes signature=3; bytes archive=4; }
+message PluginStatusReply {
+ string plugin_id=1; bool desired_enabled=2; string desired_generation=3; string observed_generation=4;
+ string desired_digest=5; string observed_digest=6; string operation_id=7; string phase=8;
+ repeated string block_reasons=9; bool reconciliation_pending=10; bool uninstalled=11;
+ repeated string approved_scopes=12; bool runtime_available=13;
+}
+message ListPluginsReply { repeated PluginStatusReply plugins=1; bool instance_management_allowed=2; }
+message PluginPackageReply { string plugin_id=1; string version=2; string digest=3; repeated string scopes=4; }
+message PluginOperationReply {
+ string operation_id=1; string plugin_id=2; string action=3; string target_generation=4;
+ string phase=5; string failure_code=6; PluginStatusReply status=7;
+}
+message PluginConfig {
+ uint32 schema_version=1; string revision=2; bool enabled=3; repeated string allowed_level_ids=4;
+}
+message ProductPluginRule {
+ string plugin_id=1; string product_id=2; bool required=3; string requirement_revision=4;
+ PluginConfig config=5; string generation=6; bool config_valid=7; string error_code=8;
+}
+message ListProductRulesReply { repeated ProductPluginRule rules=1; }
+message SaveProductRuleRequest {
+ string plugin_id=1; string product_id=2; PluginConfig config=3;
+ string expected_generation=4; string expected_config_revision=5; string expected_requirement_revision=6; uint32 schema_version=7;
+}
+message ReleaseProductRuleRequest { string plugin_id=1; string product_id=2; string expected_requirement_revision=3; }
+message PluginSchemaReply { string plugin_id=1; string generation=2; string config_schema_json=3; string ui_schema_json=4; bool runtime_available=5; }
+message PluginContributionsReply { repeated PluginSchemaReply contributions=1; repeated string unavailable_reasons=2; }
+message PluginLevelOption { string id=1; string name=2; bool enabled=3; }
+message PluginLevelOptionsReply { repeated PluginLevelOption options=1; }
+message PluginImpactReply { string affected_total=1; repeated string visible_product_ids=2; bool truncated=3; }

@@ -82,7 +82,7 @@ func TestPointsExchangeOrder(t *testing.T) {
 
 	res, err := uc.CreateOrder(ctx, CreateOrderInput{
 		QueryPassword: "test1234",
-		UserID: 7, UsePoints: true,
+		UserID:        7, UsePoints: true,
 		Items: []OrderItemInput{{ProductID: pPoints.ID, Quantity: 2}},
 	})
 	if err != nil {
@@ -126,7 +126,7 @@ func TestPointsExchangeReject(t *testing.T) {
 	// 混合购物车（常规商品不可积分兑换）
 	if _, err := uc.CreateOrder(ctx, CreateOrderInput{
 		QueryPassword: "test1234",
-		UserID: 7, UsePoints: true,
+		UserID:        7, UsePoints: true,
 		Items: []OrderItemInput{{ProductID: pPoints.ID, Quantity: 1}, {ProductID: pNormal.ID, Quantity: 1}},
 	}); err == nil || !contains2(err.Error(), "POINTS_MIXED") {
 		t.Fatalf("混合购物车应拒绝: %v", err)
@@ -134,7 +134,7 @@ func TestPointsExchangeReject(t *testing.T) {
 	// 积分不足（500 分买 6 件=600 分）→ 整单回滚
 	if _, err := uc.CreateOrder(ctx, CreateOrderInput{
 		QueryPassword: "test1234",
-		UserID: 7, UsePoints: true,
+		UserID:        7, UsePoints: true,
 		Items: []OrderItemInput{{ProductID: pPoints.ID, Quantity: 6}},
 	}); err == nil || !contains2(err.Error(), "POINTS_INSUFFICIENT") {
 		t.Fatalf("积分不足应拒绝: %v", err)
@@ -142,7 +142,7 @@ func TestPointsExchangeReject(t *testing.T) {
 	// 游客
 	if _, err := uc.CreateOrder(ctx, CreateOrderInput{
 		QueryPassword: "test1234",
-		UserID: 0, UsePoints: true,
+		UserID:        0, UsePoints: true,
 		Items: []OrderItemInput{{ProductID: pPoints.ID, Quantity: 1}},
 	}); err == nil || !contains2(err.Error(), "POINTS_LOGIN") {
 		t.Fatalf("游客积分单应拒绝: %v", err)

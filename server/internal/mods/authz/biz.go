@@ -64,6 +64,15 @@ func (uc *RbacUsecase) PermissionsOf(ctx context.Context, roleID uint64) ([]stri
 	return uc.codes(ctx, roleID), nil
 }
 
+// RoleCode reads the stable identity, independent of editable display names.
+func (uc *RbacUsecase) RoleCode(ctx context.Context, roleID uint64) string {
+	role, err := uc.repo.RoleByID(ctx, roleID)
+	if err != nil || role == nil {
+		return ""
+	}
+	return role.Code
+}
+
 // RoleName 角色名（含缓存）。
 func (uc *RbacUsecase) RoleName(ctx context.Context, roleID uint64) string {
 	uc.mu.RLock()

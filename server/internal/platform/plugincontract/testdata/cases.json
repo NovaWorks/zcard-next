@@ -1,0 +1,117 @@
+[
+  {
+    "file": "manifest-valid.json",
+    "kind": "manifest",
+    "valid": true
+  },
+  {
+    "file": "config-valid.json",
+    "kind": "config",
+    "valid": true
+  },
+  {
+    "file": "input-valid.json",
+    "kind": "input",
+    "valid": true
+  },
+  {
+    "file": "decision-valid.json",
+    "kind": "decision",
+    "valid": true
+  },
+  {
+    "file": "artifact-valid.json",
+    "kind": "artifact",
+    "valid": true
+  },
+  {
+    "file": "manifest-traversal.json",
+    "kind": "manifest",
+    "valid": false
+  },
+  {
+    "file": "manifest-unknown-field.json",
+    "kind": "manifest",
+    "valid": false
+  },
+  {
+    "file": "manifest-wildcard-scope.json",
+    "kind": "manifest",
+    "valid": false
+  },
+  {
+    "file": "manifest-duplicate-scope.json",
+    "kind": "manifest",
+    "valid": false
+  },
+  {
+    "file": "manifest-invalid-range.json",
+    "kind": "manifest",
+    "valid": false
+  },
+  {
+    "file": "manifest-optional-unknown-ui.json",
+    "kind": "manifest",
+    "valid": true
+  },
+  {
+    "file": "manifest-field-mismatch.json",
+    "kind": "manifest",
+    "valid": false
+  },
+  {
+    "file": "config-enabled-empty.json",
+    "kind": "config",
+    "valid": false
+  },
+  {
+    "file": "config-disabled-empty.json",
+    "kind": "config",
+    "valid": true
+  },
+  {
+    "file": "config-numeric-id.json",
+    "kind": "config",
+    "valid": false
+  },
+  {
+    "file": "config-overflow.json",
+    "kind": "config",
+    "valid": false
+  },
+  {
+    "file": "config-duplicate-id.json",
+    "kind": "config",
+    "valid": false
+  },
+  {
+    "file": "config-leading-zero.json",
+    "kind": "config",
+    "valid": false
+  },
+  {
+    "file": "input-anonymous-level.json",
+    "kind": "input",
+    "valid": false
+  },
+  {
+    "file": "input-private-object.json",
+    "kind": "input",
+    "valid": false
+  },
+  {
+    "file": "decision-inconsistent.json",
+    "kind": "decision",
+    "valid": false
+  },
+  {
+    "file": "decision-price-write.json",
+    "kind": "decision",
+    "valid": false
+  },
+  {
+    "file": "artifact-upper-digest.json",
+    "kind": "artifact",
+    "valid": false
+  }
+]

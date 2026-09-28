@@ -5,6 +5,20 @@ package authz
 
 func init() {
 	Declare(
+		Perm{Code: "plugin:read", Desc: "插件管理：ListPlugins", Domain: "plugin", AdminOnly: false, Op: "zcard.api.admin.v1.AdminPluginService/ListPlugins", Method: "GET", Path: "/api/v1/admin/plugins"},
+		Perm{Code: "plugin:manage", Desc: "插件管理：ImportPlugin", Domain: "plugin", AdminOnly: true, Op: "zcard.api.admin.v1.AdminPluginService/ImportPlugin", Method: "POST", Path: "/api/v1/admin/plugins/import"},
+		Perm{Code: "plugin:manage", Desc: "插件管理：InspectPlugin", Domain: "plugin", AdminOnly: true, Op: "zcard.api.admin.v1.AdminPluginService/InspectPlugin", Method: "POST", Path: "/api/v1/admin/plugins/inspect"},
+		Perm{Code: "plugin:read", Desc: "插件管理：ListContributions", Domain: "plugin", AdminOnly: false, Op: "zcard.api.admin.v1.AdminPluginService/ListContributions", Method: "GET", Path: "/api/v1/admin/plugins/contributions"},
+		Perm{Code: "plugin:read", Desc: "插件管理：GetOperation", Domain: "plugin", AdminOnly: false, Op: "zcard.api.admin.v1.AdminPluginService/GetOperation", Method: "GET", Path: "/api/v1/admin/plugins/operations/{operation_id}"},
+		Perm{Code: "plugin:read", Desc: "插件管理：GetPlugin", Domain: "plugin", AdminOnly: false, Op: "zcard.api.admin.v1.AdminPluginService/GetPlugin", Method: "GET", Path: "/api/v1/admin/plugins/{plugin_id}"},
+		Perm{Code: "plugin:manage", Desc: "插件管理：OperatePlugin", Domain: "plugin", AdminOnly: true, Op: "zcard.api.admin.v1.AdminPluginService/OperatePlugin", Method: "POST", Path: "/api/v1/admin/plugins/{plugin_id}/operations"},
+		Perm{Code: "plugin:manage", Desc: "插件管理：GetImpact", Domain: "plugin", AdminOnly: true, Op: "zcard.api.admin.v1.AdminPluginService/GetImpact", Method: "GET", Path: "/api/v1/admin/plugins/{plugin_id}/impact"},
+		Perm{Code: "plugin:read", Desc: "插件管理：ListProductRules", Domain: "plugin", AdminOnly: false, Op: "zcard.api.admin.v1.AdminPluginService/ListProductRules", Method: "GET", Path: "/api/v1/admin/products/{product_id}/plugin-rules"},
+		Perm{Code: "plugin:read", Desc: "插件管理：GetProductRule", Domain: "plugin", AdminOnly: false, Op: "zcard.api.admin.v1.AdminPluginService/GetProductRule", Method: "GET", Path: "/api/v1/admin/products/{product_id}/plugin-rules/{plugin_id}"},
+		Perm{Code: "plugin:configure", Desc: "插件管理：SaveProductRule", Domain: "plugin", AdminOnly: true, Op: "zcard.api.admin.v1.AdminPluginService/SaveProductRule", Method: "PUT", Path: "/api/v1/admin/products/{product_id}/plugin-rules/{plugin_id}"},
+		Perm{Code: "plugin:release", Desc: "插件管理：ReleaseProductRule", Domain: "plugin", AdminOnly: true, Op: "zcard.api.admin.v1.AdminPluginService/ReleaseProductRule", Method: "POST", Path: "/api/v1/admin/products/{product_id}/plugin-rules/{plugin_id}/release"},
+		Perm{Code: "plugin:read", Desc: "插件管理：GetProductSchema", Domain: "plugin", AdminOnly: false, Op: "zcard.api.admin.v1.AdminPluginService/GetProductSchema", Method: "GET", Path: "/api/v1/admin/products/{product_id}/plugin-schema/{plugin_id}"},
+		Perm{Code: "plugin:configure", Desc: "插件管理：ListLevelOptions", Domain: "plugin", AdminOnly: true, Op: "zcard.api.admin.v1.AdminPluginService/ListLevelOptions", Method: "GET", Path: "/api/v1/admin/products/{product_id}/plugin-level-options"},
 		Perm{Code: "catalog:write", Desc: "按关键词分类", Domain: "catalog", AdminOnly: true, Op: "zcard.api.admin.v1.AdminCatalogService/ClassifyProducts", Method: "POST", Path: "/api/v1/admin/products/classify"},
 		Perm{Code: "memberlevel:view_discount", Desc: "查看真实等级折扣", Domain: "memberlevel", AdminOnly: true},
 		Perm{Code: "memberlevel:invite", Desc: "配置推荐注册赠送等级", Domain: "memberlevel", AdminOnly: true, Op: "zcard.api.admin.v1.AdminMemberLevelService/ConfigureInviteLevel", Method: "PUT", Path: "/api/v1/admin/users/{user_id}/invite-level"},

@@ -44,17 +44,6 @@ func (uc *OrderUsecase) prepareServices(ctx context.Context, in CreateOrderInput
 		if err != nil {
 			return nil, err
 		}
-		if err := c.Product.UpdateOneID(p.ID).AddLockVersion(0).Exec(ctx); err != nil {
-			return nil, err
-		}
-		pq := c.Product.Query().Where(product.ID(p.ID))
-		if uc.Data.Dialect.Capabilities().SupportsSkipLocked {
-			pq = pq.ForUpdate()
-		}
-		p, err = pq.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
 		if p.LockVersion != revisions[p.ID] {
 			return nil, fmt.Errorf("商品发货设置已变化，请刷新后重新下单")
 		}

@@ -46,7 +46,7 @@ func newIdemEnv(t *testing.T) (*data.Data, *OrderUsecase, *paymentmod.PaymentRep
 		SetPrice(500).SetStockType("card").SetStatus(1).Save(ctx); err != nil {
 		t.Fatal(err)
 	}
-	uc := &OrderUsecase{Data: d, Inv: fakeInventory{}, Gen: gen}
+	uc := &OrderUsecase{Data: d, Inv: fakeInventory{}, Gen: gen, Fingerprinter: &RequestFingerprinter{key: make([]byte, 32)}}
 	// 慢通道探测只需 data 句柄，其余依赖 nil（HasPendingSlowPayment 不触达）
 	payRepo := paymentmod.NewPaymentRepoImpl(d, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	return d, uc, payRepo

@@ -23,6 +23,8 @@ type Authorizer interface {
 	Allowed(ctx context.Context, roleID uint64, permission string) bool
 	// PermissionsOf 角色的权限点清单（登录后下发给前端动态路由）。
 	PermissionsOf(ctx context.Context, roleID uint64) ([]string, error)
+	// RoleCode is the stable role identity; display names must never authorize operations.
+	RoleCode(ctx context.Context, roleID uint64) string
 	// RoleName 角色名（profile 展示）。
 	RoleName(ctx context.Context, roleID uint64) string
 }

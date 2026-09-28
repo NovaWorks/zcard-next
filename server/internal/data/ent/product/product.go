@@ -99,6 +99,8 @@ const (
 	FieldIsLocked = "is_locked"
 	// FieldLockVersion holds the string denoting the lock_version field in the database.
 	FieldLockVersion = "lock_version"
+	// FieldPluginRuleRevision holds the string denoting the plugin_rule_revision field in the database.
+	FieldPluginRuleRevision = "plugin_rule_revision"
 	// FieldLockedBy holds the string denoting the locked_by field in the database.
 	FieldLockedBy = "locked_by"
 	// FieldLockedAt holds the string denoting the locked_at field in the database.
@@ -170,6 +172,7 @@ var Columns = []string{
 	FieldListingMessage,
 	FieldIsLocked,
 	FieldLockVersion,
+	FieldPluginRuleRevision,
 	FieldLockedBy,
 	FieldLockedAt,
 }
@@ -255,6 +258,10 @@ var (
 	DefaultIsLocked bool
 	// DefaultLockVersion holds the default value on creation for the "lock_version" field.
 	DefaultLockVersion int64
+	// DefaultPluginRuleRevision holds the default value on creation for the "plugin_rule_revision" field.
+	DefaultPluginRuleRevision int64
+	// PluginRuleRevisionValidator is a validator for the "plugin_rule_revision" field. It is called by the builders before save.
+	PluginRuleRevisionValidator func(int64) error
 	// DefaultLockedBy holds the default value on creation for the "locked_by" field.
 	DefaultLockedBy uint64
 )
@@ -508,6 +515,11 @@ func ByIsLocked(opts ...sql.OrderTermOption) OrderOption {
 // ByLockVersion orders the results by the lock_version field.
 func ByLockVersion(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLockVersion, opts...).ToFunc()
+}
+
+// ByPluginRuleRevision orders the results by the plugin_rule_revision field.
+func ByPluginRuleRevision(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPluginRuleRevision, opts...).ToFunc()
 }
 
 // ByLockedBy orders the results by the locked_by field.

@@ -102,6 +102,8 @@ type Product struct {
 	IsLocked bool `json:"is_locked,omitempty"`
 	// LockVersion holds the value of the "lock_version" field.
 	LockVersion int64 `json:"lock_version,omitempty"`
+	// PluginRuleRevision holds the value of the "plugin_rule_revision" field.
+	PluginRuleRevision int64 `json:"plugin_rule_revision,omitempty"`
 	// LockedBy holds the value of the "locked_by" field.
 	LockedBy uint64 `json:"locked_by,omitempty"`
 	// LockedAt holds the value of the "locked_at" field.
@@ -150,7 +152,7 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case product.FieldCategoryProtected, product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend, product.FieldAutoListing, product.FieldListingRestocked, product.FieldIsLocked:
 			values[i] = new(sql.NullBool)
-		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldManualStock, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID, product.FieldListingRestoreStatus, product.FieldListingChangedAt, product.FieldListingObservedAt, product.FieldListingZeroSince, product.FieldListingLastStock, product.FieldLockVersion, product.FieldLockedBy:
+		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldManualStock, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID, product.FieldListingRestoreStatus, product.FieldListingChangedAt, product.FieldListingObservedAt, product.FieldListingZeroSince, product.FieldListingLastStock, product.FieldLockVersion, product.FieldPluginRuleRevision, product.FieldLockedBy:
 			values[i] = new(sql.NullInt64)
 		case product.FieldName, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldFulfillmentMode, product.FieldDeliveryMode, product.FieldUpstreamProductCode, product.FieldListingReason, product.FieldListingMessage:
 			values[i] = new(sql.NullString)
@@ -435,6 +437,12 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.LockVersion = value.Int64
 			}
+		case product.FieldPluginRuleRevision:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field plugin_rule_revision", values[i])
+			} else if value.Valid {
+				_m.PluginRuleRevision = value.Int64
+			}
 		case product.FieldLockedBy:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field locked_by", values[i])
@@ -619,6 +627,9 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("lock_version=")
 	builder.WriteString(fmt.Sprintf("%v", _m.LockVersion))
+	builder.WriteString(", ")
+	builder.WriteString("plugin_rule_revision=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PluginRuleRevision))
 	builder.WriteString(", ")
 	builder.WriteString("locked_by=")
 	builder.WriteString(fmt.Sprintf("%v", _m.LockedBy))

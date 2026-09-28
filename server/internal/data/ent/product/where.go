@@ -240,6 +240,11 @@ func LockVersion(v int64) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldLockVersion, v))
 }
 
+// PluginRuleRevision applies equality check predicate on the "plugin_rule_revision" field. It's identical to PluginRuleRevisionEQ.
+func PluginRuleRevision(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldPluginRuleRevision, v))
+}
+
 // LockedBy applies equality check predicate on the "locked_by" field. It's identical to LockedByEQ.
 func LockedBy(v uint64) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldLockedBy, v))
@@ -1798,6 +1803,46 @@ func LockVersionLT(v int64) predicate.Product {
 // LockVersionLTE applies the LTE predicate on the "lock_version" field.
 func LockVersionLTE(v int64) predicate.Product {
 	return predicate.Product(sql.FieldLTE(FieldLockVersion, v))
+}
+
+// PluginRuleRevisionEQ applies the EQ predicate on the "plugin_rule_revision" field.
+func PluginRuleRevisionEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldPluginRuleRevision, v))
+}
+
+// PluginRuleRevisionNEQ applies the NEQ predicate on the "plugin_rule_revision" field.
+func PluginRuleRevisionNEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldPluginRuleRevision, v))
+}
+
+// PluginRuleRevisionIn applies the In predicate on the "plugin_rule_revision" field.
+func PluginRuleRevisionIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldPluginRuleRevision, vs...))
+}
+
+// PluginRuleRevisionNotIn applies the NotIn predicate on the "plugin_rule_revision" field.
+func PluginRuleRevisionNotIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldPluginRuleRevision, vs...))
+}
+
+// PluginRuleRevisionGT applies the GT predicate on the "plugin_rule_revision" field.
+func PluginRuleRevisionGT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldPluginRuleRevision, v))
+}
+
+// PluginRuleRevisionGTE applies the GTE predicate on the "plugin_rule_revision" field.
+func PluginRuleRevisionGTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldPluginRuleRevision, v))
+}
+
+// PluginRuleRevisionLT applies the LT predicate on the "plugin_rule_revision" field.
+func PluginRuleRevisionLT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldPluginRuleRevision, v))
+}
+
+// PluginRuleRevisionLTE applies the LTE predicate on the "plugin_rule_revision" field.
+func PluginRuleRevisionLTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldPluginRuleRevision, v))
 }
 
 // LockedByEQ applies the EQ predicate on the "locked_by" field.

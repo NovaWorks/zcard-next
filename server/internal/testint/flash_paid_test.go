@@ -5,6 +5,7 @@ package testint
 import (
 	"context"
 	"errors"
+	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/coupon"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
@@ -105,7 +106,11 @@ func runFlashPaid(h *Harness) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	uc := &ordermod.OrderUsecase{Data: h.Data, Inv: inventory.NewCardRepoImpl(h.Data, cipher), Gen: gen, Flash: repo}
+	fingerprint, err := ordermod.NewRequestFingerprinter(&conf.Data{PluginDataDir: t.TempDir()}, h.Data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	uc := &ordermod.OrderUsecase{Fingerprinter: fingerprint, Data: h.Data, Inv: inventory.NewCardRepoImpl(h.Data, cipher), Gen: gen, Flash: repo}
 	makeOrder := func(key string) *ordermod.CreateOrderResult {
 		t.Helper()
 		o, err := uc.CreateOrder(ctx, ordermod.CreateOrderInput{UserID: 7, QueryPassword: "abcd", IdempotencyKey: key, Items: []ordermod.OrderItemInput{{ProductID: p.ID, Quantity: 1}}})

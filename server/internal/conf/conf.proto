@@ -58,6 +58,10 @@ message Data {
   Redis redis = 2;
   // 工作进程模式（worker）独立队列并发度
   int32 worker_concurrency = 3;
+  // Stable instance data root; resolved relative to the configuration directory.
+  string plugin_data_dir = 4;
+  // Explicit Ed25519 public trust keys, standard base64; no development keys by default.
+  map<string, string> plugin_trusted_keys = 5;
 }
 
 // 四把钥匙解耦（铁律 §4.11.6）：env 注入优先，此处仅作兜底。

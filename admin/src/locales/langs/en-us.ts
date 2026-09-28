@@ -1,4 +1,6 @@
+import plugin from "./plugin-en-us";
 const local: App.I18n.Schema = {
+  plugin,
   system: {
     title: "ZCard Admin",
     updateTitle: "System Version Update Notification",
@@ -227,6 +229,7 @@ const local: App.I18n.Schema = {
     },
   },
   route: {
+    plugin: "Plugins",
     login: "Login",
     403: "No Permission",
     404: "Page Not Found",

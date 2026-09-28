@@ -31,11 +31,11 @@ type PurchaseOrderInfo struct {
 
 // UpstreamCallbackAuth 上游回调验签入参（HTTP 原语；port 零依赖故用 map 传头）。
 type UpstreamCallbackAuth struct {
-	Method    string
-	Path      string // 实际接收路径（zcard 验签用）
-	RawQuery  string
-	Headers   map[string]string
-	Body      []byte
+	Method   string
+	Path     string // 实际接收路径（zcard 验签用）
+	RawQuery string
+	Headers  map[string]string
+	Body     []byte
 }
 
 // UpstreamCallbackResult 回调载荷解析结果。

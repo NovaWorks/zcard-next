@@ -4,6 +4,7 @@ package wallet
 
 import (
 	"context"
+	"fmt"
 	"testing"
 )
 
@@ -48,5 +49,24 @@ func TestPointCreditDebit(t *testing.T) {
 	reb, err := repo.RebuildPoints(ctx, 1)
 	if err != nil || reb != 70 {
 		t.Fatalf("重算不一致: %d %v", reb, err)
+	}
+}
+
+func TestCumulativeRechargeEmptyAndScanFailure(t *testing.T) {
+	d := newTestData(t)
+	r := NewWalletRepoImpl(d)
+	ctx := context.Background()
+	if n, err := r.CumulativeRecharge(ctx, 99); err != nil || n != 0 {
+		t.Fatalf("empty SUM: %d %v", n, err)
+	}
+	// Force SUM overflow: the old broad "Scan" suppression hid real SQL failures.
+	for i := 0; i < 2; i++ {
+		_, err := d.Client.WalletTransaction.Create().SetUserID(99).SetDirection("in").SetType("recharge").SetAmount(9223372036854775807).SetBalanceBefore(0).SetBalanceAfter(1).SetReference(fmt.Sprint("overflow-", i)).Save(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := r.CumulativeRecharge(ctx, 99); err == nil {
+		t.Fatal("aggregate error was treated as zero")
 	}
 }

@@ -8,15 +8,12 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
 )
 
-type claimsKey struct{}
-
 // WithClaims 注入 admin JWT claims（server 中间件调用）。
 func WithClaims(ctx context.Context, claims *authn.Claims) context.Context {
-	return context.WithValue(ctx, claimsKey{}, claims)
+	return authn.WithClaims(ctx, claims)
 }
 
 // ClaimsFromContext 取出 claims；未登录返回 nil。
 func ClaimsFromContext(ctx context.Context) *authn.Claims {
-	c, _ := ctx.Value(claimsKey{}).(*authn.Claims)
-	return c
+	return authn.ClaimsFromContext(ctx)
 }

@@ -23,8 +23,10 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyorder"
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	invport "github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/id"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
 	kerrors "github.com/go-kratos/kratos/v3/errors"
@@ -230,13 +232,34 @@ func (s *SupplyAPIService) fulfillOrder(ctx context.Context, accountID, productI
 	var out *fulfillOutcome
 	notify := false
 	rejected := errors.New("supplier: rollback rejected order")
-	err := data.Tx(ctx, s.repo.data, func(txctx context.Context) error {
+	err := data.PurchaseRetry(ctx, s.repo.data, func(txctx context.Context) error {
 		account, err := s.repo.lockAccount(txctx, accountID)
 		if err != nil {
 			return err
 		}
 		if account.Status != supplieraccount.StatusApproved {
 			return kerrors.Forbidden("supply.ACCOUNT_DISABLED", "账户未获准供货")
+		}
+		// A locking lookup preserves the legal replay path without establishing
+		// a MySQL consistent-read snapshot before the product anchor lock.
+		query := data.Client(txctx, s.repo.data).SupplyOrder.Query().Where(supplyorder.AccountID(accountID), supplyorder.DownstreamOrderNo(downstreamOrderNo))
+		if s.repo.data.Dialect != db.SQLite {
+			query.ForUpdate()
+		}
+		_, existingErr := query.Only(txctx)
+		if existingErr == nil {
+			out, notify, err = s.fulfillOrderTx(txctx, accountID, productID, quantity, downstreamOrderNo, callbackURL, traceID)
+			return err
+		}
+		if !ent.IsNotFound(existingErr) {
+			return existingErr
+		}
+		if err := data.LockPurchaseProducts(txctx, s.repo.data, 0, []uint64{productID}); err != nil {
+			if ent.IsNotFound(err) {
+				out = &fulfillOutcome{rejected: true, errCode: "product_unavailable", errMsg: "商品不可用"}
+				return rejected
+			}
+			return err
 		}
 		out, notify, err = s.fulfillOrderTx(txctx, accountID, productID, quantity, downstreamOrderNo, callbackURL, traceID)
 		if err == nil && out.rejected {
@@ -280,6 +303,13 @@ func (s *SupplyAPIService) fulfillOrderTx(ctx context.Context, accountID, produc
 	}
 	if !errors.Is(err, ErrNotFound) {
 		return nil, false, err
+	}
+	required, gateErr := data.HasPurchaseRequirements(ctx, s.repo.data, 0, []uint64{productID})
+	if gateErr != nil {
+		return nil, false, kerrors.ServiceUnavailable("PLUGIN_UNAVAILABLE", "购买校验暂不可用")
+	}
+	if required {
+		return &fulfillOutcome{rejected: true, errCode: "SUPPLY_RESTRICTED", errMsg: "当前资格不可购买"}, false, nil
 	}
 	p, err := s.reader.GetForSupply(ctx, productID)
 	if err != nil || p.Status != 1 {

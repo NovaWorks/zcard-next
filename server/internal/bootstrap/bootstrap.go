@@ -24,6 +24,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/plugin"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/reseller"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/seo"
@@ -70,6 +71,7 @@ var ProviderSet = wire.NewSet(
 	affiliate.ProviderSet,
 	media.ProviderSet,
 	license.ProviderSet,
+	plugin.ProviderSet,
 	reseller.ProviderSet,
 	seo.ProviderSet,
 	update.ProviderSet,

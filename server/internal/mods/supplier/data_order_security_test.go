@@ -36,9 +36,14 @@ func securityStock(t *testing.T, svc *SupplyAPIService, count int) {
 	}
 	repo := inventory.NewCardRepoImpl(svc.repo.data, cipher)
 	svc.inv, svc.cards = repo, repo
-	if _, err := svc.repo.data.Client.Product.Create().SetID(1).SetName("security fixture").SetSlug("security-fixture").SetPrice(1000).Save(ctx); err != nil {
+	if exists, err := svc.repo.data.Client.Product.Query().Exist(ctx); err != nil {
 		t.Fatal(err)
+	} else if !exists {
+		if _, err := svc.repo.data.Client.Product.Create().SetID(1).SetName("security fixture").SetSlug("security-fixture").SetPrice(1000).Save(ctx); err != nil {
+			t.Fatal(err)
+		}
 	}
+
 	for i := 0; i < count; i++ {
 		plain := fmt.Sprintf("SECRET-%d", i)
 		encrypted, err := cipher.Seal(plain, 1, 0)
@@ -104,7 +109,7 @@ func TestSupplyOrderHTTPAccountIsolation(t *testing.T) {
 	if code, _ := call("GET", path, "", false); code != 401 {
 		t.Fatalf("anonymous: %d", code)
 	}
-	start, end := time.Now().Add(-time.Hour), time.Now().Add(time.Hour)
+	start, end := time.Now().UTC().Add(-time.Hour), time.Now().UTC().Add(time.Hour)
 	code, body := call("GET", fmt.Sprintf("/api/supply/orders?start=%d&end=%d", start.Unix(), end.Unix()), "", true)
 	if code != 200 || strings.Contains(body, "same-no") || strings.Contains(body, "a-paid") {
 		t.Fatalf("list leaks: %d %s", code, body)

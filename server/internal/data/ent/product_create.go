@@ -564,6 +564,20 @@ func (_c *ProductCreate) SetNillableLockVersion(v *int64) *ProductCreate {
 	return _c
 }
 
+// SetPluginRuleRevision sets the "plugin_rule_revision" field.
+func (_c *ProductCreate) SetPluginRuleRevision(v int64) *ProductCreate {
+	_c.mutation.SetPluginRuleRevision(v)
+	return _c
+}
+
+// SetNillablePluginRuleRevision sets the "plugin_rule_revision" field if the given value is not nil.
+func (_c *ProductCreate) SetNillablePluginRuleRevision(v *int64) *ProductCreate {
+	if v != nil {
+		_c.SetPluginRuleRevision(*v)
+	}
+	return _c
+}
+
 // SetLockedBy sets the "locked_by" field.
 func (_c *ProductCreate) SetLockedBy(v uint64) *ProductCreate {
 	_c.mutation.SetLockedBy(v)
@@ -783,6 +797,10 @@ func (_c *ProductCreate) defaults() {
 		v := product.DefaultLockVersion
 		_c.mutation.SetLockVersion(v)
 	}
+	if _, ok := _c.mutation.PluginRuleRevision(); !ok {
+		v := product.DefaultPluginRuleRevision
+		_c.mutation.SetPluginRuleRevision(v)
+	}
 	if _, ok := _c.mutation.LockedBy(); !ok {
 		v := product.DefaultLockedBy
 		_c.mutation.SetLockedBy(v)
@@ -926,6 +944,14 @@ func (_c *ProductCreate) check() error {
 	}
 	if _, ok := _c.mutation.LockVersion(); !ok {
 		return &ValidationError{Name: "lock_version", err: errors.New(`ent: missing required field "Product.lock_version"`)}
+	}
+	if _, ok := _c.mutation.PluginRuleRevision(); !ok {
+		return &ValidationError{Name: "plugin_rule_revision", err: errors.New(`ent: missing required field "Product.plugin_rule_revision"`)}
+	}
+	if v, ok := _c.mutation.PluginRuleRevision(); ok {
+		if err := product.PluginRuleRevisionValidator(v); err != nil {
+			return &ValidationError{Name: "plugin_rule_revision", err: fmt.Errorf(`ent: validator failed for field "Product.plugin_rule_revision": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.LockedBy(); !ok {
 		return &ValidationError{Name: "locked_by", err: errors.New(`ent: missing required field "Product.locked_by"`)}
@@ -1130,6 +1156,10 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.LockVersion(); ok {
 		_spec.SetField(product.FieldLockVersion, field.TypeInt64, value)
 		_node.LockVersion = value
+	}
+	if value, ok := _c.mutation.PluginRuleRevision(); ok {
+		_spec.SetField(product.FieldPluginRuleRevision, field.TypeInt64, value)
+		_node.PluginRuleRevision = value
 	}
 	if value, ok := _c.mutation.LockedBy(); ok {
 		_spec.SetField(product.FieldLockedBy, field.TypeUint64, value)
@@ -1868,6 +1898,24 @@ func (u *ProductUpsert) UpdateLockVersion() *ProductUpsert {
 // AddLockVersion adds v to the "lock_version" field.
 func (u *ProductUpsert) AddLockVersion(v int64) *ProductUpsert {
 	u.Add(product.FieldLockVersion, v)
+	return u
+}
+
+// SetPluginRuleRevision sets the "plugin_rule_revision" field.
+func (u *ProductUpsert) SetPluginRuleRevision(v int64) *ProductUpsert {
+	u.Set(product.FieldPluginRuleRevision, v)
+	return u
+}
+
+// UpdatePluginRuleRevision sets the "plugin_rule_revision" field to the value that was provided on create.
+func (u *ProductUpsert) UpdatePluginRuleRevision() *ProductUpsert {
+	u.SetExcluded(product.FieldPluginRuleRevision)
+	return u
+}
+
+// AddPluginRuleRevision adds v to the "plugin_rule_revision" field.
+func (u *ProductUpsert) AddPluginRuleRevision(v int64) *ProductUpsert {
+	u.Add(product.FieldPluginRuleRevision, v)
 	return u
 }
 
@@ -2711,6 +2759,27 @@ func (u *ProductUpsertOne) AddLockVersion(v int64) *ProductUpsertOne {
 func (u *ProductUpsertOne) UpdateLockVersion() *ProductUpsertOne {
 	return u.Update(func(s *ProductUpsert) {
 		s.UpdateLockVersion()
+	})
+}
+
+// SetPluginRuleRevision sets the "plugin_rule_revision" field.
+func (u *ProductUpsertOne) SetPluginRuleRevision(v int64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetPluginRuleRevision(v)
+	})
+}
+
+// AddPluginRuleRevision adds v to the "plugin_rule_revision" field.
+func (u *ProductUpsertOne) AddPluginRuleRevision(v int64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddPluginRuleRevision(v)
+	})
+}
+
+// UpdatePluginRuleRevision sets the "plugin_rule_revision" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdatePluginRuleRevision() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdatePluginRuleRevision()
 	})
 }
 
@@ -3726,6 +3795,27 @@ func (u *ProductUpsertBulk) AddLockVersion(v int64) *ProductUpsertBulk {
 func (u *ProductUpsertBulk) UpdateLockVersion() *ProductUpsertBulk {
 	return u.Update(func(s *ProductUpsert) {
 		s.UpdateLockVersion()
+	})
+}
+
+// SetPluginRuleRevision sets the "plugin_rule_revision" field.
+func (u *ProductUpsertBulk) SetPluginRuleRevision(v int64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetPluginRuleRevision(v)
+	})
+}
+
+// AddPluginRuleRevision adds v to the "plugin_rule_revision" field.
+func (u *ProductUpsertBulk) AddPluginRuleRevision(v int64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddPluginRuleRevision(v)
+	})
+}
+
+// UpdatePluginRuleRevision sets the "plugin_rule_revision" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdatePluginRuleRevision() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdatePluginRuleRevision()
 	})
 }
 

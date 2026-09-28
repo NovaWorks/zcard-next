@@ -224,7 +224,7 @@ func EnsureBuiltinRoles(ctx context.Context, client *ent.Client) error {
 		"order:read", "order:read_detail",
 		"payment:read", "payment:read_detail",
 		"wallet:read", "wallet:withdraw",
-		"giftcard:read", "license:read", "reconcile:read",
+		"giftcard:read", "license:read", "plugin:read", "reconcile:read",
 		"order:view_delivery",
 		"memberlevel:read",
 		"coupon:read",

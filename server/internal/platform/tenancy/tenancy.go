@@ -50,3 +50,13 @@ func FromContext(ctx context.Context) Context {
 
 // Main 主站上下文（worker/定时任务的兜底）。
 func Main() Context { return Context{SubsiteID: MainSubsiteID, IsMain: true} }
+
+// Require returns only an explicitly established scope. Administrative plugin
+// operations must not inherit the worker's implicit main-site fallback.
+func Require(ctx context.Context) (Context, error) {
+	tc, ok := ctx.Value(ctxKey{}).(Context)
+	if !ok {
+		return Context{}, ErrNoTenant
+	}
+	return tc, nil
+}

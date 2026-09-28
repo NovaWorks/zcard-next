@@ -1,4 +1,6 @@
+import plugin from "./plugin-zh-cn";
 const local: App.I18n.Schema = {
+  plugin,
   system: {
     title: "ZCard 管理系统",
     updateTitle: "系统版本更新通知",
@@ -220,6 +222,7 @@ const local: App.I18n.Schema = {
     },
   },
   route: {
+    plugin: "插件管理",
     login: "登录",
     403: "无权限",
     404: "页面不存在",

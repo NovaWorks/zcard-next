@@ -232,6 +232,8 @@ func (h *dujiaoCompat) createOrder(w http.ResponseWriter, r *http.Request, accou
 	}
 	if out.rejected {
 		switch out.errCode {
+		case "SUPPLY_RESTRICTED":
+			writeDujiaoErr(w, http.StatusForbidden, "SUPPLY_RESTRICTED", "当前资格不可购买")
 		case "insufficient_balance":
 			// dujiao 钱包扣款失败口径：HTTP 200 + ok=false + payment_failed
 			writeDujiaoErr(w, http.StatusOK, "payment_failed", "供货余额不足")

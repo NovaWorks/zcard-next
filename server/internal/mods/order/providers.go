@@ -10,7 +10,7 @@ import (
 
 // ProviderSet order providers。
 var ProviderSet = wire.NewSet(
-	NewOrderUsecaseDep,
+	ProvideOrderUsecase, NewRequestFingerprinter,
 	NewOrderRepoImpl,
 	NewStoreOrderService,
 	NewStoreCartService,

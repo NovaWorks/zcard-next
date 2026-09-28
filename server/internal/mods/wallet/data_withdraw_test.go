@@ -9,8 +9,8 @@ import (
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
-	affiliateport "github.com/NovaWorks/zcard-next/server/internal/mods/affiliate/port"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/withdrawal"
+	affiliateport "github.com/NovaWorks/zcard-next/server/internal/mods/affiliate/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 
 	"github.com/go-kratos/kratos/v3/errors"

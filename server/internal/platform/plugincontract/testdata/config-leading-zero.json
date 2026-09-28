@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "revision": "1",
+  "enabled": true,
+  "allowedLevelIds": [
+    "07"
+  ]
+}

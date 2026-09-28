@@ -111,7 +111,7 @@
           <input v-model="couponCode" type="text" class="pd-input" placeholder="输入优惠券码" />
         </div>
 
-        <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
+        <div v-if="error" role="alert" class="error" style="margin-bottom: 12px;">{{ error }}</div>
 
         <div v-if="stockUnknown" class="pd-stock-notice" role="status">
           <div>
@@ -368,7 +368,7 @@ async function removeFromCart() {
   removingCart.value = true;
   const { error: err } = await removeCartItem(item.id);
   removingCart.value = false;
-  if (err) { error.value = err; return; }
+  if (err) { error.value = err; scrollToFormError(); return; }
 }
 
 function stockTypeLabel(t: string) {
@@ -519,7 +519,7 @@ async function buy() {
     captcha_code: (isGuest.value && captchaCfg.value.order) ? captchaCode.value : undefined,
   });
   submitting.value = false;
-  if (err) { error.value = err; return; }
+  if (err) { error.value = err; scrollToFormError(); return; }
   rememberOrderPassword(data!.order_no, queryPassword.value); // 支付成功自动取货用
   router.push(`/payment/${data!.order_no}`);
 }
@@ -545,7 +545,7 @@ async function exchangePoints() {
     use_points: true
   });
   submitting.value = false;
-  if (err) { error.value = err; return; }
+  if (err) { error.value = err; scrollToFormError(); return; }
   alert('兑换成功，订单已支付，请前往取货页领取');
   router.push('/fetch');
 }

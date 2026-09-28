@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
@@ -42,11 +44,11 @@ func TestOrderReviewAuthorizationAndModeration(t *testing.T) {
 		content string
 		product uint64
 	}{{0, "好", p.ID}, {6, "好", p.ID}, {5, "   ", p.ID}, {5, strings.Repeat("中", 1001), p.ID}, {5, "好", p.ID + 99}} {
-		req := *submit
+		req := proto.Clone(submit).(*storefrontv1.SubmitOrderReviewRequest)
 		req.Rating = bad.rating
 		req.Content = bad.content
 		req.ProductId = bad.product
-		if _, err := s.SubmitOrderReview(ctx, &req); errors.Code(err) != 400 {
+		if _, err := s.SubmitOrderReview(ctx, req); errors.Code(err) != 400 {
 			t.Fatalf("invalid input accepted: %v", err)
 		}
 	}

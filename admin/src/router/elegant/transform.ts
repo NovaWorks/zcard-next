@@ -176,6 +176,7 @@ const routeMap: RouteMap = {
   "marketing": "/marketing",
   "order": "/order",
   "payment-channel": "/payment-channel",
+  "plugin": "/plugin",
   "product": "/product",
   "settings": "/settings",
   "staff": "/staff",

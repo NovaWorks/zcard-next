@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zcard.invalid/plugin/v1/manifest.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "runtime": {
+      "const": "goja-v1"
+    },
+    "entry": {
+      "const": "main.js"
+    },
+    "hostApiVersion": {
+      "const": "1"
+    },
+    "core": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minInclusive": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "maxExclusive": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        }
+      },
+      "required": [
+        "minInclusive",
+        "maxExclusive"
+      ]
+    },
+    "requiredCapabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 96,
+        "pattern": "^[a-z][a-z0-9._]*\\.v[1-9][0-9]*$"
+      },
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true
+    },
+    "scopes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "order:validate",
+          "plugin:config:read"
+        ]
+      },
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true
+    },
+    "configSchemaVersion": {
+      "const": 1
+    },
+    "uiContributions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "extensionPoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96,
+            "pattern": "^[a-z][a-z0-9._]*\\.v[1-9][0-9]*$"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "enum": [
+                    "enabled",
+                    "allowedLevelIds"
+                  ]
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "switch",
+                    "multiselect"
+                  ]
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "optionsSource": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "member-level-options.v1"
+                  ]
+                }
+              },
+              "required": [
+                "key",
+                "type",
+                "label",
+                "optionsSource"
+              ]
+            },
+            "minItems": 0,
+            "maxItems": 2,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "extensionPoint",
+          "required",
+          "fields"
+        ]
+      },
+      "minItems": 0,
+      "maxItems": 8,
+      "uniqueItems": true
+    },
+    "entitlement": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "free",
+            "paid"
+          ]
+        }
+      },
+      "required": [
+        "mode"
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "version",
+    "runtime",
+    "entry",
+    "hostApiVersion",
+    "core",
+    "requiredCapabilities",
+    "scopes",
+    "configSchemaVersion",
+    "uiContributions",
+    "entitlement"
+  ]
+}

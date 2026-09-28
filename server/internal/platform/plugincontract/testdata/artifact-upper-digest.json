@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "pluginId": "member-purchase-gate",
+  "version": "0.1.0",
+  "manifestSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "archiveSHA256": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "archiveBytes": "1024",
+  "keyId": "test-artifact"
+}

@@ -9,6 +9,7 @@
 /** 路由名 → 所需权限点（任一命中即可见） */
 export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   home: ["dashboard:read"],
+  plugin: ["plugin:read"],
   product: ["catalog:read"],
   category: ["catalog:category_read"],
   content: ["content:read"],

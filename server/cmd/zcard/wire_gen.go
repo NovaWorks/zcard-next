@@ -28,6 +28,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/plugin"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/reseller"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/seo"
@@ -50,6 +51,28 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	if err != nil {
 		return nil, nil, err
 	}
+	coordinator := plugin.NewCoordinator()
+	box, err := bootstrap.NewDataBox(securityConf)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	repoImpl := settings.ProvideRepo(dataData, box)
+	notifyRepo := notify.NewNotifyRepo(dataData)
+	v := notify.ProvideChannels(notifyRepo, repoImpl)
+	resellerRepo := reseller.NewResellerRepo(dataData)
+	settingsUsecase := settings.NewSettingsUsecase(repoImpl)
+	adminSettingsService := settings.NewAdminSettingsService(settingsUsecase)
+	dispatcher := notify.ProvideDispatcher(notifyRepo, v, resellerRepo, adminSettingsService)
+	alerter := audit.ProvideAuditAlerter(repoImpl, dispatcher)
+	auditRepo := audit.NewAuditRepoWithAlerter(dataData, logger, alerter)
+	repo := plugin.NewRepo(dataData, coordinator, auditRepo)
+	filePackages, err := plugin.ProvideFilePackages(dataConf)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	manager := plugin.ProvideManager(repo, filePackages)
 	signer, err := bootstrap.NewSigner(securityConf)
 	if err != nil {
 		cleanup()
@@ -58,23 +81,14 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	roleRepoImpl := authz.NewRoleRepoImpl(dataData)
 	rbacUsecase := authz.NewRbacUsecase(roleRepoImpl)
 	adminUserRepoImpl := identity.NewAdminUserRepoImpl(dataData)
-	box, err := bootstrap.NewDataBox(securityConf)
-	if err != nil {
-		cleanup()
-		return nil, nil, err
-	}
 	identityUsecase := identity.NewIdentityUsecase(adminUserRepoImpl, signer, dataData, box)
-	repoImpl := settings.ProvideRepo(dataData, box)
 	settingsReader := notify.ProvideSettingsReader(repoImpl)
 	service := captcha.New(settingsReader)
 	adminAuthService := identity.NewAdminAuthService(identityUsecase, rbacUsecase, service)
-	settingsUsecase := settings.NewSettingsUsecase(repoImpl)
-	adminSettingsService := settings.NewAdminSettingsService(settingsUsecase)
 	adminInstallService := settings.NewAdminInstallService(dataData)
 	mediaRepo := media.NewMediaRepo(dataData)
 	productRepoImpl := catalog.NewProductRepoImpl(dataData, mediaRepo)
 	catalogUsecase := catalog.NewCatalogUsecase(productRepoImpl)
-	resellerRepo := reseller.NewResellerRepo(dataData)
 	cardCipher, err := bootstrap.NewCardCipher(securityConf)
 	if err != nil {
 		cleanup()
@@ -88,16 +102,17 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	}
 	walletRepoImpl := wallet.NewWalletRepoImpl(dataData)
 	rechargeReader := wallet.ProvidePortRechargeReader(walletRepoImpl)
-	memberLevelRepoImpl := memberlevel.NewMemberLevelRepoImpl(dataData, rechargeReader)
+	memberLevelRepoImpl := memberlevel.ProvideProtectedMemberLevelRepo(dataData, rechargeReader, repo)
 	couponRepoImpl := coupon.NewCouponRepoImpl(dataData)
 	outboxWriter := data.NewOutboxWriter(dataData)
-	notifyRepo := notify.NewNotifyRepo(dataData)
-	v := notify.ProvideChannels(notifyRepo, repoImpl)
-	dispatcher := notify.ProvideDispatcher(notifyRepo, v, resellerRepo, adminSettingsService)
-	alerter := audit.ProvideAuditAlerter(repoImpl, dispatcher)
-	auditRepo := audit.NewAuditRepoWithAlerter(dataData, logger, alerter)
 	pointsDebiter := wallet.ProvidePortPointsDebiter(walletRepoImpl)
-	orderUsecase := order.NewOrderUsecaseDep(dataData, cardRepoImpl, generator, memberLevelRepoImpl, couponRepoImpl, productRepoImpl, outboxWriter, auditRepo, couponRepoImpl, couponRepoImpl, settingsReader, resellerRepo, pointsDebiter)
+	requiredGate := plugin.NewRequiredGate(repo)
+	requestFingerprinter, err := order.NewRequestFingerprinter(dataConf, dataData)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	orderUsecase := order.ProvideOrderUsecase(dataData, cardRepoImpl, generator, memberLevelRepoImpl, couponRepoImpl, productRepoImpl, outboxWriter, auditRepo, couponRepoImpl, couponRepoImpl, settingsReader, resellerRepo, pointsDebiter, requiredGate, requestFingerprinter)
 	storeCatalogService := catalog.NewStoreCatalogService(catalogUsecase, resellerRepo, orderUsecase)
 	storeReviewService := catalog.NewStoreReviewService(productRepoImpl)
 	supplyRepoImpl := supply.NewSupplyRepoImpl(dataData, box)
@@ -141,6 +156,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	adminMediaService := media.NewAdminMediaService(mediaRepo)
 	licenseRepo := license.ProvideLicenseRepo(repoImpl)
 	adminLicenseService := license.NewAdminLicenseService(licenseRepo)
+	adminPluginService := plugin.NewAdminPluginService(manager, rbacUsecase)
 	adminResellerService := reseller.NewAdminResellerService(resellerRepo)
 	passwordService := identity.NewPasswordService(dataData, signer, dispatcher)
 	registerCodeService := identity.NewRegisterCodeService(dataData, dispatcher)
@@ -163,9 +179,9 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	purchaseRepo := license.NewPurchaseRepo(dataData, licenseRepo, portWallet)
 	storeLicenseService := license.NewStoreLicenseService(purchaseRepo)
 	adminCouponService := coupon.NewAdminCouponService(couponRepoImpl)
-	repo := lottery.NewRepo(dataData, cardCipher)
-	adminService := lottery.NewAdminService(repo)
-	storeService := lottery.NewStoreService(repo)
+	lotteryRepo := lottery.NewRepo(dataData, cardCipher)
+	adminService := lottery.NewAdminService(lotteryRepo)
+	storeService := lottery.NewStoreService(lotteryRepo)
 	dashboardRepoImpl := dashboard.NewDashboardRepoImpl(dataData)
 	reconciler := dashboard.NewReconciler(dataData, gateway, dispatcher)
 	settingsReader2 := dashboard.ProvideSettingsReader(repoImpl)
@@ -186,7 +202,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	seoService := seo.NewSeoService(seoRepo, repoImpl, storeCatalogService)
 	updateService := update.NewService(dataConf, settingsUsecase)
 	adminUpdateService := update.NewAdminUpdateService(updateService)
-	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminUserRepoImpl, adminAuthService, adminSettingsService, adminInstallService, storeCatalogService, storeReviewService, adminSupplyService, adminProcurementService, supplyAPIService, adminSupplierService, storeSupplierService, supplierRepoImpl, adminContentService, storeContentService, adminNotifyService, storeNotificationService, storeCouponService, storeTicketService, adminTicketService, storeAffiliateService, adminMediaService, adminLicenseService, adminResellerService, resellerRepo, storeUserService, adminUserManageService, adminAuditService, auditRepo, roleService, adminUserService, storefrontConfigService, storeCaptchaService, storeMediaService, adminCurrencyService, adminCatalogService, adminMemberLevelService, storeMemberLevelService, storeLicenseService, adminCouponService, adminService, storeService, adminDashboardService, adminInventoryService, adminOrderService, procureService, gateway, storeOrderService, storeCartService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory, trackRepo, seoService, adminUpdateService)
+	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminUserRepoImpl, adminAuthService, adminSettingsService, adminInstallService, storeCatalogService, storeReviewService, adminSupplyService, adminProcurementService, supplyAPIService, adminSupplierService, storeSupplierService, supplierRepoImpl, adminContentService, storeContentService, adminNotifyService, storeNotificationService, storeCouponService, storeTicketService, adminTicketService, storeAffiliateService, adminMediaService, adminLicenseService, adminPluginService, adminResellerService, resellerRepo, storeUserService, adminUserManageService, adminAuditService, auditRepo, roleService, adminUserService, storefrontConfigService, storeCaptchaService, storeMediaService, adminCurrencyService, adminCatalogService, adminMemberLevelService, storeMemberLevelService, storeLicenseService, adminCouponService, adminService, storeService, adminDashboardService, adminInventoryService, adminOrderService, procureService, gateway, storeOrderService, storeCartService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory, trackRepo, seoService, adminUpdateService)
 	grpcServer := server.NewGRPCServer(serverConf, adminAuthService, adminSettingsService, storeCatalogService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, storeMemberLevelService, storeLicenseService)
 	workerServer := server.NewWorkerServer(dataConf, enqueuer, dataDispatcher, syncService, procureService, supplyAPIService, broadcastService)
 	outboxRelay := bootstrap.NewOutboxRelay(dataData, enqueuer, logger)
@@ -200,8 +216,9 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	pointsService := memberlevel.NewPointsService(memberLevelRepoImpl, points, logger)
 	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer, dataDispatcher, procureService, dispatcher, affiliateService, settleService, deliveryRepoImpl, pointsService, orderUsecase, paymentRepoImpl, walletRepoImpl, gateway, storeCatalogService)
 	mainAppDeps := &appDeps{
-		App:    app,
-		Update: updateService,
+		Plugins: manager,
+		App:     app,
+		Update:  updateService,
 	}
 	return mainAppDeps, func() {
 		cleanup2()
@@ -213,6 +230,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 
 // appDeps wire 装配产物打包（wire 多具体返回值受限）。
 type appDeps struct {
-	App    *kratos.App
-	Update *update.Service // serve 层挂更新重启 hook 用
+	Plugins *plugin.Manager
+	App     *kratos.App
+	Update  *update.Service // serve 层挂更新重启 hook 用
 }

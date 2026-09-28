@@ -19,7 +19,7 @@ func TestLowStockCount(t *testing.T) {
 	p1 := d.Client.Product.Create().SetName("P1").SetSlug("p1").SetSubsiteID(0).SetStatus(1).SaveX(ctx)
 	p2 := d.Client.Product.Create().SetName("P2").SetSlug("p2").SetSubsiteID(0).SetStatus(1).SaveX(ctx)
 	off := d.Client.Product.Create().SetName("OFF").SetSlug("off").SetSubsiteID(0).SetStatus(0).SaveX(ctx) // 下架不参与
-	for i := 0; i < 3; i++ { // 3 张 < 阈值 5 → 预警
+	for i := 0; i < 3; i++ {                                                                               // 3 张 < 阈值 5 → 预警
 		d.Client.Card.Create().SetProductID(p1.ID).SetSubsiteID(0).SetContent([]byte("x")).SetContentHash(fmt.Sprintf("p1-%d", i)).SaveX(ctx)
 	}
 	for i := 0; i < 8; i++ { // 8 张 ≥ 阈值 → 不预警

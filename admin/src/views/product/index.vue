@@ -4,6 +4,8 @@
  * 全字段表单（分类/描述/封面+图集 media 上传/排序/上下架三态/发货模式/库存显示/积分价）
  * + SKU 规格管理子表格 + 下单控件配置（独立弹窗）。
  */
+import ProductExtensions from "@/components/plugin/product-extensions.vue";
+import { $t } from "@/locales";
 import ListingManagement from "./components/listing-management.vue";
 import { ref, reactive, computed, onMounted, onBeforeUnmount, h, watch } from "vue";
 import { onBeforeRouteLeave, useRoute } from "vue-router";
@@ -49,6 +51,7 @@ const route = useRoute();
 const loading = ref(false);
 const saving = ref(false);
 const showCreate = ref(false);
+const pluginPanel = ref<InstanceType<typeof ProductExtensions> | null>(null);
 const skuPanel = ref<InstanceType<typeof SkuPanel> | null>(null);
 const editingId = ref(0);
 const deliveryProduct = ref<any>(null);
@@ -81,8 +84,8 @@ async function changeLock(row:any) {
 const controlPanel = ref<InstanceType<typeof ControlPanel> | null>(null);
 const initialProduct = ref("");
 const independentlySaved = ref(false);
-const editorBusy = computed(() => saving.value || !!skuPanel.value?.saving || !!controlPanel.value?.saving);
-const hasUnsaved = computed(() => !!initialProduct.value && (JSON.stringify(buildPayload()) !== initialProduct.value || !!skuPanel.value?.hasPending || !!controlPanel.value?.hasPending));
+const editorBusy = computed(() => saving.value || !!skuPanel.value?.saving || !!controlPanel.value?.saving || !!pluginPanel.value?.saving);
+const hasUnsaved = computed(() => !!initialProduct.value && (JSON.stringify(buildPayload()) !== initialProduct.value || !!skuPanel.value?.hasPending || !!controlPanel.value?.hasPending || !!pluginPanel.value?.hasPending));
 let discardPrompt: Promise<boolean> | undefined;
 function confirmDiscard(): Promise<boolean> {
   if (!hasUnsaved.value) return Promise.resolve(true);
@@ -92,7 +95,7 @@ function confirmDiscard(): Promise<boolean> {
     if (!dialog) { resolve(false); return; }
     dialog.warning({
       title: "放弃未保存修改？",
-      content: independentlySaved.value ? "关闭将放弃尚未保存的内容。已单独保存或删除的规格、控件仍然生效。" : "本次尚未保存的商品、规格及控件输入将被放弃。",
+      content: independentlySaved.value ? "关闭将放弃尚未保存的内容。已单独保存或删除的规格、控件、插件扩展仍然生效。" : "本次尚未保存的商品、规格、控件及插件扩展输入将被放弃。",
       positiveText: "放弃修改", negativeText: "继续编辑", maskClosable: false,
       onPositiveClick: () => resolve(true), onNegativeClick: () => resolve(false), onClose: () => resolve(false), onEsc: () => resolve(false),
     });
@@ -461,7 +464,7 @@ const showCategory = ref(false);
 
 // 分步表单（大厂发布商品模式：基础 → 价格库存 → 商品描述 → 规格与控件 → 高级设置）
 const step = ref(1);
-const stepCount = 5;
+const stepCount = 6;
 
 const formData = reactive({
   name: "",
@@ -954,6 +957,7 @@ function resetForm() {
 }
 
 async function handleEdit(row: any) {
+  if (editorBusy.value || (showCreate.value && !await confirmDiscard())) return;
   // 编辑取详情（列表行可能缺全字段）
   const { data, error } = await fetchProduct(row.id);
   if(error || !data)return;
@@ -1012,6 +1016,7 @@ function buildPayload() {
 async function handleSave() {
   if(editorLocked.value)return;
   if (editorBusy.value) return;
+  if (pluginPanel.value?.hasPending) { window.$message?.warning($t("plugin.saveDraftFirst")); return; }
   if (controlPanel.value?.hasPending) { window.$message?.warning("下单控件还有未保存输入，请先点击创建/更新控件或取消编辑"); return; }
   if (!formData.name || formData.price_yuan <= 0) return;
   saving.value = true;
@@ -1276,8 +1281,13 @@ onMounted(() => {
         <NStep title="商品描述" />
         <NStep title="规格与控件" />
         <NStep title="高级设置" />
+        <NStep :title="$t('plugin.extensions')" />
       </NSteps>
 
+      <div v-if="showCreate" v-show="step === 6" class="px-12px" style="max-height: 60vh; overflow-y: auto;">
+        <ProductExtensions ref="pluginPanel" :key="editingId" :product-id="editingId && Number.isSafeInteger(editingId) ? String(editingId) : ''" :readonly="editorLocked" @persisted="independentlySaved = true" />
+        <NButton v-if="!editingId" class="mt-12px" type="primary" :loading="saving" @click="saveAndContinue">保存并配置插件扩展</NButton>
+      </div>
       <!-- 商品描述步：完全展开（编辑器整高可见，不内滚）；其余步骤限高内滚 -->
       <NScrollbar v-if="step !== 3" class="max-h-460px px-12px">
         <!-- 第 1 步：基础信息 -->
@@ -1381,7 +1391,7 @@ onMounted(() => {
         </NForm>
 
         <!-- 高级设置（第 5 步，内滚容器内） -->
-        <NForm v-else :model="formData" :disabled="editorLocked" label-placement="left" label-width="100">
+        <NForm v-else-if="step === 5" :model="formData" :disabled="editorLocked" label-placement="left" label-width="100">
           <NFormItem label="发货模式">
             <NSelect v-model:value="formData.delivery_mode" :options="deliveryModeOptions" />
           </NFormItem>
@@ -1453,7 +1463,7 @@ onMounted(() => {
             <NButton :disabled="editorBusy" @click="requestClose">取消</NButton>
             <NButton v-if="step > 1" :disabled="editorBusy" @click="stepPrev">上一步</NButton>
             <NButton v-if="step < stepCount" :disabled="editorBusy" type="primary" @click="stepNext">下一步</NButton>
-            <NButton v-else-if="!editorLocked" type="primary" :disabled="editorBusy" :loading="saving" @click="handleSave">
+            <NButton v-if="(step === 5 || step === 6) && !editorLocked" type="primary" :disabled="editorBusy" :loading="saving" @click="handleSave">
               {{ editingId ? "保存" : "创建" }}
             </NButton>
           </NSpace>

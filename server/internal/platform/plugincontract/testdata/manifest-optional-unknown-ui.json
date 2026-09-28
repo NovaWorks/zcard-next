@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "member-purchase-gate",
+  "version": "0.1.0",
+  "runtime": "goja-v1",
+  "entry": "main.js",
+  "hostApiVersion": "1",
+  "core": {
+    "minInclusive": "1.2.89",
+    "maxExclusive": "2.0.0"
+  },
+  "requiredCapabilities": [
+    "order.pre_create.v1"
+  ],
+  "scopes": [
+    "order:validate",
+    "plugin:config:read"
+  ],
+  "configSchemaVersion": 1,
+  "uiContributions": [
+    {
+      "extensionPoint": "future.chart.v1",
+      "required": false,
+      "fields": [
+        {
+          "key": "enabled",
+          "type": "switch",
+          "label": "会员购买限制",
+          "optionsSource": "none"
+        },
+        {
+          "key": "allowedLevelIds",
+          "type": "multiselect",
+          "label": "允许的有效等级",
+          "optionsSource": "member-level-options.v1"
+        }
+      ]
+    }
+  ],
+  "entitlement": {
+    "mode": "free"
+  }
+}

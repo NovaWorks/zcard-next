@@ -16,3 +16,5 @@ export * from "./ticket";
 export * from "./update";
 
 export * from "./lottery";
+
+export * from "./plugin";

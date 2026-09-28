@@ -59,6 +59,7 @@ func (Product) Fields() []ent.Field {
 		field.String("listing_message").Default("").MaxRuneLen(200),
 		field.Bool("is_locked").Default(false),
 		field.Int64("lock_version").Default(0),
+		field.Int64("plugin_rule_revision").Default(0).NonNegative(),
 		field.Uint64("locked_by").Default(0),
 		field.Time("locked_at").SchemaType(mysqlTime).Optional().Nillable(),
 	}

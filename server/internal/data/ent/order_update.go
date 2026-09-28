@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
@@ -627,6 +628,44 @@ func (_u *OrderUpdate) ClearIdempotencyKey() *OrderUpdate {
 	return _u
 }
 
+// SetRequestFingerprint sets the "request_fingerprint" field.
+func (_u *OrderUpdate) SetRequestFingerprint(v string) *OrderUpdate {
+	_u.mutation.SetRequestFingerprint(v)
+	return _u
+}
+
+// SetNillableRequestFingerprint sets the "request_fingerprint" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableRequestFingerprint(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetRequestFingerprint(*v)
+	}
+	return _u
+}
+
+// ClearRequestFingerprint clears the value of the "request_fingerprint" field.
+func (_u *OrderUpdate) ClearRequestFingerprint() *OrderUpdate {
+	_u.mutation.ClearRequestFingerprint()
+	return _u
+}
+
+// SetPluginDecisions sets the "plugin_decisions" field.
+func (_u *OrderUpdate) SetPluginDecisions(v []map[string]interface{}) *OrderUpdate {
+	_u.mutation.SetPluginDecisions(v)
+	return _u
+}
+
+// AppendPluginDecisions appends value to the "plugin_decisions" field.
+func (_u *OrderUpdate) AppendPluginDecisions(v []map[string]interface{}) *OrderUpdate {
+	_u.mutation.AppendPluginDecisions(v)
+	return _u
+}
+
+// ClearPluginDecisions clears the value of the "plugin_decisions" field.
+func (_u *OrderUpdate) ClearPluginDecisions() *OrderUpdate {
+	_u.mutation.ClearPluginDecisions()
+	return _u
+}
+
 // SetPaidAt sets the "paid_at" field.
 func (_u *OrderUpdate) SetPaidAt(v time.Time) *OrderUpdate {
 	_u.mutation.SetPaidAt(v)
@@ -1095,6 +1134,11 @@ func (_u *OrderUpdate) check() error {
 			return &ValidationError{Name: "idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Order.idempotency_key": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RequestFingerprint(); ok {
+		if err := order.RequestFingerprintValidator(v); err != nil {
+			return &ValidationError{Name: "request_fingerprint", err: fmt.Errorf(`ent: validator failed for field "Order.request_fingerprint": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ExpiryReason(); ok {
 		if err := order.ExpiryReasonValidator(v); err != nil {
 			return &ValidationError{Name: "expiry_reason", err: fmt.Errorf(`ent: validator failed for field "Order.expiry_reason": %w`, err)}
@@ -1300,6 +1344,23 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.IdempotencyKeyCleared() {
 		_spec.ClearField(order.FieldIdempotencyKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestFingerprint(); ok {
+		_spec.SetField(order.FieldRequestFingerprint, field.TypeString, value)
+	}
+	if _u.mutation.RequestFingerprintCleared() {
+		_spec.ClearField(order.FieldRequestFingerprint, field.TypeString)
+	}
+	if value, ok := _u.mutation.PluginDecisions(); ok {
+		_spec.SetField(order.FieldPluginDecisions, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedPluginDecisions(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, order.FieldPluginDecisions, value)
+		})
+	}
+	if _u.mutation.PluginDecisionsCleared() {
+		_spec.ClearField(order.FieldPluginDecisions, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.PaidAt(); ok {
 		_spec.SetField(order.FieldPaidAt, field.TypeTime, value)
@@ -2226,6 +2287,44 @@ func (_u *OrderUpdateOne) ClearIdempotencyKey() *OrderUpdateOne {
 	return _u
 }
 
+// SetRequestFingerprint sets the "request_fingerprint" field.
+func (_u *OrderUpdateOne) SetRequestFingerprint(v string) *OrderUpdateOne {
+	_u.mutation.SetRequestFingerprint(v)
+	return _u
+}
+
+// SetNillableRequestFingerprint sets the "request_fingerprint" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableRequestFingerprint(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetRequestFingerprint(*v)
+	}
+	return _u
+}
+
+// ClearRequestFingerprint clears the value of the "request_fingerprint" field.
+func (_u *OrderUpdateOne) ClearRequestFingerprint() *OrderUpdateOne {
+	_u.mutation.ClearRequestFingerprint()
+	return _u
+}
+
+// SetPluginDecisions sets the "plugin_decisions" field.
+func (_u *OrderUpdateOne) SetPluginDecisions(v []map[string]interface{}) *OrderUpdateOne {
+	_u.mutation.SetPluginDecisions(v)
+	return _u
+}
+
+// AppendPluginDecisions appends value to the "plugin_decisions" field.
+func (_u *OrderUpdateOne) AppendPluginDecisions(v []map[string]interface{}) *OrderUpdateOne {
+	_u.mutation.AppendPluginDecisions(v)
+	return _u
+}
+
+// ClearPluginDecisions clears the value of the "plugin_decisions" field.
+func (_u *OrderUpdateOne) ClearPluginDecisions() *OrderUpdateOne {
+	_u.mutation.ClearPluginDecisions()
+	return _u
+}
+
 // SetPaidAt sets the "paid_at" field.
 func (_u *OrderUpdateOne) SetPaidAt(v time.Time) *OrderUpdateOne {
 	_u.mutation.SetPaidAt(v)
@@ -2707,6 +2806,11 @@ func (_u *OrderUpdateOne) check() error {
 			return &ValidationError{Name: "idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Order.idempotency_key": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RequestFingerprint(); ok {
+		if err := order.RequestFingerprintValidator(v); err != nil {
+			return &ValidationError{Name: "request_fingerprint", err: fmt.Errorf(`ent: validator failed for field "Order.request_fingerprint": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ExpiryReason(); ok {
 		if err := order.ExpiryReasonValidator(v); err != nil {
 			return &ValidationError{Name: "expiry_reason", err: fmt.Errorf(`ent: validator failed for field "Order.expiry_reason": %w`, err)}
@@ -2929,6 +3033,23 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 	}
 	if _u.mutation.IdempotencyKeyCleared() {
 		_spec.ClearField(order.FieldIdempotencyKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestFingerprint(); ok {
+		_spec.SetField(order.FieldRequestFingerprint, field.TypeString, value)
+	}
+	if _u.mutation.RequestFingerprintCleared() {
+		_spec.ClearField(order.FieldRequestFingerprint, field.TypeString)
+	}
+	if value, ok := _u.mutation.PluginDecisions(); ok {
+		_spec.SetField(order.FieldPluginDecisions, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedPluginDecisions(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, order.FieldPluginDecisions, value)
+		})
+	}
+	if _u.mutation.PluginDecisionsCleared() {
+		_spec.ClearField(order.FieldPluginDecisions, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.PaidAt(); ok {
 		_spec.SetField(order.FieldPaidAt, field.TypeTime, value)

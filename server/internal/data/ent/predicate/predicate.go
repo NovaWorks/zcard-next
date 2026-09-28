@@ -66,6 +66,9 @@ type Giftcard func(*sql.Selector)
 // GiftcardBatch is the predicate function for giftcardbatch builders.
 type GiftcardBatch func(*sql.Selector)
 
+// InstalledPlugin is the predicate function for installedplugin builders.
+type InstalledPlugin func(*sql.Selector)
+
 // LicenseOrder is the predicate function for licenseorder builders.
 type LicenseOrder func(*sql.Selector)
 
@@ -137,6 +140,18 @@ type Payment func(*sql.Selector)
 
 // PaymentChannel is the predicate function for paymentchannel builders.
 type PaymentChannel func(*sql.Selector)
+
+// PluginData is the predicate function for plugindata builders.
+type PluginData func(*sql.Selector)
+
+// PluginOperation is the predicate function for pluginoperation builders.
+type PluginOperation func(*sql.Selector)
+
+// PluginRequirement is the predicate function for pluginrequirement builders.
+type PluginRequirement func(*sql.Selector)
+
+// PluginRuleLevelRef is the predicate function for pluginrulelevelref builders.
+type PluginRuleLevelRef func(*sql.Selector)
 
 // PointAccount is the predicate function for pointaccount builders.
 type PointAccount func(*sql.Selector)

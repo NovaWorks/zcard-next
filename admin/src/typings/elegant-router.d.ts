@@ -30,6 +30,7 @@ declare module "@elegant-router/types" {
     "marketing": "/marketing";
     "order": "/order";
     "payment-channel": "/payment-channel";
+    "plugin": "/plugin";
     "product": "/product";
     "settings": "/settings";
     "staff": "/staff";
@@ -80,6 +81,7 @@ declare module "@elegant-router/types" {
     | "marketing"
     | "order"
     | "payment-channel"
+    | "plugin"
     | "product"
     | "settings"
     | "staff"
@@ -115,6 +117,7 @@ declare module "@elegant-router/types" {
     | "marketing"
     | "order"
     | "payment-channel"
+    | "plugin"
     | "product"
     | "settings"
     | "staff"

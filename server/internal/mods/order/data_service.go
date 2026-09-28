@@ -68,14 +68,7 @@ func (s *StoreOrderService) CreateOrder(ctx context.Context, req *storefrontv1.C
 	if claims != nil {
 		userID = claims.Subject
 	}
-	// 图形验证码（captcha_order 开启时仅校验游客——防机器人；登录用户有账号体系不挡，
-	// 前台也只对游客渲染验证码框，此前未判登录态会把登录用户全部卡死在 captcha.REQUIRED）
-	if s.captcha != nil && claims == nil {
-		if err := s.captcha.VerifyScene(ctx, captcha.SceneOrder, req.GetCaptchaId(), req.GetCaptchaCode()); err != nil {
-			return nil, err
-		}
-	}
-	res, err := s.uc.CreateOrder(ctx, CreateOrderInput{
+	in := CreateOrderInput{
 		Items: items, UserID: userID, GuestContact: req.GetGuestContact(),
 		QueryPassword: req.GetQueryPassword(), Contact: req.GetContact(),
 		CouponCode: req.GetCouponCode(), ControlAnswers: req.GetControlAnswers(),
@@ -83,7 +76,21 @@ func (s *StoreOrderService) CreateOrder(ctx context.Context, req *storefrontv1.C
 		RefCode:   req.GetRefCode(),
 		// ：Idempotency-Key 头（同 key 双击返回首单，）
 		IdempotencyKey: idempotencyKeyFromContext(ctx),
-	})
+	}
+	in.SubsiteID = tenancy.FromContext(ctx).SubsiteID
+	if prev, err := s.uc.ReplayOrder(ctx, in); err != nil {
+		return nil, mapOrderErr(err)
+	} else if prev != nil {
+		return &storefrontv1.CreateOrderReply{OrderNo: prev.OrderNo, TotalCents: prev.TotalCents, ExpiresAt: prev.ExpiresAt.Unix()}, nil
+	}
+	// 图形验证码（captcha_order 开启时仅校验游客——防机器人；登录用户有账号体系不挡，
+	// 前台也只对游客渲染验证码框，此前未判登录态会把登录用户全部卡死在 captcha.REQUIRED）
+	if s.captcha != nil && claims == nil {
+		if err := s.captcha.VerifyScene(ctx, captcha.SceneOrder, req.GetCaptchaId(), req.GetCaptchaCode()); err != nil {
+			return nil, err
+		}
+	}
+	res, err := s.uc.CreateOrder(ctx, in)
 	if err != nil {
 		return nil, mapOrderErr(err)
 	}
@@ -496,6 +503,20 @@ func toAdminOrderPB(o *ent.Order, items []*ent.OrderItem, lines []*ent.OrderAmou
 func mapOrderErr(err error) error {
 	msg := err.Error()
 	switch {
+	case contains(msg, "CONCURRENT_UPDATE"):
+		return errors.Conflict("order.CONCURRENT_UPDATE", "交易状态已变化，请重试")
+	case contains(msg, "IDEMPOTENCY_CONFLICT"):
+		return errors.Conflict("order.IDEMPOTENCY_CONFLICT", "重复请求身份或参数不匹配，请使用订单查询")
+	case contains(msg, "PLUGIN_UNAVAILABLE"):
+		return errors.ServiceUnavailable("PLUGIN_UNAVAILABLE", "购买校验暂不可用，请稍后重试")
+	case msg == "LOGIN_REQUIRED":
+		return errors.Unauthorized("LOGIN_REQUIRED", "请登录后购买")
+	case msg == "MEMBER_LEVEL_DENIED" || msg == "SUPPLY_RESTRICTED":
+		return errors.Forbidden(msg, "当前资格不可购买")
+	case contains(msg, "PLUGIN_FORBIDDEN"):
+		return errors.Forbidden("PLUGIN_FORBIDDEN", "资源不在当前范围")
+	case contains(msg, "INVALID_ITEMS"):
+		return errors.BadRequest("order.INVALID_ITEMS", "订单商品数量不合法")
 	case contains(msg, "FORM_INVALID"):
 		return errors.BadRequest("order.FORM_INVALID", strings.TrimPrefix(msg, "order.FORM_INVALID: "))
 	case stderrors.Is(err, couponport.ErrFlashReserved):

@@ -16,13 +16,15 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberlevel"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel/port"
+	pluginport "github.com/NovaWorks/zcard-next/server/internal/mods/plugin/port"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 )
 
 // MemberLevelRepoImpl 等级仓储。
 type MemberLevelRepoImpl struct {
-	data     *data.Data
-	recharge walletport.RechargeReader // countAsRecharge 口径（nil = 充值口径恒 0）
+	data        *data.Data
+	pluginRules pluginport.RequirementStore
+	recharge    walletport.RechargeReader // countAsRecharge 口径（nil = 充值口径恒 0）
 }
 
 // NewMemberLevelRepoImpl 构造。
@@ -121,12 +123,21 @@ func (r *MemberLevelRepoImpl) UpdateLevel(ctx context.Context, id uint64, name s
 
 // DeleteLevel 删除等级。
 func (r *MemberLevelRepoImpl) DeleteLevel(ctx context.Context, id uint64) error {
-	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+	return data.RuleWriteTx(ctx, r.data, func(ctx context.Context) error {
 		if err := r.lockLevel(ctx, id); err != nil {
 			return err
 		}
 		if err := r.ensureUnassigned(ctx, id); err != nil {
 			return err
+		}
+		if r.pluginRules != nil {
+			used, err := r.pluginRules.LevelReferenced(ctx, id)
+			if err != nil {
+				return err
+			}
+			if used {
+				return fmt.Errorf("等级仍被商品购买限制引用，请先解除或修改规则")
+			}
 		}
 		return data.Client(ctx, r.data).MemberLevel.DeleteOneID(id).Exec(ctx)
 	})

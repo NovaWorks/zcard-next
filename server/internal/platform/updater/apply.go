@@ -110,6 +110,9 @@ func ApplyFile(binaryPath, fromVer, toVer, downloaded string) error {
 	if err := os.Chmod(downloaded, 0o755); err != nil {
 		return fmt.Errorf("updater: 临时文件加执行位失败: %w", err)
 	}
+	if err := checkPluginHost(binaryPath, downloaded); err != nil {
+		return err
+	}
 	prev := filepath.Join(dir, prevName)
 	_ = os.Remove(prev) // 上一代残留（上次更新未闭环）直接覆盖
 	if err := os.Rename(binaryPath, prev); err != nil {
@@ -133,6 +136,9 @@ func Rollback(binaryPath string) error {
 	prev := filepath.Join(dir, prevName)
 	if _, err := os.Stat(prev); err != nil {
 		return ErrNoRollback
+	}
+	if err := checkPluginHost(binaryPath, prev); err != nil {
+		return err
 	}
 	if err := copyOrRemoveBad(binaryPath); err != nil {
 		return err

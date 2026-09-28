@@ -1,5 +1,6 @@
 <template>
   <div class="cart-page">
+  <div v-if="checkoutError" class="cart-purchase-error" role="alert">{{ checkoutError }}<p>本次结算：{{ selectedItems.map(item => item.product_name).join('、') }}。购物车与填写内容已保留。</p></div>
     <div v-if="cartSettingLoaded && !cartEnabled" class="cart-empty" role="status">
       <p class="cart-empty-text">{{ cartSettingError || '购物车已关闭，请前往商品详情页直接购买' }}</p>
       <button v-if="cartSettingError" class="btn secondary" :disabled="retrying" @click="retrySetting">{{ retrying ? '读取中…' : '重试' }}</button>
@@ -109,6 +110,7 @@ const flash=useFlashOffers();
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { purchaseError } from '@/api/purchase-error';
 import { createOrder, getProduct, updateCart, rememberOrderPassword, fetchTradeConfig, contactRequiredLabel, contactValid, type CartItem, type ProductControl, type TradeConfig } from '@/api';
 import { formatMoney } from '@/api/client';
 import { loadCart, updateGuestQty, removeCartItem, clearPurchased, cartEnabled, cartSettingLoaded, cartSettingError, refreshCartSetting } from '@/cart';
@@ -229,8 +231,9 @@ async function checkout() {
 async function doCheckout() {
   if (checkingOut.value) return;
   checkingOut.value = true;
+  checkoutError.value = '';
   if (!(await refreshCartSetting(true))) { checkingOut.value = false; return; }
-  const { data, error } = await createOrder({
+  const { data, error, reason } = await createOrder({
     items: selectedItems.value.map((i) => ({ product_id: i.product_id, sku_id: i.sku_id || undefined, quantity: i.quantity, control_answers:controlAnswers.value[`${i.product_id}:${i.sku_id || 0}`] })),
     coupon_code: couponCode.value || undefined,
     query_password: queryPwd.value,
@@ -241,8 +244,8 @@ async function doCheckout() {
   });
   checkingOut.value = false;
   if (error || !data) {
-    alert(error || '下单失败');
-    await load();
+    checkoutError.value = error || '下单失败';
+    if (!purchaseError(reason)) await load();
     return;
   }
   // 下单成功后移除已结算项（游客清本地 / 登录删后端）
@@ -252,10 +255,13 @@ async function doCheckout() {
 }
 
 // 查询密码（多商品合并单共用一个取货密码；结算栏输入）
+const checkoutError = ref('');
 const queryPwd = ref('');
 </script>
 
 <style scoped>
+.cart-purchase-error { margin: 16px auto; padding: 16px; max-width: 1000px; border: 1px solid #b91c1c; color: #991b1b; border-radius: 8px; overflow-wrap: anywhere; }
+.cart-purchase-error p { margin-top: 8px; }
 .cart-page { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 
 /* ── 空态 ── */

@@ -37,12 +37,14 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
 	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/plugin"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/reseller"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/pluginstorage"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/updater"
 	"github.com/NovaWorks/zcard-next/server/internal/server"
 
@@ -89,6 +91,10 @@ func main() {
 		err = runServe(args)
 	case "migrate":
 		err = runMigrate(args)
+	case "plugin-host-check":
+		err = runPluginHostCheck(args)
+	case "plugin":
+		err = admincmd.RunPlugin(args, orDev(Version))
 	case "admin":
 		err = admincmd.Run(args)
 	case "reencrypt-cards":
@@ -123,6 +129,7 @@ func printUsage() {
   zcard serve  [-conf <dir>] [-mode all|api|worker]   启动服务（默认 all）
   zcard migrate [-conf <dir>]                          应用待执行迁移后退出
   zcard admin  create|list|reset-password              运维子命令
+  zcard plugin list|status|import|disable|disable-all  插件运维（P1 仅暂存）
   zcard reencrypt-cards --new-key <hex>                卡密密钥轮换
   zcard migrate-from-v1 --old-env <dir> [--dry-run]   1.x 数据迁移（先跑预检报告）
   zcard self-update [--check|--rollback]               在线更新（ed25519 验签；--check 只查）
@@ -235,6 +242,26 @@ func runServe(args []string) (err error) {
 	if err != nil {
 		return err
 	}
+	if bc.Data == nil {
+		return fmt.Errorf("database configuration required")
+	}
+	pluginRoot, rootErr := pluginstorage.ResolveRoot(*confDir, bc.Data.PluginDataDir)
+	if rootErr != nil {
+		return rootErr
+	}
+	bc.Data.PluginDataDir = pluginRoot
+	plugin.SplitMode = *mode != string(server.ModeAll)
+	var pluginLock *pluginstorage.Lock
+	var lockErr error
+	if plugin.SplitMode {
+		pluginLock, lockErr = pluginstorage.AcquireShared(pluginRoot)
+	} else {
+		pluginLock, lockErr = pluginstorage.Acquire(pluginRoot)
+	}
+	if lockErr != nil {
+		return fmt.Errorf("plugin instance lock: %w", lockErr)
+	}
+	defer pluginLock.Close()
 	ensureSQLiteDir(bc)
 	logger := newLogger(bc)
 	log.SetDefault(logger)
@@ -275,10 +302,45 @@ func runServe(args []string) (err error) {
 
 	supplier.ServerVersion = orDev(Version)
 	settings.SetServerVersion(orDev(Version))
+	plugin.BuildVersion = orDev(Version)
 	server.Version = orDev(Version) // /health 下发真实构建版本（此前恒 dev 的根因）
 	deps, cleanup, err := wireApp(bc.Server, bc.Data, bc.Security, logger)
 	if err != nil {
 		return err
+	}
+	if plugin.SplitMode {
+		if err := deps.Plugins.ValidateSplitMode(context.Background()); err != nil {
+			cleanup()
+			return err
+		}
+	} else {
+		if err := deps.Plugins.InitializeStorage(context.Background(), pluginRoot); err != nil {
+			cleanup()
+			return err
+		}
+		if err := deps.Plugins.ValidateServing(context.Background()); err != nil {
+			cleanup()
+			return err
+		}
+		closeControl, err := deps.Plugins.StartControl(pluginRoot)
+		if err != nil {
+			cleanup()
+			return err
+		}
+		defer closeControl()
+	}
+	if !updater.IsContainer() {
+		bin, e := os.Executable()
+		if e == nil {
+			bin, e = filepath.EvalSymlinks(bin)
+		}
+		if e == nil {
+			e = updater.ProtectPluginHost(bin, *confDir)
+		}
+		if e != nil {
+			cleanup()
+			return fmt.Errorf("persist plugin core update guard: %w", e)
+		}
 	}
 	app, updateSvc := deps.App, deps.Update
 	// 多进程形态禁用面板更新（方案 ）：api/worker 分进程会撞 update.state，

@@ -1,3 +1,4 @@
+import { purchaseError } from "./purchase-error";
 import { displayPrecision, formatCents, fromCents, toCents } from '../../../packages/money/index';
 import { loadPublicConfig } from '../config';
 import { readJSON } from './read';
@@ -33,6 +34,7 @@ export function clearToken() {
 interface ApiResult<T> {
   data: T | null;
   error: string | null;
+  reason?: string;
 }
 
 async function request<T>(method: string, path: string, body?: unknown, params?: Record<string, string | number | boolean | undefined>, silent = false): Promise<ApiResult<T>> {
@@ -75,14 +77,14 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
     if (!res.ok) {
       // token 过期/失效：清态跳登录（带回跳）；silent 模式（购物车等游客可降级
       // 端点）只清 token 不跳转——由调用方降级游客本地购物车；无 token 的 401 不动
-      if (res.status === 401 && token) {
+      if (res.status === 401 && token && json?.reason !== 'LOGIN_REQUIRED') {
         clearToken();
         if (!silent) {
           const redirect = encodeURIComponent(location.pathname + location.search);
           location.href = `/login?redirect=${redirect}`;
         }
       }
-      return { data: null, error: json?.message || json?.error || `HTTP ${res.status}` };
+      return { data: null, error: purchaseError(json?.reason) || json?.message || json?.error || `HTTP ${res.status}`, reason: typeof json?.reason === 'string' ? json.reason : undefined };
     }
     return { data: json as T, error: null };
   } catch (e: any) {

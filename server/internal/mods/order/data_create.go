@@ -12,8 +12,6 @@ package order
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -37,6 +35,7 @@ import (
 	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
 	paymentport "github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
+	pluginport "github.com/NovaWorks/zcard-next/server/internal/mods/plugin/port"
 	resellerport "github.com/NovaWorks/zcard-next/server/internal/mods/reseller/port"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
@@ -51,21 +50,23 @@ import (
 
 // OrderUsecase 扩展（持有依赖）。
 type OrderUsecase struct {
-	Data       *data.Data
-	Inv        port.Inventory
-	Gen        *id.Generator
-	MemberRate memberlevelport.RateResolver
-	Coupon     couponport.CouponResolver
-	Catalog    catalogport.PricingResolver
-	Outbox     events.Writer                  // order.* 事件发布（：procurement 订阅 order.paid）
-	Gate       auditport.RiskGate             // 下单风控闸门（nil = 未装配跳过）
-	Flash      couponport.FlashResolver       // ：秒杀（nil 跳过）
-	Promos     couponport.PromotionResolver   // ：促销（nil 跳过）
-	Settings   settingsport.SettingsReader    // ：互斥开关读取（nil 默认互斥）
-	Reseller   resellerport.Pricer            // ：管线步骤 7 分站定价 + 防自购快照（nil 跳过）
-	Points     walletport.PointsDebiter       // ：积分兑换下单扣分（nil = 积分单不可用）
-	SlowPay    paymentport.SlowPaymentChecker // ：慢通道顺延探测（nil = 不顺延直接取消；newApp 破环点注入）
-	StockGate  orderport.UpstreamStockGate    // ：上游代发项下单前实时库存预检（nil = 跳过；newApp 破环点注入）
+	PluginGate    pluginport.PurchaseGate
+	Fingerprinter *RequestFingerprinter
+	Data          *data.Data
+	Inv           port.Inventory
+	Gen           *id.Generator
+	MemberRate    memberlevelport.RateResolver
+	Coupon        couponport.CouponResolver
+	Catalog       catalogport.PricingResolver
+	Outbox        events.Writer                  // order.* 事件发布（：procurement 订阅 order.paid）
+	Gate          auditport.RiskGate             // 下单风控闸门（nil = 未装配跳过）
+	Flash         couponport.FlashResolver       // ：秒杀（nil 跳过）
+	Promos        couponport.PromotionResolver   // ：促销（nil 跳过）
+	Settings      settingsport.SettingsReader    // ：互斥开关读取（nil 默认互斥）
+	Reseller      resellerport.Pricer            // ：管线步骤 7 分站定价 + 防自购快照（nil 跳过）
+	Points        walletport.PointsDebiter       // ：积分兑换下单扣分（nil = 积分单不可用）
+	SlowPay       paymentport.SlowPaymentChecker // ：慢通道顺延探测（nil = 不顺延直接取消；newApp 破环点注入）
+	StockGate     orderport.UpstreamStockGate    // ：上游代发项下单前实时库存预检（nil = 跳过；newApp 破环点注入）
 }
 
 // ttlMinutes 订单超时分钟数（settings trade.order_ttl_minutes；缺省/非法回落 30）。
@@ -142,6 +143,35 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		in.SubsiteID = tc.SubsiteID
 	}
 
+	if explicit, e := tenancy.Require(ctx); e == nil && explicit.SubsiteID != in.SubsiteID {
+		return nil, fmt.Errorf("PLUGIN_FORBIDDEN")
+	}
+	tc.SubsiteID = in.SubsiteID
+	tc.IsMain = in.SubsiteID == tenancy.MainSubsiteID
+	ctx = tenancy.WithContext(ctx, tc)
+	if err := validatePurchaseItems(in); err != nil {
+		return nil, err
+	}
+	idemHash, legacyHash, fingerprint, err := uc.idempotency(in)
+	if err != nil {
+		return nil, err
+	}
+	if previous, e := uc.replay(ctx, in, idemHash, legacyHash, fingerprint); e != nil || previous != nil {
+		return previous, e
+	}
+	var pluginSession pluginport.PurchaseSession
+	if uc.PluginGate != nil {
+		pluginSession, err = uc.PluginGate.Begin(ctx)
+		if err != nil {
+			return nil, err
+		}
+		defer pluginSession.Release()
+	}
+	productIDs := make([]uint64, 0, len(in.Items))
+	for _, it := range in.Items {
+		productIDs = append(productIDs, it.ProductID)
+	}
+
 	// 交易设置校验（settings.trade；读取失败走保守默认——强制查询密码 + any 联系方式）
 	if err := uc.validateTradeRequirements(ctx, in); err != nil {
 		return nil, err
@@ -181,22 +211,44 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 	}
 
 	var result *CreateOrderResult
-	err := data.Tx(ctx, uc.Data, func(txCtx context.Context) error {
+	err = data.PurchaseRetry(ctx, uc.Data, func(txCtx context.Context) error {
 		client := data.Client(txCtx, uc.Data)
 
-		// Idempotency-Key：哈希落库唯一索引；同 key 双击返回首单（）
-		var idemHash string
-		if in.IdempotencyKey != "" {
-			sum := sha256.Sum256([]byte(in.IdempotencyKey))
-			idemHash = "idem-" + hex.EncodeToString(sum[:])
-			if prev, err := client.Order.Query().
-				Where(order.IdempotencyKey(idemHash)).Only(txCtx); err == nil {
-				exp := prev.ExpiredAt
-				if exp.IsZero() {
-					exp = time.Now().Add(time.Duration(uc.ttlMinutes(ctx)) * time.Minute).UTC()
-				}
-				result = &CreateOrderResult{OrderNo: prev.OrderNo, TotalCents: prev.TotalAmount, ExpiresAt: exp}
-				return nil // 幂等快路径：重复请求返回首次结果
+		// Lock before the first consistent read, including idempotency queries.
+		if err := data.LockPurchaseProducts(txCtx, uc.Data, in.SubsiteID, productIDs); err != nil {
+			return err
+		}
+		if prev, e := uc.replay(txCtx, in, idemHash, legacyHash, fingerprint); e != nil || prev != nil {
+			result = prev
+			return e
+		}
+		var memberRate int32
+		var memberLevelID uint64
+		if uc.MemberRate != nil && in.UserID > 0 {
+			r, lvl, e := uc.MemberRate.EffectiveRate(txCtx, in.UserID)
+			if e != nil {
+				return fmt.Errorf("PLUGIN_UNAVAILABLE: member resolution failed: %w", e)
+			}
+			memberRate, memberLevelID = r, lvl
+		}
+		var pluginDecisions []map[string]any
+		if pluginSession != nil {
+			gateItems := make([]pluginport.PurchaseItem, 0, len(in.Items))
+			for _, it := range in.Items {
+				gateItems = append(gateItems, pluginport.PurchaseItem{ProductID: it.ProductID, SKUID: it.SkuID, Quantity: it.Quantity})
+			}
+			var e error
+			pluginDecisions, e = pluginSession.Check(txCtx, pluginport.PurchaseInput{SubsiteID: in.SubsiteID, UserID: in.UserID, LevelID: memberLevelID, Channel: "storefront", Items: gateItems})
+			if e != nil {
+				return e
+			}
+		} else {
+			required, e := data.HasPurchaseRequirements(txCtx, uc.Data, in.SubsiteID, productIDs)
+			if e != nil {
+				return e
+			}
+			if required {
+				return fmt.Errorf("PLUGIN_UNAVAILABLE")
 			}
 		}
 
@@ -275,17 +327,6 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			return err
 		}
 		orderNo := id.FormatNo("S", snowflakeID)
-
-		// 3) 会员折扣（万分比，按用户累计消费匹配；解析失败则中止，避免指定等级失效时以错误价格成交）
-		var memberRate int32
-		var memberLevelID uint64
-		if uc.MemberRate != nil && in.UserID > 0 {
-			r, lvl, err := uc.MemberRate.EffectiveRate(txCtx, in.UserID)
-			if err != nil {
-				return fmt.Errorf("order.MEMBER_LEVEL_INVALID: %w", err)
-			}
-			memberRate, memberLevelID = r, lvl
-		}
 
 		// 4) 算价管线（每商品行独立跑管线；会员折扣逐行，优惠券整单后置）
 		type itemResult struct {
@@ -514,7 +555,10 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			SetVersion(0).
 			SetExtra(extra)
 		if idemHash != "" {
-			create.SetIdempotencyKey(idemHash)
+			create.SetIdempotencyKey(idemHash).SetRequestFingerprint(fingerprint)
+		}
+		if len(pluginDecisions) > 0 {
+			create.SetPluginDecisions(pluginDecisions)
 		}
 		o, err := create.Save(txCtx)
 
@@ -648,13 +692,13 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 		return nil
 	})
-	// A unique-key race must roll back all reservations before returning the first order.
-	if ent.IsConstraintError(err) && in.IdempotencyKey != "" {
-		sum := sha256.Sum256([]byte(in.IdempotencyKey))
-		if prev, qerr := data.Client(ctx, uc.Data).Order.Query().Where(order.IdempotencyKey("idem-" + hex.EncodeToString(sum[:]))).Only(ctx); qerr == nil {
-			return &CreateOrderResult{OrderNo: prev.OrderNo, TotalCents: prev.TotalAmount, ExpiresAt: prev.ExpiredAt}, nil
+	// Only a verified replay after rollback can convert a constraint race to success.
+	if ent.IsConstraintError(err) && idemHash != "" {
+		if previous, e := uc.replay(ctx, in, idemHash, legacyHash, fingerprint); e != nil || previous != nil {
+			return previous, e
 		}
 	}
+
 	return result, err
 }
 
@@ -1031,4 +1075,11 @@ func (uc *OrderUsecase) contactScope(ctx context.Context) string {
 		}
 	}
 	return "guest"
+}
+
+func ProvideOrderUsecase(d *data.Data, inv port.Inventory, gen *id.Generator, memberRate memberlevelport.RateResolver, coupon couponport.CouponResolver, cat catalogport.PricingResolver, outbox events.Writer, gate auditport.RiskGate, flash couponport.FlashResolver, promos couponport.PromotionResolver, settings settingsport.SettingsReader, reseller resellerport.Pricer, points walletport.PointsDebiter, plugins pluginport.PurchaseGate, fp *RequestFingerprinter) *OrderUsecase {
+	uc := NewOrderUsecaseDep(d, inv, gen, memberRate, coupon, cat, outbox, gate, flash, promos, settings, reseller, points)
+	uc.PluginGate = plugins
+	uc.Fingerprinter = fp
+	return uc
 }

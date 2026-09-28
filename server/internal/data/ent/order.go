@@ -78,6 +78,10 @@ type Order struct {
 	Extra map[string]interface{} `json:"extra,omitempty"`
 	// 下单幂等键哈希（P1-03：同 key 返回首单）
 	IdempotencyKey string `json:"idempotency_key,omitempty"`
+	// RequestFingerprint holds the value of the "request_fingerprint" field.
+	RequestFingerprint string `json:"request_fingerprint,omitempty"`
+	// PluginDecisions holds the value of the "plugin_decisions" field.
+	PluginDecisions []map[string]interface{} `json:"plugin_decisions,omitempty"`
 	// PaidAt holds the value of the "paid_at" field.
 	PaidAt time.Time `json:"paid_at,omitempty"`
 	// ClosedAt holds the value of the "closed_at" field.
@@ -178,7 +182,7 @@ func (*Order) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case order.FieldRiskFlags, order.FieldExtra:
+		case order.FieldRiskFlags, order.FieldExtra, order.FieldPluginDecisions:
 			values[i] = new([]byte)
 		case order.FieldProfitEligible, order.FieldExpiryReview:
 			values[i] = new(sql.NullBool)
@@ -186,7 +190,7 @@ func (*Order) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case order.FieldID, order.FieldSubsiteID, order.FieldVersion, order.FieldSubsiteProfit, order.FieldUserID, order.FieldTotalAmount, order.FieldCost, order.FieldAmountDisplay, order.FieldParentID, order.FieldEscrowID, order.FieldInviteL1, order.FieldInviteL2, order.FieldInviteL3, order.FieldExpiryAttempts:
 			values[i] = new(sql.NullInt64)
-		case order.FieldOrderNo, order.FieldSubsiteDomain, order.FieldGuestContact, order.FieldQueryPasswordHash, order.FieldStatus, order.FieldBaseCurrency, order.FieldDisplayCurrency, order.FieldPaymentChannel, order.FieldContact, order.FieldClientIP, order.FieldRiskIP, order.FieldIdempotencyKey, order.FieldExpiryReason:
+		case order.FieldOrderNo, order.FieldSubsiteDomain, order.FieldGuestContact, order.FieldQueryPasswordHash, order.FieldStatus, order.FieldBaseCurrency, order.FieldDisplayCurrency, order.FieldPaymentChannel, order.FieldContact, order.FieldClientIP, order.FieldRiskIP, order.FieldIdempotencyKey, order.FieldRequestFingerprint, order.FieldExpiryReason:
 			values[i] = new(sql.NullString)
 		case order.FieldCreatedAt, order.FieldUpdatedAt, order.FieldPaidAt, order.FieldClosedAt, order.FieldAdminDeletedAt, order.FieldExpiredAt, order.FieldExpiryRetryAt:
 			values[i] = new(sql.NullTime)
@@ -395,6 +399,20 @@ func (_m *Order) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.IdempotencyKey = value.String
 			}
+		case order.FieldRequestFingerprint:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field request_fingerprint", values[i])
+			} else if value.Valid {
+				_m.RequestFingerprint = value.String
+			}
+		case order.FieldPluginDecisions:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field plugin_decisions", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.PluginDecisions); err != nil {
+					return fmt.Errorf("unmarshal field plugin_decisions: %w", err)
+				}
+			}
 		case order.FieldPaidAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field paid_at", values[i])
@@ -599,6 +617,12 @@ func (_m *Order) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("idempotency_key=")
 	builder.WriteString(_m.IdempotencyKey)
+	builder.WriteString(", ")
+	builder.WriteString("request_fingerprint=")
+	builder.WriteString(_m.RequestFingerprint)
+	builder.WriteString(", ")
+	builder.WriteString("plugin_decisions=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PluginDecisions))
 	builder.WriteString(", ")
 	builder.WriteString("paid_at=")
 	builder.WriteString(_m.PaidAt.Format(time.ANSIC))

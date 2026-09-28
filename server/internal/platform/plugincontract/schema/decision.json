@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zcard.invalid/plugin/v1/decision.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "allow": {
+      "type": "boolean"
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "OK",
+        "LOGIN_REQUIRED",
+        "MEMBER_LEVEL_DENIED",
+        "SUPPLY_RESTRICTED"
+      ]
+    }
+  },
+  "required": [
+    "allow",
+    "reason"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "allow": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reason": {
+            "const": "OK"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "reason": {
+            "enum": [
+              "LOGIN_REQUIRED",
+              "MEMBER_LEVEL_DENIED",
+              "SUPPLY_RESTRICTED"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

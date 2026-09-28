@@ -613,6 +613,28 @@ var (
 		Columns:    GiftcardBatchesColumns,
 		PrimaryKey: []*schema.Column{GiftcardBatchesColumns[0]},
 	}
+	// InstalledPluginsColumns holds the columns for the "installed_plugins" table.
+	InstalledPluginsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "plugin_id", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "desired_enabled", Type: field.TypeBool, Default: false},
+		{Name: "desired_generation", Type: field.TypeInt64, Default: 0},
+		{Name: "observed_generation", Type: field.TypeInt64, Default: 0},
+		{Name: "desired_digest", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "observed_digest", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "approved_scopes", Type: field.TypeJSON, Nullable: true},
+		{Name: "block_reasons", Type: field.TypeJSON, Nullable: true},
+		{Name: "current_operation_id", Type: field.TypeString, Size: 36, Default: ""},
+		{Name: "uninstalled", Type: field.TypeBool, Default: false},
+	}
+	// InstalledPluginsTable holds the schema information for the "installed_plugins" table.
+	InstalledPluginsTable = &schema.Table{
+		Name:       "installed_plugins",
+		Columns:    InstalledPluginsColumns,
+		PrimaryKey: []*schema.Column{InstalledPluginsColumns[0]},
+	}
 	// LicenseOrdersColumns holds the columns for the "license_orders" table.
 	LicenseOrdersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
@@ -1098,6 +1120,8 @@ var (
 		{Name: "invite_l3", Type: field.TypeUint64, Nullable: true},
 		{Name: "extra", Type: field.TypeJSON, Nullable: true},
 		{Name: "idempotency_key", Type: field.TypeString, Unique: true, Nullable: true, Size: 80},
+		{Name: "request_fingerprint", Type: field.TypeString, Nullable: true, Size: 128},
+		{Name: "plugin_decisions", Type: field.TypeJSON, Nullable: true},
 		{Name: "paid_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "closed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "admin_deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
@@ -1126,7 +1150,7 @@ var (
 			{
 				Name:    "order_status_expired_at",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[12], OrdersColumns[34]},
+				Columns: []*schema.Column{OrdersColumns[12], OrdersColumns[36]},
 			},
 			{
 				Name:    "order_parent_id",
@@ -1483,6 +1507,119 @@ var (
 			},
 		},
 	}
+	// PluginDataColumns holds the columns for the "plugin_data" table.
+	PluginDataColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "plugin_id", Type: field.TypeString, Size: 64},
+		{Name: "subsite_id", Type: field.TypeUint64},
+		{Name: "entity_type", Type: field.TypeString, Size: 24},
+		{Name: "entity_id", Type: field.TypeUint64},
+		{Name: "key", Type: field.TypeString, Size: 32},
+		{Name: "payload", Type: field.TypeBytes},
+		{Name: "schema_version", Type: field.TypeInt, Default: 1},
+		{Name: "revision", Type: field.TypeInt64, Default: 0},
+	}
+	// PluginDataTable holds the schema information for the "plugin_data" table.
+	PluginDataTable = &schema.Table{
+		Name:       "plugin_data",
+		Columns:    PluginDataColumns,
+		PrimaryKey: []*schema.Column{PluginDataColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "plugindata_plugin_id_subsite_id_entity_type_entity_id_key",
+				Unique:  true,
+				Columns: []*schema.Column{PluginDataColumns[3], PluginDataColumns[4], PluginDataColumns[5], PluginDataColumns[6], PluginDataColumns[7]},
+			},
+		},
+	}
+	// PluginOperationsColumns holds the columns for the "plugin_operations" table.
+	PluginOperationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "operation_id", Type: field.TypeString, Unique: true, Size: 36},
+		{Name: "plugin_id", Type: field.TypeString, Size: 64},
+		{Name: "action", Type: field.TypeString, Size: 16},
+		{Name: "request_sha256", Type: field.TypeString, Size: 64},
+		{Name: "actor_id", Type: field.TypeUint64},
+		{Name: "subsite_id", Type: field.TypeUint64},
+		{Name: "expected_generation", Type: field.TypeInt64},
+		{Name: "target_generation", Type: field.TypeInt64, Default: 0},
+		{Name: "target_digest", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "approved_scopes", Type: field.TypeJSON, Nullable: true},
+		{Name: "phase", Type: field.TypeString, Size: 24},
+		{Name: "failure_code", Type: field.TypeString, Size: 64, Default: ""},
+	}
+	// PluginOperationsTable holds the schema information for the "plugin_operations" table.
+	PluginOperationsTable = &schema.Table{
+		Name:       "plugin_operations",
+		Columns:    PluginOperationsColumns,
+		PrimaryKey: []*schema.Column{PluginOperationsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "pluginoperation_plugin_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{PluginOperationsColumns[4], PluginOperationsColumns[1]},
+			},
+		},
+	}
+	// PluginRequirementsColumns holds the columns for the "plugin_requirements" table.
+	PluginRequirementsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "plugin_id", Type: field.TypeString, Size: 64},
+		{Name: "subsite_id", Type: field.TypeUint64},
+		{Name: "product_id", Type: field.TypeUint64},
+		{Name: "required", Type: field.TypeBool, Default: false},
+		{Name: "revision", Type: field.TypeInt64, Default: 0},
+	}
+	// PluginRequirementsTable holds the schema information for the "plugin_requirements" table.
+	PluginRequirementsTable = &schema.Table{
+		Name:       "plugin_requirements",
+		Columns:    PluginRequirementsColumns,
+		PrimaryKey: []*schema.Column{PluginRequirementsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "pluginrequirement_plugin_id_subsite_id_product_id",
+				Unique:  true,
+				Columns: []*schema.Column{PluginRequirementsColumns[3], PluginRequirementsColumns[4], PluginRequirementsColumns[5]},
+			},
+			{
+				Name:    "pluginrequirement_subsite_id_product_id",
+				Unique:  false,
+				Columns: []*schema.Column{PluginRequirementsColumns[4], PluginRequirementsColumns[5]},
+			},
+		},
+	}
+	// PluginRuleLevelRefsColumns holds the columns for the "plugin_rule_level_refs" table.
+	PluginRuleLevelRefsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "plugin_id", Type: field.TypeString, Size: 64},
+		{Name: "subsite_id", Type: field.TypeUint64},
+		{Name: "product_id", Type: field.TypeUint64},
+		{Name: "level_id", Type: field.TypeUint64},
+	}
+	// PluginRuleLevelRefsTable holds the schema information for the "plugin_rule_level_refs" table.
+	PluginRuleLevelRefsTable = &schema.Table{
+		Name:       "plugin_rule_level_refs",
+		Columns:    PluginRuleLevelRefsColumns,
+		PrimaryKey: []*schema.Column{PluginRuleLevelRefsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "pluginrulelevelref_plugin_id_subsite_id_product_id_level_id",
+				Unique:  true,
+				Columns: []*schema.Column{PluginRuleLevelRefsColumns[1], PluginRuleLevelRefsColumns[2], PluginRuleLevelRefsColumns[3], PluginRuleLevelRefsColumns[4]},
+			},
+			{
+				Name:    "pluginrulelevelref_level_id",
+				Unique:  false,
+				Columns: []*schema.Column{PluginRuleLevelRefsColumns[4]},
+			},
+		},
+	}
 	// PointAccountsColumns holds the columns for the "point_accounts" table.
 	PointAccountsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
@@ -1704,6 +1841,7 @@ var (
 		{Name: "listing_message", Type: field.TypeString, Size: 200, Default: ""},
 		{Name: "is_locked", Type: field.TypeBool, Default: false},
 		{Name: "lock_version", Type: field.TypeInt64, Default: 0},
+		{Name: "plugin_rule_revision", Type: field.TypeInt64, Default: 0},
 		{Name: "locked_by", Type: field.TypeUint64, Default: 0},
 		{Name: "locked_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 	}
@@ -3072,6 +3210,7 @@ var (
 		FlashSalesTable,
 		GiftcardsTable,
 		GiftcardBatchesTable,
+		InstalledPluginsTable,
 		LicenseOrdersTable,
 		LotteryAccountsTable,
 		LotteryActivitiesTable,
@@ -3096,6 +3235,10 @@ var (
 		PageViewsTable,
 		PaymentsTable,
 		PaymentChannelsTable,
+		PluginDataTable,
+		PluginOperationsTable,
+		PluginRequirementsTable,
+		PluginRuleLevelRefsTable,
 		PointAccountsTable,
 		PointTransactionsTable,
 		PostsTable,

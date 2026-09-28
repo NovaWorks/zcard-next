@@ -75,6 +75,10 @@ const (
 	FieldExtra = "extra"
 	// FieldIdempotencyKey holds the string denoting the idempotency_key field in the database.
 	FieldIdempotencyKey = "idempotency_key"
+	// FieldRequestFingerprint holds the string denoting the request_fingerprint field in the database.
+	FieldRequestFingerprint = "request_fingerprint"
+	// FieldPluginDecisions holds the string denoting the plugin_decisions field in the database.
+	FieldPluginDecisions = "plugin_decisions"
 	// FieldPaidAt holds the string denoting the paid_at field in the database.
 	FieldPaidAt = "paid_at"
 	// FieldClosedAt holds the string denoting the closed_at field in the database.
@@ -182,6 +186,8 @@ var Columns = []string{
 	FieldInviteL3,
 	FieldExtra,
 	FieldIdempotencyKey,
+	FieldRequestFingerprint,
+	FieldPluginDecisions,
 	FieldPaidAt,
 	FieldClosedAt,
 	FieldAdminDeletedAt,
@@ -243,6 +249,8 @@ var (
 	RiskIPValidator func(string) error
 	// IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
 	IdempotencyKeyValidator func(string) error
+	// RequestFingerprintValidator is a validator for the "request_fingerprint" field. It is called by the builders before save.
+	RequestFingerprintValidator func(string) error
 	// DefaultExpiryAttempts holds the default value on creation for the "expiry_attempts" field.
 	DefaultExpiryAttempts int32
 	// DefaultExpiryReview holds the default value on creation for the "expiry_review" field.
@@ -433,6 +441,11 @@ func ByInviteL3(opts ...sql.OrderTermOption) OrderOption {
 // ByIdempotencyKey orders the results by the idempotency_key field.
 func ByIdempotencyKey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIdempotencyKey, opts...).ToFunc()
+}
+
+// ByRequestFingerprint orders the results by the request_fingerprint field.
+func ByRequestFingerprint(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestFingerprint, opts...).ToFunc()
 }
 
 // ByPaidAt orders the results by the paid_at field.

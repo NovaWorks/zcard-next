@@ -52,6 +52,8 @@ type Tx struct {
 	Giftcard *GiftcardClient
 	// GiftcardBatch is the client for interacting with the GiftcardBatch builders.
 	GiftcardBatch *GiftcardBatchClient
+	// InstalledPlugin is the client for interacting with the InstalledPlugin builders.
+	InstalledPlugin *InstalledPluginClient
 	// LicenseOrder is the client for interacting with the LicenseOrder builders.
 	LicenseOrder *LicenseOrderClient
 	// LotteryAccount is the client for interacting with the LotteryAccount builders.
@@ -100,6 +102,14 @@ type Tx struct {
 	Payment *PaymentClient
 	// PaymentChannel is the client for interacting with the PaymentChannel builders.
 	PaymentChannel *PaymentChannelClient
+	// PluginData is the client for interacting with the PluginData builders.
+	PluginData *PluginDataClient
+	// PluginOperation is the client for interacting with the PluginOperation builders.
+	PluginOperation *PluginOperationClient
+	// PluginRequirement is the client for interacting with the PluginRequirement builders.
+	PluginRequirement *PluginRequirementClient
+	// PluginRuleLevelRef is the client for interacting with the PluginRuleLevelRef builders.
+	PluginRuleLevelRef *PluginRuleLevelRefClient
 	// PointAccount is the client for interacting with the PointAccount builders.
 	PointAccount *PointAccountClient
 	// PointTransaction is the client for interacting with the PointTransaction builders.
@@ -355,6 +365,7 @@ func (tx *Tx) init() {
 	tx.FlashSale = NewFlashSaleClient(tx.config)
 	tx.Giftcard = NewGiftcardClient(tx.config)
 	tx.GiftcardBatch = NewGiftcardBatchClient(tx.config)
+	tx.InstalledPlugin = NewInstalledPluginClient(tx.config)
 	tx.LicenseOrder = NewLicenseOrderClient(tx.config)
 	tx.LotteryAccount = NewLotteryAccountClient(tx.config)
 	tx.LotteryActivity = NewLotteryActivityClient(tx.config)
@@ -379,6 +390,10 @@ func (tx *Tx) init() {
 	tx.PageView = NewPageViewClient(tx.config)
 	tx.Payment = NewPaymentClient(tx.config)
 	tx.PaymentChannel = NewPaymentChannelClient(tx.config)
+	tx.PluginData = NewPluginDataClient(tx.config)
+	tx.PluginOperation = NewPluginOperationClient(tx.config)
+	tx.PluginRequirement = NewPluginRequirementClient(tx.config)
+	tx.PluginRuleLevelRef = NewPluginRuleLevelRefClient(tx.config)
 	tx.PointAccount = NewPointAccountClient(tx.config)
 	tx.PointTransaction = NewPointTransactionClient(tx.config)
 	tx.Post = NewPostClient(tx.config)

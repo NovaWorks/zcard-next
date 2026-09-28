@@ -3190,6 +3190,117 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Payment'
+    /api/v1/admin/plugins:
+        get:
+            tags:
+                - AdminPluginService
+            operationId: AdminPluginService_ListPlugins
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListPluginsReply'
+    /api/v1/admin/plugins/contributions:
+        get:
+            tags:
+                - AdminPluginService
+            operationId: AdminPluginService_ListContributions
+            parameters:
+                - name: productId
+                  in: query
+                  schema:
+                    type: string
+                - name: pluginId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.PluginContributionsReply'
+    /api/v1/admin/plugins/operations/{operationId}:
+        get:
+            tags:
+                - AdminPluginService
+            operationId: AdminPluginService_GetOperation
+            parameters:
+                - name: operationId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.PluginOperationReply'
+    /api/v1/admin/plugins/{pluginId}:
+        get:
+            tags:
+                - AdminPluginService
+            operationId: AdminPluginService_GetPlugin
+            parameters:
+                - name: pluginId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.PluginStatusReply'
+    /api/v1/admin/plugins/{pluginId}/impact:
+        get:
+            tags:
+                - AdminPluginService
+            operationId: AdminPluginService_GetImpact
+            parameters:
+                - name: pluginId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.PluginImpactReply'
+    /api/v1/admin/plugins/{pluginId}/operations:
+        post:
+            tags:
+                - AdminPluginService
+            operationId: AdminPluginService_OperatePlugin
+            parameters:
+                - name: pluginId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.OperatePluginRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.PluginOperationReply'
     /api/v1/admin/procurements:
         get:
             tags:
@@ -3708,6 +3819,153 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.DeliverySourcesReply'
+    /api/v1/admin/products/{productId}/plugin-level-options:
+        get:
+            tags:
+                - AdminPluginService
+            operationId: AdminPluginService_ListLevelOptions
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: pluginId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.PluginLevelOptionsReply'
+    /api/v1/admin/products/{productId}/plugin-rules:
+        get:
+            tags:
+                - AdminPluginService
+            operationId: AdminPluginService_ListProductRules
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: pluginId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListProductRulesReply'
+    /api/v1/admin/products/{productId}/plugin-rules/{pluginId}:
+        get:
+            tags:
+                - AdminPluginService
+            operationId: AdminPluginService_GetProductRule
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: pluginId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ProductPluginRule'
+        put:
+            tags:
+                - AdminPluginService
+            operationId: AdminPluginService_SaveProductRule
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: pluginId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.SaveProductRuleRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ProductPluginRule'
+    /api/v1/admin/products/{productId}/plugin-rules/{pluginId}/release:
+        post:
+            tags:
+                - AdminPluginService
+            operationId: AdminPluginService_ReleaseProductRule
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: pluginId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ReleaseProductRuleRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ProductPluginRule'
+    /api/v1/admin/products/{productId}/plugin-schema/{pluginId}:
+        get:
+            tags:
+                - AdminPluginService
+            operationId: AdminPluginService_GetProductSchema
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: pluginId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.PluginSchemaReply'
     /api/v1/admin/products/{productId}/skus:
         get:
             tags:
@@ -9792,6 +10050,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.PendingOrder'
+        zcard.api.admin.v1.ListPluginsReply:
+            type: object
+            properties:
+                plugins:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.PluginStatusReply'
+                instanceManagementAllowed:
+                    type: boolean
         zcard.api.admin.v1.ListPostCategoriesAdminReply:
             type: object
             properties:
@@ -9838,6 +10105,13 @@ components:
                 pageSize:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.ListProductRulesReply:
+            type: object
+            properties:
+                rules:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ProductPluginRule'
         zcard.api.admin.v1.ListProductsReply:
             type: object
             properties:
@@ -10611,6 +10885,23 @@ components:
                     type: string
                 operatorName:
                     type: string
+        zcard.api.admin.v1.OperatePluginRequest:
+            type: object
+            properties:
+                pluginId:
+                    type: string
+                operationId:
+                    type: string
+                action:
+                    type: string
+                targetDigest:
+                    type: string
+                expectedGeneration:
+                    type: string
+                approvedScopes:
+                    type: array
+                    items:
+                        type: string
         zcard.api.admin.v1.Option:
             type: object
             properties:
@@ -10763,6 +11054,121 @@ components:
             properties:
                 id:
                     type: string
+        zcard.api.admin.v1.PluginConfig:
+            type: object
+            properties:
+                schemaVersion:
+                    type: integer
+                    format: uint32
+                revision:
+                    type: string
+                enabled:
+                    type: boolean
+                allowedLevelIds:
+                    type: array
+                    items:
+                        type: string
+        zcard.api.admin.v1.PluginContributionsReply:
+            type: object
+            properties:
+                contributions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.PluginSchemaReply'
+                unavailableReasons:
+                    type: array
+                    items:
+                        type: string
+        zcard.api.admin.v1.PluginImpactReply:
+            type: object
+            properties:
+                affectedTotal:
+                    type: string
+                visibleProductIds:
+                    type: array
+                    items:
+                        type: string
+                truncated:
+                    type: boolean
+        zcard.api.admin.v1.PluginLevelOption:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                enabled:
+                    type: boolean
+        zcard.api.admin.v1.PluginLevelOptionsReply:
+            type: object
+            properties:
+                options:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.PluginLevelOption'
+        zcard.api.admin.v1.PluginOperationReply:
+            type: object
+            properties:
+                operationId:
+                    type: string
+                pluginId:
+                    type: string
+                action:
+                    type: string
+                targetGeneration:
+                    type: string
+                phase:
+                    type: string
+                failureCode:
+                    type: string
+                status:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.PluginStatusReply'
+        zcard.api.admin.v1.PluginSchemaReply:
+            type: object
+            properties:
+                pluginId:
+                    type: string
+                generation:
+                    type: string
+                configSchemaJson:
+                    type: string
+                uiSchemaJson:
+                    type: string
+                runtimeAvailable:
+                    type: boolean
+        zcard.api.admin.v1.PluginStatusReply:
+            type: object
+            properties:
+                pluginId:
+                    type: string
+                desiredEnabled:
+                    type: boolean
+                desiredGeneration:
+                    type: string
+                observedGeneration:
+                    type: string
+                desiredDigest:
+                    type: string
+                observedDigest:
+                    type: string
+                operationId:
+                    type: string
+                phase:
+                    type: string
+                blockReasons:
+                    type: array
+                    items:
+                        type: string
+                reconciliationPending:
+                    type: boolean
+                uninstalled:
+                    type: boolean
+                approvedScopes:
+                    type: array
+                    items:
+                        type: string
+                runtimeAvailable:
+                    type: boolean
         zcard.api.admin.v1.PointsBalance:
             type: object
             properties:
@@ -11065,6 +11471,25 @@ components:
                     format: int32
                 autoListing:
                     type: boolean
+        zcard.api.admin.v1.ProductPluginRule:
+            type: object
+            properties:
+                pluginId:
+                    type: string
+                productId:
+                    type: string
+                required:
+                    type: boolean
+                requirementRevision:
+                    type: string
+                config:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.PluginConfig'
+                generation:
+                    type: string
+                configValid:
+                    type: boolean
+                errorCode:
+                    type: string
         zcard.api.admin.v1.PromotionItem:
             type: object
             properties:
@@ -11226,6 +11651,15 @@ components:
                 issuedAt:
                     type: string
             description: ReleaseNoteEntry 历史版本变更记录（manifest history 段透传）。
+        zcard.api.admin.v1.ReleaseProductRuleRequest:
+            type: object
+            properties:
+                pluginId:
+                    type: string
+                productId:
+                    type: string
+                expectedRequirementRevision:
+                    type: string
         zcard.api.admin.v1.RenameMediaCategoryRequest:
             required:
                 - id
@@ -11496,6 +11930,24 @@ components:
             properties:
                 id:
                     type: string
+        zcard.api.admin.v1.SaveProductRuleRequest:
+            type: object
+            properties:
+                pluginId:
+                    type: string
+                productId:
+                    type: string
+                config:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.PluginConfig'
+                expectedGeneration:
+                    type: string
+                expectedConfigRevision:
+                    type: string
+                expectedRequirementRevision:
+                    type: string
+                schemaVersion:
+                    type: integer
+                    format: uint32
         zcard.api.admin.v1.SaveThemeSettingsRequest:
             type: object
             properties:
@@ -14916,6 +15368,8 @@ tags:
       description: AdminOrderService 订单管理。
     - name: AdminPaymentService
       description: AdminPaymentService 支付管理：渠道 CRUD + 支付单 + 退款。
+    - name: AdminPluginService
+      description: Instance-side administration only. Runtime execution is introduced in P2.
     - name: AdminProcurementService
       description: AdminProcurementService 采购管理：采购单列表/详情/手动重试/手动标记完成。
     - name: AdminResellerService

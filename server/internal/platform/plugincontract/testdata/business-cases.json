@@ -1,0 +1,602 @@
+[
+  {
+    "id": "disabled",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": false,
+        "effectiveLevelId": "0"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": false,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": false,
+    "availability": "ready",
+    "expected": "OK"
+  },
+  {
+    "id": "guest",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": false,
+        "effectiveLevelId": "0"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "ready",
+    "expected": "LOGIN_REQUIRED"
+  },
+  {
+    "id": "none",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "0"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "ready",
+    "expected": "MEMBER_LEVEL_DENIED"
+  },
+  {
+    "id": "manual",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "7"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "ready",
+    "expected": "OK"
+  },
+  {
+    "id": "referral",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "7"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "ready",
+    "expected": "OK"
+  },
+  {
+    "id": "auto",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "7"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "ready",
+    "expected": "OK"
+  },
+  {
+    "id": "upgrade-unselected",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "8"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "ready",
+    "expected": "MEMBER_LEVEL_DENIED"
+  },
+  {
+    "id": "precise-id",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "9007199254740993"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "ready",
+    "expected": "OK"
+  },
+  {
+    "id": "supply",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "supply",
+      "member": {
+        "authenticated": false,
+        "effectiveLevelId": "0"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "ready",
+    "expected": "SUPPLY_RESTRICTED"
+  },
+  {
+    "id": "acg",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "acg",
+      "member": {
+        "authenticated": false,
+        "effectiveLevelId": "0"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "ready",
+    "expected": "SUPPLY_RESTRICTED"
+  },
+  {
+    "id": "dujiao",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "dujiao",
+      "member": {
+        "authenticated": false,
+        "effectiveLevelId": "0"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "ready",
+    "expected": "SUPPLY_RESTRICTED"
+  },
+  {
+    "id": "missing-package",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "7"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "missing",
+    "expected": "PLUGIN_UNAVAILABLE"
+  },
+  {
+    "id": "expired",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "7"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "expired",
+    "expected": "PLUGIN_UNAVAILABLE"
+  },
+  {
+    "id": "disabled-plugin",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "7"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "disabled",
+    "expected": "PLUGIN_UNAVAILABLE"
+  },
+  {
+    "id": "resolver-error",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "0"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "member-error",
+    "expected": "PLUGIN_UNAVAILABLE"
+  },
+  {
+    "id": "auto-level-disabled-no-fallback",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "0"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "ready",
+    "expected": "MEMBER_LEVEL_DENIED"
+  },
+  {
+    "id": "auto-level-deleted-no-fallback",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "0"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "ready",
+    "expected": "MEMBER_LEVEL_DENIED"
+  },
+  {
+    "id": "manual-level-disabled",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "0"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "resolver-error",
+    "expected": "PLUGIN_UNAVAILABLE"
+  },
+  {
+    "id": "referral-level-disabled",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "0"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "resolver-error",
+    "expected": "PLUGIN_UNAVAILABLE"
+  },
+  {
+    "id": "assigned-level-missing",
+    "input": {
+      "schemaVersion": 1,
+      "hook": "order.pre_create.v1",
+      "pluginId": "member-purchase-gate",
+      "generation": "1",
+      "subsiteId": "0",
+      "productId": "101",
+      "skuId": "0",
+      "quantity": 1,
+      "channel": "storefront",
+      "member": {
+        "authenticated": true,
+        "effectiveLevelId": "0"
+      },
+      "config": {
+        "schemaVersion": 1,
+        "revision": "1",
+        "enabled": true,
+        "allowedLevelIds": [
+          "7",
+          "9007199254740993"
+        ]
+      }
+    },
+    "requirement": true,
+    "availability": "resolver-error",
+    "expected": "PLUGIN_UNAVAILABLE"
+  }
+]
