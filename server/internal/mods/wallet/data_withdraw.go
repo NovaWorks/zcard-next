@@ -137,4 +137,3 @@ func (r *WalletRepoImpl) PayWithdrawal(ctx context.Context, id uint64, receipt s
 	})
 	return w, err
 }
-

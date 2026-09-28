@@ -5,9 +5,10 @@ package testint
 import (
 	"context"
 	"fmt"
-	kerrors "github.com/go-kratos/kratos/v3/errors"
 	"sync"
 	"testing"
+
+	kerrors "github.com/go-kratos/kratos/v3/errors"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
@@ -53,13 +54,18 @@ func runReferralLevels(h *Harness) {
 	// Concurrent registrations and configuration changes may reject a stale configuration,
 	// but every successful registration must retain exactly one valid grant and attribution.
 	var wg sync.WaitGroup
-	results := make(chan error, 8)
+	type registrationResult struct {
+		username string
+		err      error
+	}
+	results := make(chan registrationResult, 8)
 	for i := 0; i < 8; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			_, err := users.Register(ctx, identity.RegisterInput{Username: fmt.Sprintf("concurrent%d", i), Password: "test-pass", InviteCode: inviter.PromoCode})
-			results <- err
+			username := fmt.Sprintf("concurrent%d", i)
+			_, err := users.Register(ctx, identity.RegisterInput{Username: username, Password: "test-pass", InviteCode: inviter.PromoCode})
+			results <- registrationResult{username: username, err: err}
 		}(i)
 	}
 	for i := 0; i < 4; i++ {
@@ -74,23 +80,37 @@ func runReferralLevels(h *Harness) {
 	wg.Wait()
 	close(results)
 	successes := 0
-	for err := range results {
-		if err == nil {
+	var rejected []string
+	for result := range results {
+		if result.err == nil {
 			successes++
 			continue
 		}
-		if kerrors.FromError(err).Reason != "identity.INVITE_CHANGED" {
-			t.Fatal("unexpected registration failure", err)
+		if kerrors.FromError(result.err).Reason != "identity.INVITE_CHANGED" {
+			t.Fatal("unexpected registration failure", result.err)
 		}
-	}
-	if successes == 0 {
-		t.Fatal("no concurrent registration succeeded")
+		rejected = append(rejected, result.username)
 	}
 	if c.User.Query().CountX(ctx) != 2+successes {
 		t.Fatal("failed registration left a user")
 	}
 	if c.AuditLog.Query().CountX(ctx) != before+4+successes {
 		t.Fatal("registration and audit not atomic")
+	}
+	// Every racing request may legitimately reject a changed configuration.
+	// Once configuration is stable, a new registration and retries with the same
+	// rejected usernames must succeed and grant the final configured level.
+	for _, username := range append(rejected, "stablecustomer") {
+		registered, err := users.Register(ctx, identity.RegisterInput{Username: username, Password: "test-pass", InviteCode: inviter.PromoCode})
+		if err != nil {
+			t.Fatalf("stable registration %s: %v", username, err)
+		}
+		if registered.ReferralLevelID != level.ID || registered.InviteL1 != inviter.ID {
+			t.Fatalf("stable registration used stale grant or attribution: %s", username)
+		}
+	}
+	if c.User.Query().CountX(ctx) != 11 || c.AuditLog.Query().CountX(ctx) != before+4+9 {
+		t.Fatal("stable registrations and retries must each create one user and one audit")
 	}
 	rows := c.User.Query().AllX(ctx)
 	for _, row := range rows {

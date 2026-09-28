@@ -56,7 +56,7 @@ jobs:
           MYSQL_ROOT_PASSWORD: root
         ports: ["3306:3306"]
         options: >-
-          --health-cmd "mysqladmin ping -proot" --health-interval 5s
+          --health-cmd "mysql -h127.0.0.1 -uroot -proot -e 'SELECT 1'" --health-interval 5s
           --health-timeout 3s --health-retries 10
       postgres:
         image: postgres:16
@@ -65,7 +65,7 @@ jobs:
           POSTGRES_PASSWORD: pass
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-cmd "PGPASSWORD=pass psql -h127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'SELECT 1'" --health-interval 5s
           --health-timeout 3s --health-retries 10
     steps:
       - uses: actions/checkout@v4

@@ -17,6 +17,7 @@ function load(file, overrides = {}) {
     if (id.includes('theme-sdk')) return { mergeThemeConfig: x => x };
     if (id === '../config') return { loadPublicConfig: async () => ({ entries: [] }) };
     if (id === './read') return { readJSON: async () => { throw new Error('unexpected network call'); } };
+    if (id === './purchase-error') return load('storefront/src/api/purchase-error.ts');
     if (id === '@/utils/storage') return {localStg:{get:()=> 'test-token'}};
     if (id === '@/service/api') return {
       fetchSettings: async()=>({data:{items:[]}}),

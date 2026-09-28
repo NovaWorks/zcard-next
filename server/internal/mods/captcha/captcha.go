@@ -12,17 +12,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mojocn/base64Captcha"
 	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
+	"github.com/mojocn/base64Captcha"
 )
 
 // 场景枚举（对应 settings.security.captcha_* 键）。
 const (
-	SceneLogin       = "login"        // 登录（captcha_login）
-	SceneRegister    = "register"     // 注册（captcha_register）
-	SceneOrder       = "order"        // 游客下单（captcha_order）
-	SceneReset       = "reset"        // 找回密码发码（captcha_reset）
-	SceneAdminLogin  = "admin_login"  // 后台登录（captcha_admin_login）
+	SceneLogin      = "login"       // 登录（captcha_login）
+	SceneRegister   = "register"    // 注册（captcha_register）
+	SceneOrder      = "order"       // 游客下单（captcha_order）
+	SceneReset      = "reset"       // 找回密码发码（captcha_reset）
+	SceneAdminLogin = "admin_login" // 后台登录（captcha_admin_login）
 )
 
 // 场景 → settings 键映射。
@@ -116,11 +116,11 @@ func (s *Service) sceneEnabled(ctx context.Context, key string) bool {
 
 // sceneDefault 目录默认值（settings.directory security 组 Defaults 同源快照）。
 var sceneDefault = map[string]bool{
-	"captcha_register":     true,
-	"captcha_reset":        true,
-	"captcha_login":        false,
-	"captcha_order":        false,
-	"captcha_admin_login":  false,
+	"captcha_register":    true,
+	"captcha_reset":       true,
+	"captcha_login":       false,
+	"captcha_order":       false,
+	"captcha_admin_login": false,
 }
 
 // SceneEnabledFor 场景开关查询（前端 config 已下发；此方法供内部/测试用）。

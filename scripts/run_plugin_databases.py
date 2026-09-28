@@ -29,9 +29,12 @@ try:
         run(['docker', 'run', '-d', '--name', name, '-e', setting + '=' + password, '-p', f'127.0.0.1::{port}', image], stdout=subprocess.DEVNULL)
         names.append(name)
         hostport = subprocess.check_output(['docker', 'port', name, str(port)], text=True).strip().split(':')[-1]
-        ready = ['mysql', '-h127.0.0.1', '-uroot', '-p' + password, '-e', 'SELECT 1'] if driver == 'mysql' else ['pg_isready', '-U', 'postgres']
+        # Both images start a temporary socket-only server during initialization.
+        # Require authenticated SQL over TCP before creating or using databases.
+        dbexec = ['docker', 'exec', '-e', ('MYSQL_PWD=' if driver == 'mysql' else 'PGPASSWORD=') + password, name]
+        ready = ['mysql', '-h127.0.0.1', '-uroot', '-e', 'SELECT 1'] if driver == 'mysql' else ['psql', '-h127.0.0.1', '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-c', 'SELECT 1']
         for _ in range(120):
-            if subprocess.run(['docker', 'exec', name, *ready], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+            if subprocess.run([*dbexec, *ready], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
                 break
             time.sleep(1)
         else:
@@ -43,9 +46,9 @@ try:
         for suite in ['P1', 'P1_UPGRADE', 'P2', 'P2_SUPPLY']:
             database = 'p4_' + suite.lower()
             if driver == 'mysql':
-                run(['docker', 'exec', '-e', 'MYSQL_PWD=' + password, name, 'mysql', '-uroot', '-e', 'CREATE DATABASE ' + database])
+                run([*dbexec, 'mysql', '-h127.0.0.1', '-uroot', '-e', 'CREATE DATABASE ' + database])
             else:
-                run(['docker', 'exec', name, 'createdb', '-U', 'postgres', database])
+                run([*dbexec, 'createdb', '-h127.0.0.1', '-U', 'postgres', database])
             env[f'ZCARD_{suite}_{driver.upper()}_DSN'] = dsn(database)
         env['ZCARD_TEST_MYSQL_DSN' if driver == 'mysql' else 'ZCARD_TEST_PG_DSN'] = dsn('mysql' if driver == 'mysql' else 'postgres')
     for name, cmd in [('dialects', ['go', 'test', '-count=1', '-v', './internal/mods/plugin', './internal/mods/order', './internal/mods/supplier', './migrations']), ('integration', ['make', 'test-integration'])]:
