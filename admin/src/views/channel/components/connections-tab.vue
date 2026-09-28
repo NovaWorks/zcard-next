@@ -262,7 +262,7 @@ async function handlePing(row: any) {
     if (!error && data) {
       const d = data as any;
       if (d.ok === true) {
-        const balance = d.balance_cents ?? d.balance;
+        const balance = d.balance_cents ?? d.balance ?? (d.currency ? 0 : -1);
         window.$message?.success(`连接成功：${d.site_name || "上游"}，余额 ${balance == null || balance < 0 ? "未知" : formatMoney(balance)}`);
       } else {
         window.$message?.error(`连接失败：${d.error || "上游未确认连接成功，请重试"}`);
@@ -727,14 +727,16 @@ const columns = computed<DataTableColumns<any>>(() => {
     cols.push({
       title: "余额", key: "balance_cache", width: 110,
       render: (row: any) => {
-        if (row.balance_cache == null || row.balance_cache < 0) return "—（未取到）";
+        // JSON omits a known zero balance; an unknown balance is explicitly -1.
+        const balance = row.balance_cache ?? (row.last_ping_ok ? 0 : -1);
+        if (balance < 0) return "—（未取到）";
         const historical = !row.last_ping_ok;
         return h("div", {
           title: historical
             ? "上次成功获取的余额，当前未验证；最新余额以连接成功后的结果为准"
             : `最近测试：${fmtTime(row.last_ping_at)}`,
         }, [
-          h("div", formatMoney(row.balance_cache)),
+          h("div", formatMoney(balance)),
           historical ? h("small", { class: "text-amber-600" }, "历史余额") : null,
         ]);
       },

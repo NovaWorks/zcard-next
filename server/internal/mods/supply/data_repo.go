@@ -16,6 +16,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplysynctask"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 )
 
@@ -59,7 +60,7 @@ func (r *SupplyRepoImpl) SealCredentials(driver, baseURL, credsJSON string) ([]b
 func (r *SupplyRepoImpl) OpenCredentials(conn *ent.SupplyConnection) (string, error) {
 	plain, err := r.box.Open(conn.Credentials, credAAD(conn.Driver, conn.BaseURL))
 	if err != nil {
-		return "", fmt.Errorf("supply: 凭据解密失败（请重新配置连接）: %w", err)
+		return "", fmt.Errorf("%w: %w", adapter.ErrCredentialsInvalid, err)
 	}
 	return string(plain), nil
 }

@@ -156,13 +156,18 @@ func (s *AdminSupplyService) updateConnection(ctx context.Context, req *adminv1.
 			return nil, err
 		}
 	}
-	// 凭据单独更新（换 base_url 时凭据需重配：AAD 绑定 base_url）
-	if req.GetCredentials() != "" {
-		newBase := req.GetBaseUrl()
-		if newBase == "" {
-			newBase = conn.BaseURL
+	// URL and ciphertext must change in the same transaction. Reuse the old
+	// plaintext when the form omits credentials; never bind old ciphertext to a
+	// new URL. A decryption failure rolls back the entire edit.
+	credentials := req.GetCredentials()
+	if credentials == "" && updated.BaseURL != conn.BaseURL {
+		credentials, err = s.repo.OpenCredentials(conn)
+		if err != nil {
+			return nil, err
 		}
-		if err := s.repo.UpdateCredentials(ctx, req.GetId(), conn.Driver, newBase, req.GetCredentials()); err != nil {
+	}
+	if credentials != "" {
+		if err := s.repo.UpdateCredentials(ctx, req.GetId(), conn.Driver, updated.BaseURL, credentials); err != nil {
 			return nil, err
 		}
 	}

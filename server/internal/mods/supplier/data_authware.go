@@ -4,7 +4,7 @@ package supplier
 // X-Supply-Key / X-Supply-Timestamp / X-Supply-Nonce / X-Supply-Signature
 // 流程：四头解析 → key 查账户 → 状态 approved → ±300s 时间窗 → nonce 防重放
 // （DB supply_nonces UNIQUE(key,nonce)）→ 双口径验签（常数时间）→ 账户注入 context。
-// 挂载：仅 /api/supply/* 路由组（不挂 JWT——架构测试规则 9；Ping 免签名）。
+// 挂载：仅 /api/supply/* 路由组（不挂 JWT；匿名 Ping 免签名）。
 //
 // 签名字节不变式：签名哈希的字节 === 实际发出的字节——直接读 *http.Request
 // （Method/URL.Path/RawQuery/Body），不依赖 Kratos operation 转写。
@@ -54,7 +54,7 @@ type AuthStore interface {
 
 // SupplyAuthFilter HMAC 四头鉴权过滤器（http.Handler 级，能拿到原始 *http.Request
 // ——Kratos v3 Transporter 不暴露 method/path/body，签名不变式要求原始字节）。
-// 仅匹配 /api/supply/*（Ping 免签名）；账户注入 request context（Handler 内读取）。
+// 仅匹配 /api/supply/*（匿名 Ping 免签名）；账户注入 request context（Handler 内读取）。
 func SupplyAuthFilter(store AuthStore, skew int64) func(http.Handler) http.Handler {
 	if skew <= 0 {
 		skew = defaultTimestampSkew
@@ -62,6 +62,13 @@ func SupplyAuthFilter(store AuthStore, skew int64) func(http.Handler) http.Handl
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if !isSupplyPath(r.URL.Path) {
+				next.ServeHTTP(w, r)
+				return
+			}
+			// Anonymous ping remains a public connectivity probe. Once any
+			// credential header is supplied, require full authentication before
+			// reporting the account balance (or a successful credential check).
+			if r.URL.Path == "/api/supply/ping" && !hasSupplyCredentials(r) {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -114,12 +121,21 @@ func authenticate(r *http.Request, store AuthStore, skew int64) (context.Context
 	return context.WithValue(r.Context(), accountCtxKey{}, account.ID), nil
 }
 
-// isSupplyPath 供货路由判定（Ping 免签名）。
+func hasSupplyCredentials(r *http.Request) bool {
+	for _, name := range []string{"X-Supply-Key", "X-Supply-Timestamp", "X-Supply-Nonce", "X-Supply-Signature"} {
+		if r.Header.Get(name) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// isSupplyPath 供货路由判定。
 func isSupplyPath(path string) bool {
 	if len(path) < len("/api/supply/") || path[:len("/api/supply/")] != "/api/supply/" {
 		return false
 	}
-	return path != "/api/supply/ping"
+	return true
 }
 
 // writeAuthError 401 响应（错误码供下游程序化处理）。

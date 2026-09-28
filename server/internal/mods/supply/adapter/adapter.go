@@ -20,6 +20,9 @@ import (
 
 // 哨兵错误：适配器层把上游协议差异归一化为统一语义（ 同步/ 库存判据）。
 var (
+	// ErrCredentialsInvalid identifies a local credential failure, before any
+	// upstream request, so catalog jobs can ask for reconfiguration accurately.
+	ErrCredentialsInvalid = errors.New("货源凭据无法读取，请编辑货源并重新填写完整的账号密钥")
 	// ErrProductDeleted 上游商品已删除（不存在）。同步时本地应下架。
 	ErrProductDeleted = errors.New("adapter: upstream product deleted")
 	// ErrProductUnavailable 上游商品已下架（存在但不可购）。同步时本地应隐藏。

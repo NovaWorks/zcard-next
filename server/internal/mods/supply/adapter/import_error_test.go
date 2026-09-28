@@ -3,6 +3,7 @@ package adapter
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -15,6 +16,7 @@ func TestImportFailuresAreClassifiedAndRedacted(t *testing.T) {
 		retry, pause bool
 	}{
 		{context.DeadlineExceeded, "TIMEOUT", true, false},
+		{fmt.Errorf("%w: internal decrypt detail", ErrCredentialsInvalid), "CREDENTIALS_INVALID", false, true},
 		{&net.DNSError{Err: "secret", Name: "private.example", IsTimeout: true}, "NETWORK_ERROR", true, false},
 		{&httpError{Status: 401, Message: "api_secret=secret"}, "AUTH_FAILED", false, true},
 		{&httpError{Status: 403, Message: "secret"}, "ACCESS_DENIED", false, true},

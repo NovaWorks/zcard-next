@@ -20,6 +20,8 @@ func ClassifyImportError(err error) ImportFailure {
 	var he *httpError
 	var ne net.Error
 	switch {
+	case errors.Is(err, ErrCredentialsInvalid):
+		return ImportFailure{Code: "CREDENTIALS_INVALID", Summary: ErrCredentialsInvalid.Error(), Pause: true}
 	case errors.As(err, &he):
 		switch {
 		case he.Status == 401:
