@@ -42,11 +42,11 @@ func TestOrderReviewAuthorizationAndModeration(t *testing.T) {
 		content string
 		product uint64
 	}{{0, "好", p.ID}, {6, "好", p.ID}, {5, "   ", p.ID}, {5, strings.Repeat("中", 1001), p.ID}, {5, "好", p.ID + 99}} {
-		req := *submit
+		req := &storefrontv1.SubmitOrderReviewRequest{OrderNo: submit.OrderNo}
 		req.Rating = bad.rating
 		req.Content = bad.content
 		req.ProductId = bad.product
-		if _, err := s.SubmitOrderReview(ctx, &req); errors.Code(err) != 400 {
+		if _, err := s.SubmitOrderReview(ctx, req); errors.Code(err) != 400 {
 			t.Fatalf("invalid input accepted: %v", err)
 		}
 	}
