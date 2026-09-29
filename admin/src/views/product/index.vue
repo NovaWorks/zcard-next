@@ -1359,15 +1359,15 @@ onMounted(() => {
 </script>
 
 <template>
-  <ListingManagement
-    v-model:show="showListing"
-    :ids="listingIds"
-    :filter="listingFilter"
-    :initial-action="listingAction"
-    :scope-label="listingScope"
-    @saved="listingSaved"
-  />
   <div class="product-management min-h-500px flex flex-1 gap-16px overflow-hidden">
+    <ListingManagement
+      v-model:show="showListing"
+      :ids="listingIds"
+      :filter="listingFilter"
+      :initial-action="listingAction"
+      :scope-label="listingScope"
+      @saved="listingSaved"
+    />
     <DeleteProductModal
       :show="!!deleteTarget"
       :product="deleteTarget"

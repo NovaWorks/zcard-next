@@ -5,9 +5,15 @@ import { getServiceBaseURL } from "@/utils/service";
 import { getAuthorization, handleExpiredRequest, showErrorMsg } from "./shared";
 import type { RequestInstanceState } from "./type";
 import { suppressUpdateRestartError } from "./update-restart";
+import { authResponseStatus, createSessionRecovery } from "./session-recovery";
 
 const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === "Y";
 const { baseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
+const recoverSession = createSessionRecovery({
+  authorization: getAuthorization,
+  refresh: () => handleExpiredRequest(request.state),
+  logout: () => useAuthStore().resetStore(),
+});
 
 /**
  * Kratos 后端请求客户端：
@@ -18,6 +24,7 @@ const { baseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
 export const request = createFlatRequest<App.Service.Response<any>, any, RequestInstanceState>(
   {
     baseURL,
+    validateStatus: authResponseStatus,
     headers: { "Content-Type": "application/json" },
   },
   {
@@ -45,31 +52,7 @@ export const request = createFlatRequest<App.Service.Response<any>, any, Request
       return response.status >= 200 && response.status < 300;
     },
     async onBackendFail(response: any, instance: any) {
-      const authStore = useAuthStore();
-
-      function handleLogout() {
-        authStore.resetStore();
-      }
-
-      if (response.status === 401 && !/\/auth\/(login|refresh)$/.test(response.config?.url || '')) {
-        const success = await handleExpiredRequest(request.state as RequestInstanceState);
-        if (success) {
-          const Authorization = getAuthorization();
-          if (Authorization) {
-            return instance.request({
-              ...response.config,
-              headers: { ...response.config.headers, Authorization },
-            });
-          }
-        }
-        handleLogout();
-        return null;
-      }
-
-      if (response.config?.silentError) return null;
-      const errMsg = response.data?.message || `请求失败 (${response.status})`;
-      showErrorMsg(request.state as RequestInstanceState, errMsg);
-      return null;
+      return recoverSession(response, instance);
     },
     onError(err: any) {
       if (err.config?.silentError && err.response?.status !== 401) return;

@@ -2,6 +2,7 @@ import { useAuthStore } from "@/store/modules/auth";
 import { localStg } from "@/utils/storage";
 import { fetchRefreshToken } from "../api";
 import type { RequestInstanceState } from "./type";
+import { singleFlightRefresh } from "./session-recovery";
 
 export function getAuthorization() {
   const token = localStg.get("token");
@@ -11,32 +12,27 @@ export function getAuthorization() {
 
 /** refresh token（Kratos：POST /api/v1/admin/auth/refresh） */
 async function handleRefreshToken() {
-  const { resetStore } = useAuthStore();
+  const authStore = useAuthStore();
   const rToken = localStg.get("refreshToken") || "";
   if (!rToken) return false;
 
   const { error, data } = await fetchRefreshToken(rToken);
+  if (localStg.get("refreshToken") !== rToken) return false;
   if (!error && data) {
     // Kratos 返回 snake_case
     const accessToken = (data as any).access_token || (data as any).token;
     const newRefresh = (data as any).refresh_token || (data as any).refreshToken;
-    if (accessToken) localStg.set("token", accessToken);
+    if (!accessToken) return false;
+    localStg.set("token", accessToken);
+    authStore.token = accessToken;
     if (newRefresh) localStg.set("refreshToken", newRefresh);
     return true;
   }
-  resetStore();
   return false;
 }
 
 export async function handleExpiredRequest(state: RequestInstanceState) {
-  if (!state.refreshTokenPromise) {
-    state.refreshTokenPromise = handleRefreshToken();
-  }
-  const success = await state.refreshTokenPromise;
-  setTimeout(() => {
-    state.refreshTokenPromise = null;
-  }, 1000);
-  return success;
+  return singleFlightRefresh(state, handleRefreshToken);
 }
 
 export function showErrorMsg(state: RequestInstanceState, message: string) {

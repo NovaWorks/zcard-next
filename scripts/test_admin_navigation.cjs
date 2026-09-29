@@ -49,6 +49,11 @@ const server = http.createServer((req, res) => {
       await navigate(label, label === '首页' ? '工作台' : label);
       console.log('PASS staff →', label);
     }
+    for (const label of ['用户管理', '订单管理', '系统设置', '内容管理', '首页']) {
+      await navigate('商品管理');
+      await navigate(label, label === '首页' ? '工作台' : label);
+      console.log('PASS product →', label);
+    }
     await navigate('员工管理');
     await navigate('系统设置');
     await page.goBack();

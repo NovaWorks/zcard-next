@@ -40,7 +40,13 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const isLogin = computed(() => Boolean(token.value));
 
   /** Reset auth store */
-  async function resetStore() {
+  let resetPromise: Promise<void> | null = null;
+  function resetStore(): Promise<void> {
+    resetPromise ??= clearSession().finally(() => { resetPromise = null; });
+    return resetPromise;
+  }
+
+  async function clearSession() {
     recordUserId();
 
     clearAuthStorage();
@@ -53,7 +59,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     }
 
     tabStore.cacheTabs();
-    routeStore.resetStore();
+    await routeStore.resetStore();
   }
 
   /** Record the user ID of the previous login session Used to compare with the current user ID on next login */
@@ -160,7 +166,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     const pass = await getUserInfo();
 
     if (pass) {
-      token.value = accessToken;
+      token.value = getToken();
       return true;
     }
 
@@ -211,7 +217,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       token.value = maybeToken;
       const pass = await getUserInfo();
 
-      if (!pass) {
+      if (!pass && getToken()) {
         resetStore();
       }
     }

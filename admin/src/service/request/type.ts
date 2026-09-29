@@ -2,6 +2,8 @@ import "axios";
 
 declare module "axios" {
   interface AxiosRequestConfig {
+    /** An expired request may be replayed only once. */
+    authRetried?: boolean;
     /** 由更新页实时提供等待状态，仅供更新状态 GET 的错误提示判定。 */
     expectedUpdateRestart?: () => boolean;
   }
