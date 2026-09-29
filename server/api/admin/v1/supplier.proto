@@ -112,6 +112,7 @@ message SupplierAccountReply {
   uint64 owner_user_id = 13; // 前台申请归属用户（0=admin 手动建号）
   string apply_reason = 14; // 申请理由（前台申请时填）
   string review_note = 15; // 审核意见/驳回理由
+  bool shared_wallet = 17;
   repeated string ip_whitelist = 16; // IP 白名单（空=所有 IP 放行；精确 IP 或 CIDR）
 }
 
@@ -122,6 +123,7 @@ message CreateSupplierAccountRequest {
   string contact = 4;
   string protocol = 5; // 空 = zcard；dujiao_next/acg_faka 为兼容账号
   string display_name = 6;
+  uint64 owner_user_id = 7; // 必填：共用钱包归属用户
 }
 
 message ListSupplierAccountsRequest {

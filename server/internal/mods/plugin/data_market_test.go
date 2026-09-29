@@ -24,9 +24,23 @@ func TestMarketCheckpointPersistence(t *testing.T) {
 	if e = r.configureMarket(ctx, origin); e != nil {
 		t.Fatal(e)
 	}
-	c := mc.Catalog{Origin: origin, Revision: "10", Entries: []mc.Entry{}}
+	c := mc.Catalog{APIVersion: "1", Origin: origin, Revision: "10", Entries: []mc.Entry{}}
 	if e = r.acceptCatalog(ctx, c); e != nil {
 		t.Fatal(e)
+	}
+	v2 := c
+	v2.APIVersion = "2"
+	v2.Entries = []mc.Entry{{Name: "licensed addition"}}
+	if e = r.acceptCatalog(ctx, v2); e != nil {
+		t.Fatal("v2 shares v1 hash incorrectly", e)
+	}
+	if e = r.acceptCatalog(ctx, c); e != nil {
+		t.Fatal("v2 overwrote v1 checkpoint", e)
+	}
+	olderV2 := v2
+	olderV2.Revision = "9"
+	if e = r.acceptCatalog(ctx, olderV2); e == nil {
+		t.Fatal("v2 replay")
 	}
 	restarted := NewRepo(d, NewCoordinator(), nil)
 	old := c

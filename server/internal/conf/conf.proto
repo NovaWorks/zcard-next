@@ -62,6 +62,12 @@ message Data {
   string plugin_data_dir = 4;
   // Explicit Ed25519 public trust keys, standard base64; no development keys by default.
   map<string, string> plugin_trusted_keys = 5;
+  // Independent entitlement trust; artifact keys never imply licensing authority.
+  message PluginLicenseRoot { string issuer = 1; string public_key = 2; }
+  map<string, PluginLicenseRoot> plugin_license_roots = 6;
+  string plugin_license_issuer = 7;
+  // Trusted deployment domain, never inferred from an HTTP Host header.
+  string plugin_license_domain = 8;
 }
 
 // 四把钥匙解耦（铁律 §4.11.6）：env 注入优先，此处仅作兜底。

@@ -1,0 +1,210 @@
+{
+  "catalog": [
+    {
+      "key": "ip",
+      "limit": 60,
+      "windowSeconds": 60
+    },
+    {
+      "key": "global",
+      "limit": 600,
+      "windowSeconds": 60
+    }
+  ],
+  "preauth": [
+    {
+      "key": "ip",
+      "limit": 20,
+      "windowSeconds": 60
+    },
+    {
+      "key": "global",
+      "limit": 300,
+      "windowSeconds": 60
+    }
+  ],
+  "code": [
+    {
+      "key": "normalized_email",
+      "limit": 1,
+      "windowSeconds": 60
+    },
+    {
+      "key": "normalized_email",
+      "limit": 5,
+      "windowSeconds": 3600
+    },
+    {
+      "key": "ip",
+      "limit": 10,
+      "windowSeconds": 600
+    },
+    {
+      "key": "global",
+      "limit": 100,
+      "windowSeconds": 600
+    }
+  ],
+  "challenge": [
+    {
+      "key": "ip",
+      "limit": 30,
+      "windowSeconds": 600
+    },
+    {
+      "key": "global",
+      "limit": 300,
+      "windowSeconds": 60
+    }
+  ],
+  "login": [
+    {
+      "key": "normalized_identifier",
+      "limit": 10,
+      "windowSeconds": 600
+    },
+    {
+      "key": "ip",
+      "limit": 30,
+      "windowSeconds": 600
+    },
+    {
+      "key": "global",
+      "limit": 300,
+      "windowSeconds": 60
+    }
+  ],
+  "read": [
+    {
+      "key": "session_or_grant",
+      "limit": 60,
+      "windowSeconds": 60
+    },
+    {
+      "key": "account",
+      "limit": 120,
+      "windowSeconds": 60
+    },
+    {
+      "key": "global",
+      "limit": 1200,
+      "windowSeconds": 60
+    }
+  ],
+  "write": [
+    {
+      "key": "account",
+      "limit": 30,
+      "windowSeconds": 60
+    },
+    {
+      "key": "global",
+      "limit": 300,
+      "windowSeconds": 60
+    }
+  ],
+  "view_start": [
+    {
+      "key": "ip",
+      "limit": 10,
+      "windowSeconds": 600
+    },
+    {
+      "key": "global",
+      "limit": 300,
+      "windowSeconds": 60
+    }
+  ],
+  "view_poll": [
+    {
+      "key": "proof_or_grant",
+      "limit": 12,
+      "windowSeconds": 60
+    },
+    {
+      "key": "ip",
+      "limit": 120,
+      "windowSeconds": 60
+    },
+    {
+      "key": "global",
+      "limit": 1200,
+      "windowSeconds": 60
+    }
+  ],
+  "approval": [
+    {
+      "key": "account",
+      "limit": 10,
+      "windowSeconds": 600
+    },
+    {
+      "key": "ip",
+      "limit": 30,
+      "windowSeconds": 600
+    },
+    {
+      "key": "global",
+      "limit": 300,
+      "windowSeconds": 60
+    }
+  ],
+  "site_verify": [
+    {
+      "key": "site",
+      "limit": 3,
+      "windowSeconds": 600
+    },
+    {
+      "key": "account",
+      "limit": 10,
+      "windowSeconds": 600
+    },
+    {
+      "key": "ip",
+      "limit": 30,
+      "windowSeconds": 600
+    },
+    {
+      "key": "global",
+      "limit": 100,
+      "windowSeconds": 600
+    }
+  ],
+  "challenge_read": [
+    {
+      "key": "ip",
+      "limit": 30,
+      "windowSeconds": 60
+    },
+    {
+      "key": "global",
+      "limit": 300,
+      "windowSeconds": 60
+    }
+  ],
+  "host": [
+    {
+      "key": "local_admin",
+      "limit": 60,
+      "windowSeconds": 60
+    },
+    {
+      "key": "global",
+      "limit": 1200,
+      "windowSeconds": 60
+    }
+  ],
+  "operator": [
+    {
+      "key": "operator_admin",
+      "limit": 60,
+      "windowSeconds": 60
+    },
+    {
+      "key": "global",
+      "limit": 1200,
+      "windowSeconds": 60
+    }
+  ]
+}

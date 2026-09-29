@@ -41,6 +41,8 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
   /** Reset auth store */
   async function resetStore() {
+    sessionStorage.removeItem("zcard-market-browser-view");
+    window.dispatchEvent(new Event("zcard-market-context-clear"));
     recordUserId();
 
     clearAuthStorage();

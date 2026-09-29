@@ -28,6 +28,8 @@ message PluginOperationRequest { string operation_id=1; }
 message OperatePluginRequest {
  string plugin_id=1; string operation_id=2; string action=3; string target_digest=4;
  string expected_generation=5; repeated string approved_scopes=6;
+ // Explicit approval of a new paid artifact, bound to the immutable operation.
+ bool confirm_paid=7;
 }
 message ImportPluginRequest { OperatePluginRequest command=1; bytes descriptor_json=2; bytes signature=3; bytes archive=4; }
 message PluginStatusReply {
@@ -37,7 +39,7 @@ message PluginStatusReply {
  repeated string approved_scopes=12; bool runtime_available=13;
 }
 message ListPluginsReply { repeated PluginStatusReply plugins=1; bool instance_management_allowed=2; }
-message PluginPackageReply { string plugin_id=1; string version=2; string digest=3; repeated string scopes=4; }
+message PluginPackageReply { string plugin_id=1; string version=2; string digest=3; repeated string scopes=4; string entitlement_mode=5; }
 message PluginOperationReply {
  string operation_id=1; string plugin_id=2; string action=3; string target_generation=4;
  string phase=5; string failure_code=6; PluginStatusReply status=7;

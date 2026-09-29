@@ -103,6 +103,20 @@ func (_u *SupplierAccountUpdate) SetNillableStatus(v *supplieraccount.Status) *S
 	return _u
 }
 
+// SetSharedWallet sets the "shared_wallet" field.
+func (_u *SupplierAccountUpdate) SetSharedWallet(v bool) *SupplierAccountUpdate {
+	_u.mutation.SetSharedWallet(v)
+	return _u
+}
+
+// SetNillableSharedWallet sets the "shared_wallet" field if the given value is not nil.
+func (_u *SupplierAccountUpdate) SetNillableSharedWallet(v *bool) *SupplierAccountUpdate {
+	if v != nil {
+		_u.SetSharedWallet(*v)
+	}
+	return _u
+}
+
 // SetBalanceCache sets the "balance_cache" field.
 func (_u *SupplierAccountUpdate) SetBalanceCache(v int64) *SupplierAccountUpdate {
 	_u.mutation.ResetBalanceCache()
@@ -407,6 +421,9 @@ func (_u *SupplierAccountUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(supplieraccount.FieldStatus, field.TypeEnum, value)
 	}
+	if value, ok := _u.mutation.SharedWallet(); ok {
+		_spec.SetField(supplieraccount.FieldSharedWallet, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.BalanceCache(); ok {
 		_spec.SetField(supplieraccount.FieldBalanceCache, field.TypeInt64, value)
 	}
@@ -556,6 +573,20 @@ func (_u *SupplierAccountUpdateOne) SetStatus(v supplieraccount.Status) *Supplie
 func (_u *SupplierAccountUpdateOne) SetNillableStatus(v *supplieraccount.Status) *SupplierAccountUpdateOne {
 	if v != nil {
 		_u.SetStatus(*v)
+	}
+	return _u
+}
+
+// SetSharedWallet sets the "shared_wallet" field.
+func (_u *SupplierAccountUpdateOne) SetSharedWallet(v bool) *SupplierAccountUpdateOne {
+	_u.mutation.SetSharedWallet(v)
+	return _u
+}
+
+// SetNillableSharedWallet sets the "shared_wallet" field if the given value is not nil.
+func (_u *SupplierAccountUpdateOne) SetNillableSharedWallet(v *bool) *SupplierAccountUpdateOne {
+	if v != nil {
+		_u.SetSharedWallet(*v)
 	}
 	return _u
 }
@@ -893,6 +924,9 @@ func (_u *SupplierAccountUpdateOne) sqlSave(ctx context.Context) (_node *Supplie
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(supplieraccount.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.SharedWallet(); ok {
+		_spec.SetField(supplieraccount.FieldSharedWallet, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.BalanceCache(); ok {
 		_spec.SetField(supplieraccount.FieldBalanceCache, field.TypeInt64, value)

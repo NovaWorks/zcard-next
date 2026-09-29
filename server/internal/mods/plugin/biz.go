@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
+	ma "github.com/NovaWorks/zcard-next/server/internal/platform/marketaccount"
 	"io"
 	"math"
 	"regexp"
@@ -27,6 +29,7 @@ type Command struct {
 	ExpectedGeneration uint64     `json:"expected_generation,string"`
 	ApprovedScopes     []string   `json:"approved_scopes"`
 	Actor              port.Actor `json:"actor"`
+	ConfirmPaid        bool       `json:"confirm_paid,omitempty"`
 }
 type Operation struct {
 	Command          Command    `json:"command"`
@@ -42,14 +45,19 @@ type Status struct {
 	Uninstalled    bool       `json:"uninstalled"`
 }
 type Manager struct {
-	repo        *Repo
-	packages    port.PackageStore
-	loader      port.RuntimeLoader
-	coordinator *Coordinator
+	officialProfile *ma.PublicProfile
+	repo            *Repo
+	packages        port.PackageStore
+	loader          port.RuntimeLoader
+	coordinator     *Coordinator
+	licensing       *licensePolicy
+	bindingBox      *crypto.Box
 }
 
 func NewManager(repo *Repo, packages port.PackageStore, loader port.RuntimeLoader) *Manager {
-	return &Manager{repo: repo, packages: packages, loader: loader, coordinator: repo.coordinator}
+	m := &Manager{repo: repo, packages: packages, loader: loader, coordinator: repo.coordinator}
+	repo.coordinator.licenseCheck = m.runtimeLicenseOK
+	return m
 }
 func validateCommand(c Command) error {
 	if !operationPattern.MatchString(c.OperationID) || len(c.PluginID) > 64 || !pluginIDPattern.MatchString(c.PluginID) || c.ExpectedGeneration >= math.MaxInt64 {
@@ -184,6 +192,12 @@ func (m *Manager) Operate(ctx context.Context, c Command) (Operation, error) {
 		if a.Manifest.ID != c.PluginID {
 			return fail(contractError(pc.InvalidContract, "artifact belongs to another plugin"))
 		}
+		if reason := m.licenseReason(a); reason != "" {
+			return fail(contractError(pc.Unavailable, string(reason)))
+		}
+		if a.Manifest.Entitlement.Mode == "paid" && sha != old.DesiredDigest && !c.ConfirmPaid {
+			return fail(contractError(pc.Forbidden, "explicit paid artifact confirmation required"))
+		}
 		if !sameScopes(c.ApprovedScopes, a.Manifest.Scopes) {
 			return fail(contractError(pc.Forbidden, "explicit signed scopes approval required"))
 		}
@@ -233,6 +247,11 @@ func (m *Manager) Status(ctx context.Context, id string) (Status, error) {
 		return s, err
 	}
 	if slot := m.coordinator.slots[id]; slot != nil {
+		if a, ok := slot.runtime.(*artifactRuntime); ok {
+			if reason := m.licenseReason(port.Artifact{Manifest: a.manifest, Descriptor: pc.ArtifactDescriptor{ArchiveSHA256: a.digest}}); reason != "" {
+				s.State.BlockReasons = append(s.State.BlockReasons, port.BlockReason(reason))
+			}
+		}
 		if health, ok := slot.runtime.(interface{ Faulted() bool }); ok && health.Faulted() {
 			s.State.BlockReasons = append(s.State.BlockReasons, port.BlockRuntime)
 		}
@@ -341,6 +360,12 @@ func (m *Manager) reconcileLocked(ctx context.Context, id string) (Operation, er
 
 // InitializeStorage must run with the instance lock held, before serving.
 func (m *Manager) InitializeStorage(ctx context.Context, root string) error {
+	if err := m.applyOfficialOrigin(ctx); err != nil {
+		return err
+	}
+	if err := m.loadLicensing(ctx); err != nil {
+		return err
+	}
 	used, err := m.repo.hasOrderFingerprints(ctx)
 	if err != nil {
 		return err

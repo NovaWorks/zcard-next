@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import { onBeforeRouteLeave } from "vue-router";
+import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
 import { $t } from "@/locales";
 import { checkAuth } from "@/directives";
 import { useAuthStore } from "@/store/modules/auth";
@@ -19,11 +19,43 @@ import {
   type PluginPackage,
   type PluginStatus,
 } from "@/service/api/plugin";
+import MarketAccount from "@/components/plugin/market-account.vue";
+import PluginEntitlements from "@/components/plugin/plugin-entitlements.vue";
+import MarketSettings from "@/components/plugin/market-settings.vue";
+import MarketUpdates from "@/components/plugin/market-updates.vue";
 import MarketCatalog from "@/components/plugin/market-catalog.vue";
 import ProductExtensions from "@/components/plugin/product-extensions.vue";
 import { errorReason } from "@/components/plugin/schema";
 
 defineOptions({ name: "PluginManagement" });
+const route = useRoute(),
+  router = useRouter();
+const tab = computed(() =>
+  ["market", "installed", "account", "updates", "settings"].includes(
+    String(route.query.tab),
+  )
+    ? String(route.query.tab)
+    : "market",
+);
+function tabKey(event: KeyboardEvent, value: string) {
+  const tabs = ["market", "installed", "account", "updates", "settings"];
+  let next = value;
+  if (event.key === "ArrowRight")
+    next = tabs[(tabs.indexOf(value) + 1) % tabs.length];
+  else if (event.key === "ArrowLeft")
+    next = tabs[(tabs.indexOf(value) + tabs.length - 1) % tabs.length];
+  else if (!["Enter", " "].includes(event.key)) return;
+  event.preventDefault();
+  selectTab(next);
+  document.getElementById(`plugin-tab-${next}`)?.focus();
+}
+function selectTab(value: string) {
+  void router.replace({ query: { ...route.query, tab: value } });
+}
+const marketCatalog = ref<InstanceType<typeof MarketCatalog>>();
+const marketRevision = ref(0);
+const advanced = ref(false);
+const marketAccountId = ref("");
 const auth = useAuthStore();
 const plugins = ref<PluginStatus[]>([]);
 const impacts = ref<Record<string, PluginImpact>>({});
@@ -32,6 +64,8 @@ const loading = ref(false),
   loadError = ref(false),
   managementAllowed = ref(false);
 const marketBusy = ref(false);
+const licenseBusy = ref(false);
+const accountBusy = ref(false);
 const message = ref("");
 const storageKey = computed(
   () => `zcard.plugin.operation:${location.host}:${auth.userInfo.userId}`,
@@ -39,9 +73,12 @@ const storageKey = computed(
 const pending = ref("");
 const outcome = ref<PluginOperation>();
 const canManage = computed(
-  () => managementAllowed.value && checkAuth("plugin:manage") && !loadError.value,
+  () =>
+    managementAllowed.value && checkAuth("plugin:manage") && !loadError.value,
 );
-const canEditProduct = computed(() => checkAuth("plugin:read") && checkAuth("catalog:write"));
+const canEditProduct = computed(
+  () => checkAuth("plugin:read") && checkAuth("catalog:write"),
+);
 const uploadOpen = ref(false),
   selected = ref<Partial<PluginFiles>>({}),
   preview = ref<PluginPackage>(),
@@ -65,7 +102,11 @@ function persistPending(id: string) {
 function stateText(row: PluginStatus) {
   if (row.reconciliation_pending) return $t("plugin.pending");
   if (row.uninstalled) return $t("plugin.uninstalled");
-  if (row.block_reasons?.length || !row.runtime_available || row.phase === "failed")
+  if (
+    row.block_reasons?.length ||
+    !row.runtime_available ||
+    row.phase === "failed"
+  )
     return $t("plugin.failed");
   return row.desired_enabled ? $t("plugin.active") : $t("plugin.disabled");
 }
@@ -74,13 +115,24 @@ function reasonText(reason: string) {
     package_missing: "plugin.packageMissing",
     runtime_fault: "plugin.runtimeFault",
     incompatible: "plugin.packageIncompatible",
+    entitlement_missing: "plugin.licenseMissing",
+    entitlement_not_yet_valid: "plugin.licenseNotYetValid",
+    entitlement_incompatible: "plugin.licenseIncompatible",
+    security_revoked: "plugin.securityRevoked",
     entitlement_expired: "plugin.expired",
     entitlement_revoked: "plugin.revoked",
   };
   return names[reason] ? $t(names[reason]) : reason;
 }
 async function refresh() {
-  if (loading.value || busy.value || marketBusy.value) return;
+  if (
+    loading.value ||
+    busy.value ||
+    marketBusy.value ||
+    accountBusy.value ||
+    licenseBusy.value
+  )
+    return;
   loading.value = true;
   try {
     const result = await fetchPlugins();
@@ -96,7 +148,8 @@ async function refresh() {
       await Promise.all(
         plugins.value.map(async (row) => {
           const response = await fetchPluginImpact(row.plugin_id);
-          if (!response.error && response.data) impacts.value[row.plugin_id] = response.data;
+          if (!response.error && response.data)
+            impacts.value[row.plugin_id] = response.data;
         }),
       );
   } finally {
@@ -108,7 +161,9 @@ function resultMessage(result: PluginOperation) {
   if (result.phase === "reconciled" || result.phase === "failed") {
     persistPending("");
     message.value = $t(
-      result.phase === "failed" ? "plugin.operationFailed" : "plugin.operationDone",
+      result.phase === "failed"
+        ? "plugin.operationFailed"
+        : "plugin.operationDone",
     );
   } else message.value = $t("plugin.unknown");
 }
@@ -140,10 +195,20 @@ function clearOperation() {
   });
 }
 async function apply(command: PluginCommand, files?: PluginFiles) {
-  if (busy.value || marketBusy.value || pending.value || !canManage.value) return;
+  if (
+    busy.value ||
+    marketBusy.value ||
+    accountBusy.value ||
+    licenseBusy.value ||
+    pending.value ||
+    !canManage.value
+  )
+    return;
   busy.value = true;
   persistPending(command.operation_id);
-  const result = files ? await importPlugin(command, files) : await operatePlugin(command);
+  const result = files
+    ? await importPlugin(command, files)
+    : await operatePlugin(command);
   busy.value = false;
   if (result.error || !result.data) {
     message.value = $t("plugin.unknown");
@@ -154,7 +219,15 @@ async function apply(command: PluginCommand, files?: PluginFiles) {
   }
 }
 async function confirmOperation(command: PluginCommand, files?: PluginFiles) {
-  if (busy.value || marketBusy.value || pending.value || !canManage.value) return;
+  if (
+    busy.value ||
+    marketBusy.value ||
+    accountBusy.value ||
+    licenseBusy.value ||
+    pending.value ||
+    !canManage.value
+  )
+    return;
   busy.value = true;
   const result = await fetchPluginImpact(command.plugin_id);
   busy.value = false;
@@ -177,7 +250,10 @@ async function confirmOperation(command: PluginCommand, files?: PluginFiles) {
     },
   });
 }
-function operate(row: PluginStatus, action: "enable" | "disable" | "uninstall") {
+function operate(
+  row: PluginStatus,
+  action: "enable" | "disable" | "uninstall",
+) {
   void confirmOperation({
     plugin_id: row.plugin_id,
     action,
@@ -187,7 +263,10 @@ function operate(row: PluginStatus, action: "enable" | "disable" | "uninstall") 
     approved_scopes: row.approved_scopes || [],
   });
 }
-function openUpload(row?: PluginStatus, action: "import" | "upgrade" | "rollback" = "import") {
+function openUpload(
+  row?: PluginStatus,
+  action: "import" | "upgrade" | "rollback" = "import",
+) {
   selected.value = {};
   preview.value = undefined;
   preparedCommand.value = undefined;
@@ -204,7 +283,14 @@ function pick(name: keyof PluginFiles, event: Event) {
   approved.value = false;
 }
 async function verify() {
-  if (busy.value || marketBusy.value || !canManage.value) return;
+  if (
+    busy.value ||
+    marketBusy.value ||
+    accountBusy.value ||
+    licenseBusy.value ||
+    !canManage.value
+  )
+    return;
   const files = selected.value;
   if (
     !files.descriptor ||
@@ -224,10 +310,13 @@ async function verify() {
     if (
       typeof descriptor.pluginId !== "string" ||
       typeof descriptor.archiveSHA256 !== "string" ||
-      (uploadTarget.value && descriptor.pluginId !== uploadTarget.value.plugin_id)
+      (uploadTarget.value &&
+        descriptor.pluginId !== uploadTarget.value.plugin_id)
     )
       throw Error("identity");
-    const installed = plugins.value.find((row) => row.plugin_id === descriptor.pluginId);
+    const installed = plugins.value.find(
+      (row) => row.plugin_id === descriptor.pluginId,
+    );
     if (uploadAction.value === "import" && installed && !installed.uninstalled)
       throw Error("already installed");
     const command: PluginCommand = {
@@ -241,7 +330,10 @@ async function verify() {
     const result = await inspectPlugin(command, files as PluginFiles);
     if (result.error || !result.data) throw Error("verify");
     preview.value = result.data;
-    preparedCommand.value = { ...command, approved_scopes: result.data.scopes || [] };
+    preparedCommand.value = {
+      ...command,
+      approved_scopes: result.data.scopes || [],
+    };
     message.value = "";
   } catch {
     message.value = $t("plugin.verifyFailed");
@@ -260,7 +352,11 @@ async function viewImpact(row: PluginStatus) {
 async function openProduct(id: string) {
   if (productBusy.value || !(await discardProduct())) return;
   productBusy.value = true;
-  const result = await request<{ id: string; name: string; is_locked: boolean }>({
+  const result = await request<{
+    id: string;
+    name: string;
+    is_locked: boolean;
+  }>({
     url: `/api/v1/admin/products/${encodeURIComponent(id)}`,
     silentError: true,
   });
@@ -291,9 +387,23 @@ async function discardProduct() {
 async function closeProduct() {
   if (await discardProduct()) product.value = undefined;
 }
-onBeforeRouteLeave(async () => !busy.value && !marketBusy.value && (await discardProduct()));
+onBeforeRouteLeave(
+  async () =>
+    !busy.value &&
+    !marketBusy.value &&
+    !accountBusy.value &&
+    !licenseBusy.value &&
+    (await discardProduct()),
+);
 function beforeUnload(event: BeforeUnloadEvent) {
-  if (busy.value || marketBusy.value || panel.value?.hasPending || panel.value?.saving) {
+  if (
+    busy.value ||
+    marketBusy.value ||
+    accountBusy.value ||
+    licenseBusy.value ||
+    panel.value?.hasPending ||
+    panel.value?.saving
+  ) {
     event.preventDefault();
     event.returnValue = "";
   }
@@ -317,28 +427,136 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="plugin-page">
-    <NCard :title="$t('plugin.title')">
-      <p>{{ $t("plugin.intro") }}</p>
-      <NSpace class="mt-16px">
-        <NButton
-          type="primary"
-          :disabled="!canManage || busy || marketBusy || loading || !!pending"
-          @click="openUpload()"
+    <header class="market-heading">
+      <div>
+        <h1>{{ $t("plugin.marketTitle") }}</h1>
+        <p>{{ $t("plugin.workspaceIntro") }}</p>
+      </div>
+      <div id="plugin-account-slot" class="market-account-slot" />
+    </header>
+    <div class="market-navigation">
+      <NTabs
+        role="tablist"
+        :value="tab"
+        type="line"
+        :aria-label="$t('plugin.title')"
+        @update:value="selectTab"
+      >
+        <NTab
+          name="market"
+          id="plugin-tab-market"
+          role="tab"
+          :tabindex="tab === 'market' ? 0 : -1"
+          :aria-selected="tab === 'market'"
+          @keydown="tabKey($event, 'market')"
+          >{{ $t("plugin.marketTitle") }}</NTab
         >
-          {{ $t("plugin.upload") }}
-        </NButton>
-        <NButton :loading="loading" :disabled="busy" @click="refresh">
-          {{
-            $t("plugin.refresh")
-          }}
-        </NButton>
+        <NTab
+          name="installed"
+          id="plugin-tab-installed"
+          role="tab"
+          :tabindex="tab === 'installed' ? 0 : -1"
+          :aria-selected="tab === 'installed'"
+          @keydown="tabKey($event, 'installed')"
+          >{{ $t("plugin.installedTab") }}</NTab
+        >
+        <NTab
+          name="account"
+          id="plugin-tab-account"
+          role="tab"
+          :tabindex="tab === 'account' ? 0 : -1"
+          :aria-selected="tab === 'account'"
+          @keydown="tabKey($event, 'account')"
+          >{{ $t("plugin.accountTab") }}</NTab
+        >
+        <NTab
+          v-for="name in ['updates', 'settings']"
+          :key="name"
+          :name="name"
+          :id="`plugin-tab-${name}`"
+          role="tab"
+          :tabindex="tab === name ? 0 : -1"
+          :aria-selected="tab === name"
+          @keydown="tabKey($event, name)"
+          >{{
+            $t(name === "updates" ? "plugin.updatesTab" : "plugin.settingsTab")
+          }}</NTab
+        >
+      </NTabs>
+      <NSpace :wrap="false" class="market-tools">
+        <NButton
+          quaternary
+          :disabled="busy"
+          :loading="loading"
+          @click="refresh"
+          >{{ $t("plugin.refresh") }}</NButton
+        >
+        <NButton
+          quaternary
+          :disabled="!canManage"
+          @click="advanced = !advanced"
+          >{{ $t("plugin.advanced") }}</NButton
+        >
       </NSpace>
-      <p v-if="!managementAllowed && !loading">{{ $t("plugin.readonly") }}</p>
-    </NCard>
-    <MarketCatalog
+    </div>
+    <NAlert v-if="!managementAllowed && !loading" type="info">{{
+      $t("plugin.readonly")
+    }}</NAlert>
+
+    <section v-if="advanced && canManage" :aria-label="$t('plugin.advanced')">
+      <NCard :title="$t('plugin.advanced')">
+        <NButton
+          :disabled="busy || marketBusy || licenseBusy || loading || !!pending"
+          @click="openUpload()"
+          >{{ $t("plugin.upload") }}</NButton
+        >
+      </NCard>
+      <PluginEntitlements
+        :disabled="busy || loading || !!pending || marketBusy || accountBusy"
+        @busy="(value) => (licenseBusy = value)"
+        @updated="refresh"
+      />
+    </section>
+    <MarketAccount
       v-if="canManage"
+      v-show="tab === 'account'"
+      :disabled="busy || loading || !!pending || marketBusy || licenseBusy"
+      @account="(value) => (marketAccountId = value)"
+      @navigate="selectTab('account')"
+      @busy="(value) => (accountBusy = value)"
+      @updated="refresh"
+    />
+    <MarketSettings
+      v-if="canManage && tab === 'settings'"
+      :disabled="
+        busy || loading || !!pending || marketBusy || licenseBusy || accountBusy
+      "
+      @busy="(value) => (accountBusy = value)"
+      @saved="marketRevision++"
+    />
+    <MarketUpdates
+      v-if="canManage && tab === 'updates'"
+      :disabled="
+        busy || loading || !!pending || marketBusy || licenseBusy || accountBusy
+      "
+      @busy="(value) => (accountBusy = value)"
+      @detail="
+        (id) => {
+          selectTab('market');
+          marketCatalog?.showDetail(id);
+        }
+      "
+    />
+    <MarketCatalog
+      ref="marketCatalog"
+      :key="marketRevision"
+      v-if="canManage"
+      v-show="tab === 'market'"
+      :advanced="advanced"
+      :account-id="marketAccountId"
+      @account="selectTab('account')"
       :plugins="plugins"
-      :disabled="busy || loading || !!pending"
+      :disabled="busy || loading || !!pending || licenseBusy || accountBusy"
       @busy="(value) => (marketBusy = value)"
       @pending="persistPending"
       @done="
@@ -349,100 +567,137 @@ onBeforeUnmount(() => {
         }
       "
     />
-    <NAlert v-if="loadError" type="error" role="alert">{{ $t("plugin.loadFailed") }}</NAlert>
-    <NAlert v-if="message && !uploadOpen" type="info" role="status">{{ message }}</NAlert>
+    <NAlert v-if="loadError" type="error" role="alert">{{
+      $t("plugin.loadFailed")
+    }}</NAlert>
+    <NAlert v-if="message && !uploadOpen" type="info" role="status">{{
+      message
+    }}</NAlert>
     <NCard v-if="pending" :title="$t('plugin.pending')" size="small">
       <p>
         {{ $t("plugin.operation") }}: <code>{{ pending }}</code>
       </p>
       <NSpace>
-        <NButton :loading="busy" @click="queryOperation">{{ $t("plugin.query") }}</NButton><NButton :disabled="busy || loading || loadError" @click="clearOperation">
-          {{
-            $t("plugin.clearOperation")
-          }}
+        <NButton :loading="busy" @click="queryOperation">{{
+          $t("plugin.query")
+        }}</NButton
+        ><NButton
+          :disabled="busy || loading || loadError"
+          @click="clearOperation"
+        >
+          {{ $t("plugin.clearOperation") }}
         </NButton>
       </NSpace>
     </NCard>
     <p v-if="outcome" role="status">
-      {{ $t("plugin.operation") }}: {{ outcome.operation_id }} · {{ outcome.phase }}
+      {{ $t("plugin.operation") }}: {{ outcome.operation_id }} ·
+      {{ outcome.phase }}
       {{ outcome.failure_code }}
     </p>
-    <NEmpty v-if="!loading && !loadError && !plugins.length" :description="$t('plugin.empty')" />
-    <NCard
-      v-for="row in plugins"
-      :key="row.plugin_id"
-      :title="row.plugin_id"
-      size="small"
-      class="plugin-card"
+    <section
+      v-show="tab === 'installed'"
+      class="plugin-page"
+      :aria-label="$t('plugin.installedTab')"
     >
-      <NTag
-        :type="
-          row.desired_enabled && !row.block_reasons?.length && !row.reconciliation_pending
-            ? 'success'
-            : 'warning'
-        "
+      <NEmpty
+        v-if="!loading && !loadError && !plugins.length"
+        :description="$t('plugin.empty')"
+      />
+      <NCard
+        v-for="row in plugins"
+        :key="row.plugin_id"
+        :title="row.plugin_id"
+        size="small"
+        class="plugin-card"
       >
-        {{ stateText(row) }}
-      </NTag>
-      <dl>
-        <dt>{{ $t("plugin.desired") }}</dt>
-        <dd>
-          <code>{{ row.desired_digest || "—" }}</code>
-        </dd>
-        <dt>{{ $t("plugin.observed") }}</dt>
-        <dd>
-          <code>{{ row.observed_digest || "—" }}</code>
-        </dd>
-        <dt>{{ $t("plugin.generation") }}</dt>
-        <dd>{{ row.observed_generation }} / {{ row.desired_generation }}</dd>
-        <dt>{{ $t("plugin.scopes") }}</dt>
-        <dd>{{ row.approved_scopes?.join(", ") || "—" }}</dd>
-      </dl>
-      <NAlert v-for="reason in row.block_reasons" :key="reason" type="error" class="mb-12px">
-        {{
-          reasonText(reason)
-        }}
-      </NAlert>
-      <NSpace v-if="canManage" align="center" class="mb-12px">
-        <NButton :disabled="busy || loading" @click="viewImpact(row)">
-          {{ $t("plugin.impact") }} ({{ impacts[row.plugin_id]?.affected_total ?? "—" }})
-        </NButton>
-        <template v-if="!row.uninstalled">
-          <NButton
-            v-if="!row.desired_enabled"
-            :disabled="busy || loading || !!pending || row.reconciliation_pending"
-            type="primary"
-            @click="operate(row, 'enable')"
-          >
-            {{ $t("plugin.enable") }}
+        <NTag
+          :type="
+            row.desired_enabled &&
+            !row.block_reasons?.length &&
+            !row.reconciliation_pending
+              ? 'success'
+              : 'warning'
+          "
+        >
+          {{ stateText(row) }}
+        </NTag>
+        <details class="my-12px">
+          <summary>{{ $t("plugin.runtimeDetails") }}</summary>
+          <dl>
+            <dt>{{ $t("plugin.desired") }}</dt>
+            <dd>
+              <code>{{ row.desired_digest || "—" }}</code>
+            </dd>
+            <dt>{{ $t("plugin.observed") }}</dt>
+            <dd>
+              <code>{{ row.observed_digest || "—" }}</code>
+            </dd>
+            <dt>{{ $t("plugin.generation") }}</dt>
+            <dd>
+              {{ row.observed_generation }} / {{ row.desired_generation }}
+            </dd>
+            <dt>{{ $t("plugin.scopes") }}</dt>
+            <dd>{{ row.approved_scopes?.join(", ") || "—" }}</dd>
+          </dl>
+        </details>
+        <NAlert
+          v-for="reason in row.block_reasons"
+          :key="reason"
+          type="error"
+          class="mb-12px"
+        >
+          {{ reasonText(reason) }}
+        </NAlert>
+        <NSpace v-if="canManage" align="center" class="mb-12px">
+          <NButton :disabled="busy || loading" @click="viewImpact(row)">
+            {{ $t("plugin.impact") }} ({{
+              impacts[row.plugin_id]?.affected_total ?? "—"
+            }})
           </NButton>
-          <NButton
-            v-else
-            :disabled="busy || loading || !!pending"
-            @click="operate(row, 'disable')"
-          >
-            {{ $t("plugin.disable") }}
-          </NButton>
-          <NButton
-            :disabled="busy || loading || !!pending || row.reconciliation_pending"
-            @click="openUpload(row, 'upgrade')"
-          >
-            {{ $t("plugin.upgrade") }}
-          </NButton>
-          <NButton
-            :disabled="busy || loading || !!pending || row.reconciliation_pending"
-            @click="openUpload(row, 'rollback')"
-          >
-            {{ $t("plugin.rollback") }}
-          </NButton>
-          <NButton :disabled="busy || loading || !!pending" @click="operate(row, 'uninstall')">
-            {{
-              $t("plugin.uninstall")
-            }}
-          </NButton>
-        </template>
-      </NSpace>
-    </NCard>
+          <template v-if="!row.uninstalled">
+            <NButton
+              v-if="!row.desired_enabled"
+              :disabled="
+                busy || loading || !!pending || row.reconciliation_pending
+              "
+              type="primary"
+              @click="operate(row, 'enable')"
+            >
+              {{ $t("plugin.enable") }}
+            </NButton>
+            <NButton
+              v-else
+              :disabled="busy || loading || !!pending"
+              @click="operate(row, 'disable')"
+            >
+              {{ $t("plugin.disable") }}
+            </NButton>
+            <NButton
+              :disabled="
+                busy || loading || !!pending || row.reconciliation_pending
+              "
+              @click="openUpload(row, 'upgrade')"
+            >
+              {{ $t("plugin.upgrade") }}
+            </NButton>
+            <NButton
+              :disabled="
+                busy || loading || !!pending || row.reconciliation_pending
+              "
+              @click="openUpload(row, 'rollback')"
+            >
+              {{ $t("plugin.rollback") }}
+            </NButton>
+            <NButton
+              :disabled="busy || loading || !!pending"
+              @click="operate(row, 'uninstall')"
+            >
+              {{ $t("plugin.uninstall") }}
+            </NButton>
+          </template>
+        </NSpace>
+      </NCard>
+    </section>
     <NModal
       :show="uploadOpen"
       preset="card"
@@ -454,7 +709,10 @@ onBeforeUnmount(() => {
       @update:show="uploadOpen = $event"
     >
       <div class="upload-fields">
-        <label v-for="name in ['descriptor', 'signature', 'archive'] as const" :key="name">
+        <label
+          v-for="name in ['descriptor', 'signature', 'archive'] as const"
+          :key="name"
+        >
           <span>{{ $t(`plugin.${name}`) }}</span>
           <input
             type="file"
@@ -465,18 +723,24 @@ onBeforeUnmount(() => {
         </label>
       </div>
       <NButton :loading="busy" :disabled="!canManage" @click="verify">
-        {{
-          $t("plugin.verify")
-        }}
+        {{ $t("plugin.verify") }}
       </NButton>
-      <NAlert v-if="message && uploadOpen" type="error" role="alert" class="mt-12px">
-        {{
-          message
-        }}
+      <NAlert
+        v-if="message && uploadOpen"
+        type="error"
+        role="alert"
+        class="mt-12px"
+      >
+        {{ message }}
       </NAlert>
       <template v-if="preview && preparedCommand">
-        <NAlert type="success" class="mt-12px">{{ $t("plugin.verified") }}</NAlert>
-        <p>{{ preview.plugin_id }} · {{ $t("plugin.version") }} {{ preview.version }}</p>
+        <NAlert type="success" class="mt-12px">{{
+          $t("plugin.verified")
+        }}</NAlert>
+        <p>
+          {{ preview.plugin_id }} · {{ $t("plugin.version") }}
+          {{ preview.version }}
+        </p>
         <p>
           <code>{{ preview.digest }}</code>
         </p>
@@ -484,19 +748,36 @@ onBeforeUnmount(() => {
         <p v-if="uploadTarget">
           {{ $t("plugin.newScopes") }}:
           {{
-            preview.scopes?.filter((s) => !uploadTarget?.approved_scopes?.includes(s)).join(", ") ||
-              "—"
+            preview.scopes
+              ?.filter((s) => !uploadTarget?.approved_scopes?.includes(s))
+              .join(", ") || "—"
           }}
         </p>
+        <NAlert
+          v-if="preview.entitlement_mode === 'paid'"
+          type="warning"
+          class="my-12px"
+        >
+          <NCheckbox
+            v-model:checked="preparedCommand.confirm_paid"
+            :disabled="busy"
+            >{{ $t("plugin.confirmPaid") }}</NCheckbox
+          >
+        </NAlert>
         <NCheckbox v-model:checked="approved" :disabled="busy">
-          {{
-            $t("plugin.approve")
-          }}
+          {{ $t("plugin.approve") }}
         </NCheckbox>
         <div class="mt-16px">
           <NButton
             type="primary"
-            :disabled="!approved || busy || !!pending || !canManage"
+            :disabled="
+              !approved ||
+              busy ||
+              !!pending ||
+              !canManage ||
+              (preview.entitlement_mode === 'paid' &&
+                !preparedCommand.confirm_paid)
+            "
             @click="confirmOperation(preparedCommand, selected as PluginFiles)"
           >
             {{ $t(`plugin.${uploadAction}`) }}
@@ -514,7 +795,8 @@ onBeforeUnmount(() => {
       <template v-if="impactView">
         <NAlert type="warning">{{ $t("plugin.impactWarning") }}</NAlert>
         <p>
-          {{ impactView.id }} · {{ $t("plugin.affected") }}: {{ impactView.data.affected_total }}
+          {{ impactView.id }} · {{ $t("plugin.affected") }}:
+          {{ impactView.data.affected_total }}
         </p>
         <p>{{ $t("plugin.currentSite") }}</p>
         <p v-if="impactView.data.truncated">{{ $t("plugin.truncated") }}</p>
@@ -553,11 +835,84 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.market-heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 8px 0 4px;
+}
+.market-heading h1 {
+  font-size: 22px;
+  font-weight: 650;
+  margin: 0 0 5px;
+  letter-spacing: -0.4px;
+}
+.market-heading p {
+  color: rgb(var(--base-text-color) / 0.6);
+  margin: 0;
+}
+.market-account-slot {
+  flex-shrink: 0;
+}
+.market-navigation {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1px solid rgb(var(--base-text-color) / 0.1);
+}
+.market-navigation :deep(.n-tabs) {
+  flex: 1;
+  min-width: 0;
+}
+.market-tools {
+  flex-shrink: 0;
+}
+@media (max-width: 700px) {
+  .market-heading {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .market-heading h1 {
+    font-size: 19px;
+  }
+  .market-heading p {
+    display: none;
+  }
+  .market-navigation {
+    flex-wrap: wrap;
+    gap: 0;
+  }
+  .market-navigation :deep(.n-tabs) {
+    flex-basis: 100%;
+  }
+  .market-tools {
+    margin: 4px 0;
+  }
+}
+
+:deep(.n-button) {
+  min-height: 44px;
+}
+summary {
+  cursor: pointer;
+  padding: 10px 0;
+}
+a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
 .plugin-page {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
   gap: 16px;
   align-content: start;
   padding-bottom: 24px;
+  min-width: 0;
+}
+.plugin-page > * {
   min-width: 0;
 }
 .plugin-page :deep(.n-card-header__main) {

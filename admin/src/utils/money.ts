@@ -141,3 +141,11 @@ export function transactionRemark(row: { id?: number; type?: string; remark?: st
   }
   return formatTransactionRemark(row.remark);
 }
+
+// Market quotes use the remote contract's currency and integer cents, independent
+// of this shop's configurable base currency. Keep int64 strings exact.
+export function formatMarketCents(value: string): string {
+  if (!/^-?[0-9]+$/.test(value)) return '—';
+  const cents=BigInt(value), amount=cents<0n?-cents:cents;
+  return `${cents<0n?'-':''}${amount/100n}.${String(amount%100n).padStart(2,'0')}`;
+}

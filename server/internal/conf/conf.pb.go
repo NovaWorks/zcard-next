@@ -180,9 +180,13 @@ type Data struct {
 	// Stable instance data root; resolved relative to the configuration directory.
 	PluginDataDir string `protobuf:"bytes,4,opt,name=plugin_data_dir,json=pluginDataDir,proto3" json:"plugin_data_dir,omitempty"`
 	// Explicit Ed25519 public trust keys, standard base64; no development keys by default.
-	PluginTrustedKeys map[string]string `protobuf:"bytes,5,rep,name=plugin_trusted_keys,json=pluginTrustedKeys,proto3" json:"plugin_trusted_keys,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	PluginTrustedKeys   map[string]string                  `protobuf:"bytes,5,rep,name=plugin_trusted_keys,json=pluginTrustedKeys,proto3" json:"plugin_trusted_keys,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	PluginLicenseRoots  map[string]*Data_PluginLicenseRoot `protobuf:"bytes,6,rep,name=plugin_license_roots,json=pluginLicenseRoots,proto3" json:"plugin_license_roots,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	PluginLicenseIssuer string                             `protobuf:"bytes,7,opt,name=plugin_license_issuer,json=pluginLicenseIssuer,proto3" json:"plugin_license_issuer,omitempty"`
+	// Trusted deployment domain, never inferred from an HTTP Host header.
+	PluginLicenseDomain string `protobuf:"bytes,8,opt,name=plugin_license_domain,json=pluginLicenseDomain,proto3" json:"plugin_license_domain,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *Data) Reset() {
@@ -248,6 +252,27 @@ func (x *Data) GetPluginTrustedKeys() map[string]string {
 		return x.PluginTrustedKeys
 	}
 	return nil
+}
+
+func (x *Data) GetPluginLicenseRoots() map[string]*Data_PluginLicenseRoot {
+	if x != nil {
+		return x.PluginLicenseRoots
+	}
+	return nil
+}
+
+func (x *Data) GetPluginLicenseIssuer() string {
+	if x != nil {
+		return x.PluginLicenseIssuer
+	}
+	return ""
+}
+
+func (x *Data) GetPluginLicenseDomain() string {
+	if x != nil {
+		return x.PluginLicenseDomain
+	}
+	return ""
 }
 
 // 四把钥匙解耦（铁律 §4.11.6）：env 注入优先，此处仅作兜底。
@@ -708,6 +733,59 @@ func (x *Data_Redis) GetWriteTimeout() *durationpb.Duration {
 	return nil
 }
 
+// Independent entitlement trust; artifact keys never imply licensing authority.
+type Data_PluginLicenseRoot struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Issuer        string                 `protobuf:"bytes,1,opt,name=issuer,proto3" json:"issuer,omitempty"`
+	PublicKey     string                 `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Data_PluginLicenseRoot) Reset() {
+	*x = Data_PluginLicenseRoot{}
+	mi := &file_conf_conf_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Data_PluginLicenseRoot) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Data_PluginLicenseRoot) ProtoMessage() {}
+
+func (x *Data_PluginLicenseRoot) ProtoReflect() protoreflect.Message {
+	mi := &file_conf_conf_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Data_PluginLicenseRoot.ProtoReflect.Descriptor instead.
+func (*Data_PluginLicenseRoot) Descriptor() ([]byte, []int) {
+	return file_conf_conf_proto_rawDescGZIP(), []int{2, 3}
+}
+
+func (x *Data_PluginLicenseRoot) GetIssuer() string {
+	if x != nil {
+		return x.Issuer
+	}
+	return ""
+}
+
+func (x *Data_PluginLicenseRoot) GetPublicKey() string {
+	if x != nil {
+		return x.PublicKey
+	}
+	return ""
+}
+
 var File_conf_conf_proto protoreflect.FileDescriptor
 
 const file_conf_conf_proto_rawDesc = "" +
@@ -732,13 +810,16 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xd9\x05\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xd4\b\n" +
 	"\x04Data\x125\n" +
 	"\bdatabase\x18\x01 \x01(\v2\x19.zcard.conf.Data.DatabaseR\bdatabase\x12,\n" +
 	"\x05redis\x18\x02 \x01(\v2\x16.zcard.conf.Data.RedisR\x05redis\x12-\n" +
 	"\x12worker_concurrency\x18\x03 \x01(\x05R\x11workerConcurrency\x12&\n" +
 	"\x0fplugin_data_dir\x18\x04 \x01(\tR\rpluginDataDir\x12W\n" +
-	"\x13plugin_trusted_keys\x18\x05 \x03(\v2'.zcard.conf.Data.PluginTrustedKeysEntryR\x11pluginTrustedKeys\x1a\xad\x01\n" +
+	"\x13plugin_trusted_keys\x18\x05 \x03(\v2'.zcard.conf.Data.PluginTrustedKeysEntryR\x11pluginTrustedKeys\x12Z\n" +
+	"\x14plugin_license_roots\x18\x06 \x03(\v2(.zcard.conf.Data.PluginLicenseRootsEntryR\x12pluginLicenseRoots\x122\n" +
+	"\x15plugin_license_issuer\x18\a \x01(\tR\x13pluginLicenseIssuer\x122\n" +
+	"\x15plugin_license_domain\x18\b \x01(\tR\x13pluginLicenseDomain\x1a\xad\x01\n" +
 	"\bDatabase\x12\x16\n" +
 	"\x06driver\x18\x01 \x01(\tR\x06driver\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x12$\n" +
@@ -753,7 +834,14 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\rwrite_timeout\x18\x05 \x01(\v2\x19.google.protobuf.DurationR\fwriteTimeout\x1aD\n" +
 	"\x16PluginTrustedKeysEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x86\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aJ\n" +
+	"\x11PluginLicenseRoot\x12\x16\n" +
+	"\x06issuer\x18\x01 \x01(\tR\x06issuer\x12\x1d\n" +
+	"\n" +
+	"public_key\x18\x02 \x01(\tR\tpublicKey\x1ai\n" +
+	"\x17PluginLicenseRootsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x128\n" +
+	"\x05value\x18\x02 \x01(\v2\".zcard.conf.Data.PluginLicenseRootR\x05value:\x028\x01\"\x86\x01\n" +
 	"\bSecurity\x12\"\n" +
 	"\rjwt_admin_key\x18\x01 \x01(\tR\vjwtAdminKey\x12 \n" +
 	"\fjwt_user_key\x18\x02 \x01(\tR\n" +
@@ -780,20 +868,22 @@ func file_conf_conf_proto_rawDescGZIP() []byte {
 	return file_conf_conf_proto_rawDescData
 }
 
-var file_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_conf_conf_proto_goTypes = []any{
-	(*Bootstrap)(nil),           // 0: zcard.conf.Bootstrap
-	(*Server)(nil),              // 1: zcard.conf.Server
-	(*Data)(nil),                // 2: zcard.conf.Data
-	(*Security)(nil),            // 3: zcard.conf.Security
-	(*Tenancy)(nil),             // 4: zcard.conf.Tenancy
-	(*Log)(nil),                 // 5: zcard.conf.Log
-	(*Server_HTTP)(nil),         // 6: zcard.conf.Server.HTTP
-	(*Server_GRPC)(nil),         // 7: zcard.conf.Server.GRPC
-	(*Data_Database)(nil),       // 8: zcard.conf.Data.Database
-	(*Data_Redis)(nil),          // 9: zcard.conf.Data.Redis
-	nil,                         // 10: zcard.conf.Data.PluginTrustedKeysEntry
-	(*durationpb.Duration)(nil), // 11: google.protobuf.Duration
+	(*Bootstrap)(nil),              // 0: zcard.conf.Bootstrap
+	(*Server)(nil),                 // 1: zcard.conf.Server
+	(*Data)(nil),                   // 2: zcard.conf.Data
+	(*Security)(nil),               // 3: zcard.conf.Security
+	(*Tenancy)(nil),                // 4: zcard.conf.Tenancy
+	(*Log)(nil),                    // 5: zcard.conf.Log
+	(*Server_HTTP)(nil),            // 6: zcard.conf.Server.HTTP
+	(*Server_GRPC)(nil),            // 7: zcard.conf.Server.GRPC
+	(*Data_Database)(nil),          // 8: zcard.conf.Data.Database
+	(*Data_Redis)(nil),             // 9: zcard.conf.Data.Redis
+	nil,                            // 10: zcard.conf.Data.PluginTrustedKeysEntry
+	(*Data_PluginLicenseRoot)(nil), // 11: zcard.conf.Data.PluginLicenseRoot
+	nil,                            // 12: zcard.conf.Data.PluginLicenseRootsEntry
+	(*durationpb.Duration)(nil),    // 13: google.protobuf.Duration
 }
 var file_conf_conf_proto_depIdxs = []int32{
 	1,  // 0: zcard.conf.Bootstrap.server:type_name -> zcard.conf.Server
@@ -806,15 +896,17 @@ var file_conf_conf_proto_depIdxs = []int32{
 	8,  // 7: zcard.conf.Data.database:type_name -> zcard.conf.Data.Database
 	9,  // 8: zcard.conf.Data.redis:type_name -> zcard.conf.Data.Redis
 	10, // 9: zcard.conf.Data.plugin_trusted_keys:type_name -> zcard.conf.Data.PluginTrustedKeysEntry
-	11, // 10: zcard.conf.Server.HTTP.timeout:type_name -> google.protobuf.Duration
-	11, // 11: zcard.conf.Server.GRPC.timeout:type_name -> google.protobuf.Duration
-	11, // 12: zcard.conf.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
-	11, // 13: zcard.conf.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	12, // 10: zcard.conf.Data.plugin_license_roots:type_name -> zcard.conf.Data.PluginLicenseRootsEntry
+	13, // 11: zcard.conf.Server.HTTP.timeout:type_name -> google.protobuf.Duration
+	13, // 12: zcard.conf.Server.GRPC.timeout:type_name -> google.protobuf.Duration
+	13, // 13: zcard.conf.Data.Redis.read_timeout:type_name -> google.protobuf.Duration
+	13, // 14: zcard.conf.Data.Redis.write_timeout:type_name -> google.protobuf.Duration
+	11, // 15: zcard.conf.Data.PluginLicenseRootsEntry.value:type_name -> zcard.conf.Data.PluginLicenseRoot
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_conf_conf_proto_init() }
@@ -828,7 +920,7 @@ func file_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_conf_conf_proto_rawDesc), len(file_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

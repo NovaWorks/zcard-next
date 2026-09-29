@@ -91,6 +91,8 @@ func main() {
 		err = runServe(args)
 	case "migrate":
 		err = runMigrate(args)
+	case "supply-wallet-migrate":
+		err = runSupplyWalletMigration(args)
 	case "plugin-host-check":
 		err = runPluginHostCheck(args)
 	case "plugin":
@@ -350,7 +352,11 @@ func runServe(args []string) (err error) {
 	}
 	// cleanup 单次化：重启路径 exec 前显式收口，进程退出路径 defer 兜底
 	var cleanupOnce sync.Once
-	doCleanup := func() { cleanupOnce.Do(cleanup) }
+	stopEntitlementSync := func() {}
+	if !plugin.SplitMode {
+		stopEntitlementSync = deps.Plugins.StartEntitlementSync()
+	}
+	doCleanup := func() { cleanupOnce.Do(func() { stopEntitlementSync(); cleanup() }) }
 	defer doCleanup()
 
 	// 更新重启 hook（三分支）：置位标记 + 异步优雅停机；

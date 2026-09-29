@@ -19,6 +19,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplynonce"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyorder"
+	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 )
@@ -35,18 +36,20 @@ func secretAAD(apiKey string) []byte { return []byte("supplier_account:" + apiKe
 
 // SupplierRepoImpl 供货仓储。
 type SupplierRepoImpl struct {
-	data *data.Data
-	box  *crypto.Box // ZCARD_DATA_KEY
+	data   *data.Data
+	wallet walletport.Wallet
+	box    *crypto.Box // ZCARD_DATA_KEY
 }
 
 // NewSupplierRepoImpl 构造。
-func NewSupplierRepoImpl(d *data.Data, box *crypto.Box) *SupplierRepoImpl {
-	return &SupplierRepoImpl{data: d, box: box}
+func NewSupplierRepoImpl(d *data.Data, box *crypto.Box, wallet walletport.Wallet) *SupplierRepoImpl {
+	return &SupplierRepoImpl{data: d, box: box, wallet: wallet}
 }
 
 // ── 账户 ──────────────────────────────────────────────────
 
-// CreateAccount 下游申请（secret 加密入库；只显示一次的语义由 service 层处理）。
+// CreateAccount constructs a legacy import/test account. HTTP entry points must
+// use CreateOwnedAccount or CreateApplication so all new customers share a wallet.
 func (r *SupplierRepoImpl) CreateAccount(ctx context.Context, name, apiKey, apiSecret, contact, protocol, displayName string) (*ent.SupplierAccount, error) {
 	enc, err := r.box.Seal([]byte(apiSecret), secretAAD(apiKey))
 	if err != nil {
@@ -66,8 +69,31 @@ func (r *SupplierRepoImpl) CreateAccount(ctx context.Context, name, apiKey, apiS
 	return create.Save(ctx)
 }
 
+// CreateOwnedAccount creates an administrative supply account with an explicit
+// wallet owner. Legacy CreateAccount is retained for import/test compatibility.
+func (r *SupplierRepoImpl) CreateOwnedAccount(ctx context.Context, owner uint64, name, key, secret, contact, protocol, display string) (out *ent.SupplierAccount, err error) {
+	if display == "" {
+		display = name
+	}
+	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+		out, err = r.CreateApplication(ctx, owner, protocol, display, contact, "", "", key, secret)
+		if err != nil {
+			return err
+		}
+		out, err = data.Client(ctx, r.data).SupplierAccount.UpdateOneID(out.ID).SetName(name).Save(ctx)
+		return err
+	})
+	return
+}
+
 // CreateApplication 前台对接申请（owner=用户 id；凭据由 service 生成后传入）。
 func (r *SupplierRepoImpl) CreateApplication(ctx context.Context, ownerUserID uint64, protocol, displayName, contact, applyReason, notifyURL, apiKey, apiSecret string) (*ent.SupplierAccount, error) {
+	if ownerUserID == 0 {
+		return nil, errors.New("supplier.OWNER_REQUIRED")
+	}
+	if _, err := data.Client(ctx, r.data).User.Get(ctx, ownerUserID); err != nil {
+		return nil, err
+	}
 	enc, err := r.box.Seal([]byte(apiSecret), secretAAD(apiKey))
 	if err != nil {
 		return nil, fmt.Errorf("supplier: secret 加密失败: %w", err)
@@ -80,6 +106,7 @@ func (r *SupplierRepoImpl) CreateApplication(ctx context.Context, ownerUserID ui
 		SetStatus(supplieraccount.StatusApplying).
 		SetProtocol(supplieraccount.Protocol(protocol)).
 		SetOwnerUserID(ownerUserID).
+		SetSharedWallet(true).
 		SetDisplayName(displayName)
 	if applyReason != "" {
 		create.SetApplyReason(applyReason)
@@ -263,17 +290,25 @@ func (r *SupplierRepoImpl) LedgerEntry(ctx context.Context, accountID, supplyOrd
 		if exists {
 			return ErrDuplicateLedger
 		}
-		if amount < 0 && (amount == math.MinInt64 || acc.BalanceCache < -amount) {
+		if !acc.SharedWallet && amount < 0 && (amount == math.MinInt64 || acc.BalanceCache < -amount) {
 			return ErrInsufficientBalance
 		}
-		if amount > 0 && acc.BalanceCache > math.MaxInt64-amount {
+		if !acc.SharedWallet && amount > 0 && acc.BalanceCache > math.MaxInt64-amount {
 			return errors.New("supplier.BALANCE_OVERFLOW")
+		}
+		if acc.SharedWallet {
+			if err := r.sharedEntry(ctx, acc, typ, amount, reference, remark); err != nil {
+				return err
+			}
 		}
 		_, err = client.SupplierLedgerEntry.Create().
 			SetAccountID(accountID).SetSupplyOrderID(supplyOrderID).SetType(typ).
 			SetAmount(amount).SetReference(reference).SetRemark(remark).Save(ctx)
 		if err != nil {
 			return err
+		}
+		if acc.SharedWallet {
+			return nil
 		}
 		return client.SupplierAccount.UpdateOneID(accountID).SetBalanceCache(acc.BalanceCache + amount).Exec(ctx)
 	})
@@ -303,7 +338,7 @@ func (r *SupplierRepoImpl) BalanceOf(ctx context.Context, accountID uint64) (int
 	if err != nil {
 		return 0, err
 	}
-	return acc.BalanceCache, nil
+	return r.accountBalance(ctx, acc)
 }
 
 // ListLedger 账本流水（分页）。
@@ -714,4 +749,12 @@ func (r *SupplierRepoImpl) DeletePrice(ctx context.Context, id uint64) error {
 		return fmt.Errorf("supplier: 专属价不存在")
 	}
 	return err
+}
+
+// SupplyRechargeOrder scopes the order to both its payer and supplier account.
+func (r *SupplierRepoImpl) SupplyRechargeOrder(ctx context.Context, userID, accountID, orderID uint64) (*ent.RechargeOrder, error) {
+	return data.Client(ctx, r.data).RechargeOrder.Query().Where(
+		rechargeorder.ID(orderID), rechargeorder.UserID(userID),
+		rechargeorder.SupplierAccountID(accountID), rechargeorder.TargetEQ(rechargeorder.TargetSupply),
+	).Only(ctx)
 }

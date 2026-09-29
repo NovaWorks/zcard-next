@@ -32,6 +32,9 @@ func (g *RequiredGate) Begin(ctx context.Context) (port.PurchaseSession, error) 
 	defer c.mu.Unlock()
 	s := &purchaseSession{repo: g.repo, leases: map[string]port.RuntimeLease{}, digests: map[string]string{}, versions: map[string]string{}, remaining: pluginruntime.RequestBudget}
 	for id, slot := range c.slots {
+		if c.licenseCheck != nil && !c.licenseCheck(slot.runtime) {
+			continue
+		}
 		slot.refs++
 		s.leases[id] = &lease{owner: c, slot: slot}
 		if rt, ok := slot.runtime.(*artifactRuntime); ok {

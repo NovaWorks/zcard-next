@@ -2504,6 +2504,7 @@ var (
 		{Name: "api_secret", Type: field.TypeBytes},
 		{Name: "contact", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"applying", "approved", "rejected", "disabled"}, Default: "applying"},
+		{Name: "shared_wallet", Type: field.TypeBool, Default: false},
 		{Name: "balance_cache", Type: field.TypeInt64, Default: 0},
 		{Name: "notify_url", Type: field.TypeString, Nullable: true, Size: 500},
 		{Name: "reviewed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
@@ -2523,7 +2524,7 @@ var (
 			{
 				Name:    "supplieraccount_owner_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{SupplierAccountsColumns[13]},
+				Columns: []*schema.Column{SupplierAccountsColumns[14]},
 			},
 		},
 	}

@@ -11,8 +11,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net"
 	"net/smtp"
 	"strings"
+	"time"
 
 	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 )
@@ -97,23 +99,45 @@ func (c *EmailChannel) Deliver(ctx context.Context, msg notifyport.Message) erro
 	if cfg.Username != "" {
 		auth = smtp.PlainAuth("", cfg.Username, cfg.Password, cfg.Host)
 	}
-	// TLS：465 隐式；587/25 走明文+STARTTLS（服务器支持时客户端自动升级由 net/smtp 处理）
-	if cfg.Port == 465 {
-		return dialTLS(addr, cfg.Host, auth, from, msg.Recipient, body)
-	}
-	return smtp.SendMail(addr, auth, from, []string{msg.Recipient}, []byte(body))
+	return sendSMTP(ctx, addr, cfg.Host, auth, cfg.From, msg.Recipient, body, cfg.Port == 465)
 }
 
-func dialTLS(addr, host string, auth smtp.Auth, from, to, body string) error {
-	conn, err := tls.Dial("tcp", addr, &tls.Config{ServerName: host})
+// Bound both connection establishment and every SMTP/TLS read/write. A stalled
+// provider must not retain anonymous verification requests indefinitely.
+func sendSMTP(ctx context.Context, addr, host string, auth smtp.Auth, from, to, body string, implicitTLS bool) error {
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	conn, err := (&net.Dialer{Timeout: 10 * time.Second}).DialContext(ctx, "tcp", addr)
 	if err != nil {
-		return fmt.Errorf("notify: SMTP TLS 连接失败: %w", err)
+		return err
 	}
-	client, err := smtp.NewClient(conn, host)
+	defer conn.Close()
+	deadline, _ := ctx.Deadline()
+	if err = conn.SetDeadline(deadline); err != nil {
+		return err
+	}
+	stop := context.AfterFunc(ctx, func() { _ = conn.Close() })
+	defer stop()
+	var transport net.Conn = conn
+	if implicitTLS {
+		secure := tls.Client(conn, &tls.Config{ServerName: host, MinVersion: tls.VersionTLS12})
+		if err = secure.HandshakeContext(ctx); err != nil {
+			return err
+		}
+		transport = secure
+	}
+	client, err := smtp.NewClient(transport, host)
 	if err != nil {
-		return fmt.Errorf("notify: SMTP 客户端构造失败: %w", err)
+		return err
 	}
 	defer client.Close()
+	if !implicitTLS {
+		if ok, _ := client.Extension("STARTTLS"); ok {
+			if err = client.StartTLS(&tls.Config{ServerName: host, MinVersion: tls.VersionTLS12}); err != nil {
+				return err
+			}
+		}
+	}
 	if auth != nil {
 		if err := client.Auth(auth); err != nil {
 			return fmt.Errorf("notify: SMTP 认证失败: %w", err)

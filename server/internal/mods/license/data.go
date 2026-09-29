@@ -10,6 +10,8 @@ import (
 	crand "crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/platform/license"
@@ -23,7 +25,8 @@ type settingsStore interface {
 
 // LicenseRepo 许可证仓储。
 type LicenseRepo struct {
-	settings settingsStore
+	identityMu sync.Mutex
+	settings   settingsStore
 }
 
 // NewLicenseRepo 构造。
@@ -33,12 +36,18 @@ func NewLicenseRepo(settings settingsStore) *LicenseRepo {
 
 // InstanceID 读取或生成实例 ID（生成后持久化，许可证绑定用）。
 func (r *LicenseRepo) InstanceID(ctx context.Context) (string, error) {
+	r.identityMu.Lock()
+	defer r.identityMu.Unlock()
 	raw, err := r.settings.Get(ctx, "license", "instance_id")
-	if err == nil && len(raw) > 0 && string(raw) != "null" && string(raw) != `""` {
+	if err != nil {
+		return "", err
+	}
+	if len(raw) > 0 && string(raw) != "null" && string(raw) != `""` {
 		var v string
 		if json.Unmarshal(raw, &v) == nil && v != "" {
 			return v, nil
 		}
+		return "", fmt.Errorf("stored instance identity is invalid")
 	}
 	id := randomInstanceID()
 	if err := r.settings.Put(ctx, "license", "instance_id", json.RawMessage(`"`+id+`"`)); err != nil {

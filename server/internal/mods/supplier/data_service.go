@@ -40,11 +40,11 @@ func (s *AdminSupplierService) CreateAccount(ctx context.Context, req *adminv1.C
 	if protocol != "zcard" && protocol != "dujiao_next" && protocol != "acg_faka" {
 		return nil, errors.New("supplier.INVALID_PROTOCOL: protocol 必须为 zcard|dujiao_next|acg_faka")
 	}
-	acc, err := s.repo.CreateAccount(ctx, req.GetName(), req.GetApiKey(), req.GetApiSecret(), req.GetContact(), protocol, req.GetDisplayName())
+	acc, err := s.repo.CreateOwnedAccount(ctx, req.GetOwnerUserId(), req.GetName(), req.GetApiKey(), req.GetApiSecret(), req.GetContact(), protocol, req.GetDisplayName())
 	if err != nil {
 		return nil, err
 	}
-	return toAccountPB(acc, req.GetApiSecret()), nil
+	return s.accountPB(ctx, acc, req.GetApiSecret())
 }
 
 // ListAccounts 列表（secret 零回显）。
@@ -56,7 +56,11 @@ func (s *AdminSupplierService) ListAccounts(ctx context.Context, req *adminv1.Li
 	}
 	reply := &adminv1.ListSupplierAccountsReply{Total: int64(total), Page: int32(page), PageSize: int32(size)}
 	for _, r := range rows {
-		reply.Accounts = append(reply.Accounts, toAccountPB(r, ""))
+		item, err := s.accountPB(ctx, r, "")
+		if err != nil {
+			return nil, err
+		}
+		reply.Accounts = append(reply.Accounts, item)
 	}
 	return reply, nil
 }
@@ -70,7 +74,7 @@ func (s *AdminSupplierService) ReviewAccount(ctx context.Context, req *adminv1.R
 	if err != nil {
 		return nil, err
 	}
-	return toAccountPB(acc, ""), nil
+	return s.accountPB(ctx, acc, "")
 }
 
 // ToggleAccount 启停。
@@ -79,7 +83,7 @@ func (s *AdminSupplierService) ToggleAccount(ctx context.Context, req *adminv1.T
 	if err != nil {
 		return nil, err
 	}
-	return toAccountPB(acc, ""), nil
+	return s.accountPB(ctx, acc, "")
 }
 
 // ResetSecret 重置密钥（明文返回一次）。
@@ -101,7 +105,7 @@ func (s *AdminSupplierService) SetNotifyURL(ctx context.Context, req *adminv1.Se
 		return nil, err
 	}
 	acc, _ := s.repo.GetAccount(ctx, req.GetId())
-	return toAccountPB(acc, ""), nil
+	return s.accountPB(ctx, acc, "")
 }
 
 // SetIPWhitelist 设置 IP 白名单（空 = 所有 IP 放行；接口鉴权层强制）。
@@ -114,7 +118,7 @@ func (s *AdminSupplierService) SetIPWhitelist(ctx context.Context, req *adminv1.
 		return nil, err
 	}
 	acc, _ := s.repo.GetAccount(ctx, req.GetId())
-	return toAccountPB(acc, ""), nil
+	return s.accountPB(ctx, acc, "")
 }
 
 // Recharge 充值（账本入账；reference 幂等由调用方保证）。
@@ -255,4 +259,15 @@ func orEmpty(v, def string) string {
 		return def
 	}
 	return v
+}
+
+func (s *AdminSupplierService) accountPB(ctx context.Context, acc *ent.SupplierAccount, secret string) (*adminv1.SupplierAccountReply, error) {
+	balance, err := s.repo.accountBalance(ctx, acc)
+	if err != nil {
+		return nil, err
+	}
+	out := toAccountPB(acc, secret)
+	out.BalanceCache = balance
+	out.SharedWallet = acc.SharedWallet
+	return out, nil
 }

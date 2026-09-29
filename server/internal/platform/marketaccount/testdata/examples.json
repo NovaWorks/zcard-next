@@ -1,0 +1,526 @@
+{
+  "Empty": {},
+  "Operation": {
+    "requestId": "request-0000000001"
+  },
+  "PageQuery": {
+    "cursor": "",
+    "limit": 20
+  },
+  "ProductQuery": {
+    "cursor": "",
+    "limit": 20,
+    "q": ""
+  },
+  "PluginPath": {
+    "pluginId": "member-purchase-gate"
+  },
+  "SitePath": {
+    "siteId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "Bootstrap": {
+    "csrfToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "expiresAt": 1790000000,
+    "captchaEnabled": true,
+    "captchaId": "Example",
+    "captchaImage": ""
+  },
+  "CodeRequest": {
+    "requestId": "request-0000000001",
+    "email": "buyer@example.test",
+    "captchaId": "Example",
+    "captchaCode": "Example"
+  },
+  "CodeAccepted": {
+    "challengeId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "recoverySecret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "expiresAt": 1790000000,
+    "retryAfterSeconds": 60
+  },
+  "Register": {
+    "requestId": "request-0000000001",
+    "challengeId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "recoverySecret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "code": "123456",
+    "username": "buyer",
+    "password": "new-password-123"
+  },
+  "ResetPassword": {
+    "requestId": "request-0000000001",
+    "challengeId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "recoverySecret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "code": "123456",
+    "newPassword": "new-password-123"
+  },
+  "VerifyEmail": {
+    "requestId": "request-0000000001",
+    "challengeId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "recoverySecret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "code": "123456"
+  },
+  "Login": {
+    "identifier": "buyer",
+    "password": "old-password",
+    "captchaId": "Example",
+    "captchaCode": "Example"
+  },
+  "Session": {
+    "customer": {
+      "accountId": "71",
+      "displayName": "Example",
+      "status": "pending_verification",
+      "emailMasked": "Example",
+      "emailVerified": true
+    },
+    "expiresAt": 1790000000,
+    "csrfToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "Profile": {
+    "customer": {
+      "accountId": "71",
+      "displayName": "Example",
+      "status": "pending_verification",
+      "emailMasked": "Example",
+      "emailVerified": true
+    },
+    "expiresAt": 1790000000
+  },
+  "Accepted": {
+    "accepted": true
+  },
+  "ViewStart": {
+    "requestId": "request-0000000001",
+    "startSecret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "instanceId": "instance-account-a",
+    "contextId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "ViewPair": {
+    "pairId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "deviceSecret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "userCode": "a123b456c789",
+    "expiresAt": 1790000000,
+    "pollSeconds": 5
+  },
+  "ViewProof": {
+    "pairId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "deviceSecret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "ViewConfirm": {
+    "pairId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "deviceSecret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "accountId": "71"
+  },
+  "ViewApproval": {
+    "requestId": "request-0000000001",
+    "userCode": "a123b456c789",
+    "confirm": true
+  },
+  "ViewLookup": {
+    "userCode": "a123b456c789"
+  },
+  "ViewTarget": {
+    "instanceId": "instance-account-a",
+    "scopes": [
+      "profile:read",
+      "orders:read",
+      "entitlements:read",
+      "sites:read"
+    ],
+    "expiresAt": 1790000000
+  },
+  "ViewStatus": {
+    "status": "pending",
+    "expiresAt": 1790000000
+  },
+  "ViewCredential": {
+    "token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "accountId": "71",
+    "instanceId": "instance-account-a",
+    "contextId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "scopes": [
+      "profile:read",
+      "orders:read",
+      "entitlements:read",
+      "sites:read"
+    ],
+    "expiresAt": 1790000000
+  },
+  "SitePatch": {
+    "requestId": "request-0000000001",
+    "expectedRevision": "1",
+    "name": "My website",
+    "siteUrl": ""
+  },
+  "SiteOperation": {
+    "requestId": "request-0000000001",
+    "expectedRevision": "1"
+  },
+  "Site": {
+    "siteId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "instanceId": "instance-account-a",
+    "name": "Example",
+    "siteUrl": "",
+    "verifiedOrigin": "",
+    "verifiedAt": 0,
+    "verificationState": "unverified",
+    "connectionState": "connected",
+    "revision": "1",
+    "lastSyncAt": 0,
+    "createdAt": 1790000000
+  },
+  "SiteChallenge": {
+    "schemaVersion": 1,
+    "challengeId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "instanceId": "instance-account-a",
+    "proof": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "Verification": {
+    "challenge": {
+      "schemaVersion": 1,
+      "challengeId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "instanceId": "instance-account-a",
+      "proof": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "siteId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "expectedRevision": "1",
+    "origin": "https://market.example.test",
+    "expiresAt": 1790000000
+  },
+  "Order": {
+    "orderNo": "M12345678",
+    "pluginId": "member-purchase-gate",
+    "instanceId": "instance-account-a",
+    "siteId": "",
+    "amount": "100",
+    "currency": "CNY",
+    "state": "pending",
+    "trial": true,
+    "expiresAt": 1790000000,
+    "createdAt": 1790000000,
+    "lastError": ""
+  },
+  "Entitlement": {
+    "licenseId": "member-purchase-gate",
+    "pluginId": "member-purchase-gate",
+    "instanceId": "instance-account-a",
+    "siteId": "",
+    "revision": "1",
+    "source": "purchase",
+    "status": "active",
+    "domain": "",
+    "notBefore": 1790000000,
+    "expiresAt": 1790003600,
+    "minVersion": "",
+    "maxVersionExclusive": ""
+  },
+  "Version": {
+    "version": "1.0.0",
+    "mode": "free",
+    "minCore": "1.0.0",
+    "maxCoreExclusive": "2.0.0"
+  },
+  "Price": {
+    "revision": "1",
+    "amount": "100",
+    "currency": "CNY",
+    "durationSeconds": 3600,
+    "trialSeconds": 0
+  },
+  "Product": {
+    "pluginId": "member-purchase-gate",
+    "name": "Example",
+    "description": "Example plugin",
+    "publisher": "Example",
+    "sellable": true,
+    "price": {
+      "revision": "1",
+      "amount": "100",
+      "currency": "CNY",
+      "durationSeconds": 3600,
+      "trialSeconds": 0
+    },
+    "versions": [
+      {
+        "version": "1.0.0",
+        "mode": "free",
+        "minCore": "1.0.0",
+        "maxCoreExclusive": "2.0.0"
+      }
+    ]
+  },
+  "SitePage": {
+    "items": [
+      {
+        "siteId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "instanceId": "instance-account-a",
+        "name": "Example",
+        "siteUrl": "",
+        "verifiedOrigin": "",
+        "verifiedAt": 0,
+        "verificationState": "unverified",
+        "connectionState": "connected",
+        "revision": "1",
+        "lastSyncAt": 0,
+        "createdAt": 1790000000
+      }
+    ],
+    "nextCursor": ""
+  },
+  "OrderPage": {
+    "items": [
+      {
+        "orderNo": "M12345678",
+        "pluginId": "member-purchase-gate",
+        "instanceId": "instance-account-a",
+        "siteId": "",
+        "amount": "100",
+        "currency": "CNY",
+        "state": "pending",
+        "trial": true,
+        "expiresAt": 1790000000,
+        "createdAt": 1790000000,
+        "lastError": ""
+      }
+    ],
+    "nextCursor": ""
+  },
+  "EntitlementPage": {
+    "items": [
+      {
+        "licenseId": "member-purchase-gate",
+        "pluginId": "member-purchase-gate",
+        "instanceId": "instance-account-a",
+        "siteId": "",
+        "revision": "1",
+        "source": "purchase",
+        "status": "active",
+        "domain": "",
+        "notBefore": 1790000000,
+        "expiresAt": 1790003600,
+        "minVersion": "",
+        "maxVersionExclusive": ""
+      }
+    ],
+    "nextCursor": ""
+  },
+  "ProductPage": {
+    "items": [
+      {
+        "pluginId": "member-purchase-gate",
+        "name": "Example",
+        "description": "Example plugin",
+        "publisher": "Example",
+        "sellable": true,
+        "price": {
+          "revision": "1",
+          "amount": "100",
+          "currency": "CNY",
+          "durationSeconds": 3600,
+          "trialSeconds": 0
+        },
+        "versions": [
+          {
+            "version": "1.0.0",
+            "mode": "free",
+            "minCore": "1.0.0",
+            "maxCoreExclusive": "2.0.0"
+          }
+        ]
+      }
+    ],
+    "nextCursor": ""
+  },
+  "Capabilities": {
+    "apiVersion": "1",
+    "customerAccounts": true,
+    "accountView": true,
+    "publicProducts": true
+  },
+  "PublicProfile": {
+    "profileId": "member-purchase-gate",
+    "origin": "https://market.example.test",
+    "distributionRoots": {
+      "key-a": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE="
+    },
+    "licenseIssuer": "https://market.example.test",
+    "licenseRoots": {
+      "key-b": "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI="
+    }
+  },
+  "Failure": {
+    "code": "market.INVALID_REQUEST",
+    "message": "Request failed",
+    "requestId": "Example",
+    "retryAfterSeconds": 60
+  },
+  "Customer": {
+    "accountId": "71",
+    "displayName": "Example",
+    "status": "pending_verification",
+    "emailMasked": "Example",
+    "emailVerified": true
+  },
+  "HostContext": {
+    "contextId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "contextSecret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "HostBegin": {
+    "contextId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "contextSecret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "userCode": "a123b456c789",
+    "expiresAt": 1790000000,
+    "pollSeconds": 5
+  },
+  "HostConfirm": {
+    "contextId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "contextSecret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "accountId": "71"
+  },
+  "HostPage": {
+    "contextId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "contextSecret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "cursor": "",
+    "limit": 20
+  },
+  "CustomerPath": {
+    "accountId": "71"
+  },
+  "CustomerStatus": {
+    "requestId": "request-0000000001",
+    "expectedRevision": "1",
+    "suspended": true,
+    "reason": "support request"
+  },
+  "CustomerRecord": {
+    "customer": {
+      "accountId": "71",
+      "displayName": "Example",
+      "status": "pending_verification",
+      "emailMasked": "Example",
+      "emailVerified": true
+    },
+    "revision": "1",
+    "origin": "legacy",
+    "provisioningState": "pending",
+    "createdAt": 1790000000
+  },
+  "CustomerPage": {
+    "items": [
+      {
+        "customer": {
+          "accountId": "71",
+          "displayName": "Example",
+          "status": "pending_verification",
+          "emailMasked": "Example",
+          "emailVerified": true
+        },
+        "revision": "1",
+        "origin": "legacy",
+        "provisioningState": "pending",
+        "createdAt": 1790000000
+      }
+    ],
+    "nextCursor": ""
+  },
+  "Wallet": {
+    "balance": "12345",
+    "currency": "CNY"
+  },
+  "ListingQuery": {
+    "mode": "paid",
+    "category": "应用",
+    "kind": "后台",
+    "recommended": true
+  },
+  "Release": {
+    "version": "1.0.0",
+    "publishedAt": 1,
+    "status": "published",
+    "notes": "First release"
+  },
+  "Facets": {
+    "categories": [
+      "应用"
+    ],
+    "kinds": [
+      "后台"
+    ]
+  },
+  "Listing": {
+    "pluginId": "member-purchase-gate",
+    "name": "Example",
+    "description": "Example plugin",
+    "publisher": "Example",
+    "sellable": true,
+    "price": {
+      "revision": "1",
+      "amount": "100",
+      "currency": "CNY",
+      "durationSeconds": 3600,
+      "trialSeconds": 0
+    },
+    "versions": [
+      {
+        "version": "1.0.0",
+        "mode": "free",
+        "minCore": "1.0.0",
+        "maxCoreExclusive": "2.0.0"
+      }
+    ],
+    "category": "应用",
+    "kind": "后台",
+    "recommended": true,
+    "images": [],
+    "details": "Detail",
+    "billingMode": "term",
+    "history": [
+      {
+        "version": "1.0.0",
+        "publishedAt": 1,
+        "status": "published",
+        "notes": "First release"
+      }
+    ]
+  },
+  "ListingPage": {
+    "items": [
+      {
+        "pluginId": "member-purchase-gate",
+        "name": "Example",
+        "description": "Example plugin",
+        "publisher": "Example",
+        "sellable": true,
+        "price": {
+          "revision": "1",
+          "amount": "100",
+          "currency": "CNY",
+          "durationSeconds": 3600,
+          "trialSeconds": 0
+        },
+        "versions": [
+          {
+            "version": "1.0.0",
+            "mode": "free",
+            "minCore": "1.0.0",
+            "maxCoreExclusive": "2.0.0"
+          }
+        ],
+        "category": "应用",
+        "kind": "后台",
+        "recommended": true,
+        "images": [],
+        "details": "Detail",
+        "billingMode": "term",
+        "history": [
+          {
+            "version": "1.0.0",
+            "publishedAt": 1,
+            "status": "published",
+            "notes": "First release"
+          }
+        ]
+      }
+    ],
+    "nextCursor": ""
+  }
+}

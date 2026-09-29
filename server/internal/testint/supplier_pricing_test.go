@@ -5,6 +5,7 @@ package testint
 import (
 	"context"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 	"sync"
 	"testing"
@@ -16,7 +17,7 @@ func runSupplierPricing(h *Harness) {
 	t := h.T
 	ctx := context.Background()
 	box, _ := crypto.NewBox(make([]byte, 32))
-	r := supplier.NewSupplierRepoImpl(h.Data, box)
+	r := supplier.NewSupplierRepoImpl(h.Data, box, wallet.ProvidePortWallet(wallet.NewWalletRepoImpl(h.Data)))
 	a, err := r.CreateAccount(ctx, "pricing", "pricing-test", "secret", "", "zcard", "")
 	if err != nil {
 		t.Fatal(err)

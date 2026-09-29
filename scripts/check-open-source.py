@@ -8,6 +8,10 @@ PRIVATE = {name + suffix + ".go" for name in (
     "tenant", "escrow", "subscription", "api_key", "api_scope",
     "plugin_manifest", "market_supplier", "supplier_rating", "market_plugin",
     "market_version", "market_artifact", "market_catalog", "market_audit",
+    "market_entitlement", "market_license_issue", "market_pairing", "market_binding", "market_binding_audit", "market_safety", "market_price", "market_order",
+    "market_customer", "market_customer_session", "market_customer_challenge",
+    "market_customer_operation", "market_customer_audit", "market_account_view",
+    "market_site", "market_site_challenge", "market_rate_limit",
 ) for suffix in ("", "s")} | {"licenses.go"}
 
 

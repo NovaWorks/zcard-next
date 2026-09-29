@@ -6,6 +6,7 @@ package supplier
 import (
 	"context"
 	"errors"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"testing"
 	"time"
 
@@ -31,7 +32,7 @@ func newSupplierTestData(t *testing.T) (*SupplierRepoImpl, *data.Data) {
 	}
 	d := &data.Data{Client: client, DB: handle, Dialect: db.SQLite}
 	box, _ := crypto.NewBox(make([]byte, 32))
-	return NewSupplierRepoImpl(d, box), d
+	return NewSupplierRepoImpl(d, box, wallet.ProvidePortWallet(wallet.NewWalletRepoImpl(d))), d
 }
 
 // seedAccount 建账户（approved + 余额 10000 分）。

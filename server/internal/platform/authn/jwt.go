@@ -24,6 +24,7 @@ const (
 
 // Claims 自定义声明。
 type Claims struct {
+	SessionID   uint64 `json:"session_id,omitempty"`
 	AuthVersion int    `json:"auth_version"`
 	Subject     uint64 `json:"sub"`            // admin_users.id / users.id
 	Username    string `json:"username"`       // 登录名快照
@@ -67,7 +68,7 @@ func (s *Signer) Issue(realm Realm, subject uint64, username string, roleID uint
 }
 
 // IssueUntil caps the final access token at the original session deadline.
-func (s *Signer) IssueUntil(realm Realm, subject uint64, username string, roleID uint64, version int, deadline time.Time) (token string, expiresAt time.Time, err error) {
+func (s *Signer) IssueUntil(realm Realm, subject uint64, username string, roleID uint64, version int, deadline time.Time, sessionID ...uint64) (token string, expiresAt time.Time, err error) {
 	now := time.Now()
 	expiresAt = now.Add(s.ttl)
 	if !deadline.IsZero() && deadline.Before(expiresAt) {
@@ -89,6 +90,9 @@ func (s *Signer) IssueUntil(realm Realm, subject uint64, username string, roleID
 		},
 	}
 	claims.AuthVersion = version
+	if len(sessionID) > 0 {
+		claims.SessionID = sessionID[0]
+	}
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	key := s.adminKey
 	if realm == RealmUser {

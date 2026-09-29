@@ -19,7 +19,9 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/audit"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/license"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/plugin"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	pc "github.com/NovaWorks/zcard-next/server/internal/platform/plugincontract"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/pluginstorage"
 )
@@ -41,6 +43,7 @@ func RunPlugin(args []string, version string) error {
 	signature := flags.String("signature", "", "raw signature file")
 	archive := flags.String("archive", "", "ZIP file")
 	uploadAction := flags.String("action", "import", "upload action: import, upgrade or rollback")
+	confirmPaid := flags.Bool("confirm-paid", false, "explicitly approve switching to this paid artifact")
 	approve := flags.Bool("approve-scopes", false, "approve the two v1 read-only scopes for this exact digest")
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
@@ -79,7 +82,12 @@ func RunPlugin(args []string, version string) error {
 			return e
 		}
 		repo := plugin.NewRepo(d, plugin.NewCoordinator(), audit.NewAuditRepo(d, slog.Default()))
-		m := plugin.NewManager(repo, packages, plugin.NewRuntimeLoader(packages))
+		// Offline lifecycle uses the same identity and signed policy as serve.
+		// This CLI never reads or changes market binding credentials.
+		m, e := plugin.ProvideManager(repo, packages, bc.Data, license.ProvideLicenseRepo(settings.NewRepoImpl(d)), nil)
+		if e != nil {
+			return e
+		}
 		if e = m.InitializeStorage(ctx, root); e != nil {
 			return e
 		}
@@ -104,7 +112,7 @@ func RunPlugin(args []string, version string) error {
 		if e != nil || strconv.FormatUint(gen, 10) != *generation {
 			return fmt.Errorf("--expected-generation is required as a canonical decimal")
 		}
-		in.Command = plugin.Command{OperationID: *opID, PluginID: *id, Action: action, TargetDigest: *sha, ExpectedGeneration: gen}
+		in.Command = plugin.Command{OperationID: *opID, PluginID: *id, Action: action, TargetDigest: *sha, ExpectedGeneration: gen, ConfirmPaid: *confirmPaid}
 		if *approve {
 			in.Command.ApprovedScopes = []string{"order:validate", "plugin:config:read"}
 		}

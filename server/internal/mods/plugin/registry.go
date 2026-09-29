@@ -18,12 +18,13 @@ type runtimeSlot struct {
 // Coordinator serializes lifecycle and rule writes. Purchases pin leases before
 // entering product transactions, so rule saves never reverse the lock order.
 type Coordinator struct {
-	mu       sync.Mutex
-	readOnly bool
-	draining int
-	slots    map[string]*runtimeSlot
-	pending  map[string]bool
-	observed map[string]uint64
+	licenseCheck func(port.PreparedRuntime) bool
+	mu           sync.Mutex
+	readOnly     bool
+	draining     int
+	slots        map[string]*runtimeSlot
+	pending      map[string]bool
+	observed     map[string]uint64
 }
 
 func NewCoordinator() *Coordinator {
@@ -38,6 +39,9 @@ func (c *Coordinator) Acquire(ctx context.Context, id string) (port.RuntimeLease
 	slot := c.slots[id]
 	if slot == nil {
 		return nil, contractError(pc.Unavailable, "runtime unavailable")
+	}
+	if c.licenseCheck != nil && !c.licenseCheck(slot.runtime) {
+		return nil, contractError(pc.Unavailable, "plugin entitlement unavailable")
 	}
 	slot.refs++
 	return &lease{owner: c, slot: slot}, nil

@@ -40,7 +40,8 @@ type SupplierAccountReply struct {
 	OwnerUserId   uint64                 `protobuf:"varint,13,opt,name=owner_user_id,json=ownerUserId,proto3" json:"owner_user_id,omitempty"` // 前台申请归属用户（0=admin 手动建号）
 	ApplyReason   string                 `protobuf:"bytes,14,opt,name=apply_reason,json=applyReason,proto3" json:"apply_reason,omitempty"`    // 申请理由（前台申请时填）
 	ReviewNote    string                 `protobuf:"bytes,15,opt,name=review_note,json=reviewNote,proto3" json:"review_note,omitempty"`       // 审核意见/驳回理由
-	IpWhitelist   []string               `protobuf:"bytes,16,rep,name=ip_whitelist,json=ipWhitelist,proto3" json:"ip_whitelist,omitempty"`    // IP 白名单（空=所有 IP 放行；精确 IP 或 CIDR）
+	SharedWallet  bool                   `protobuf:"varint,17,opt,name=shared_wallet,json=sharedWallet,proto3" json:"shared_wallet,omitempty"`
+	IpWhitelist   []string               `protobuf:"bytes,16,rep,name=ip_whitelist,json=ipWhitelist,proto3" json:"ip_whitelist,omitempty"` // IP 白名单（空=所有 IP 放行；精确 IP 或 CIDR）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -180,6 +181,13 @@ func (x *SupplierAccountReply) GetReviewNote() string {
 	return ""
 }
 
+func (x *SupplierAccountReply) GetSharedWallet() bool {
+	if x != nil {
+		return x.SharedWallet
+	}
+	return false
+}
+
 func (x *SupplierAccountReply) GetIpWhitelist() []string {
 	if x != nil {
 		return x.IpWhitelist
@@ -195,6 +203,7 @@ type CreateSupplierAccountRequest struct {
 	Contact       string                 `protobuf:"bytes,4,opt,name=contact,proto3" json:"contact,omitempty"`
 	Protocol      string                 `protobuf:"bytes,5,opt,name=protocol,proto3" json:"protocol,omitempty"` // 空 = zcard；dujiao_next/acg_faka 为兼容账号
 	DisplayName   string                 `protobuf:"bytes,6,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	OwnerUserId   uint64                 `protobuf:"varint,7,opt,name=owner_user_id,json=ownerUserId,proto3" json:"owner_user_id,omitempty"` // 必填：共用钱包归属用户
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -269,6 +278,13 @@ func (x *CreateSupplierAccountRequest) GetDisplayName() string {
 		return x.DisplayName
 	}
 	return ""
+}
+
+func (x *CreateSupplierAccountRequest) GetOwnerUserId() uint64 {
+	if x != nil {
+		return x.OwnerUserId
+	}
+	return 0
 }
 
 type ListSupplierAccountsRequest struct {
@@ -1631,7 +1647,7 @@ var File_admin_v1_supplier_proto protoreflect.FileDescriptor
 
 const file_admin_v1_supplier_proto_rawDesc = "" +
 	"\n" +
-	"\x17admin/v1/supplier.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xf2\x03\n" +
+	"\x17admin/v1/supplier.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x97\x04\n" +
 	"\x14SupplierAccountReply\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x17\n" +
@@ -1653,8 +1669,9 @@ const file_admin_v1_supplier_proto_rawDesc = "" +
 	"\rowner_user_id\x18\r \x01(\x04R\vownerUserId\x12!\n" +
 	"\fapply_reason\x18\x0e \x01(\tR\vapplyReason\x12\x1f\n" +
 	"\vreview_note\x18\x0f \x01(\tR\n" +
-	"reviewNote\x12!\n" +
-	"\fip_whitelist\x18\x10 \x03(\tR\vipWhitelist\"\xd2\x01\n" +
+	"reviewNote\x12#\n" +
+	"\rshared_wallet\x18\x11 \x01(\bR\fsharedWallet\x12!\n" +
+	"\fip_whitelist\x18\x10 \x03(\tR\vipWhitelist\"\xf6\x01\n" +
 	"\x1cCreateSupplierAccountRequest\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x1c\n" +
 	"\aapi_key\x18\x02 \x01(\tB\x03\xe0A\x02R\x06apiKey\x12\"\n" +
@@ -1662,7 +1679,8 @@ const file_admin_v1_supplier_proto_rawDesc = "" +
 	"api_secret\x18\x03 \x01(\tB\x03\xe0A\x02R\tapiSecret\x12\x18\n" +
 	"\acontact\x18\x04 \x01(\tR\acontact\x12\x1a\n" +
 	"\bprotocol\x18\x05 \x01(\tR\bprotocol\x12!\n" +
-	"\fdisplay_name\x18\x06 \x01(\tR\vdisplayName\"N\n" +
+	"\fdisplay_name\x18\x06 \x01(\tR\vdisplayName\x12\"\n" +
+	"\rowner_user_id\x18\a \x01(\x04R\vownerUserId\"N\n" +
 	"\x1bListSupplierAccountsRequest\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"\xa8\x01\n" +

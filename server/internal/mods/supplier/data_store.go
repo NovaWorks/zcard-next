@@ -15,6 +15,7 @@ import (
 
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/rechargeorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
@@ -105,7 +106,7 @@ func (s *StoreSupplierService) SubmitSupplierApplication(ctx context.Context, re
 	if err != nil {
 		return nil, err
 	}
-	return toStoreAccountPB(acc), nil
+	return s.accountPB(ctx, acc)
 }
 
 // ListMySupplierAccounts 我的对接账户。
@@ -120,7 +121,11 @@ func (s *StoreSupplierService) ListMySupplierAccounts(ctx context.Context, _ *em
 	}
 	reply := &storefrontv1.ListSupplierAccountsReply{}
 	for _, r := range rows {
-		reply.Accounts = append(reply.Accounts, toStoreAccountPB(r))
+		item, err := s.accountPB(ctx, r)
+		if err != nil {
+			return nil, err
+		}
+		reply.Accounts = append(reply.Accounts, item)
 	}
 	return reply, nil
 }
@@ -351,7 +356,7 @@ func (s *StoreSupplierService) SetSupplierIPWhitelist(ctx context.Context, req *
 	if err != nil {
 		return nil, err
 	}
-	return toStoreAccountPB(updated), nil
+	return s.accountPB(ctx, updated)
 }
 
 // normalizeWhitelist 白名单条目清洗：去空/去重 + 格式校验（精确 IP 或 CIDR）+ 数量上限。
@@ -401,4 +406,37 @@ func toStoreAccountPB(acc *ent.SupplierAccount) *storefrontv1.SupplierAccountRep
 		p.ReviewedAt = acc.ReviewedAt.Unix()
 	}
 	return p
+}
+
+func (s *StoreSupplierService) accountPB(ctx context.Context, acc *ent.SupplierAccount) (*storefrontv1.SupplierAccountReply, error) {
+	balance, err := s.repo.accountBalance(ctx, acc)
+	if err != nil {
+		return nil, err
+	}
+	out := toStoreAccountPB(acc)
+	out.BalanceCache = balance
+	out.SharedWallet = acc.SharedWallet
+	return out, nil
+}
+
+func (s *StoreSupplierService) GetSupplierRecharge(ctx context.Context, req *storefrontv1.GetSupplierRechargeRequest) (*storefrontv1.SupplierRechargeReply, error) {
+	uid, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := s.mine(ctx, uid, req.Id); err != nil {
+		return nil, err
+	}
+	order, err := s.repo.SupplyRechargeOrder(ctx, uid, req.Id, req.RechargeId)
+	if ent.IsNotFound(err) {
+		return nil, errors.NotFound("supplier.NOT_FOUND", "充值单不存在")
+	}
+	if err != nil {
+		return nil, err
+	}
+	reply := &storefrontv1.SupplierRechargeReply{RechargeId: order.ID, PaymentId: order.PaymentID, Status: string(order.Status)}
+	if order.Status == rechargeorder.StatusSuccess {
+		reply.CreditedCents = order.Amount + order.GiftAmount
+	}
+	return reply, nil
 }

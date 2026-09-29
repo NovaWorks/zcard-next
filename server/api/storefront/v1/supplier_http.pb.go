@@ -21,6 +21,7 @@ const _ = http.SupportPackageIsVersion3
 const OperationStoreSupplierServiceCancelSupplierApplication = "/zcard.api.storefront.v1.StoreSupplierService/CancelSupplierApplication"
 const OperationStoreSupplierServiceCreateSupplierRecharge = "/zcard.api.storefront.v1.StoreSupplierService/CreateSupplierRecharge"
 const OperationStoreSupplierServiceGetSupplierCredentials = "/zcard.api.storefront.v1.StoreSupplierService/GetSupplierCredentials"
+const OperationStoreSupplierServiceGetSupplierRecharge = "/zcard.api.storefront.v1.StoreSupplierService/GetSupplierRecharge"
 const OperationStoreSupplierServiceListMySupplierAccounts = "/zcard.api.storefront.v1.StoreSupplierService/ListMySupplierAccounts"
 const OperationStoreSupplierServiceRegenerateSupplierSecret = "/zcard.api.storefront.v1.StoreSupplierService/RegenerateSupplierSecret"
 const OperationStoreSupplierServiceSetSupplierIPWhitelist = "/zcard.api.storefront.v1.StoreSupplierService/SetSupplierIPWhitelist"
@@ -34,6 +35,8 @@ type StoreSupplierServiceHTTPServer interface {
 	CreateSupplierRecharge(context.Context, *CreateSupplierRechargeRequest) (*CreateSupplierRechargeReply, error)
 	// GetSupplierCredentials GetSupplierCredentials 查看凭据（仅 approved 且归属本人；返回明文 api_secret）。
 	GetSupplierCredentials(context.Context, *GetSupplierCredentialsRequest) (*SupplierCredentialsReply, error)
+	// GetSupplierRecharge GetSupplierRecharge 查询本人、指定供货账户的充值单结算状态。
+	GetSupplierRecharge(context.Context, *GetSupplierRechargeRequest) (*SupplierRechargeReply, error)
 	// ListMySupplierAccounts ListMySupplierAccounts 我的对接账户（申请中/已通过/已驳回/已禁用全量）。
 	ListMySupplierAccounts(context.Context, *emptypb.Empty) (*ListSupplierAccountsReply, error)
 	// RegenerateSupplierSecret RegenerateSupplierSecret 重置密钥（旧 secret 立即失效；新明文仅此一次返回）。
@@ -53,6 +56,7 @@ func RegisterStoreSupplierServiceHTTPServer(s *http.Server, srv StoreSupplierSer
 	r.Handle("POST", "/api/v1/storefront/supplier/accounts/{id}/regenerate-secret", _StoreSupplierService_RegenerateSupplierSecret0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/storefront/supplier/accounts/{id}/cancel", _StoreSupplierService_CancelSupplierApplication0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/storefront/supplier/accounts/{id}/recharge", _StoreSupplierService_CreateSupplierRecharge0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/storefront/supplier/accounts/{id}/recharges/{recharge_id}", _StoreSupplierService_GetSupplierRecharge0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/storefront/supplier/accounts/{id}/ip-whitelist", _StoreSupplierService_SetSupplierIPWhitelist0_HTTP_Handler(srv))
 }
 
@@ -182,6 +186,28 @@ func _StoreSupplierService_CreateSupplierRecharge0_HTTP_Handler(srv StoreSupplie
 	}
 }
 
+func _StoreSupplierService_GetSupplierRecharge0_HTTP_Handler(srv StoreSupplierServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetSupplierRechargeRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreSupplierServiceGetSupplierRecharge)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetSupplierRecharge(ctx, req.(*GetSupplierRechargeRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*SupplierRechargeReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _StoreSupplierService_SetSupplierIPWhitelist0_HTTP_Handler(srv StoreSupplierServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in SetSupplierIPWhitelistRequest
@@ -212,6 +238,8 @@ type StoreSupplierServiceHTTPClient interface {
 	CreateSupplierRecharge(ctx context.Context, req *CreateSupplierRechargeRequest, opts ...http.CallOption) (rsp *CreateSupplierRechargeReply, err error)
 	// GetSupplierCredentials GetSupplierCredentials 查看凭据（仅 approved 且归属本人；返回明文 api_secret）。
 	GetSupplierCredentials(ctx context.Context, req *GetSupplierCredentialsRequest, opts ...http.CallOption) (rsp *SupplierCredentialsReply, err error)
+	// GetSupplierRecharge GetSupplierRecharge 查询本人、指定供货账户的充值单结算状态。
+	GetSupplierRecharge(ctx context.Context, req *GetSupplierRechargeRequest, opts ...http.CallOption) (rsp *SupplierRechargeReply, err error)
 	// ListMySupplierAccounts ListMySupplierAccounts 我的对接账户（申请中/已通过/已驳回/已禁用全量）。
 	ListMySupplierAccounts(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *ListSupplierAccountsReply, err error)
 	// RegenerateSupplierSecret RegenerateSupplierSecret 重置密钥（旧 secret 立即失效；新明文仅此一次返回）。
@@ -275,6 +303,23 @@ func (c *StoreSupplierServiceHTTPClientImpl) GetSupplierCredentials(ctx context.
 	opts = append([]http.CallOption{
 		http.Accept("application/protojson"),
 		http.Operation(OperationStoreSupplierServiceGetSupplierCredentials),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetSupplierRecharge GetSupplierRecharge 查询本人、指定供货账户的充值单结算状态。
+func (c *StoreSupplierServiceHTTPClientImpl) GetSupplierRecharge(ctx context.Context, in *GetSupplierRechargeRequest, opts ...http.CallOption) (*SupplierRechargeReply, error) {
+	var out SupplierRechargeReply
+	pattern := "/api/v1/storefront/supplier/accounts/{id}/recharges/{recharge_id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationStoreSupplierServiceGetSupplierRecharge),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)

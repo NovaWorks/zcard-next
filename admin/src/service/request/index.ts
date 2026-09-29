@@ -51,7 +51,10 @@ export const request = createFlatRequest<App.Service.Response<any>, any, Request
         authStore.resetStore();
       }
 
-      if (response.status === 401 && !/\/auth\/(login|refresh)$/.test(response.config?.url || '')) {
+      // A market grant expiring must not refresh or terminate the local admin login.
+      if (response.status === 401 && String(response.data?.reason || "").startsWith("market."))
+        return null;
+      if (response.status === 401 && !/\/auth\/(login|refresh)$/.test(response.config?.url || "")) {
         const success = await handleExpiredRequest(request.state as RequestInstanceState);
         if (success) {
           const Authorization = getAuthorization();
@@ -72,11 +75,20 @@ export const request = createFlatRequest<App.Service.Response<any>, any, Request
       return null;
     },
     onError(err: any) {
-      if (err.config?.silentError && err.response?.status !== 401) return;
+      if (
+        err.config?.silentError &&
+        (err.response?.status !== 401 ||
+          String(err.response?.data?.reason || "").startsWith("market."))
+      )
+        return;
       if (suppressUpdateRestartError(err)) return;
       // Closing an import preview intentionally aborts its in-flight quotes.
-      if (err.code === "ERR_CANCELED" && err.config?.params?.quote_code
-        && /^\/api\/v1\/admin\/supply\/connections\/\d+\/preview$/.test(err.config?.url || "")) return;
+      if (
+        err.code === "ERR_CANCELED" &&
+        err.config?.params?.quote_code &&
+        /^\/api\/v1\/admin\/supply\/connections\/\d+\/preview$/.test(err.config?.url || "")
+      )
+        return;
       const msg = err.response?.data?.message || err.message || "网络异常";
       showErrorMsg(request.state as RequestInstanceState, msg);
     },

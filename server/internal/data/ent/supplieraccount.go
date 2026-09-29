@@ -32,6 +32,8 @@ type SupplierAccount struct {
 	Contact string `json:"contact,omitempty"`
 	// Status holds the value of the "status" field.
 	Status supplieraccount.Status `json:"status,omitempty"`
+	// 已转入所属用户钱包；旧余额仅作迁移对账
+	SharedWallet bool `json:"shared_wallet,omitempty"`
 	// 供货余额缓存（可由流水重算）
 	BalanceCache int64 `json:"balance_cache,omitempty"`
 	// 交付回调地址（HTTPS 强制）
@@ -60,6 +62,8 @@ func (*SupplierAccount) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case supplieraccount.FieldAPISecret, supplieraccount.FieldIPWhitelist:
 			values[i] = new([]byte)
+		case supplieraccount.FieldSharedWallet:
+			values[i] = new(sql.NullBool)
 		case supplieraccount.FieldID, supplieraccount.FieldBalanceCache, supplieraccount.FieldOwnerUserID:
 			values[i] = new(sql.NullInt64)
 		case supplieraccount.FieldName, supplieraccount.FieldAPIKey, supplieraccount.FieldContact, supplieraccount.FieldStatus, supplieraccount.FieldNotifyURL, supplieraccount.FieldProtocol, supplieraccount.FieldDisplayName, supplieraccount.FieldApplyReason, supplieraccount.FieldReviewNote:
@@ -128,6 +132,12 @@ func (_m *SupplierAccount) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
 				_m.Status = supplieraccount.Status(value.String)
+			}
+		case supplieraccount.FieldSharedWallet:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field shared_wallet", values[i])
+			} else if value.Valid {
+				_m.SharedWallet = value.Bool
 			}
 		case supplieraccount.FieldBalanceCache:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -241,6 +251,9 @@ func (_m *SupplierAccount) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))
+	builder.WriteString(", ")
+	builder.WriteString("shared_wallet=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SharedWallet))
 	builder.WriteString(", ")
 	builder.WriteString("balance_cache=")
 	builder.WriteString(fmt.Sprintf("%v", _m.BalanceCache))

@@ -47,7 +47,7 @@ func (s *AdminSettingsService) ListSettings(ctx context.Context, req *adminv1.Li
 	items = SanitizeGroup(items)
 	reply := &adminv1.ListSettingsReply{Items: make([]*adminv1.Setting, 0, len(items))}
 	for _, it := range items {
-		if it.Group == themeStateGroup || it.Group == "plugin_market" {
+		if it.Group == themeStateGroup || it.Group == "plugin_market" || it.Group == "plugin_entitlements" {
 			continue
 		}
 		if it.Group == "template" && (it.Key == "mobile_template" || it.Key == activeThemeKey) {
@@ -250,7 +250,7 @@ func (s *AdminSettingsService) UpdateSettings(ctx context.Context, req *adminv1.
 	}
 	reply := &adminv1.UpdateSettingsReply{Updated: int32(len(items))}
 	for _, it := range items {
-		if it.Group == themeStateGroup || it.Group == "plugin_market" {
+		if it.Group == themeStateGroup || it.Group == "plugin_market" || it.Group == "plugin_entitlements" {
 			continue
 		}
 		if it.Group == "site" && it.Key == "admin_path" {

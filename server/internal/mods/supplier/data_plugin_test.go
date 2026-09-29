@@ -7,6 +7,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 	"net/http"
 	"net/http/httptest"
@@ -163,7 +164,7 @@ func TestP2SupplyDatabaseGate(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			repo := NewSupplierRepoImpl(d, box)
+			repo := NewSupplierRepoImpl(d, box, wallet.ProvidePortWallet(wallet.NewWalletRepoImpl(d)))
 			cat := &fakeCatalog{prods: []catalogport.SupplierProduct{{ID: 1, Name: "P2 supply", Price: 1000, Status: 1}}}
 			svc := &SupplyAPIService{repo: repo, reader: cat}
 			securityStock(t, svc, 3)

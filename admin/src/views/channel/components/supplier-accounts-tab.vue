@@ -75,6 +75,7 @@ async function load() {
 const showForm = ref(false);
 const saving = ref(false);
 const form = reactive({
+  owner_user_id: "",
   name: "",
   protocol: "zcard",
   api_key: "",
@@ -84,6 +85,7 @@ const form = reactive({
 });
 
 function openCreate() {
+  form.owner_user_id = "";
   form.name = "";
   form.protocol = "zcard";
   form.api_key = "";
@@ -95,7 +97,7 @@ function openCreate() {
 
 const secretOnce = ref(""); // 创建/重置时一次性回显
 async function submitForm() {
-  if (!form.name || !form.api_key || !form.api_secret) {
+  if (!/^[1-9][0-9]*$/.test(form.owner_user_id) || !form.name || !form.api_key || !form.api_secret) {
     window.$message?.warning("名称、api_key、api_secret 必填");
     return;
   }
@@ -547,6 +549,7 @@ onMounted(load);
     <!-- 新增 -->
     <NModal v-model:show="showForm" preset="card" title="新增供货账号" style="width: 540px; max-width: 96vw">
       <NForm label-placement="left" label-width="110">
+        <NFormItem label="所属用户 ID" required><NInput v-model:value="form.owner_user_id" placeholder="现有用户 ID，与供货共用账户余额" /></NFormItem>
         <NFormItem label="名称" required>
           <NInput v-model:value="form.name" placeholder="下游客户标识" />
         </NFormItem>

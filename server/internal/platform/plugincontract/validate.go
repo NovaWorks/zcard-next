@@ -233,10 +233,11 @@ func checkDecimals(v any) error {
 }
 
 type Host struct {
-	CoreVersion  string
-	APIVersion   string
-	Capabilities map[string]bool
-	UIExtensions map[string]bool
+	PaidEntitlements bool
+	CoreVersion      string
+	APIVersion       string
+	Capabilities     map[string]bool
+	UIExtensions     map[string]bool
 }
 
 // CheckCompatibility returns skipped optional UI extensions. Validation must
@@ -259,7 +260,7 @@ func CheckCompatibility(m Manifest, h Host) ([]string, error) {
 			return nil, &Error{Code: Incompatible, Detail: "required capability: " + cap}
 		}
 	}
-	if m.Entitlement.Mode != "free" {
+	if m.Entitlement.Mode != "free" && !h.PaidEntitlements {
 		return nil, &Error{Code: PaidUnsupported, Detail: "paid activation requires P6"}
 	}
 	var skipped []string

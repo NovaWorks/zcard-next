@@ -1,0 +1,1853 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zcard.invalid/market/account/v1",
+  "$defs": {
+    "ID": {
+      "type": "string",
+      "format": "uint64-positive"
+    },
+    "Revision": {
+      "type": "string",
+      "format": "int64-positive"
+    },
+    "Amount": {
+      "type": "string",
+      "format": "cny-cents"
+    },
+    "Secret": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "RandomID": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "RequestID": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]{16,64}$"
+    },
+    "Instance": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{8,128}$"
+    },
+    "Plugin": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+    },
+    "Email": {
+      "type": "string",
+      "format": "market-email",
+      "maxLength": 255
+    },
+    "Password": {
+      "type": "string",
+      "format": "new-password"
+    },
+    "Code": {
+      "type": "string",
+      "pattern": "^[0-9]{6}$"
+    },
+    "UserCode": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{12}$"
+    },
+    "Time": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 253402300799
+    },
+    "Origin": {
+      "type": "string",
+      "format": "market-origin"
+    },
+    "OptionalOrigin": {
+      "anyOf": [
+        {
+          "const": ""
+        },
+        {
+          "$ref": "#/$defs/Origin"
+        }
+      ]
+    },
+    "Cursor": {
+      "type": "string",
+      "maxLength": 512,
+      "pattern": "^[A-Za-z0-9_-]*$"
+    },
+    "Text": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "Bool": {
+      "type": "boolean"
+    },
+    "SemVer": {
+      "type": "string",
+      "format": "semver"
+    },
+    "OptionalVersion": {
+      "anyOf": [
+        {
+          "const": ""
+        },
+        {
+          "$ref": "#/$defs/SemVer"
+        }
+      ]
+    },
+    "Scopes": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "profile:read",
+          "orders:read",
+          "entitlements:read",
+          "sites:read"
+        ]
+      }
+    },
+    "Empty": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {},
+      "required": []
+    },
+    "Operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requestId": {
+          "$ref": "#/$defs/RequestID"
+        }
+      },
+      "required": [
+        "requestId"
+      ]
+    },
+    "PageQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cursor": {
+          "$ref": "#/$defs/Cursor"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "required": []
+    },
+    "ProductQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cursor": {
+          "$ref": "#/$defs/Cursor"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        },
+        "q": {
+          "type": "string",
+          "maxLength": 100,
+          "default": ""
+        }
+      },
+      "required": []
+    },
+    "PluginPath": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pluginId": {
+          "$ref": "#/$defs/Plugin"
+        }
+      },
+      "required": [
+        "pluginId"
+      ]
+    },
+    "SitePath": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "siteId": {
+          "$ref": "#/$defs/RandomID"
+        }
+      },
+      "required": [
+        "siteId"
+      ]
+    },
+    "Bootstrap": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "csrfToken": {
+          "$ref": "#/$defs/Secret"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Time"
+        },
+        "captchaEnabled": {
+          "$ref": "#/$defs/Bool"
+        },
+        "captchaId": {
+          "$ref": "#/$defs/Text"
+        },
+        "captchaImage": {
+          "type": "string",
+          "maxLength": 32768,
+          "default": ""
+        }
+      },
+      "required": [
+        "csrfToken",
+        "expiresAt",
+        "captchaEnabled",
+        "captchaId",
+        "captchaImage"
+      ]
+    },
+    "CodeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requestId": {
+          "$ref": "#/$defs/RequestID"
+        },
+        "email": {
+          "$ref": "#/$defs/Email"
+        },
+        "captchaId": {
+          "$ref": "#/$defs/Text"
+        },
+        "captchaCode": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "requestId",
+        "email",
+        "captchaId",
+        "captchaCode"
+      ]
+    },
+    "CodeAccepted": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "challengeId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "recoverySecret": {
+          "$ref": "#/$defs/Secret"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Time"
+        },
+        "retryAfterSeconds": {
+          "const": 60
+        }
+      },
+      "required": [
+        "challengeId",
+        "recoverySecret",
+        "expiresAt",
+        "retryAfterSeconds"
+      ]
+    },
+    "Register": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requestId": {
+          "$ref": "#/$defs/RequestID"
+        },
+        "challengeId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "recoverySecret": {
+          "$ref": "#/$defs/Secret"
+        },
+        "code": {
+          "$ref": "#/$defs/Code"
+        },
+        "username": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{3,30}$",
+          "default": "buyer"
+        },
+        "password": {
+          "$ref": "#/$defs/Password"
+        }
+      },
+      "required": [
+        "requestId",
+        "challengeId",
+        "recoverySecret",
+        "code",
+        "username",
+        "password"
+      ]
+    },
+    "ResetPassword": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requestId": {
+          "$ref": "#/$defs/RequestID"
+        },
+        "challengeId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "recoverySecret": {
+          "$ref": "#/$defs/Secret"
+        },
+        "code": {
+          "$ref": "#/$defs/Code"
+        },
+        "newPassword": {
+          "$ref": "#/$defs/Password"
+        }
+      },
+      "required": [
+        "requestId",
+        "challengeId",
+        "recoverySecret",
+        "code",
+        "newPassword"
+      ]
+    },
+    "VerifyEmail": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requestId": {
+          "$ref": "#/$defs/RequestID"
+        },
+        "challengeId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "recoverySecret": {
+          "$ref": "#/$defs/Secret"
+        },
+        "code": {
+          "$ref": "#/$defs/Code"
+        }
+      },
+      "required": [
+        "requestId",
+        "challengeId",
+        "recoverySecret",
+        "code"
+      ]
+    },
+    "Login": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "identifier": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "default": "buyer"
+        },
+        "password": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 72,
+          "format": "login-password",
+          "default": "old-password"
+        },
+        "captchaId": {
+          "$ref": "#/$defs/Text"
+        },
+        "captchaCode": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "identifier",
+        "password",
+        "captchaId",
+        "captchaCode"
+      ]
+    },
+    "Customer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "accountId": {
+          "$ref": "#/$defs/ID"
+        },
+        "displayName": {
+          "$ref": "#/$defs/Text"
+        },
+        "status": {
+          "enum": [
+            "pending_verification",
+            "active",
+            "suspended"
+          ]
+        },
+        "emailMasked": {
+          "$ref": "#/$defs/Text"
+        },
+        "emailVerified": {
+          "$ref": "#/$defs/Bool"
+        }
+      },
+      "required": [
+        "accountId",
+        "displayName",
+        "status",
+        "emailMasked",
+        "emailVerified"
+      ]
+    },
+    "Session": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customer": {
+          "$ref": "#/$defs/Customer"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Time"
+        },
+        "csrfToken": {
+          "$ref": "#/$defs/Secret"
+        }
+      },
+      "required": [
+        "customer",
+        "expiresAt",
+        "csrfToken"
+      ]
+    },
+    "Profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customer": {
+          "$ref": "#/$defs/Customer"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Time"
+        }
+      },
+      "required": [
+        "customer",
+        "expiresAt"
+      ]
+    },
+    "Accepted": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "const": true
+        }
+      },
+      "required": [
+        "accepted"
+      ]
+    },
+    "ViewStart": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requestId": {
+          "$ref": "#/$defs/RequestID"
+        },
+        "startSecret": {
+          "$ref": "#/$defs/Secret"
+        },
+        "instanceId": {
+          "$ref": "#/$defs/Instance"
+        },
+        "contextId": {
+          "$ref": "#/$defs/RandomID"
+        }
+      },
+      "required": [
+        "requestId",
+        "startSecret",
+        "instanceId",
+        "contextId"
+      ]
+    },
+    "ViewPair": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pairId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "deviceSecret": {
+          "$ref": "#/$defs/Secret"
+        },
+        "userCode": {
+          "$ref": "#/$defs/UserCode"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Time"
+        },
+        "pollSeconds": {
+          "const": 5
+        }
+      },
+      "required": [
+        "pairId",
+        "deviceSecret",
+        "userCode",
+        "expiresAt",
+        "pollSeconds"
+      ]
+    },
+    "ViewProof": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pairId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "deviceSecret": {
+          "$ref": "#/$defs/Secret"
+        }
+      },
+      "required": [
+        "pairId",
+        "deviceSecret"
+      ]
+    },
+    "ViewConfirm": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pairId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "deviceSecret": {
+          "$ref": "#/$defs/Secret"
+        },
+        "accountId": {
+          "$ref": "#/$defs/ID"
+        }
+      },
+      "required": [
+        "pairId",
+        "deviceSecret",
+        "accountId"
+      ]
+    },
+    "ViewApproval": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requestId": {
+          "$ref": "#/$defs/RequestID"
+        },
+        "userCode": {
+          "$ref": "#/$defs/UserCode"
+        },
+        "confirm": {
+          "$ref": "#/$defs/Bool"
+        }
+      },
+      "required": [
+        "requestId",
+        "userCode",
+        "confirm"
+      ]
+    },
+    "ViewLookup": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "userCode": {
+          "$ref": "#/$defs/UserCode"
+        }
+      },
+      "required": [
+        "userCode"
+      ]
+    },
+    "ViewTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "instanceId": {
+          "$ref": "#/$defs/Instance"
+        },
+        "scopes": {
+          "$ref": "#/$defs/Scopes"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Time"
+        }
+      },
+      "required": [
+        "instanceId",
+        "scopes",
+        "expiresAt"
+      ]
+    },
+    "ViewStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "pending",
+            "approved",
+            "denied",
+            "confirmed",
+            "expired"
+          ]
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Time"
+        },
+        "customer": {
+          "$ref": "#/$defs/Customer"
+        }
+      },
+      "required": [
+        "status",
+        "expiresAt"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "approved",
+                  "confirmed"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "customer"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "customer"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "ViewCredential": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "token": {
+          "$ref": "#/$defs/Secret"
+        },
+        "accountId": {
+          "$ref": "#/$defs/ID"
+        },
+        "instanceId": {
+          "$ref": "#/$defs/Instance"
+        },
+        "contextId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "scopes": {
+          "$ref": "#/$defs/Scopes"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Time"
+        }
+      },
+      "required": [
+        "token",
+        "accountId",
+        "instanceId",
+        "contextId",
+        "scopes",
+        "expiresAt"
+      ]
+    },
+    "SitePatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requestId": {
+          "$ref": "#/$defs/RequestID"
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "default": "My website"
+        },
+        "siteUrl": {
+          "$ref": "#/$defs/OptionalOrigin"
+        }
+      },
+      "required": [
+        "requestId",
+        "expectedRevision",
+        "name",
+        "siteUrl"
+      ]
+    },
+    "SiteOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requestId": {
+          "$ref": "#/$defs/RequestID"
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        }
+      },
+      "required": [
+        "requestId",
+        "expectedRevision"
+      ]
+    },
+    "Site": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "siteId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "instanceId": {
+          "$ref": "#/$defs/Instance"
+        },
+        "name": {
+          "$ref": "#/$defs/Text"
+        },
+        "siteUrl": {
+          "$ref": "#/$defs/OptionalOrigin"
+        },
+        "verifiedOrigin": {
+          "$ref": "#/$defs/OptionalOrigin"
+        },
+        "verifiedAt": {
+          "$ref": "#/$defs/Time"
+        },
+        "verificationState": {
+          "enum": [
+            "unverified",
+            "pending",
+            "verified",
+            "failed"
+          ]
+        },
+        "connectionState": {
+          "enum": [
+            "connected",
+            "expired",
+            "disconnected"
+          ]
+        },
+        "revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "lastSyncAt": {
+          "$ref": "#/$defs/Time"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Time"
+        }
+      },
+      "required": [
+        "siteId",
+        "instanceId",
+        "name",
+        "siteUrl",
+        "verifiedOrigin",
+        "verifiedAt",
+        "verificationState",
+        "connectionState",
+        "revision",
+        "lastSyncAt",
+        "createdAt"
+      ]
+    },
+    "SiteChallenge": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "challengeId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "instanceId": {
+          "$ref": "#/$defs/Instance"
+        },
+        "proof": {
+          "$ref": "#/$defs/Secret"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "challengeId",
+        "instanceId",
+        "proof"
+      ]
+    },
+    "Verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "challenge": {
+          "$ref": "#/$defs/SiteChallenge"
+        },
+        "siteId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "origin": {
+          "$ref": "#/$defs/Origin"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Time"
+        }
+      },
+      "required": [
+        "challenge",
+        "siteId",
+        "expectedRevision",
+        "origin",
+        "expiresAt"
+      ]
+    },
+    "Order": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "orderNo": {
+          "type": "string",
+          "pattern": "^M[1-9][0-9]{0,19}$",
+          "default": "M12345678"
+        },
+        "pluginId": {
+          "$ref": "#/$defs/Plugin"
+        },
+        "instanceId": {
+          "$ref": "#/$defs/Instance"
+        },
+        "siteId": {
+          "anyOf": [
+            {
+              "const": ""
+            },
+            {
+              "$ref": "#/$defs/RandomID"
+            }
+          ],
+          "default": ""
+        },
+        "amount": {
+          "$ref": "#/$defs/Amount"
+        },
+        "currency": {
+          "const": "CNY"
+        },
+        "state": {
+          "enum": [
+            "pending",
+            "fulfilled",
+            "compensating",
+            "failed",
+            "refunding",
+            "refunded"
+          ]
+        },
+        "trial": {
+          "$ref": "#/$defs/Bool"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Time"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Time"
+        },
+        "lastError": {
+          "enum": [
+            "",
+            "insufficient_balance",
+            "compensated",
+            "settlement_retry",
+            "binding_conflict",
+            "entitlement_conflict",
+            "unavailable"
+          ]
+        }
+      },
+      "required": [
+        "orderNo",
+        "pluginId",
+        "instanceId",
+        "siteId",
+        "amount",
+        "currency",
+        "state",
+        "trial",
+        "expiresAt",
+        "createdAt",
+        "lastError"
+      ]
+    },
+    "Entitlement": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "licenseId": {
+          "$ref": "#/$defs/Plugin"
+        },
+        "pluginId": {
+          "$ref": "#/$defs/Plugin"
+        },
+        "instanceId": {
+          "$ref": "#/$defs/Instance"
+        },
+        "siteId": {
+          "anyOf": [
+            {
+              "const": ""
+            },
+            {
+              "$ref": "#/$defs/RandomID"
+            }
+          ],
+          "default": ""
+        },
+        "revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "source": {
+          "enum": [
+            "purchase",
+            "trial",
+            "gift",
+            "test",
+            "legacy"
+          ]
+        },
+        "status": {
+          "enum": [
+            "active",
+            "revoked"
+          ]
+        },
+        "domain": {
+          "type": "string",
+          "maxLength": 253,
+          "default": ""
+        },
+        "notBefore": {
+          "$ref": "#/$defs/Time"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Time"
+        },
+        "minVersion": {
+          "$ref": "#/$defs/OptionalVersion"
+        },
+        "maxVersionExclusive": {
+          "$ref": "#/$defs/OptionalVersion"
+        }
+      },
+      "required": [
+        "licenseId",
+        "pluginId",
+        "instanceId",
+        "siteId",
+        "revision",
+        "source",
+        "status",
+        "domain",
+        "notBefore",
+        "expiresAt",
+        "minVersion",
+        "maxVersionExclusive"
+      ]
+    },
+    "Version": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/SemVer"
+        },
+        "mode": {
+          "enum": [
+            "free",
+            "paid"
+          ]
+        },
+        "minCore": {
+          "$ref": "#/$defs/SemVer"
+        },
+        "maxCoreExclusive": {
+          "$ref": "#/$defs/SemVer"
+        }
+      },
+      "required": [
+        "version",
+        "mode",
+        "minCore",
+        "maxCoreExclusive"
+      ]
+    },
+    "Price": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "amount": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/Amount"
+            },
+            {
+              "not": {
+                "const": "0"
+              }
+            }
+          ]
+        },
+        "currency": {
+          "const": "CNY"
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 31622400,
+          "default": 3600
+        },
+        "trialSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2592000,
+          "default": 0
+        }
+      },
+      "required": [
+        "revision",
+        "amount",
+        "currency",
+        "durationSeconds",
+        "trialSeconds"
+      ]
+    },
+    "Product": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pluginId": {
+          "$ref": "#/$defs/Plugin"
+        },
+        "name": {
+          "$ref": "#/$defs/Text"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 4096,
+          "default": "Example plugin"
+        },
+        "publisher": {
+          "$ref": "#/$defs/Text"
+        },
+        "sellable": {
+          "$ref": "#/$defs/Bool"
+        },
+        "price": {
+          "$ref": "#/$defs/Price"
+        },
+        "versions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {
+            "$ref": "#/$defs/Version"
+          },
+          "default": [
+            {
+              "version": "1.0.0",
+              "mode": "free",
+              "minCore": "1.0.0",
+              "maxCoreExclusive": "1.0.0"
+            }
+          ]
+        }
+      },
+      "required": [
+        "pluginId",
+        "name",
+        "description",
+        "publisher",
+        "sellable",
+        "versions"
+      ]
+    },
+    "SitePage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/Site"
+          },
+          "default": [
+            {
+              "siteId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "instanceId": "instance-account-a",
+              "name": "Example",
+              "siteUrl": "",
+              "verifiedOrigin": "",
+              "verifiedAt": 0,
+              "verificationState": "unverified",
+              "connectionState": "connected",
+              "revision": "1",
+              "lastSyncAt": 0,
+              "createdAt": 1790000000
+            }
+          ]
+        },
+        "nextCursor": {
+          "$ref": "#/$defs/Cursor"
+        }
+      },
+      "required": [
+        "items",
+        "nextCursor"
+      ]
+    },
+    "OrderPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/Order"
+          },
+          "default": [
+            {
+              "orderNo": "M12345678",
+              "pluginId": "member-purchase-gate",
+              "instanceId": "instance-account-a",
+              "siteId": "",
+              "amount": "100",
+              "currency": "CNY",
+              "state": "pending",
+              "trial": true,
+              "expiresAt": 1790000000,
+              "createdAt": 1790000000,
+              "lastError": ""
+            }
+          ]
+        },
+        "nextCursor": {
+          "$ref": "#/$defs/Cursor"
+        }
+      },
+      "required": [
+        "items",
+        "nextCursor"
+      ]
+    },
+    "EntitlementPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/Entitlement"
+          },
+          "default": [
+            {
+              "licenseId": "member-purchase-gate",
+              "pluginId": "member-purchase-gate",
+              "instanceId": "instance-account-a",
+              "siteId": "",
+              "revision": "1",
+              "source": "purchase",
+              "status": "active",
+              "domain": "",
+              "notBefore": 1790000000,
+              "expiresAt": 1790000000,
+              "minVersion": "",
+              "maxVersionExclusive": ""
+            }
+          ]
+        },
+        "nextCursor": {
+          "$ref": "#/$defs/Cursor"
+        }
+      },
+      "required": [
+        "items",
+        "nextCursor"
+      ]
+    },
+    "ProductPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/Product"
+          },
+          "default": [
+            {
+              "pluginId": "member-purchase-gate",
+              "name": "Example",
+              "description": "Example plugin",
+              "publisher": "Example",
+              "sellable": true,
+              "price": {
+                "revision": "1",
+                "amount": "100",
+                "currency": "CNY",
+                "durationSeconds": 3600,
+                "trialSeconds": 0
+              },
+              "versions": [
+                {
+                  "version": "1.0.0",
+                  "mode": "free",
+                  "minCore": "1.0.0",
+                  "maxCoreExclusive": "1.0.0"
+                }
+              ]
+            }
+          ]
+        },
+        "nextCursor": {
+          "$ref": "#/$defs/Cursor"
+        }
+      },
+      "required": [
+        "items",
+        "nextCursor"
+      ]
+    },
+    "Capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "apiVersion": {
+          "const": "1"
+        },
+        "customerAccounts": {
+          "$ref": "#/$defs/Bool"
+        },
+        "accountView": {
+          "$ref": "#/$defs/Bool"
+        },
+        "publicProducts": {
+          "$ref": "#/$defs/Bool"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "customerAccounts",
+        "accountView",
+        "publicProducts"
+      ]
+    },
+    "PublicProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profileId": {
+          "$ref": "#/$defs/Plugin"
+        },
+        "origin": {
+          "$ref": "#/$defs/Origin"
+        },
+        "distributionRoots": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 32,
+          "propertyNames": {
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "format": "ed25519-public"
+          },
+          "default": {
+            "key-a": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE="
+          }
+        },
+        "licenseIssuer": {
+          "$ref": "#/$defs/Origin"
+        },
+        "licenseRoots": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 32,
+          "propertyNames": {
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "format": "ed25519-public"
+          },
+          "default": {
+            "key-b": "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI="
+          }
+        }
+      },
+      "required": [
+        "profileId",
+        "origin",
+        "distributionRoots",
+        "licenseIssuer",
+        "licenseRoots"
+      ]
+    },
+    "Failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "market.INVALID_REQUEST",
+            "market.LOGIN_REQUIRED",
+            "market.SESSION_EXPIRED",
+            "market.CSRF_REJECTED",
+            "market.FORBIDDEN",
+            "market.EMAIL_REQUIRED",
+            "market.NOT_FOUND",
+            "market.CONFLICT",
+            "market.REAUTH_REQUIRED",
+            "market.CODE_INVALID",
+            "market.RATE_LIMITED",
+            "market.DEPENDENCY_UNAVAILABLE",
+            "market.CURSOR_INVALID",
+            "market.PROVISIONING_PENDING"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 256,
+          "default": "Request failed"
+        },
+        "requestId": {
+          "$ref": "#/$defs/Text"
+        },
+        "retryAfterSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400,
+          "default": 60
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "requestId"
+      ]
+    },
+    "HostContext": {
+      "type": "object",
+      "properties": {
+        "contextId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "contextSecret": {
+          "$ref": "#/$defs/Secret"
+        }
+      },
+      "required": [
+        "contextId",
+        "contextSecret"
+      ],
+      "additionalProperties": false
+    },
+    "HostBegin": {
+      "type": "object",
+      "properties": {
+        "contextId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "contextSecret": {
+          "$ref": "#/$defs/Secret"
+        },
+        "userCode": {
+          "$ref": "#/$defs/UserCode"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Time"
+        },
+        "pollSeconds": {
+          "const": 5,
+          "default": 5
+        }
+      },
+      "required": [
+        "contextId",
+        "contextSecret",
+        "userCode",
+        "expiresAt",
+        "pollSeconds"
+      ],
+      "additionalProperties": false
+    },
+    "HostConfirm": {
+      "type": "object",
+      "properties": {
+        "contextId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "contextSecret": {
+          "$ref": "#/$defs/Secret"
+        },
+        "accountId": {
+          "$ref": "#/$defs/ID"
+        }
+      },
+      "required": [
+        "contextId",
+        "contextSecret",
+        "accountId"
+      ],
+      "additionalProperties": false
+    },
+    "HostPage": {
+      "type": "object",
+      "properties": {
+        "contextId": {
+          "$ref": "#/$defs/RandomID"
+        },
+        "contextSecret": {
+          "$ref": "#/$defs/Secret"
+        },
+        "cursor": {
+          "$ref": "#/$defs/Cursor",
+          "default": ""
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "required": [
+        "contextId",
+        "contextSecret"
+      ],
+      "additionalProperties": false
+    },
+    "CustomerPath": {
+      "type": "object",
+      "properties": {
+        "accountId": {
+          "$ref": "#/$defs/ID"
+        }
+      },
+      "required": [
+        "accountId"
+      ],
+      "additionalProperties": false
+    },
+    "CustomerStatus": {
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "$ref": "#/$defs/RequestID"
+        },
+        "expectedRevision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "suspended": {
+          "$ref": "#/$defs/Bool"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "default": "support request"
+        }
+      },
+      "required": [
+        "requestId",
+        "expectedRevision",
+        "suspended",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "CustomerRecord": {
+      "type": "object",
+      "properties": {
+        "customer": {
+          "$ref": "#/$defs/Customer"
+        },
+        "revision": {
+          "$ref": "#/$defs/Revision"
+        },
+        "origin": {
+          "enum": [
+            "legacy",
+            "self_registered"
+          ]
+        },
+        "provisioningState": {
+          "enum": [
+            "pending",
+            "ready",
+            "conflict"
+          ]
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Time"
+        }
+      },
+      "required": [
+        "customer",
+        "revision",
+        "origin",
+        "provisioningState",
+        "createdAt"
+      ],
+      "additionalProperties": false
+    },
+    "CustomerPage": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/CustomerRecord"
+          },
+          "default": [
+            {
+              "customer": {
+                "accountId": "71",
+                "displayName": "Example",
+                "status": "pending_verification",
+                "emailMasked": "Example",
+                "emailVerified": true
+              },
+              "revision": "1",
+              "origin": "legacy",
+              "provisioningState": "pending",
+              "createdAt": 1790000000
+            }
+          ]
+        },
+        "nextCursor": {
+          "$ref": "#/$defs/Cursor",
+          "default": ""
+        }
+      },
+      "required": [
+        "items",
+        "nextCursor"
+      ],
+      "additionalProperties": false
+    },
+    "Wallet": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "balance": {
+          "$ref": "#/$defs/Amount"
+        },
+        "currency": {
+          "const": "CNY"
+        }
+      },
+      "required": [
+        "balance",
+        "currency"
+      ]
+    },
+    "ListingQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cursor": {
+          "$ref": "#/$defs/Cursor"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        },
+        "q": {
+          "type": "string",
+          "maxLength": 100,
+          "default": ""
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "kind": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "mode": {
+          "enum": [
+            "free",
+            "paid"
+          ]
+        },
+        "recommended": {
+          "type": "boolean"
+        }
+      },
+      "required": []
+    },
+    "Release": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/SemVer"
+        },
+        "publishedAt": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 253402300799
+        },
+        "status": {
+          "enum": [
+            "published",
+            "withdrawn"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 4000
+        }
+      },
+      "required": [
+        "version",
+        "publishedAt",
+        "status",
+        "notes"
+      ]
+    },
+    "Listing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pluginId": {
+          "$ref": "#/$defs/Plugin"
+        },
+        "name": {
+          "$ref": "#/$defs/Text"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 4096,
+          "default": "Example plugin"
+        },
+        "publisher": {
+          "$ref": "#/$defs/Text"
+        },
+        "sellable": {
+          "$ref": "#/$defs/Bool"
+        },
+        "price": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "revision": {
+              "$ref": "#/$defs/Revision"
+            },
+            "amount": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/Amount"
+                },
+                {
+                  "not": {
+                    "const": "0"
+                  }
+                }
+              ]
+            },
+            "currency": {
+              "const": "CNY"
+            },
+            "durationSeconds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 31622400,
+              "default": 3600
+            },
+            "trialSeconds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2592000,
+              "default": 0
+            }
+          },
+          "required": [
+            "revision",
+            "amount",
+            "currency",
+            "durationSeconds",
+            "trialSeconds"
+          ]
+        },
+        "versions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {
+            "$ref": "#/$defs/Version"
+          },
+          "default": [
+            {
+              "version": "1.0.0",
+              "mode": "free",
+              "minCore": "1.0.0",
+              "maxCoreExclusive": "1.0.0"
+            }
+          ]
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "kind": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "recommended": {
+          "type": "boolean"
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^/api/market/v1/media/[a-f0-9]{64}$"
+          },
+          "maxItems": 8
+        },
+        "details": {
+          "type": "string",
+          "maxLength": 12000
+        },
+        "billingMode": {
+          "enum": [
+            "free",
+            "term",
+            "perpetual"
+          ]
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Release"
+          },
+          "maxItems": 128
+        }
+      },
+      "required": [
+        "pluginId",
+        "name",
+        "description",
+        "publisher",
+        "sellable",
+        "versions",
+        "category",
+        "kind",
+        "recommended",
+        "images",
+        "details",
+        "billingMode",
+        "history"
+      ]
+    },
+    "ListingPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Listing"
+          },
+          "maxItems": 100
+        },
+        "nextCursor": {
+          "$ref": "#/$defs/Cursor"
+        }
+      },
+      "required": [
+        "items",
+        "nextCursor"
+      ]
+    },
+    "Facets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "maxItems": 256
+        },
+        "kinds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "maxItems": 256
+        }
+      },
+      "required": [
+        "categories",
+        "kinds"
+      ]
+    }
+  }
+}

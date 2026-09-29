@@ -868,7 +868,8 @@ export interface SupplierAccount {
   api_key: string;       // app_id（明文常驻）
   reviewed_at: number;
   created_at: number;
-  balance_cache: number; // 供货余额（分）
+  balance_cache: number; // 可用余额（分）；共用钱包以账户钱包为准
+  shared_wallet?: boolean;
   ip_whitelist?: string[]; // IP 白名单（空=所有 IP 放行）
 }
 
@@ -910,6 +911,12 @@ export function createSupplierRecharge(id: number, body: { amount_cents: number;
   return api.post<{ recharge_id: number; payment_id: number; type: string; payload: string; quote?: PaymentQuote }>(
     `/supplier/accounts/${id}/recharge`,
     body,
+  );
+}
+
+export function getSupplierRecharge(id: number, rechargeID: number) {
+  return api.get<{ recharge_id: number; payment_id: number; status: string; credited_cents: number }>(
+    `/supplier/accounts/${id}/recharges/${rechargeID}`,
   );
 }
 

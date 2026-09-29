@@ -17,9 +17,16 @@ export interface PluginStatus {
   runtime_available: boolean;
 }
 export interface PluginCommand {
+  confirm_paid?: boolean;
   plugin_id: string;
   operation_id: string;
-  action: "import" | "enable" | "upgrade" | "rollback" | "disable" | "uninstall";
+  action:
+    | "import"
+    | "enable"
+    | "upgrade"
+    | "rollback"
+    | "disable"
+    | "uninstall";
   target_digest: string;
   expected_generation: string;
   approved_scopes: string[];
@@ -34,6 +41,7 @@ export interface PluginOperation {
   status?: PluginStatus;
 }
 export interface PluginPackage {
+  entitlement_mode: "free" | "paid";
   plugin_id: string;
   version: string;
   digest: string;
@@ -104,9 +112,15 @@ export const fetchPlugins = () =>
     silentError: true,
   });
 export const fetchPluginOperation = (id: string) =>
-  request<PluginOperation>({ url: `${root}/plugins/operations/${segment(id)}`, silentError: true });
+  request<PluginOperation>({
+    url: `${root}/plugins/operations/${segment(id)}`,
+    silentError: true,
+  });
 export const fetchPluginImpact = (id: string) =>
-  request<PluginImpact>({ url: `${root}/plugins/${segment(id)}/impact`, silentError: true });
+  request<PluginImpact>({
+    url: `${root}/plugins/${segment(id)}/impact`,
+    silentError: true,
+  });
 export const operatePlugin = (data: PluginCommand) =>
   request<PluginOperation>({
     url: `${root}/plugins/${segment(data.plugin_id)}/operations`,
@@ -114,7 +128,11 @@ export const operatePlugin = (data: PluginCommand) =>
     data,
     silentError: true,
   });
-function upload<T>(action: "inspect" | "import", command: PluginCommand, files: PluginFiles) {
+function upload<T>(
+  action: "inspect" | "import",
+  command: PluginCommand,
+  files: PluginFiles,
+) {
   const data = new FormData();
   data.append("command", JSON.stringify(command));
   for (const name of ["descriptor", "signature", "archive"] as const)
@@ -139,7 +157,10 @@ export const fetchPluginContributions = (id: string) =>
     silentError: true,
   });
 export const fetchProductPluginRules = (id: string) =>
-  request<{ rules: PluginRule[] }>({ url: `${product(id)}/plugin-rules`, silentError: true });
+  request<{ rules: PluginRule[] }>({
+    url: `${product(id)}/plugin-rules`,
+    silentError: true,
+  });
 export const fetchProductPluginRule = (id: string, pluginId: string) =>
   request<PluginRule>({ url: ruleURL(id, pluginId), silentError: true });
 export const fetchPluginLevels = (id: string) =>
@@ -171,7 +192,11 @@ export const releasePluginRule = (rule: PluginRule) =>
 export interface MarketEntry {
   name: string;
   descriptor: { pluginId: string; version: string; archiveSHA256: string };
-  manifest: { scopes: string[]; core: { minInclusive: string; maxExclusive: string } };
+  manifest: {
+    entitlement: { mode: "free" | "paid" };
+    scopes: string[];
+    core: { minInclusive: string; maxExclusive: string };
+  };
 }
 export interface MarketCatalog {
   catalog: { origin: string; revision: string; entries: MarketEntry[] };
@@ -218,5 +243,66 @@ export const installMarketPlugin = (
     method: "post",
     data: { origin, version, command },
     timeout: 30000,
+    silentError: true,
+  });
+
+export interface PluginEntitlements {
+  ready: boolean;
+  instanceId?: string;
+  issuer?: string;
+  purchaseAvailable?: boolean;
+  licenses?: {
+    pluginId: string;
+    issuer: string;
+    revision: string;
+    expiresAt: number;
+    status: string;
+  }[];
+}
+export const fetchPluginEntitlements = () =>
+  request<PluginEntitlements>({
+    url: `${root}/plugins/market/entitlements`,
+    silentError: true,
+  });
+export const installPluginEntitlement = (data: unknown) =>
+  request<PluginEntitlements>({
+    url: `${root}/plugins/market/license`,
+    method: "POST",
+    data,
+    silentError: true,
+  });
+
+export interface MarketBinding {
+  state: string;
+  origin: string;
+  instanceId: string;
+  userCode?: string;
+  accountId?: string;
+  accountName?: string;
+  version?: string;
+  expiresAt?: number;
+  lastSync?: number;
+  safetyCheckedAt?: number;
+}
+export const fetchMarketBinding = () =>
+  request<MarketBinding>({ url: `${marketRoot}/binding`, silentError: true });
+export const operateMarketBinding = (
+  action: string,
+  accountId?: string,
+  confirm = false,
+) =>
+  request<MarketBinding>({
+    url: `${marketRoot}/binding`,
+    method: "POST",
+    data: { action, accountId, confirm },
+    timeout: 30000,
+    silentError: true,
+  });
+
+export const installPluginSafetyPolicy = (data: unknown) =>
+  request<PluginEntitlements>({
+    url: "/api/v1/admin/plugins/market/revocations",
+    method: "post",
+    data,
     silentError: true,
   });

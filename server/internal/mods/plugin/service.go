@@ -147,7 +147,7 @@ func (s *AdminPluginService) command(ctx context.Context, in *adminv1.OperatePlu
 	if e != nil {
 		return Command{}, e
 	}
-	return Command{OperationID: in.OperationId, PluginID: in.PluginId, Action: in.Action, TargetDigest: in.TargetDigest, ExpectedGeneration: gen, ApprovedScopes: in.ApprovedScopes, Actor: a}, nil
+	return Command{OperationID: in.OperationId, PluginID: in.PluginId, Action: in.Action, TargetDigest: in.TargetDigest, ExpectedGeneration: gen, ApprovedScopes: in.ApprovedScopes, Actor: a, ConfirmPaid: in.ConfirmPaid}, nil
 }
 func (s *AdminPluginService) operationPB(ctx context.Context, v Operation) *adminv1.PluginOperationReply {
 	state, _ := s.manager.Status(ctx, v.Command.PluginID)
@@ -191,7 +191,7 @@ func (s *AdminPluginService) InspectPlugin(ctx context.Context, in *adminv1.Impo
 	if a.Manifest.ID != c.PluginID || a.Descriptor.ArchiveSHA256 != c.TargetDigest {
 		return nil, apiError(contractError(pc.InvalidContract, "package identity mismatch"))
 	}
-	return &adminv1.PluginPackageReply{PluginId: a.Manifest.ID, Version: a.Manifest.Version, Digest: a.Descriptor.ArchiveSHA256, Scopes: a.Manifest.Scopes}, nil
+	return &adminv1.PluginPackageReply{PluginId: a.Manifest.ID, Version: a.Manifest.Version, Digest: a.Descriptor.ArchiveSHA256, Scopes: a.Manifest.Scopes, EntitlementMode: a.Manifest.Entitlement.Mode}, nil
 }
 func (s *AdminPluginService) ImportPlugin(ctx context.Context, in *adminv1.ImportPluginRequest) (*adminv1.PluginOperationReply, error) {
 	c, e := s.command(ctx, in.GetCommand())

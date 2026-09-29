@@ -12,6 +12,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/marketclient"
 	mc "github.com/NovaWorks/zcard-next/server/internal/platform/marketcontract"
 	pc "github.com/NovaWorks/zcard-next/server/internal/platform/plugincontract"
+	pl "github.com/NovaWorks/zcard-next/server/internal/platform/pluginlicense"
 	"github.com/go-kratos/kratos/v3/errors"
 	khttp "github.com/go-kratos/kratos/v3/transport/http"
 	"golang.org/x/mod/semver"
@@ -39,14 +40,24 @@ func (s *AdminPluginService) catalog(ctx context.Context, origin string) (mc.Env
 		return mc.Envelope{}, e
 	}
 	defer client.Close()
-	env, e := client.Catalog(ctx)
+	token, e := s.manager.marketCredential(ctx, origin)
+	if e != nil {
+		return mc.Envelope{}, e
+	}
+	var env mc.Envelope
+	if token != "" {
+		client.WithCredential(token)
+		env, e = client.LicensedCatalog(ctx)
+	} else {
+		env, e = client.Catalog(ctx)
+	}
 	if e == nil {
 		e = s.manager.repo.acceptCatalog(ctx, env.Catalog)
 	}
 	return env, e
 }
 func (s *AdminPluginService) RegisterMarket(srv *khttp.Server) {
-	for _, spec := range []struct{ method, path, op string }{{"GET", "config", "GetMarketConfig"}, {"PUT", "config", "SetMarketConfig"}, {"GET", "catalog", "GetMarketCatalog"}, {"POST", "inspect", "InspectMarketPlugin"}, {"POST", "install", "InstallMarketPlugin"}} {
+	for _, spec := range []struct{ method, path, op string }{{"GET", "binding", "GetMarketBinding"}, {"POST", "binding", "UpdateMarketBinding"}, {"GET", "entitlements", "GetEntitlements"}, {"POST", "license", "InstallEntitlement"}, {"POST", "revocations", "InstallSafetyPolicy"}, {"GET", "config", "GetMarketConfig"}, {"PUT", "config", "SetMarketConfig"}, {"GET", "updates", "GetMarketUpdates"}, {"GET", "catalog", "GetMarketCatalog"}, {"POST", "inspect", "InspectMarketPlugin"}, {"POST", "install", "InstallMarketPlugin"}} {
 		route := spec
 		srv.Route("/").Handle(route.method, marketPrefix+"/"+route.path, func(c khttp.Context) error {
 			khttp.SetOperation(c, "/zcard.api.admin.v1.AdminPluginService/"+route.op)
@@ -62,8 +73,53 @@ func (s *AdminPluginService) RegisterMarket(srv *khttp.Server) {
 					return nil, e
 				}
 				switch route.op {
+				case "GetMarketBinding":
+					return s.manager.bindingStatus(ctx)
+				case "UpdateMarketBinding":
+					var in bindingAction
+					raw, err := io.ReadAll(io.LimitReader(c.Request().Body, (64<<10)+1))
+					if err != nil || pl.Decode(raw, &in) != nil {
+						return nil, errors.BadRequest("plugin.INVALID_BINDING", "绑定请求格式不正确")
+					}
+					actor, err := s.authorize(ctx, "plugin:manage", true, false)
+					if err != nil {
+						return nil, err
+					}
+					result, err := s.manager.bindingOperation(ctx, in, actor)
+					if err != nil {
+						return nil, errors.BadRequest("plugin.BINDING_FAILED", err.Error())
+					}
+					return result, nil
+				case "GetEntitlements":
+					return s.manager.entitlementStatus(), nil
+				case "InstallEntitlement", "InstallSafetyPolicy":
+					raw, err := io.ReadAll(io.LimitReader(c.Request().Body, (64<<10)+1))
+					if err != nil || len(raw) > 64<<10 {
+						return nil, errors.BadRequest("plugin.INVALID_LICENSE", "授权文档超过限制")
+					}
+					actor, err := s.authorize(ctx, "plugin:manage", true, false)
+					if err != nil {
+						return nil, err
+					}
+					if err = s.manager.installSecurity(ctx, raw, route.op == "InstallSafetyPolicy", actor); err != nil {
+						return nil, errors.BadRequest("plugin.INVALID_LICENSE", "授权签名、实例、域名或修订号校验失败，请检查受信配置")
+					}
+					return s.manager.entitlementStatus(), nil
 				case "GetMarketConfig":
-					return map[string]string{"origin": origin}, nil
+					s.manager.repo.marketMu.Lock()
+					state, err := s.manager.repo.readMarket(ctx)
+					s.manager.repo.marketMu.Unlock()
+					if err != nil {
+						return nil, err
+					}
+					source := "unconfigured"
+					if state.Origin != "" {
+						source = "custom"
+						if state.ProfileID != "" && !state.ExplicitOrigin {
+							source = "official"
+						}
+					}
+					return map[string]string{"origin": state.Origin, "source": source, "profileId": state.ProfileID}, nil
 				case "SetMarketConfig":
 					var in struct {
 						Origin string `json:"origin"`
@@ -84,7 +140,9 @@ func (s *AdminPluginService) RegisterMarket(srv *khttp.Server) {
 						client.Close()
 					}
 					e = s.manager.repo.configureMarket(ctx, in.Origin)
-					return map[string]string{"origin": in.Origin}, e
+					return map[string]string{"origin": in.Origin}, apiError(e)
+				case "GetMarketUpdates":
+					return s.marketUpdates(ctx, origin)
 				case "GetMarketCatalog":
 					env, e := s.catalog(ctx, origin)
 					if e != nil {
@@ -176,6 +234,13 @@ func (s *AdminPluginService) marketInstall(ctx context.Context, body io.Reader, 
 		return nil, e
 	}
 	defer client.Close()
+	if env.Catalog.APIVersion == "2" {
+		token, e := s.manager.marketCredential(ctx, origin)
+		if e != nil || token == "" {
+			return nil, errors.BadRequest("plugin.BINDING_REQUIRED", "请先恢复市场绑定")
+		}
+		client.WithCredential(token)
+	}
 	archive, e := client.Download(ctx, *selected)
 	if e != nil {
 		return nil, errors.New(503, "plugin.MARKET_DOWNLOAD_FAILED", "工件下载中断或校验失败，请重试")
@@ -221,4 +286,50 @@ func (s *AdminPluginService) marketInstall(ctx context.Context, body io.Reader, 
 		return nil, errors.New(409, "plugin.MARKET_CHANGED", "目录已变化，请重新确认")
 	}
 	return s.ImportPlugin(ctx, req)
+}
+
+// Updates are computed from verified distribution data and the installed package,
+// never from untrusted display metadata or a difference in digest alone.
+func (s *AdminPluginService) marketUpdates(ctx context.Context, origin string) (any, error) {
+	env, err := s.catalog(ctx, origin)
+	if err != nil {
+		return nil, errors.New(503, "plugin.MARKET_UNAVAILABLE", "无法读取已验证的更新目录")
+	}
+	ids, err := s.manager.repo.installedIDs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	items := []map[string]string{}
+	host := s.manager.packages.(*FilePackages).host
+	for _, id := range ids {
+		state, err := s.manager.Status(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if state.Uninstalled || state.State.ReconciliationPending || state.ObservedDigest == "" {
+			continue
+		}
+		artifact, reader, err := s.manager.packages.Open(ctx, state.ObservedDigest)
+		if err != nil {
+			return nil, err
+		}
+		reader.Close()
+		current := artifact.Descriptor.Version
+		latest := current
+		for _, entry := range env.Catalog.Entries {
+			if entry.Descriptor.PluginID != id {
+				continue
+			}
+			if _, err := pc.CheckCompatibility(entry.Manifest, host); err != nil {
+				continue
+			}
+			if semver.Compare("v"+entry.Descriptor.Version, "v"+latest) > 0 {
+				latest = entry.Descriptor.Version
+			}
+		}
+		if latest != current {
+			items = append(items, map[string]string{"pluginId": id, "currentVersion": current, "latestVersion": latest})
+		}
+	}
+	return map[string]any{"items": items}, nil
 }

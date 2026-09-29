@@ -1,0 +1,16 @@
+{
+  "market.INVALID_REQUEST": 400,
+  "market.LOGIN_REQUIRED": 401,
+  "market.SESSION_EXPIRED": 401,
+  "market.CSRF_REJECTED": 403,
+  "market.FORBIDDEN": 403,
+  "market.EMAIL_REQUIRED": 403,
+  "market.NOT_FOUND": 404,
+  "market.CONFLICT": 409,
+  "market.REAUTH_REQUIRED": 401,
+  "market.CODE_INVALID": 400,
+  "market.RATE_LIMITED": 429,
+  "market.DEPENDENCY_UNAVAILABLE": 503,
+  "market.CURSOR_INVALID": 400,
+  "market.PROVISIONING_PENDING": 503
+}

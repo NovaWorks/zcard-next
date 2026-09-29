@@ -4,6 +4,7 @@ package supplier
 
 import (
 	"context"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"testing"
 
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
@@ -19,7 +20,7 @@ func concurrentSupplyDatabase(t *testing.T, h *testint.Harness) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repo := NewSupplierRepoImpl(h.Data, box)
+	repo := NewSupplierRepoImpl(h.Data, box, wallet.ProvidePortWallet(wallet.NewWalletRepoImpl(h.Data)))
 	svc := &SupplyAPIService{repo: repo, reader: &fakeCatalog{prods: []port.SupplierProduct{{ID: 1, Name: "fixture", Price: 1000, Status: 1}}}}
 	exerciseConcurrentSupply(t, svc)
 	// The actual migrated index must allow the same downstream number for B.

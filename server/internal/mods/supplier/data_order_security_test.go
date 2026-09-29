@@ -1,6 +1,7 @@
 package supplier
 
 import (
+ "github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"context"
 	"encoding/json"
 	"errors"
@@ -494,7 +495,7 @@ func TestSupplyConcurrentSQLiteWAL(t *testing.T) {
 	if err := d.Client.Schema.Create(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	svc.repo = NewSupplierRepoImpl(d, svc.repo.box)
+	svc.repo = NewSupplierRepoImpl(d, svc.repo.box, wallet.ProvidePortWallet(wallet.NewWalletRepoImpl(d)))
 	exerciseConcurrentSupply(t, svc)
 }
 

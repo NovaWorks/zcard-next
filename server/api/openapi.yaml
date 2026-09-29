@@ -6995,6 +6995,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.CreateSupplierRechargeReply'
+    /api/v1/storefront/supplier/accounts/{id}/recharges/{rechargeId}:
+        get:
+            tags:
+                - StoreSupplierService
+            description: GetSupplierRecharge 查询本人、指定供货账户的充值单结算状态。
+            operationId: StoreSupplierService_GetSupplierRecharge
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: rechargeId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SupplierRechargeReply'
     /api/v1/storefront/supplier/accounts/{id}/regenerate-secret:
         post:
             tags:
@@ -8973,6 +8997,8 @@ components:
                     type: string
                 displayName:
                     type: string
+                ownerUserId:
+                    type: string
         zcard.api.admin.v1.CreateSyncTaskRequest:
             required:
                 - connectionId
@@ -10902,6 +10928,9 @@ components:
                     type: array
                     items:
                         type: string
+                confirmPaid:
+                    type: boolean
+                    description: Explicit approval of a new paid artifact, bound to the immutable operation.
         zcard.api.admin.v1.Option:
             type: object
             properties:
@@ -12200,6 +12229,8 @@ components:
                     type: string
                 reviewNote:
                     type: string
+                sharedWallet:
+                    type: boolean
                 ipWhitelist:
                     type: array
                     items:
@@ -15027,6 +15058,8 @@ components:
                     type: array
                     items:
                         type: string
+                sharedWallet:
+                    type: boolean
         zcard.api.storefront.v1.SupplierCredentialsReply:
             type: object
             properties:
@@ -15039,6 +15072,17 @@ components:
                 apiKey:
                     type: string
                 apiSecret:
+                    type: string
+        zcard.api.storefront.v1.SupplierRechargeReply:
+            type: object
+            properties:
+                rechargeId:
+                    type: string
+                paymentId:
+                    type: string
+                status:
+                    type: string
+                creditedCents:
                     type: string
         zcard.api.storefront.v1.TeamMember:
             type: object

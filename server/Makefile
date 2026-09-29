@@ -197,3 +197,9 @@ help:
 git-hooks:
 	git config core.hooksPath ../.githooks
 	@echo "git 钩子已启用（core.hooksPath=.githooks）"
+
+# Local public trust profile is mandatory for this explicit distribution target.
+# Use FULLSTACK=true after web-dist for a binary with embedded frontends.
+.PHONY: build-official-market
+build-official-market:
+	VERSION=$(VERSION) go run ./tools/official-market

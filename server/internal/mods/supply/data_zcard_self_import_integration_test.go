@@ -4,6 +4,7 @@ package supply
 
 import (
 	"context"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"log/slog"
 	"net/http/httptest"
 	"os"
@@ -43,7 +44,7 @@ func TestZCardSelfImportHTTP(t *testing.T) {
 	}
 	ctx := context.Background()
 	repo, d := newTestRepo(t)
-	upstream := supplier.NewSupplierRepoImpl(d, newTestBox(t))
+	upstream := supplier.NewSupplierRepoImpl(d, newTestBox(t), wallet.ProvidePortWallet(wallet.NewWalletRepoImpl(d)))
 	acc, err := upstream.CreateAccount(ctx, "self import", "self-key", "self-secret", "", "zcard", "")
 	if err != nil {
 		t.Fatal(err)

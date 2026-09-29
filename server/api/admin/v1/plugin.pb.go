@@ -171,8 +171,10 @@ type OperatePluginRequest struct {
 	TargetDigest       string                 `protobuf:"bytes,4,opt,name=target_digest,json=targetDigest,proto3" json:"target_digest,omitempty"`
 	ExpectedGeneration string                 `protobuf:"bytes,5,opt,name=expected_generation,json=expectedGeneration,proto3" json:"expected_generation,omitempty"`
 	ApprovedScopes     []string               `protobuf:"bytes,6,rep,name=approved_scopes,json=approvedScopes,proto3" json:"approved_scopes,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Explicit approval of a new paid artifact, bound to the immutable operation.
+	ConfirmPaid   bool `protobuf:"varint,7,opt,name=confirm_paid,json=confirmPaid,proto3" json:"confirm_paid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *OperatePluginRequest) Reset() {
@@ -245,6 +247,13 @@ func (x *OperatePluginRequest) GetApprovedScopes() []string {
 		return x.ApprovedScopes
 	}
 	return nil
+}
+
+func (x *OperatePluginRequest) GetConfirmPaid() bool {
+	if x != nil {
+		return x.ConfirmPaid
+	}
+	return false
 }
 
 type ImportPluginRequest struct {
@@ -508,13 +517,14 @@ func (x *ListPluginsReply) GetInstanceManagementAllowed() bool {
 }
 
 type PluginPackageReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PluginId      string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	Version       string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	Digest        string                 `protobuf:"bytes,3,opt,name=digest,proto3" json:"digest,omitempty"`
-	Scopes        []string               `protobuf:"bytes,4,rep,name=scopes,proto3" json:"scopes,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	PluginId        string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	Version         string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	Digest          string                 `protobuf:"bytes,3,opt,name=digest,proto3" json:"digest,omitempty"`
+	Scopes          []string               `protobuf:"bytes,4,rep,name=scopes,proto3" json:"scopes,omitempty"`
+	EntitlementMode string                 `protobuf:"bytes,5,opt,name=entitlement_mode,json=entitlementMode,proto3" json:"entitlement_mode,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *PluginPackageReply) Reset() {
@@ -573,6 +583,13 @@ func (x *PluginPackageReply) GetScopes() []string {
 		return x.Scopes
 	}
 	return nil
+}
+
+func (x *PluginPackageReply) GetEntitlementMode() string {
+	if x != nil {
+		return x.EntitlementMode
+	}
+	return ""
 }
 
 type PluginOperationReply struct {
@@ -1335,14 +1352,15 @@ const file_admin_v1_plugin_proto_rawDesc = "" +
 	"product_id\x18\x01 \x01(\tR\tproductId\x12\x1b\n" +
 	"\tplugin_id\x18\x02 \x01(\tR\bpluginId\";\n" +
 	"\x16PluginOperationRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\"\xed\x01\n" +
+	"\foperation_id\x18\x01 \x01(\tR\voperationId\"\x90\x02\n" +
 	"\x14OperatePluginRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12!\n" +
 	"\foperation_id\x18\x02 \x01(\tR\voperationId\x12\x16\n" +
 	"\x06action\x18\x03 \x01(\tR\x06action\x12#\n" +
 	"\rtarget_digest\x18\x04 \x01(\tR\ftargetDigest\x12/\n" +
 	"\x13expected_generation\x18\x05 \x01(\tR\x12expectedGeneration\x12'\n" +
-	"\x0fapproved_scopes\x18\x06 \x03(\tR\x0eapprovedScopes\"\xba\x01\n" +
+	"\x0fapproved_scopes\x18\x06 \x03(\tR\x0eapprovedScopes\x12!\n" +
+	"\fconfirm_paid\x18\a \x01(\bR\vconfirmPaid\"\xba\x01\n" +
 	"\x13ImportPluginRequest\x12B\n" +
 	"\acommand\x18\x01 \x01(\v2(.zcard.api.admin.v1.OperatePluginRequestR\acommand\x12'\n" +
 	"\x0fdescriptor_json\x18\x02 \x01(\fR\x0edescriptorJson\x12\x1c\n" +
@@ -1365,12 +1383,13 @@ const file_admin_v1_plugin_proto_rawDesc = "" +
 	"\x11runtime_available\x18\r \x01(\bR\x10runtimeAvailable\"\x93\x01\n" +
 	"\x10ListPluginsReply\x12?\n" +
 	"\aplugins\x18\x01 \x03(\v2%.zcard.api.admin.v1.PluginStatusReplyR\aplugins\x12>\n" +
-	"\x1binstance_management_allowed\x18\x02 \x01(\bR\x19instanceManagementAllowed\"{\n" +
+	"\x1binstance_management_allowed\x18\x02 \x01(\bR\x19instanceManagementAllowed\"\xa6\x01\n" +
 	"\x12PluginPackageReply\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x16\n" +
 	"\x06digest\x18\x03 \x01(\tR\x06digest\x12\x16\n" +
-	"\x06scopes\x18\x04 \x03(\tR\x06scopes\"\x93\x02\n" +
+	"\x06scopes\x18\x04 \x03(\tR\x06scopes\x12)\n" +
+	"\x10entitlement_mode\x18\x05 \x01(\tR\x0fentitlementMode\"\x93\x02\n" +
 	"\x14PluginOperationReply\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12\x1b\n" +
 	"\tplugin_id\x18\x02 \x01(\tR\bpluginId\x12\x16\n" +

@@ -72,7 +72,12 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 		cleanup()
 		return nil, nil, err
 	}
-	manager := plugin.ProvideManager(repo, filePackages)
+	licenseRepo := license.ProvideLicenseRepo(repoImpl)
+	manager, err := plugin.ProvideManager(repo, filePackages, dataConf, licenseRepo, box)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
 	signer, err := bootstrap.NewSigner(securityConf)
 	if err != nil {
 		cleanup()
@@ -133,7 +138,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	orderLifecycle := order.ProvideOrderLifecycle(orderUsecase)
 	portWallet := wallet.ProvidePortWallet(walletRepoImpl)
 	points := wallet.ProvidePortPoints(walletRepoImpl)
-	supplierRepoImpl := supplier.NewSupplierRepoImpl(dataData, box)
+	supplierRepoImpl := supplier.NewSupplierRepoImpl(dataData, box, portWallet)
 	paymentRepoImpl := payment.NewPaymentRepoImpl(dataData, box, registry, orderLifecycle, portWallet, points, outboxWriter, repoImpl, repoImpl, supplierRepoImpl)
 	procureService := procurement.NewProcureService(procureRepo, gateway, productRepoImpl, cardCipher, deliveryRepoImpl, paymentRepoImpl, outboxWriter, enqueuer, logger)
 	adminProcurementService := procurement.NewAdminProcurementService(procureRepo, procureService)
@@ -154,7 +159,6 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	userRepo := identity.NewUserRepo(dataData)
 	storeAffiliateService := affiliate.NewStoreAffiliateService(commissionRepo, userRepo, settingsReader)
 	adminMediaService := media.NewAdminMediaService(mediaRepo)
-	licenseRepo := license.ProvideLicenseRepo(repoImpl)
 	adminLicenseService := license.NewAdminLicenseService(licenseRepo)
 	adminPluginService := plugin.NewAdminPluginService(manager, rbacUsecase)
 	adminResellerService := reseller.NewAdminResellerService(resellerRepo)

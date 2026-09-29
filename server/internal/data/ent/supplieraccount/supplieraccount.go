@@ -28,6 +28,8 @@ const (
 	FieldContact = "contact"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldSharedWallet holds the string denoting the shared_wallet field in the database.
+	FieldSharedWallet = "shared_wallet"
 	// FieldBalanceCache holds the string denoting the balance_cache field in the database.
 	FieldBalanceCache = "balance_cache"
 	// FieldNotifyURL holds the string denoting the notify_url field in the database.
@@ -60,6 +62,7 @@ var Columns = []string{
 	FieldAPISecret,
 	FieldContact,
 	FieldStatus,
+	FieldSharedWallet,
 	FieldBalanceCache,
 	FieldNotifyURL,
 	FieldReviewedAt,
@@ -94,6 +97,8 @@ var (
 	APIKeyValidator func(string) error
 	// ContactValidator is a validator for the "contact" field. It is called by the builders before save.
 	ContactValidator func(string) error
+	// DefaultSharedWallet holds the default value on creation for the "shared_wallet" field.
+	DefaultSharedWallet bool
 	// DefaultBalanceCache holds the default value on creation for the "balance_cache" field.
 	DefaultBalanceCache int64
 	// NotifyURLValidator is a validator for the "notify_url" field. It is called by the builders before save.
@@ -199,6 +204,11 @@ func ByContact(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// BySharedWallet orders the results by the shared_wallet field.
+func BySharedWallet(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSharedWallet, opts...).ToFunc()
 }
 
 // ByBalanceCache orders the results by the balance_cache field.

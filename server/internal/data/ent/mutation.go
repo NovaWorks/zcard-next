@@ -86821,6 +86821,7 @@ type SupplierAccountMutation struct {
 	api_secret         *[]byte
 	contact            *string
 	status             *supplieraccount.Status
+	shared_wallet      *bool
 	balance_cache      *int64
 	addbalance_cache   *int64
 	notify_url         *string
@@ -87206,6 +87207,42 @@ func (m *SupplierAccountMutation) OldStatus(ctx context.Context) (v supplieracco
 // ResetStatus resets all changes to the "status" field.
 func (m *SupplierAccountMutation) ResetStatus() {
 	m.status = nil
+}
+
+// SetSharedWallet sets the "shared_wallet" field.
+func (m *SupplierAccountMutation) SetSharedWallet(b bool) {
+	m.shared_wallet = &b
+}
+
+// SharedWallet returns the value of the "shared_wallet" field in the mutation.
+func (m *SupplierAccountMutation) SharedWallet() (r bool, exists bool) {
+	v := m.shared_wallet
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSharedWallet returns the old "shared_wallet" field's value of the SupplierAccount entity.
+// If the SupplierAccount object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierAccountMutation) OldSharedWallet(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSharedWallet is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSharedWallet requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSharedWallet: %w", err)
+	}
+	return oldValue.SharedWallet, nil
+}
+
+// ResetSharedWallet resets all changes to the "shared_wallet" field.
+func (m *SupplierAccountMutation) ResetSharedWallet() {
+	m.shared_wallet = nil
 }
 
 // SetBalanceCache sets the "balance_cache" field.
@@ -87714,7 +87751,7 @@ func (m *SupplierAccountMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SupplierAccountMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 17)
 	if m.created_at != nil {
 		fields = append(fields, supplieraccount.FieldCreatedAt)
 	}
@@ -87735,6 +87772,9 @@ func (m *SupplierAccountMutation) Fields() []string {
 	}
 	if m.status != nil {
 		fields = append(fields, supplieraccount.FieldStatus)
+	}
+	if m.shared_wallet != nil {
+		fields = append(fields, supplieraccount.FieldSharedWallet)
 	}
 	if m.balance_cache != nil {
 		fields = append(fields, supplieraccount.FieldBalanceCache)
@@ -87785,6 +87825,8 @@ func (m *SupplierAccountMutation) Field(name string) (ent.Value, bool) {
 		return m.Contact()
 	case supplieraccount.FieldStatus:
 		return m.Status()
+	case supplieraccount.FieldSharedWallet:
+		return m.SharedWallet()
 	case supplieraccount.FieldBalanceCache:
 		return m.BalanceCache()
 	case supplieraccount.FieldNotifyURL:
@@ -87826,6 +87868,8 @@ func (m *SupplierAccountMutation) OldField(ctx context.Context, name string) (en
 		return m.OldContact(ctx)
 	case supplieraccount.FieldStatus:
 		return m.OldStatus(ctx)
+	case supplieraccount.FieldSharedWallet:
+		return m.OldSharedWallet(ctx)
 	case supplieraccount.FieldBalanceCache:
 		return m.OldBalanceCache(ctx)
 	case supplieraccount.FieldNotifyURL:
@@ -87901,6 +87945,13 @@ func (m *SupplierAccountMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
+		return nil
+	case supplieraccount.FieldSharedWallet:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSharedWallet(v)
 		return nil
 	case supplieraccount.FieldBalanceCache:
 		v, ok := value.(int64)
@@ -88112,6 +88163,9 @@ func (m *SupplierAccountMutation) ResetField(name string) error {
 		return nil
 	case supplieraccount.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case supplieraccount.FieldSharedWallet:
+		m.ResetSharedWallet()
 		return nil
 	case supplieraccount.FieldBalanceCache:
 		m.ResetBalanceCache()

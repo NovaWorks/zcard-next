@@ -84,6 +84,11 @@ func Contact(v string) predicate.SupplierAccount {
 	return predicate.SupplierAccount(sql.FieldEQ(FieldContact, v))
 }
 
+// SharedWallet applies equality check predicate on the "shared_wallet" field. It's identical to SharedWalletEQ.
+func SharedWallet(v bool) predicate.SupplierAccount {
+	return predicate.SupplierAccount(sql.FieldEQ(FieldSharedWallet, v))
+}
+
 // BalanceCache applies equality check predicate on the "balance_cache" field. It's identical to BalanceCacheEQ.
 func BalanceCache(v int64) predicate.SupplierAccount {
 	return predicate.SupplierAccount(sql.FieldEQ(FieldBalanceCache, v))
@@ -462,6 +467,16 @@ func StatusIn(vs ...Status) predicate.SupplierAccount {
 // StatusNotIn applies the NotIn predicate on the "status" field.
 func StatusNotIn(vs ...Status) predicate.SupplierAccount {
 	return predicate.SupplierAccount(sql.FieldNotIn(FieldStatus, vs...))
+}
+
+// SharedWalletEQ applies the EQ predicate on the "shared_wallet" field.
+func SharedWalletEQ(v bool) predicate.SupplierAccount {
+	return predicate.SupplierAccount(sql.FieldEQ(FieldSharedWallet, v))
+}
+
+// SharedWalletNEQ applies the NEQ predicate on the "shared_wallet" field.
+func SharedWalletNEQ(v bool) predicate.SupplierAccount {
+	return predicate.SupplierAccount(sql.FieldNEQ(FieldSharedWallet, v))
 }
 
 // BalanceCacheEQ applies the EQ predicate on the "balance_cache" field.

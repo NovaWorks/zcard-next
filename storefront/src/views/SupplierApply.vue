@@ -9,7 +9,7 @@
       <div class="muted" style="margin-top: 6px; line-height: 1.7;">
         申请通过后，你的第三方站点（acg-faka / dujiao-next / 另一套 ZCard）可把本站作为上游供货方，
         填本站地址 + 下方凭据即可对接，无需改动对方代码。协议在申请时选定，一个账户对应一种面板。
-        下游下单从账户「供货余额」扣款，余额不足请先充值。
+        下游下单从账户余额扣款；共用钱包的账户与插件购买使用同一余额。
       </div>
     </div>
 
@@ -159,7 +159,7 @@
     <div v-if="rechargeOpen" class="recharge-mask" @click.self="closeRecharge">
       <div class="recharge-modal">
         <div class="recharge-head">
-          <div style="font-weight: 700; font-size: 16px;">供货余额充值</div>
+          <div style="font-weight: 700; font-size: 16px;">{{ rechargeTarget?.shared_wallet ? '账户余额充值' : '供货余额充值' }}</div>
           <button class="recharge-close" @click="closeRecharge">✕</button>
         </div>
 
@@ -250,10 +250,10 @@ import PaymentBreakdown from '@/components/PaymentBreakdown.vue';
 import { usePaymentQuote } from '@/composables/payment-quote';
 import type { PaymentQuote } from '@/api';
 import { flattenPayOptions } from '@/composables/pay-options';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import {
   listMySupplierAccounts, submitSupplierApplication, getSupplierCredentials,
-  regenerateSupplierSecret, cancelSupplierApplication, createSupplierRecharge,
+  regenerateSupplierSecret, cancelSupplierApplication, createSupplierRecharge, getSupplierRecharge,
   setSupplierIPWhitelist, fetchPaymentChannels, type ChannelItem,
   type SupplierAccount, type SupplierCredentials,
 } from '@/api';
@@ -374,6 +374,9 @@ const rechargeDone = ref(false);
 const rechargeDoneAmount = ref(0);
 
 async function openRecharge(a: SupplierAccount) {
+  stopRechargePolling();
+  const epoch = rechargeEpoch;
+  recharging.value = false;
   supplierGiftTiers.value = [];
   presetTiers.value = [100, 200, 500, 1000, 2000];
   rechargeTarget.value = a;
@@ -387,6 +390,7 @@ async function openRecharge(a: SupplierAccount) {
   rechargeOpen.value = true;
   // 支付渠道 + 供货充值限额（独立配置组 supplier_recharge，与钱包充值隔离）
   const [ch, cfg] = await Promise.all([fetchPaymentChannels('supply_recharge'), api.get<{ entries: { key: string; value_json: string }[] }>('/config')]);
+  if (epoch !== rechargeEpoch) return;
   rechargeChannels.value = ch.data?.channels || [];
   rechargeChannel.value = supplierPayOptions.value[0]?.channel || '';
   rechargeMethod.value = supplierPayOptions.value[0]?.method || '';
@@ -421,6 +425,7 @@ function supplierGiftOf(yuan: number | null): number {
 }
 
 function closeRecharge() {
+  stopRechargePolling();
   rechargeOpen.value = false;
   rechargeTarget.value = null;
 }
@@ -436,17 +441,21 @@ async function doRecharge() {
     rechargeError.value = '请选择支付方式';
     return;
   }
+  stopRechargePolling();
+  const epoch = rechargeEpoch;
+  const accountID = rechargeTarget.value.id;
   recharging.value = true;
   rechargeError.value = '';
   rechargeRedirect.value = '';
   rechargeParams.value = null;
   rechargeQrcode.value = '';
-  const { data, error } = await createSupplierRecharge(rechargeTarget.value.id, {
+  const { data, error } = await createSupplierRecharge(accountID, {
     amount_cents: Math.round(rechargeYuan.value * 100),
     channel: rechargeChannel.value,
     method: rechargeMethod.value || undefined,
     quote_key: quote.value.quote_key,
   });
+  if (epoch !== rechargeEpoch) return;
   recharging.value = false;
   if (error || !data) {
     rechargeError.value = error || '创建失败';
@@ -463,10 +472,12 @@ async function doRecharge() {
     let content = data.payload;
     try { content = JSON.parse(data.payload).code_url || content; } catch { /* 原文即二维码内容 */ }
     try {
-      rechargeQrcode.value = content.startsWith('https://') || content.startsWith('http://') || content.startsWith('data:image')
+      const image = content.startsWith('https://') || content.startsWith('http://') || content.startsWith('data:image')
         ? content
         : await QRCode.toDataURL(content, { width: 220, margin: 1, errorCorrectionLevel: 'M' });
-    } catch { rechargeError.value = '无法生成支付二维码，请重新发起支付'; }
+      if (epoch !== rechargeEpoch) return;
+      rechargeQrcode.value = image;
+    } catch { if (epoch === rechargeEpoch) rechargeError.value = '无法生成支付二维码，请重新发起支付'; }
   } else if (data.type === 'params') {
     try {
       const p = JSON.parse(data.payload);
@@ -477,32 +488,38 @@ async function doRecharge() {
       rechargeError.value = '支付参数异常';
     }
   }
-  // 轮询账户余额（支付完成后刷新）
-  pollBalance(rechargeTarget.value.id);
+  if (epoch !== rechargeEpoch) return;
+  pollRecharge(accountID, data.recharge_id, epoch);
 }
 
-let balanceTimer: ReturnType<typeof setInterval> | null = null;
-function pollBalance(id: number) {
-  if (balanceTimer) clearInterval(balanceTimer);
-  const started = Date.now();
-  balanceTimer = setInterval(async () => {
-    const { data } = await listMySupplierAccounts();
-    if (!data) return;
-    const acc = data.accounts.find((a) => a.id === id);
-    if (acc) {
-      const before = rechargeTarget.value?.balance_cache || 0;
-      if (acc.balance_cache > before) {
-        rechargeDone.value = true;
-        rechargeDoneAmount.value = acc.balance_cache - before;
-        if (balanceTimer) clearInterval(balanceTimer);
-        await load();
-      }
+let rechargeTimer: ReturnType<typeof setTimeout> | null = null;
+let rechargeEpoch = 0;
+function stopRechargePolling() {
+  rechargeEpoch++;
+  if (rechargeTimer) clearTimeout(rechargeTimer);
+  rechargeTimer = null;
+}
+onUnmounted(stopRechargePolling);
+
+function pollRecharge(id: number, rechargeID: number, epoch: number) {
+  const deadline = Date.now() + 5 * 60 * 1000;
+  async function check() {
+    if (epoch !== rechargeEpoch || Date.now() > deadline) return;
+    const { data } = await getSupplierRecharge(id, rechargeID);
+    if (epoch !== rechargeEpoch) return;
+    if (data?.status === 'success') {
+      rechargeDone.value = true;
+      rechargeDoneAmount.value = data.credited_cents;
+      await load();
+      return;
     }
-    // 5 分钟超时停止轮询
-    if (Date.now() - started > 5 * 60 * 1000 && balanceTimer) {
-      clearInterval(balanceTimer);
+    if (data && data.status !== 'pending') {
+      rechargeError.value = '本次充值未完成，请重新发起支付';
+      return;
     }
-  }, 3000);
+    if (Date.now() < deadline) rechargeTimer = setTimeout(check, 3000);
+  }
+  rechargeTimer = setTimeout(check, 3000);
 }
 
 function protocolLabel(p: string) {

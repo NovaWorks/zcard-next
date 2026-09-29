@@ -49,6 +49,10 @@ service StoreSupplierService {
       body: "*"
     };
   }
+  // GetSupplierRecharge 查询本人、指定供货账户的充值单结算状态。
+  rpc GetSupplierRecharge(GetSupplierRechargeRequest) returns (SupplierRechargeReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/supplier/accounts/{id}/recharges/{recharge_id}" };
+  }
   // SetSupplierIPWhitelist 设置 IP 白名单（仅 approved 且归属本人；空 = 所有 IP 放行）。
   rpc SetSupplierIPWhitelist(SetSupplierIPWhitelistRequest) returns (SupplierAccountReply) {
     option (google.api.http) = {
@@ -80,6 +84,7 @@ message SupplierAccountReply {
   int64 created_at = 10;
   int64 balance_cache = 11; // 供货余额（分）
   repeated string ip_whitelist = 12; // IP 白名单（空=所有 IP 放行；精确 IP 或 CIDR）
+  bool shared_wallet = 18;
 }
 
 message ListSupplierAccountsReply {
@@ -126,4 +131,16 @@ message SupplierCredentialsReply {
   string status = 3;
   string api_key = 4; // app_id（明文）
   string api_secret = 5; // app_key（明文；重置后旧值立即失效）
+}
+
+message GetSupplierRechargeRequest {
+  uint64 id = 1;
+  uint64 recharge_id = 2;
+}
+
+message SupplierRechargeReply {
+  uint64 recharge_id = 1;
+  uint64 payment_id = 2;
+  string status = 3;
+  int64 credited_cents = 4; // 仅成功时返回实际到账金额（含赠送），不以余额差额推算。
 }

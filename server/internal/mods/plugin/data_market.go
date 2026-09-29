@@ -20,8 +20,13 @@ type marketCheckpoint struct {
 	Hash     string     `json:"hash"`
 }
 type marketState struct {
-	Origin      string                      `json:"origin"`
-	Checkpoints map[string]marketCheckpoint `json:"checkpoints"`
+	ExplicitOrigin      bool                        `json:"explicitOrigin,omitempty"`
+	ProfileID           string                      `json:"profileId,omitempty"`
+	SafetyCheckedAt     int64                       `json:"safetyCheckedAt,omitempty"`
+	Origin              string                      `json:"origin"`
+	Checkpoints         map[string]marketCheckpoint `json:"checkpoints"`
+	LicensedCheckpoints map[string]marketCheckpoint `json:"licensedCheckpoints,omitempty"`
+	Binding             []byte                      `json:"binding,omitempty"`
 }
 
 func (r *Repo) readMarket(ctx context.Context) (marketState, error) {
@@ -36,12 +41,20 @@ func (r *Repo) readMarket(ctx context.Context) (marketState, error) {
 	if e = json.Unmarshal(row.Value, &out); e != nil || out.Checkpoints == nil || len(out.Checkpoints) > 16 {
 		return out, fmt.Errorf("invalid persisted market state")
 	}
-	for origin, v := range out.Checkpoints {
-		if _, e = mc.Origin(origin); e != nil {
-			return out, e
-		}
-		if _, e = mc.Revision(v.Revision); e != nil || !digestPattern.MatchString(v.Hash) {
-			return out, fmt.Errorf("invalid persisted market checkpoint")
+	if out.LicensedCheckpoints == nil {
+		out.LicensedCheckpoints = map[string]marketCheckpoint{}
+	}
+	if len(out.LicensedCheckpoints) > 16 {
+		return out, fmt.Errorf("invalid licensed market history")
+	}
+	for _, checkpoints := range []map[string]marketCheckpoint{out.Checkpoints, out.LicensedCheckpoints} {
+		for origin, v := range checkpoints {
+			if _, e = mc.Origin(origin); e != nil {
+				return out, e
+			}
+			if _, e = mc.Revision(v.Revision); e != nil || !digestPattern.MatchString(v.Hash) {
+				return out, fmt.Errorf("invalid persisted market checkpoint")
+			}
 		}
 	}
 	return out, nil
@@ -66,8 +79,28 @@ func (r *Repo) configureMarket(ctx context.Context, origin string) error {
 	if e != nil {
 		return e
 	}
-	v.Origin = origin
-	return r.writeMarket(ctx, v)
+	if v.Origin != origin && len(v.Binding) != 0 {
+		return contractError(pc.Conflict, "请先解除市场绑定或取消未确认的配对，再修改市场地址")
+	}
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if v.Origin != origin {
+			// Mark every context locally unreadable before exposing the new origin. Ciphertexts stay for old-origin revocation.
+			rows, e := data.Client(ctx, r.data).Setting.Query().Where(setting.Group("plugin_market"), setting.KeyHasPrefix("view.")).All(ctx)
+			if e != nil {
+				return e
+			}
+			// Context origin is immutable and every read checks it; persist a generation-independent revocation marker too.
+			for _, row := range rows {
+				if e = r.putMarketSetting(ctx, "revoked."+row.Key[5:], true); e != nil {
+					return e
+				}
+			}
+		}
+		v.Origin = origin
+		v.ExplicitOrigin = true
+		v.ProfileID = ""
+		return r.writeMarket(ctx, v)
+	})
 }
 
 // Caller verifies signature and freshness first; high-water marks survive restarts
@@ -90,7 +123,16 @@ func (r *Repo) acceptCatalogLocked(ctx context.Context, c mc.Catalog) error {
 		return e
 	}
 	hash := mc.EntriesHash(c)
-	old, ok := v.Checkpoints[c.Origin]
+	checkpoints := v.Checkpoints
+	if c.APIVersion == "2" {
+		if v.LicensedCheckpoints == nil {
+			v.LicensedCheckpoints = map[string]marketCheckpoint{}
+		}
+		checkpoints = v.LicensedCheckpoints
+	} else if c.APIVersion != "1" {
+		return fmt.Errorf("unsupported catalog version")
+	}
+	old, ok := checkpoints[c.Origin]
 	if ok {
 		previous, _ := mc.Revision(old.Revision)
 		if n < previous || (n == previous && old.Hash != hash) {
@@ -99,10 +141,10 @@ func (r *Repo) acceptCatalogLocked(ctx context.Context, c mc.Catalog) error {
 		if n == previous {
 			return nil
 		}
-	} else if len(v.Checkpoints) >= 16 {
+	} else if len(checkpoints) >= 16 {
 		return fmt.Errorf("market origin history limit reached")
 	}
-	v.Checkpoints[c.Origin] = marketCheckpoint{Revision: c.Revision, Hash: hash}
+	checkpoints[c.Origin] = marketCheckpoint{Revision: c.Revision, Hash: hash}
 	return r.writeMarket(ctx, v)
 }
 

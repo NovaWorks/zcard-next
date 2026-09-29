@@ -24,6 +24,7 @@ func (SupplierAccount) Fields() []ent.Field {
 		field.Bytes("api_secret").Comment("AES-256-GCM 加密 secret"),
 		field.String("contact").MaxLen(255).Optional().Comment("联系方式（申请审核用）"),
 		field.Enum("status").Values("applying", "approved", "rejected", "disabled").Default("applying"),
+		field.Bool("shared_wallet").Default(false).Comment("已转入所属用户钱包；旧余额仅作迁移对账"),
 		field.Int64("balance_cache").Default(0).Comment("供货余额缓存（可由流水重算）"),
 		field.String("notify_url").MaxLen(500).Optional().Comment("交付回调地址（HTTPS 强制）"),
 		field.Time("reviewed_at").SchemaType(mysqlTime).Optional(),

@@ -96,6 +96,20 @@ func (_c *SupplierAccountCreate) SetNillableStatus(v *supplieraccount.Status) *S
 	return _c
 }
 
+// SetSharedWallet sets the "shared_wallet" field.
+func (_c *SupplierAccountCreate) SetSharedWallet(v bool) *SupplierAccountCreate {
+	_c.mutation.SetSharedWallet(v)
+	return _c
+}
+
+// SetNillableSharedWallet sets the "shared_wallet" field if the given value is not nil.
+func (_c *SupplierAccountCreate) SetNillableSharedWallet(v *bool) *SupplierAccountCreate {
+	if v != nil {
+		_c.SetSharedWallet(*v)
+	}
+	return _c
+}
+
 // SetBalanceCache sets the "balance_cache" field.
 func (_c *SupplierAccountCreate) SetBalanceCache(v int64) *SupplierAccountCreate {
 	_c.mutation.SetBalanceCache(v)
@@ -267,6 +281,10 @@ func (_c *SupplierAccountCreate) defaults() {
 		v := supplieraccount.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.SharedWallet(); !ok {
+		v := supplieraccount.DefaultSharedWallet
+		_c.mutation.SetSharedWallet(v)
+	}
 	if _, ok := _c.mutation.BalanceCache(); !ok {
 		v := supplieraccount.DefaultBalanceCache
 		_c.mutation.SetBalanceCache(v)
@@ -320,6 +338,9 @@ func (_c *SupplierAccountCreate) check() error {
 		if err := supplieraccount.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.status": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.SharedWallet(); !ok {
+		return &ValidationError{Name: "shared_wallet", err: errors.New(`ent: missing required field "SupplierAccount.shared_wallet"`)}
 	}
 	if _, ok := _c.mutation.BalanceCache(); !ok {
 		return &ValidationError{Name: "balance_cache", err: errors.New(`ent: missing required field "SupplierAccount.balance_cache"`)}
@@ -412,6 +433,10 @@ func (_c *SupplierAccountCreate) createSpec() (*SupplierAccount, *sqlgraph.Creat
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(supplieraccount.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
+	}
+	if value, ok := _c.mutation.SharedWallet(); ok {
+		_spec.SetField(supplieraccount.FieldSharedWallet, field.TypeBool, value)
+		_node.SharedWallet = value
 	}
 	if value, ok := _c.mutation.BalanceCache(); ok {
 		_spec.SetField(supplieraccount.FieldBalanceCache, field.TypeInt64, value)
@@ -576,6 +601,18 @@ func (u *SupplierAccountUpsert) SetStatus(v supplieraccount.Status) *SupplierAcc
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *SupplierAccountUpsert) UpdateStatus() *SupplierAccountUpsert {
 	u.SetExcluded(supplieraccount.FieldStatus)
+	return u
+}
+
+// SetSharedWallet sets the "shared_wallet" field.
+func (u *SupplierAccountUpsert) SetSharedWallet(v bool) *SupplierAccountUpsert {
+	u.Set(supplieraccount.FieldSharedWallet, v)
+	return u
+}
+
+// UpdateSharedWallet sets the "shared_wallet" field to the value that was provided on create.
+func (u *SupplierAccountUpsert) UpdateSharedWallet() *SupplierAccountUpsert {
+	u.SetExcluded(supplieraccount.FieldSharedWallet)
 	return u
 }
 
@@ -880,6 +917,20 @@ func (u *SupplierAccountUpsertOne) SetStatus(v supplieraccount.Status) *Supplier
 func (u *SupplierAccountUpsertOne) UpdateStatus() *SupplierAccountUpsertOne {
 	return u.Update(func(s *SupplierAccountUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetSharedWallet sets the "shared_wallet" field.
+func (u *SupplierAccountUpsertOne) SetSharedWallet(v bool) *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.SetSharedWallet(v)
+	})
+}
+
+// UpdateSharedWallet sets the "shared_wallet" field to the value that was provided on create.
+func (u *SupplierAccountUpsertOne) UpdateSharedWallet() *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.UpdateSharedWallet()
 	})
 }
 
@@ -1377,6 +1428,20 @@ func (u *SupplierAccountUpsertBulk) SetStatus(v supplieraccount.Status) *Supplie
 func (u *SupplierAccountUpsertBulk) UpdateStatus() *SupplierAccountUpsertBulk {
 	return u.Update(func(s *SupplierAccountUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetSharedWallet sets the "shared_wallet" field.
+func (u *SupplierAccountUpsertBulk) SetSharedWallet(v bool) *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.SetSharedWallet(v)
+	})
+}
+
+// UpdateSharedWallet sets the "shared_wallet" field to the value that was provided on create.
+func (u *SupplierAccountUpsertBulk) UpdateSharedWallet() *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.UpdateSharedWallet()
 	})
 }
 

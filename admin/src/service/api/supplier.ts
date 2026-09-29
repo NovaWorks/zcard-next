@@ -8,6 +8,7 @@ export function fetchSupplierAccounts(params?: { page?: number; page_size?: numb
 }
 
 export function createSupplierAccount(data: {
+  owner_user_id: string;
   name: string;
   api_key: string;
   api_secret: string;

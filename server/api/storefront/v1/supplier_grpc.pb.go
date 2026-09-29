@@ -26,6 +26,7 @@ const (
 	StoreSupplierService_RegenerateSupplierSecret_FullMethodName  = "/zcard.api.storefront.v1.StoreSupplierService/RegenerateSupplierSecret"
 	StoreSupplierService_CancelSupplierApplication_FullMethodName = "/zcard.api.storefront.v1.StoreSupplierService/CancelSupplierApplication"
 	StoreSupplierService_CreateSupplierRecharge_FullMethodName    = "/zcard.api.storefront.v1.StoreSupplierService/CreateSupplierRecharge"
+	StoreSupplierService_GetSupplierRecharge_FullMethodName       = "/zcard.api.storefront.v1.StoreSupplierService/GetSupplierRecharge"
 	StoreSupplierService_SetSupplierIPWhitelist_FullMethodName    = "/zcard.api.storefront.v1.StoreSupplierService/SetSupplierIPWhitelist"
 )
 
@@ -51,6 +52,8 @@ type StoreSupplierServiceClient interface {
 	// CreateSupplierRecharge 对接账户自助充值（金额服务端档位裁决；
 	// 支付确认前不入账——回调成功后入账到供货余额，reference 幂等）。
 	CreateSupplierRecharge(ctx context.Context, in *CreateSupplierRechargeRequest, opts ...grpc.CallOption) (*CreateSupplierRechargeReply, error)
+	// GetSupplierRecharge 查询本人、指定供货账户的充值单结算状态。
+	GetSupplierRecharge(ctx context.Context, in *GetSupplierRechargeRequest, opts ...grpc.CallOption) (*SupplierRechargeReply, error)
 	// SetSupplierIPWhitelist 设置 IP 白名单（仅 approved 且归属本人；空 = 所有 IP 放行）。
 	SetSupplierIPWhitelist(ctx context.Context, in *SetSupplierIPWhitelistRequest, opts ...grpc.CallOption) (*SupplierAccountReply, error)
 }
@@ -123,6 +126,16 @@ func (c *storeSupplierServiceClient) CreateSupplierRecharge(ctx context.Context,
 	return out, nil
 }
 
+func (c *storeSupplierServiceClient) GetSupplierRecharge(ctx context.Context, in *GetSupplierRechargeRequest, opts ...grpc.CallOption) (*SupplierRechargeReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SupplierRechargeReply)
+	err := c.cc.Invoke(ctx, StoreSupplierService_GetSupplierRecharge_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *storeSupplierServiceClient) SetSupplierIPWhitelist(ctx context.Context, in *SetSupplierIPWhitelistRequest, opts ...grpc.CallOption) (*SupplierAccountReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SupplierAccountReply)
@@ -155,6 +168,8 @@ type StoreSupplierServiceServer interface {
 	// CreateSupplierRecharge 对接账户自助充值（金额服务端档位裁决；
 	// 支付确认前不入账——回调成功后入账到供货余额，reference 幂等）。
 	CreateSupplierRecharge(context.Context, *CreateSupplierRechargeRequest) (*CreateSupplierRechargeReply, error)
+	// GetSupplierRecharge 查询本人、指定供货账户的充值单结算状态。
+	GetSupplierRecharge(context.Context, *GetSupplierRechargeRequest) (*SupplierRechargeReply, error)
 	// SetSupplierIPWhitelist 设置 IP 白名单（仅 approved 且归属本人；空 = 所有 IP 放行）。
 	SetSupplierIPWhitelist(context.Context, *SetSupplierIPWhitelistRequest) (*SupplierAccountReply, error)
 	mustEmbedUnimplementedStoreSupplierServiceServer()
@@ -184,6 +199,9 @@ func (UnimplementedStoreSupplierServiceServer) CancelSupplierApplication(context
 }
 func (UnimplementedStoreSupplierServiceServer) CreateSupplierRecharge(context.Context, *CreateSupplierRechargeRequest) (*CreateSupplierRechargeReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateSupplierRecharge not implemented")
+}
+func (UnimplementedStoreSupplierServiceServer) GetSupplierRecharge(context.Context, *GetSupplierRechargeRequest) (*SupplierRechargeReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSupplierRecharge not implemented")
 }
 func (UnimplementedStoreSupplierServiceServer) SetSupplierIPWhitelist(context.Context, *SetSupplierIPWhitelistRequest) (*SupplierAccountReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetSupplierIPWhitelist not implemented")
@@ -317,6 +335,24 @@ func _StoreSupplierService_CreateSupplierRecharge_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StoreSupplierService_GetSupplierRecharge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSupplierRechargeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreSupplierServiceServer).GetSupplierRecharge(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreSupplierService_GetSupplierRecharge_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreSupplierServiceServer).GetSupplierRecharge(ctx, req.(*GetSupplierRechargeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _StoreSupplierService_SetSupplierIPWhitelist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetSupplierIPWhitelistRequest)
 	if err := dec(in); err != nil {
@@ -365,6 +401,10 @@ var StoreSupplierService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateSupplierRecharge",
 			Handler:    _StoreSupplierService_CreateSupplierRecharge_Handler,
+		},
+		{
+			MethodName: "GetSupplierRecharge",
+			Handler:    _StoreSupplierService_GetSupplierRecharge_Handler,
 		},
 		{
 			MethodName: "SetSupplierIPWhitelist",

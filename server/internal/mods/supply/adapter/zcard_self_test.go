@@ -3,6 +3,7 @@ package adapter
 import (
 	"context"
 	"fmt"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"net/http/httptest"
 	"testing"
 
@@ -45,7 +46,7 @@ func TestZCardSelfContract(t *testing.T) {
 	}
 	d := &data.Data{Client: client, DB: handle, Dialect: db.SQLite}
 	box, _ := crypto.NewBox(make([]byte, 32))
-	repo := supplier.NewSupplierRepoImpl(d, box)
+	repo := supplier.NewSupplierRepoImpl(d, box, wallet.ProvidePortWallet(wallet.NewWalletRepoImpl(d)))
 	acc, err := repo.CreateAccount(ctx, "diagnosis", "diagnostic-key", "diagnostic-secret", "", "zcard", "diagnosis")
 	if err != nil {
 		t.Fatal(err)

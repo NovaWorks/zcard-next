@@ -3026,28 +3026,32 @@ func init() {
 	supplieraccountDescContact := supplieraccountFields[4].Descriptor()
 	// supplieraccount.ContactValidator is a validator for the "contact" field. It is called by the builders before save.
 	supplieraccount.ContactValidator = supplieraccountDescContact.Validators[0].(func(string) error)
+	// supplieraccountDescSharedWallet is the schema descriptor for shared_wallet field.
+	supplieraccountDescSharedWallet := supplieraccountFields[6].Descriptor()
+	// supplieraccount.DefaultSharedWallet holds the default value on creation for the shared_wallet field.
+	supplieraccount.DefaultSharedWallet = supplieraccountDescSharedWallet.Default.(bool)
 	// supplieraccountDescBalanceCache is the schema descriptor for balance_cache field.
-	supplieraccountDescBalanceCache := supplieraccountFields[6].Descriptor()
+	supplieraccountDescBalanceCache := supplieraccountFields[7].Descriptor()
 	// supplieraccount.DefaultBalanceCache holds the default value on creation for the balance_cache field.
 	supplieraccount.DefaultBalanceCache = supplieraccountDescBalanceCache.Default.(int64)
 	// supplieraccountDescNotifyURL is the schema descriptor for notify_url field.
-	supplieraccountDescNotifyURL := supplieraccountFields[7].Descriptor()
+	supplieraccountDescNotifyURL := supplieraccountFields[8].Descriptor()
 	// supplieraccount.NotifyURLValidator is a validator for the "notify_url" field. It is called by the builders before save.
 	supplieraccount.NotifyURLValidator = supplieraccountDescNotifyURL.Validators[0].(func(string) error)
 	// supplieraccountDescDisplayName is the schema descriptor for display_name field.
-	supplieraccountDescDisplayName := supplieraccountFields[10].Descriptor()
+	supplieraccountDescDisplayName := supplieraccountFields[11].Descriptor()
 	// supplieraccount.DisplayNameValidator is a validator for the "display_name" field. It is called by the builders before save.
 	supplieraccount.DisplayNameValidator = supplieraccountDescDisplayName.Validators[0].(func(string) error)
 	// supplieraccountDescOwnerUserID is the schema descriptor for owner_user_id field.
-	supplieraccountDescOwnerUserID := supplieraccountFields[11].Descriptor()
+	supplieraccountDescOwnerUserID := supplieraccountFields[12].Descriptor()
 	// supplieraccount.DefaultOwnerUserID holds the default value on creation for the owner_user_id field.
 	supplieraccount.DefaultOwnerUserID = supplieraccountDescOwnerUserID.Default.(uint64)
 	// supplieraccountDescApplyReason is the schema descriptor for apply_reason field.
-	supplieraccountDescApplyReason := supplieraccountFields[12].Descriptor()
+	supplieraccountDescApplyReason := supplieraccountFields[13].Descriptor()
 	// supplieraccount.ApplyReasonValidator is a validator for the "apply_reason" field. It is called by the builders before save.
 	supplieraccount.ApplyReasonValidator = supplieraccountDescApplyReason.Validators[0].(func(string) error)
 	// supplieraccountDescReviewNote is the schema descriptor for review_note field.
-	supplieraccountDescReviewNote := supplieraccountFields[13].Descriptor()
+	supplieraccountDescReviewNote := supplieraccountFields[14].Descriptor()
 	// supplieraccount.ReviewNoteValidator is a validator for the "review_note" field. It is called by the builders before save.
 	supplieraccount.ReviewNoteValidator = supplieraccountDescReviewNote.Validators[0].(func(string) error)
 	supplierledgerentryFields := schema.SupplierLedgerEntry{}.Fields()

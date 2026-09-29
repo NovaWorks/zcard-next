@@ -14,6 +14,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/platform/httpx"
 	mc "github.com/NovaWorks/zcard-next/server/internal/platform/marketcontract"
+	ml "github.com/NovaWorks/zcard-next/server/internal/platform/marketlicensed"
 	pc "github.com/NovaWorks/zcard-next/server/internal/platform/plugincontract"
 )
 
@@ -21,6 +22,7 @@ type Client struct {
 	origin string
 	keys   map[string]ed25519.PublicKey
 	http   *http.Client
+	token  string
 }
 
 func New(origin, testOrigin string, keys map[string]ed25519.PublicKey) (*Client, error) {
@@ -44,11 +46,31 @@ func New(origin, testOrigin string, keys map[string]ed25519.PublicKey) (*Client,
 	}
 	return &Client{origin: origin, keys: copied, http: h}, nil
 }
+func (c *Client) WithCredential(token string) {
+	c.token = token
+	c.http.CheckRedirect = func(*http.Request, []*http.Request) error {
+		return fmt.Errorf("authenticated market redirects forbidden")
+	}
+}
+func (c *Client) LicensedCatalog(ctx context.Context) (mc.Envelope, error) {
+	raw, e := c.get(ctx, ml.Prefix+"/plugins", mc.MaxCatalogBytes)
+	if e != nil {
+		return mc.Envelope{}, e
+	}
+	env, e := mc.Decode(raw)
+	if e == nil {
+		e = ml.Verify(env, c.origin, c.keys, time.Now())
+	}
+	return env, e
+}
 func (c *Client) Close() { c.http.CloseIdleConnections() }
 func (c *Client) get(ctx context.Context, path string, limit int64) ([]byte, error) {
 	req, e := http.NewRequestWithContext(ctx, http.MethodGet, c.origin+path, nil)
 	if e != nil {
 		return nil, e
+	}
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
 	}
 	resp, e := c.http.Do(req)
 	if e != nil {
@@ -87,7 +109,11 @@ func (c *Client) Catalog(ctx context.Context) (mc.Envelope, error) {
 	return v, e
 }
 func (c *Client) Download(ctx context.Context, v mc.Entry) ([]byte, error) {
-	if v.ArtifactPath != mc.Prefix+"/artifacts/"+v.Descriptor.ArchiveSHA256 {
+	prefix := mc.Prefix
+	if c.token != "" {
+		prefix = ml.Prefix
+	}
+	if v.ArtifactPath != prefix+"/artifacts/"+v.Descriptor.ArchiveSHA256 {
 		return nil, fmt.Errorf("invalid artifact path")
 	}
 	raw, e := c.get(ctx, v.ArtifactPath, pc.MaxArchiveBytes)

@@ -285,12 +285,12 @@ func (uc *IdentityUsecase) FinishLogin(ctx context.Context, challenge, code, ip 
 	return out, err
 }
 func (uc *IdentityUsecase) issueSession(ctx context.Context, u *ent.AdminUser, ip string, deadline time.Time) (*AdminLoginResult, error) {
-	access, expires, err := uc.signer.IssueUntil(authn.RealmAdmin, u.ID, u.Username, u.RoleID, u.AuthVersion, deadline)
+	refresh := randomToken()
+	sess, err := data.Client(ctx, uc.data).Session.Create().SetRealm(session.RealmAdmin).SetUserID(u.ID).SetAuthVersion(u.AuthVersion).SetRefreshTokenHash(hashToken(refresh)).SetIP(ip).SetExpiresAt(deadline.UTC()).Save(ctx)
 	if err != nil {
 		return nil, err
 	}
-	refresh := randomToken()
-	err = data.Client(ctx, uc.data).Session.Create().SetRealm(session.RealmAdmin).SetUserID(u.ID).SetAuthVersion(u.AuthVersion).SetRefreshTokenHash(hashToken(refresh)).SetIP(ip).SetExpiresAt(deadline.UTC()).Exec(ctx)
+	access, expires, err := uc.signer.IssueUntil(authn.RealmAdmin, u.ID, u.Username, u.RoleID, u.AuthVersion, deadline, sess.ID)
 	if err != nil {
 		return nil, err
 	}

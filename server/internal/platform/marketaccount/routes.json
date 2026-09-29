@@ -1,0 +1,934 @@
+[
+  {
+    "id": "capabilities",
+    "method": "GET",
+    "path": "/api/market/v1/storefront/capabilities",
+    "request": "Empty",
+    "response": "Capabilities",
+    "identities": [
+      "anonymous"
+    ],
+    "scope": "",
+    "rateClass": "catalog",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C3",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "products",
+    "method": "GET",
+    "path": "/api/market/v1/storefront/products",
+    "request": "ProductQuery",
+    "response": "ProductPage",
+    "identities": [
+      "anonymous"
+    ],
+    "scope": "",
+    "rateClass": "catalog",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C3",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "product",
+    "method": "GET",
+    "path": "/api/market/v1/storefront/products/{pluginId}",
+    "request": "Empty",
+    "response": "Product",
+    "identities": [
+      "anonymous"
+    ],
+    "scope": "",
+    "rateClass": "catalog",
+    "csrf": false,
+    "pathSchema": "PluginPath",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C3",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "bootstrap",
+    "method": "GET",
+    "path": "/api/market/v1/customer/bootstrap",
+    "request": "Empty",
+    "response": "Bootstrap",
+    "identities": [
+      "anonymous"
+    ],
+    "scope": "",
+    "rateClass": "preauth",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C1",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "register-code",
+    "method": "POST",
+    "path": "/api/market/v1/customer/register-code",
+    "request": "CodeRequest",
+    "response": "CodeAccepted",
+    "identities": [
+      "preauth"
+    ],
+    "scope": "",
+    "rateClass": "code",
+    "csrf": true,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C1",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "register",
+    "method": "POST",
+    "path": "/api/market/v1/customer/register",
+    "request": "Register",
+    "response": "Session",
+    "identities": [
+      "preauth"
+    ],
+    "scope": "",
+    "rateClass": "challenge",
+    "csrf": true,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C1",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "login",
+    "method": "POST",
+    "path": "/api/market/v1/customer/login",
+    "request": "Login",
+    "response": "Session",
+    "identities": [
+      "preauth"
+    ],
+    "scope": "",
+    "rateClass": "login",
+    "csrf": true,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C1",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "forgot",
+    "method": "POST",
+    "path": "/api/market/v1/customer/password/forgot",
+    "request": "CodeRequest",
+    "response": "CodeAccepted",
+    "identities": [
+      "preauth"
+    ],
+    "scope": "",
+    "rateClass": "code",
+    "csrf": true,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C1",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "reset",
+    "method": "POST",
+    "path": "/api/market/v1/customer/password/reset",
+    "request": "ResetPassword",
+    "response": "Accepted",
+    "identities": [
+      "preauth"
+    ],
+    "scope": "",
+    "rateClass": "challenge",
+    "csrf": true,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C1",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "verify-code",
+    "method": "POST",
+    "path": "/api/market/v1/customer/email/code",
+    "request": "CodeRequest",
+    "response": "CodeAccepted",
+    "identities": [
+      "customer_session"
+    ],
+    "scope": "",
+    "rateClass": "code",
+    "csrf": true,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C1",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "verify-email",
+    "method": "POST",
+    "path": "/api/market/v1/customer/email/verify",
+    "request": "VerifyEmail",
+    "response": "Session",
+    "identities": [
+      "customer_session"
+    ],
+    "scope": "",
+    "rateClass": "challenge",
+    "csrf": true,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C1",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "logout",
+    "method": "POST",
+    "path": "/api/market/v1/customer/logout",
+    "request": "Empty",
+    "response": "Accepted",
+    "identities": [
+      "customer_session"
+    ],
+    "scope": "",
+    "rateClass": "write",
+    "csrf": true,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C1",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "me",
+    "method": "GET",
+    "path": "/api/market/v1/customer/me",
+    "request": "Empty",
+    "response": "Profile",
+    "identities": [
+      "customer_session",
+      "account_view"
+    ],
+    "scope": "profile:read",
+    "rateClass": "read",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C2",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "orders",
+    "method": "GET",
+    "path": "/api/market/v1/customer/orders",
+    "request": "PageQuery",
+    "response": "OrderPage",
+    "identities": [
+      "customer_session",
+      "account_view"
+    ],
+    "scope": "orders:read",
+    "rateClass": "read",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C2",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "entitlements",
+    "method": "GET",
+    "path": "/api/market/v1/customer/entitlements",
+    "request": "PageQuery",
+    "response": "EntitlementPage",
+    "identities": [
+      "customer_session",
+      "account_view"
+    ],
+    "scope": "entitlements:read",
+    "rateClass": "read",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C2",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "sites",
+    "method": "GET",
+    "path": "/api/market/v1/customer/sites",
+    "request": "PageQuery",
+    "response": "SitePage",
+    "identities": [
+      "customer_session",
+      "account_view"
+    ],
+    "scope": "sites:read",
+    "rateClass": "read",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C2",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "view-start",
+    "method": "POST",
+    "path": "/api/market/v1/account-view/start",
+    "request": "ViewStart",
+    "response": "ViewPair",
+    "identities": [
+      "request_secret"
+    ],
+    "scope": "",
+    "rateClass": "view_start",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C2",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "view-poll",
+    "method": "POST",
+    "path": "/api/market/v1/account-view/poll",
+    "request": "ViewProof",
+    "response": "ViewStatus",
+    "identities": [
+      "device_secret"
+    ],
+    "scope": "",
+    "rateClass": "view_poll",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C2",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "view-confirm",
+    "method": "POST",
+    "path": "/api/market/v1/account-view/confirm",
+    "request": "ViewConfirm",
+    "response": "ViewCredential",
+    "identities": [
+      "device_secret"
+    ],
+    "scope": "",
+    "rateClass": "view_poll",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C2",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "view-revoke",
+    "method": "POST",
+    "path": "/api/market/v1/account-view/revoke",
+    "request": "Operation",
+    "response": "Accepted",
+    "identities": [
+      "account_view"
+    ],
+    "scope": "",
+    "rateClass": "view_poll",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C2",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "view-lookup",
+    "method": "POST",
+    "path": "/api/market/v1/account-view/lookup",
+    "request": "ViewLookup",
+    "response": "ViewTarget",
+    "identities": [
+      "customer_session"
+    ],
+    "scope": "",
+    "rateClass": "approval",
+    "csrf": true,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C2",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "view-approve",
+    "method": "POST",
+    "path": "/api/market/v1/account-view/approve",
+    "request": "ViewApproval",
+    "response": "Accepted",
+    "identities": [
+      "customer_session"
+    ],
+    "scope": "",
+    "rateClass": "approval",
+    "csrf": true,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C2",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "site-patch",
+    "method": "PATCH",
+    "path": "/api/market/v1/customer/sites/{siteId}",
+    "request": "SitePatch",
+    "response": "Site",
+    "identities": [
+      "customer_session"
+    ],
+    "scope": "",
+    "rateClass": "write",
+    "csrf": true,
+    "pathSchema": "SitePath",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C2",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "site-challenge",
+    "method": "POST",
+    "path": "/api/market/v1/customer/sites/{siteId}/verification",
+    "request": "SiteOperation",
+    "response": "Verification",
+    "identities": [
+      "customer_session"
+    ],
+    "scope": "",
+    "rateClass": "site_verify",
+    "csrf": true,
+    "pathSchema": "SitePath",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C2",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "site-check",
+    "method": "POST",
+    "path": "/api/market/v1/customer/sites/{siteId}/verification/check",
+    "request": "SiteOperation",
+    "response": "Site",
+    "identities": [
+      "customer_session"
+    ],
+    "scope": "",
+    "rateClass": "site_verify",
+    "csrf": true,
+    "pathSchema": "SitePath",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C2",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "site-disconnect",
+    "method": "POST",
+    "path": "/api/market/v1/customer/sites/{siteId}/disconnect",
+    "request": "SiteOperation",
+    "response": "Site",
+    "identities": [
+      "customer_session"
+    ],
+    "scope": "",
+    "rateClass": "write",
+    "csrf": true,
+    "pathSchema": "SitePath",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C2",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "challenge",
+    "method": "GET",
+    "path": "/.well-known/zcard-market-site",
+    "request": "Empty",
+    "response": "SiteChallenge",
+    "identities": [
+      "anonymous"
+    ],
+    "scope": "",
+    "rateClass": "challenge_read",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 4096,
+    "maxResponseBytes": 4096,
+    "phase": "C3",
+    "service": "instance",
+    "permission": ""
+  },
+  {
+    "id": "host-products",
+    "method": "GET",
+    "path": "/api/v1/admin/plugins/market/products",
+    "request": "ProductQuery",
+    "response": "ProductPage",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C3",
+    "service": "instance",
+    "permission": "plugin:manage"
+  },
+  {
+    "id": "host-product",
+    "method": "GET",
+    "path": "/api/v1/admin/plugins/market/products/{pluginId}",
+    "request": "Empty",
+    "response": "Product",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "pathSchema": "PluginPath",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C3",
+    "service": "instance",
+    "permission": "plugin:manage"
+  },
+  {
+    "id": "host-start",
+    "method": "POST",
+    "path": "/api/v1/admin/plugins/market/account-view/start",
+    "request": "Empty",
+    "response": "HostBegin",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C3",
+    "service": "instance",
+    "permission": "plugin:manage"
+  },
+  {
+    "id": "host-poll",
+    "method": "POST",
+    "path": "/api/v1/admin/plugins/market/account-view/poll",
+    "request": "HostContext",
+    "response": "ViewStatus",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C3",
+    "service": "instance",
+    "permission": "plugin:manage"
+  },
+  {
+    "id": "host-confirm",
+    "method": "POST",
+    "path": "/api/v1/admin/plugins/market/account-view/confirm",
+    "request": "HostConfirm",
+    "response": "Profile",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C3",
+    "service": "instance",
+    "permission": "plugin:manage"
+  },
+  {
+    "id": "host-logout",
+    "method": "POST",
+    "path": "/api/v1/admin/plugins/market/account-view/logout",
+    "request": "HostContext",
+    "response": "Accepted",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C3",
+    "service": "instance",
+    "permission": "plugin:manage"
+  },
+  {
+    "id": "host-me",
+    "method": "POST",
+    "path": "/api/v1/admin/plugins/market/account-view/me",
+    "request": "HostContext",
+    "response": "Profile",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C3",
+    "service": "instance",
+    "permission": "plugin:manage"
+  },
+  {
+    "id": "host-orders",
+    "method": "POST",
+    "path": "/api/v1/admin/plugins/market/account-view/orders",
+    "request": "HostPage",
+    "response": "OrderPage",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C3",
+    "service": "instance",
+    "permission": "plugin:manage"
+  },
+  {
+    "id": "host-entitlements",
+    "method": "POST",
+    "path": "/api/v1/admin/plugins/market/account-view/entitlements",
+    "request": "HostPage",
+    "response": "EntitlementPage",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C3",
+    "service": "instance",
+    "permission": "plugin:manage"
+  },
+  {
+    "id": "host-sites",
+    "method": "POST",
+    "path": "/api/v1/admin/plugins/market/account-view/sites",
+    "request": "HostPage",
+    "response": "SitePage",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C3",
+    "service": "instance",
+    "permission": "plugin:manage"
+  },
+  {
+    "id": "host-challenge",
+    "method": "PUT",
+    "path": "/api/v1/admin/plugins/market/site-challenge",
+    "request": "Verification",
+    "response": "Accepted",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C3",
+    "service": "instance",
+    "permission": "plugin:manage"
+  },
+  {
+    "id": "operator-customers",
+    "method": "GET",
+    "path": "/api/v1/admin/market/customers",
+    "request": "PageQuery",
+    "response": "CustomerPage",
+    "identities": [
+      "operator_admin"
+    ],
+    "scope": "",
+    "rateClass": "operator",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C1",
+    "service": "market",
+    "permission": "market:customer-read"
+  },
+  {
+    "id": "operator-customer",
+    "method": "GET",
+    "path": "/api/v1/admin/market/customers/{accountId}",
+    "request": "Empty",
+    "response": "CustomerRecord",
+    "identities": [
+      "operator_admin"
+    ],
+    "scope": "",
+    "rateClass": "operator",
+    "csrf": false,
+    "pathSchema": "CustomerPath",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C1",
+    "service": "market",
+    "permission": "market:customer-read"
+  },
+  {
+    "id": "operator-customer-status",
+    "method": "POST",
+    "path": "/api/v1/admin/market/customers/{accountId}/status",
+    "request": "CustomerStatus",
+    "response": "CustomerRecord",
+    "identities": [
+      "operator_admin"
+    ],
+    "scope": "",
+    "rateClass": "operator",
+    "csrf": false,
+    "pathSchema": "CustomerPath",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C1",
+    "service": "market",
+    "permission": "market:customer-write"
+  },
+  {
+    "id": "wallet",
+    "method": "GET",
+    "path": "/api/market/v1/customer/wallet",
+    "request": "Empty",
+    "response": "Wallet",
+    "identities": [
+      "customer_session",
+      "account_view"
+    ],
+    "scope": "orders:read",
+    "rateClass": "read",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C4",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "host-wallet",
+    "method": "POST",
+    "path": "/api/v1/admin/plugins/market/account-view/wallet",
+    "request": "HostContext",
+    "response": "Wallet",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "pathSchema": "",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C4",
+    "service": "instance",
+    "permission": "plugin:manage"
+  },
+  {
+    "id": "listings",
+    "method": "GET",
+    "path": "/api/market/v1/storefront/listings",
+    "request": "ListingQuery",
+    "response": "ListingPage",
+    "identities": [
+      "anonymous"
+    ],
+    "scope": "",
+    "rateClass": "catalog",
+    "csrf": false,
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C4",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "listing",
+    "method": "GET",
+    "path": "/api/market/v1/storefront/listings/{pluginId}",
+    "request": "Empty",
+    "response": "Listing",
+    "identities": [
+      "anonymous"
+    ],
+    "scope": "",
+    "rateClass": "catalog",
+    "csrf": false,
+    "pathSchema": "PluginPath",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C4",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "facets",
+    "method": "GET",
+    "path": "/api/market/v1/storefront/facets",
+    "request": "Empty",
+    "response": "Facets",
+    "identities": [
+      "anonymous"
+    ],
+    "scope": "",
+    "rateClass": "catalog",
+    "csrf": false,
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C4",
+    "service": "market",
+    "permission": ""
+  },
+  {
+    "id": "host-listings",
+    "method": "GET",
+    "path": "/api/v1/admin/plugins/market/listings",
+    "request": "ListingQuery",
+    "response": "ListingPage",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C4",
+    "service": "instance",
+    "permission": "plugin:manage"
+  },
+  {
+    "id": "host-listing",
+    "method": "GET",
+    "path": "/api/v1/admin/plugins/market/listings/{pluginId}",
+    "request": "Empty",
+    "response": "Listing",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "pathSchema": "PluginPath",
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C4",
+    "service": "instance",
+    "permission": "plugin:manage"
+  },
+  {
+    "id": "host-facets",
+    "method": "GET",
+    "path": "/api/v1/admin/plugins/market/facets",
+    "request": "Empty",
+    "response": "Facets",
+    "identities": [
+      "local_admin"
+    ],
+    "scope": "",
+    "rateClass": "host",
+    "csrf": false,
+    "maxRequestBytes": 16384,
+    "maxResponseBytes": 2097152,
+    "phase": "C4",
+    "service": "instance",
+    "permission": "plugin:manage"
+  }
+]

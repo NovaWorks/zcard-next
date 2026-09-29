@@ -251,6 +251,7 @@ func NewHTTPServer(
 	adminv1.RegisterAdminMediaServiceHTTPServer(srv, mediaAdminSvc)
 	adminv1.RegisterAdminLicenseServiceHTTPServer(srv, licenseAdminSvc)
 	pluginAdminSvc.RegisterMarket(srv)
+	pluginAdminSvc.RegisterMarketAccount(srv)
 	pluginAdminSvc.RegisterImport(srv)
 	adminv1.RegisterAdminPluginServiceHTTPServer(srv, pluginAdminSvc)
 	adminv1.RegisterAdminResellerServiceHTTPServer(srv, resellerAdminSvc)

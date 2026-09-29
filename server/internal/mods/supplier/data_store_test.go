@@ -6,11 +6,14 @@ package supplier
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
 
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/rechargeorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
@@ -21,7 +24,10 @@ import (
 
 func newStoreSupplierService(t *testing.T) (*StoreSupplierService, *SupplierRepoImpl) {
 	t.Helper()
-	repo, _ := newSupplierTestData(t)
+	repo, d := newSupplierTestData(t)
+	for _, id := range []uint64{1, 2, 3, 9, 99} {
+		d.Client.User.Create().SetID(id).SetUsername(fmt.Sprintf("test-owner-%d", id)).SaveX(context.Background())
+	}
 	return NewStoreSupplierService(repo, nil, nil), repo
 }
 
@@ -246,7 +252,10 @@ func TestStoreCancelApplication(t *testing.T) {
 }
 
 func TestStoreSupplierRecharge(t *testing.T) {
-	repo, _ := newSupplierTestData(t)
+	repo, d := newSupplierTestData(t)
+	for _, id := range []uint64{1, 2, 3, 9, 99} {
+		d.Client.User.Create().SetID(id).SetUsername(fmt.Sprintf("test-owner-%d", id)).SaveX(context.Background())
+	}
 	payer := &fakeRechargePayer{}
 	svc := NewStoreSupplierService(repo, nil, payer)
 
@@ -374,7 +383,10 @@ func TestIPWhitelistMatch(t *testing.T) {
 }
 
 func TestStoreIPWhitelist(t *testing.T) {
-	repo, _ := newSupplierTestData(t)
+	repo, d := newSupplierTestData(t)
+	for _, id := range []uint64{1, 2, 3, 9, 99} {
+		d.Client.User.Create().SetID(id).SetUsername(fmt.Sprintf("test-owner-%d", id)).SaveX(context.Background())
+	}
 	svc := NewStoreSupplierService(repo, nil, nil)
 
 	// 申请 + 审核通过
@@ -432,5 +444,59 @@ func TestStoreIPWhitelist(t *testing.T) {
 		Id: acc2.Id, Ips: []string{"1.2.3.4"},
 	}); err == nil {
 		t.Fatal("未审核账户应拒绝设置白名单")
+	}
+}
+
+func TestSupplierRechargeStatusUsesOwnedOrder(t *testing.T) {
+	svc, repo := newStoreSupplierService(t)
+	ctx := userCtx(1)
+	acc, err := repo.CreateOwnedAccount(ctx, 1, "shared", "shared-key", "secret", "", "zcard", "Shared")
+	if err != nil {
+		t.Fatal(err)
+	}
+	order, err := repo.CreateSupplyRechargeOrder(ctx, 1, acc.ID, 1000, 200)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &storefrontv1.GetSupplierRechargeRequest{Id: acc.ID, RechargeId: order.ID}
+	// Unrelated credits cannot settle this order even though the shared balance rises.
+	if err := repo.Recharge(ctx, acc.ID, 700, "unrelated-credit", "unrelated"); err != nil {
+		t.Fatal(err)
+	}
+	got, err := svc.GetSupplierRecharge(ctx, req)
+	if err != nil || got.Status != "pending" || got.CreditedCents != 0 {
+		t.Fatalf("pending: %+v %v", got, err)
+	}
+	if _, err := svc.GetSupplierRecharge(userCtx(2), req); err == nil {
+		t.Fatal("other owner accepted")
+	}
+	if _, err := svc.GetSupplierRecharge(context.Background(), req); err == nil {
+		t.Fatal("anonymous accepted")
+	}
+	other, err := repo.CreateOwnedAccount(ctx, 1, "other", "other-key", "secret", "", "zcard", "Other")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.GetSupplierRecharge(ctx, &storefrontv1.GetSupplierRechargeRequest{Id: other.ID, RechargeId: order.ID}); err == nil {
+		t.Fatal("other account accepted")
+	}
+	old, err := repo.CreateSupplyRechargeOrder(ctx, 2, acc.ID, 1000, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.GetSupplierRecharge(ctx, &storefrontv1.GetSupplierRechargeRequest{Id: acc.ID, RechargeId: old.ID}); err == nil {
+		t.Fatal("different payer accepted")
+	}
+	if err := data.Tx(ctx, repo.data, func(ctx context.Context) error {
+		if err := repo.Recharge(ctx, acc.ID, 1200, "recharge:900", "paid"); err != nil {
+			return err
+		}
+		return data.Client(ctx, repo.data).RechargeOrder.UpdateOneID(order.ID).SetStatus(rechargeorder.StatusSuccess).SetPaymentID(900).Exec(ctx)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got, err = svc.GetSupplierRecharge(ctx, req)
+	if err != nil || got.Status != "success" || got.CreditedCents != 1200 || got.PaymentId != 900 {
+		t.Fatalf("settled: %+v %v", got, err)
 	}
 }
