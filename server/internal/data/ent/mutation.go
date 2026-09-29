@@ -72499,6 +72499,8 @@ type RefundOrderMutation struct {
 	addamount              *int64
 	item_allocations       *[]map[string]int64
 	appenditem_allocations []map[string]int64
+	request_key            *string
+	request_hash           *string
 	shipping_amount        *int64
 	addshipping_amount     *int64
 	fee_amount             *int64
@@ -72848,6 +72850,104 @@ func (m *RefundOrderMutation) ResetItemAllocations() {
 	m.item_allocations = nil
 	m.appenditem_allocations = nil
 	delete(m.clearedFields, refundorder.FieldItemAllocations)
+}
+
+// SetRequestKey sets the "request_key" field.
+func (m *RefundOrderMutation) SetRequestKey(s string) {
+	m.request_key = &s
+}
+
+// RequestKey returns the value of the "request_key" field in the mutation.
+func (m *RefundOrderMutation) RequestKey() (r string, exists bool) {
+	v := m.request_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestKey returns the old "request_key" field's value of the RefundOrder entity.
+// If the RefundOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RefundOrderMutation) OldRequestKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestKey: %w", err)
+	}
+	return oldValue.RequestKey, nil
+}
+
+// ClearRequestKey clears the value of the "request_key" field.
+func (m *RefundOrderMutation) ClearRequestKey() {
+	m.request_key = nil
+	m.clearedFields[refundorder.FieldRequestKey] = struct{}{}
+}
+
+// RequestKeyCleared returns if the "request_key" field was cleared in this mutation.
+func (m *RefundOrderMutation) RequestKeyCleared() bool {
+	_, ok := m.clearedFields[refundorder.FieldRequestKey]
+	return ok
+}
+
+// ResetRequestKey resets all changes to the "request_key" field.
+func (m *RefundOrderMutation) ResetRequestKey() {
+	m.request_key = nil
+	delete(m.clearedFields, refundorder.FieldRequestKey)
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (m *RefundOrderMutation) SetRequestHash(s string) {
+	m.request_hash = &s
+}
+
+// RequestHash returns the value of the "request_hash" field in the mutation.
+func (m *RefundOrderMutation) RequestHash() (r string, exists bool) {
+	v := m.request_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestHash returns the old "request_hash" field's value of the RefundOrder entity.
+// If the RefundOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RefundOrderMutation) OldRequestHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestHash: %w", err)
+	}
+	return oldValue.RequestHash, nil
+}
+
+// ClearRequestHash clears the value of the "request_hash" field.
+func (m *RefundOrderMutation) ClearRequestHash() {
+	m.request_hash = nil
+	m.clearedFields[refundorder.FieldRequestHash] = struct{}{}
+}
+
+// RequestHashCleared returns if the "request_hash" field was cleared in this mutation.
+func (m *RefundOrderMutation) RequestHashCleared() bool {
+	_, ok := m.clearedFields[refundorder.FieldRequestHash]
+	return ok
+}
+
+// ResetRequestHash resets all changes to the "request_hash" field.
+func (m *RefundOrderMutation) ResetRequestHash() {
+	m.request_hash = nil
+	delete(m.clearedFields, refundorder.FieldRequestHash)
 }
 
 // SetShippingAmount sets the "shipping_amount" field.
@@ -73263,7 +73363,7 @@ func (m *RefundOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RefundOrderMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, refundorder.FieldCreatedAt)
 	}
@@ -73278,6 +73378,12 @@ func (m *RefundOrderMutation) Fields() []string {
 	}
 	if m.item_allocations != nil {
 		fields = append(fields, refundorder.FieldItemAllocations)
+	}
+	if m.request_key != nil {
+		fields = append(fields, refundorder.FieldRequestKey)
+	}
+	if m.request_hash != nil {
+		fields = append(fields, refundorder.FieldRequestHash)
 	}
 	if m.shipping_amount != nil {
 		fields = append(fields, refundorder.FieldShippingAmount)
@@ -73318,6 +73424,10 @@ func (m *RefundOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.Amount()
 	case refundorder.FieldItemAllocations:
 		return m.ItemAllocations()
+	case refundorder.FieldRequestKey:
+		return m.RequestKey()
+	case refundorder.FieldRequestHash:
+		return m.RequestHash()
 	case refundorder.FieldShippingAmount:
 		return m.ShippingAmount()
 	case refundorder.FieldFeeAmount:
@@ -73351,6 +73461,10 @@ func (m *RefundOrderMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldAmount(ctx)
 	case refundorder.FieldItemAllocations:
 		return m.OldItemAllocations(ctx)
+	case refundorder.FieldRequestKey:
+		return m.OldRequestKey(ctx)
+	case refundorder.FieldRequestHash:
+		return m.OldRequestHash(ctx)
 	case refundorder.FieldShippingAmount:
 		return m.OldShippingAmount(ctx)
 	case refundorder.FieldFeeAmount:
@@ -73408,6 +73522,20 @@ func (m *RefundOrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetItemAllocations(v)
+		return nil
+	case refundorder.FieldRequestKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestKey(v)
+		return nil
+	case refundorder.FieldRequestHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestHash(v)
 		return nil
 	case refundorder.FieldShippingAmount:
 		v, ok := value.(int64)
@@ -73542,6 +73670,12 @@ func (m *RefundOrderMutation) ClearedFields() []string {
 	if m.FieldCleared(refundorder.FieldItemAllocations) {
 		fields = append(fields, refundorder.FieldItemAllocations)
 	}
+	if m.FieldCleared(refundorder.FieldRequestKey) {
+		fields = append(fields, refundorder.FieldRequestKey)
+	}
+	if m.FieldCleared(refundorder.FieldRequestHash) {
+		fields = append(fields, refundorder.FieldRequestHash)
+	}
 	if m.FieldCleared(refundorder.FieldReason) {
 		fields = append(fields, refundorder.FieldReason)
 	}
@@ -73567,6 +73701,12 @@ func (m *RefundOrderMutation) ClearField(name string) error {
 	switch name {
 	case refundorder.FieldItemAllocations:
 		m.ClearItemAllocations()
+		return nil
+	case refundorder.FieldRequestKey:
+		m.ClearRequestKey()
+		return nil
+	case refundorder.FieldRequestHash:
+		m.ClearRequestHash()
 		return nil
 	case refundorder.FieldReason:
 		m.ClearReason()
@@ -73599,6 +73739,12 @@ func (m *RefundOrderMutation) ResetField(name string) error {
 		return nil
 	case refundorder.FieldItemAllocations:
 		m.ResetItemAllocations()
+		return nil
+	case refundorder.FieldRequestKey:
+		m.ResetRequestKey()
+		return nil
+	case refundorder.FieldRequestHash:
+		m.ResetRequestHash()
 		return nil
 	case refundorder.FieldShippingAmount:
 		m.ResetShippingAmount()

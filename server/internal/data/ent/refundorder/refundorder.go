@@ -25,6 +25,10 @@ const (
 	FieldAmount = "amount"
 	// FieldItemAllocations holds the string denoting the item_allocations field in the database.
 	FieldItemAllocations = "item_allocations"
+	// FieldRequestKey holds the string denoting the request_key field in the database.
+	FieldRequestKey = "request_key"
+	// FieldRequestHash holds the string denoting the request_hash field in the database.
+	FieldRequestHash = "request_hash"
 	// FieldShippingAmount holds the string denoting the shipping_amount field in the database.
 	FieldShippingAmount = "shipping_amount"
 	// FieldFeeAmount holds the string denoting the fee_amount field in the database.
@@ -60,6 +64,8 @@ var Columns = []string{
 	FieldOrderID,
 	FieldAmount,
 	FieldItemAllocations,
+	FieldRequestKey,
+	FieldRequestHash,
 	FieldShippingAmount,
 	FieldFeeAmount,
 	FieldChannel,
@@ -86,6 +92,10 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// RequestKeyValidator is a validator for the "request_key" field. It is called by the builders before save.
+	RequestKeyValidator func(string) error
+	// RequestHashValidator is a validator for the "request_hash" field. It is called by the builders before save.
+	RequestHashValidator func(string) error
 	// DefaultShippingAmount holds the default value on creation for the "shipping_amount" field.
 	DefaultShippingAmount int64
 	// DefaultFeeAmount holds the default value on creation for the "fee_amount" field.
@@ -172,6 +182,16 @@ func ByOrderID(opts ...sql.OrderTermOption) OrderOption {
 // ByAmount orders the results by the amount field.
 func ByAmount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAmount, opts...).ToFunc()
+}
+
+// ByRequestKey orders the results by the request_key field.
+func ByRequestKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestKey, opts...).ToFunc()
+}
+
+// ByRequestHash orders the results by the request_hash field.
+func ByRequestHash(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestHash, opts...).ToFunc()
 }
 
 // ByShippingAmount orders the results by the shipping_amount field.

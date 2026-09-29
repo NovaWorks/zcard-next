@@ -122,3 +122,57 @@ func TestPhysicalCanceledItemRejectsLateUpstreamDelivery(t *testing.T) {
 		t.Fatal("failed delivery did not roll back")
 	}
 }
+
+func TestReviewCanceledManualDelivery(t *testing.T) {
+	d, _, r := newFulfillData(t)
+	ctx := context.Background()
+	p := d.Client.Product.Create().SetName("Review").SetSlug("review").SetPrice(500).SaveX(ctx)
+	o := d.Client.Order.Create().SetOrderNo("REVIEW-CANCELED").SetStatus("fulfilling").SetCommerceVersion(1).SaveX(ctx)
+	it := d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(p.ID).SetQuantity(1).SetUnitPrice(500).SetAmount(500).SetGoodsType("virtual").SetFulfillmentType("manual").SetCanceledQuantity(1).SetFulfillmentStatus("refunded").SaveX(ctx)
+	d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(p.ID).SetQuantity(1).SetUnitPrice(500).SetAmount(500).SetGoodsType("physical").SetFulfillmentType("shipping").SetFulfillmentStatus("pending").SaveX(ctx)
+	err := r.ManualDeliver(ctx, o.OrderNo, "REVIEW-SECRET", "", "", 7, it.ID)
+	if err == nil {
+		t.Fatalf("canceled item accepted manual delivery: deliveries=%d cards=%d", d.Client.OrderDelivery.Query().CountX(ctx), d.Client.Card.Query().CountX(ctx))
+	}
+}
+
+func TestReviewNullSkuManualRelease(t *testing.T) {
+	d, cipher, r := newFulfillData(t)
+	ctx := context.Background()
+	p := d.Client.Product.Create().SetName("Review null").SetSlug("review-null").SetPrice(500).SaveX(ctx)
+	o := d.Client.Order.Create().SetOrderNo("REVIEW-NULL").SetStatus("fulfilling").SetCommerceVersion(1).SaveX(ctx)
+	it := d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(p.ID).SetQuantity(1).SetUnitPrice(500).SetAmount(500).SetGoodsType("virtual").SetFulfillmentType("manual").SaveX(ctx)
+	sealed, err := cipher.Seal("RESERVED", p.ID, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := d.Client.Card.Create().SetProductID(p.ID).SetContent(sealed).SetContentHash(cipher.ContentHash("RESERVED")).SetStatus("reserved").SetOrderID(o.ID).SaveX(ctx)
+	if err := r.ManualDeliver(ctx, o.OrderNo, "REPLACEMENT", "", "", 7, it.ID); err != nil {
+		t.Fatal(err)
+	}
+	current := d.Client.Card.GetX(ctx, c.ID)
+	if current.Status != "available" {
+		t.Fatalf("replaced null-SKU card remained %s in order %d", current.Status, current.OrderID)
+	}
+}
+
+func TestReviewTrackingCorrectionAfterFullRefund(t *testing.T) {
+	d, _, r := newFulfillData(t)
+	ctx := identity.WithClaims(context.Background(), &authn.Claims{Subject: 7})
+	s := NewAdminFulfillmentService(r, d)
+	o := d.Client.Order.Create().SetOrderNo("REFUNDED-SHIPMENT").SetCommerceVersion(1).SetStatus("refunded").SetShippingStatus("shipped").SaveX(ctx)
+	pkg := d.Client.Shipment.Create().SetOrderID(o.ID).SetCarrier("Express").SetTrackingNo("WRONG001").SetItems(map[string]int32{}).SetAddress(map[string]string{}).SetAdminID(7).SetRequestKey("tracking-review-key").SaveX(ctx)
+	_, err := s.UpdateShipping(ctx, &adminv1.UpdateShippingRequest{OrderNo: o.OrderNo, ShipmentId: pkg.ID, Carrier: "Express", TrackingNo: "RIGHT001", Reason: "更正已寄出包裹单号"})
+	if err != nil {
+		t.Fatalf("existing shipped parcel cannot correct tracking after refund: %v", err)
+	}
+	if d.Client.Shipment.GetX(ctx, pkg.ID).TrackingNo != "RIGHT001" || d.Client.Order.GetX(ctx, o.ID).Status != "refunded" {
+		t.Fatal("tracking correction changed the refund state or was not persisted")
+	}
+	if _, err := s.ShipOrder(ctx, &adminv1.ShipOrderRequest{OrderNo: o.OrderNo, Carrier: "Express", TrackingNo: "NEW001", ItemIds: []uint64{1}, RequestKey: "refunded-new-shipment"}); err == nil {
+		t.Fatal("refunded order accepted a new shipment")
+	}
+	if _, err := s.UpdateShipping(ctx, &adminv1.UpdateShippingRequest{OrderNo: o.OrderNo, Reason: "修改地址"}); err == nil {
+		t.Fatal("refunded order accepted an address change")
+	}
+}

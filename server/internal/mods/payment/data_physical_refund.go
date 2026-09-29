@@ -2,8 +2,10 @@ package payment
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -28,6 +30,16 @@ func (r *PaymentRepoImpl) RefundPhysical(ctx context.Context, oid, actor uint64,
 		return nil, refundInvalid("请填写有效的商品退款分摊并刷新订单金额")
 	}
 	noMoney := req.AmountCents == 0 && req.FeeCents == 0
+	if (noMoney && req.RequestKey == "") || (req.RequestKey != "" && (len(req.RequestKey) < 8 || len(req.RequestKey) > 100)) {
+		return nil, refundInvalid("请刷新页面后重试，取消数量必须携带有效请求标识")
+	}
+	var requestKey, requestHash string
+	if req.RequestKey != "" {
+		requestKey = fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%d:%s", oid, req.RequestKey))))
+		sort.Slice(allocations, func(i, j int) bool { return allocations[i]["item_id"] < allocations[j]["item_id"] })
+		raw, _ := json.Marshal([]any{allocations, req.AmountCents, req.FeeCents, req.Channel, req.Reason, req.ExternalConfirmed, req.ExternalReference, req.ExpectedRefundedCents, req.ExpectedRefundedFeeCents})
+		requestHash = fmt.Sprintf("%x", sha256.Sum256(raw))
+	}
 	externalReference := strings.TrimSpace(req.ExternalReference)
 	if noMoney {
 		externalReference = ""
@@ -44,6 +56,19 @@ func (r *PaymentRepoImpl) RefundPhysical(ctx context.Context, oid, actor uint64,
 		}
 		if o.CommerceVersion != 1 {
 			return refundInvalid("订单版本不支持商品退款")
+		}
+		if requestKey != "" {
+			previous, err := c.RefundOrder.Query().Where(refundorder.RequestKey(requestKey)).Only(ctx)
+			if err == nil {
+				if previous.OrderID != oid || previous.RequestHash != requestHash {
+					return refundInvalid("同一退款请求不能更改内容，请刷新核对后重新操作")
+				}
+				result = previous
+				return nil
+			}
+			if !ent.IsNotFound(err) {
+				return err
+			}
 		}
 		if req.Channel == "wallet" && o.UserID == 0 && !noMoney {
 			return refundInvalid("游客订单不能退至会员余额")
@@ -163,7 +188,11 @@ func (r *PaymentRepoImpl) RefundPhysical(ctx context.Context, oid, actor uint64,
 		if sum != req.AmountCents || (sum == 0 && req.FeeCents == 0 && canceled == 0) {
 			return refundInvalid("退款金额与商品分摊不一致，或没有退款/取消内容")
 		}
-		result, e = c.RefundOrder.Create().SetOrderID(oid).SetAmount(sum).SetShippingAmount(shippingSum).SetFeeAmount(req.FeeCents).SetItemAllocations(allocations).SetChannel(refundorder.Channel(req.Channel)).SetStatus(refundorder.StatusSucceeded).SetOperatorID(actor).SetReason(req.Reason).SetUpstreamRefundID(externalReference).Save(ctx)
+		create := c.RefundOrder.Create().SetOrderID(oid).SetAmount(sum).SetShippingAmount(shippingSum).SetFeeAmount(req.FeeCents).SetItemAllocations(allocations).SetChannel(refundorder.Channel(req.Channel)).SetStatus(refundorder.StatusSucceeded).SetOperatorID(actor).SetReason(req.Reason).SetUpstreamRefundID(externalReference)
+		if requestKey != "" {
+			create.SetRequestKey(requestKey).SetRequestHash(requestHash)
+		}
+		result, e = create.Save(ctx)
 		if e != nil {
 			return e
 		}

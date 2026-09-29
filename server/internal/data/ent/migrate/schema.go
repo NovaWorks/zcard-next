@@ -2039,6 +2039,8 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "amount", Type: field.TypeInt64},
 		{Name: "item_allocations", Type: field.TypeJSON, Nullable: true},
+		{Name: "request_key", Type: field.TypeString, Unique: true, Nullable: true, Size: 64},
+		{Name: "request_hash", Type: field.TypeString, Nullable: true, Size: 64},
 		{Name: "shipping_amount", Type: field.TypeInt64, Default: 0},
 		{Name: "fee_amount", Type: field.TypeInt64, Default: 0},
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"gateway", "wallet", "upstream"}},
@@ -2056,7 +2058,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "refund_orders_orders_refunds",
-				Columns:    []*schema.Column{RefundOrdersColumns[12]},
+				Columns:    []*schema.Column{RefundOrdersColumns[14]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2065,12 +2067,12 @@ var (
 			{
 				Name:    "refundorder_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{RefundOrdersColumns[12]},
+				Columns: []*schema.Column{RefundOrdersColumns[14]},
 			},
 			{
 				Name:    "refundorder_status",
 				Unique:  false,
-				Columns: []*schema.Column{RefundOrdersColumns[8]},
+				Columns: []*schema.Column{RefundOrdersColumns[10]},
 			},
 		},
 	}

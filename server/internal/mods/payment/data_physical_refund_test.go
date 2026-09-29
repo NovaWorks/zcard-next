@@ -53,15 +53,42 @@ func TestPhysicalGuestCancellationWithoutMoney(t *testing.T) {
 	p := d.Client.Product.Create().SetName("Gift").SetSlug("gift").SetPrice(0).SetGoodsType("physical").SaveX(ctx)
 	o := d.Client.Order.Create().SetOrderNo("GUEST-GIFT").SetCommerceVersion(1).SetStatus("paid").SetTotalAmount(0).SaveX(ctx)
 	it := d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(p.ID).SetQuantity(1).SetUnitPrice(0).SetAmount(0).SetGoodsType("physical").SetFulfillmentType("shipping").SaveX(ctx)
-	req := &adminv1.CreateRefundRequest{Channel: "gateway", ExpectedRefundedCents: refundPtr(0), ItemAllocationsJson: fmt.Sprintf(`[{"item_id":%d,"cancel_quantity":1}]`, it.ID)}
+	req := &adminv1.CreateRefundRequest{Channel: "gateway", RequestKey: "gift-cancel-request", ExpectedRefundedCents: refundPtr(0), ItemAllocationsJson: fmt.Sprintf(`[{"item_id":%d,"cancel_quantity":1}]`, it.ID)}
 	if _, e := r.RefundPhysical(ctx, o.ID, 7, req); e != nil {
 		t.Fatal(e)
 	}
 	if d.Client.Product.GetX(ctx, p.ID).PhysicalStock != 1 || d.Client.Order.GetX(ctx, o.ID).ShippingStatus != "canceled" {
 		t.Fatal("zero cancellation failed")
 	}
-	if _, e := r.RefundPhysical(ctx, o.ID, 7, req); e == nil {
-		t.Fatal("duplicate cancellation")
+	if _, e := r.RefundPhysical(ctx, o.ID, 7, req); e != nil {
+		t.Fatal("idempotent cancellation replay", e)
+	}
+	if d.Client.Product.GetX(ctx, p.ID).PhysicalStock != 1 {
+		t.Fatal("duplicate cancellation restored stock twice")
+	}
+}
+
+func TestPhysicalWalletRefundKeyedReplay(t *testing.T) {
+	ctx := context.Background()
+	d, r, _, _, _, _ := newCallbackEnv(t)
+	r.outbox = data.NewOutboxWriter(d)
+	p := d.Client.Product.Create().SetName("Parcel").SetSlug("wallet-retry").SetPrice(500).SetGoodsType("physical").SaveX(ctx)
+	o := d.Client.Order.Create().SetOrderNo("WALLET-KEYED-RETRY").SetUserID(1).SetCommerceVersion(1).SetStatus("paid").SetTotalAmount(500).SaveX(ctx)
+	it := d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(p.ID).SetQuantity(1).SetUnitPrice(500).SetAmount(500).SetPaidAmount(500).SetGoodsType("physical").SetFulfillmentType("shipping").SaveX(ctx)
+	req := &adminv1.CreateRefundRequest{Channel: "wallet", RequestKey: "wallet-refund-retry", AmountCents: 500, ExpectedRefundedCents: refundPtr(0), ItemAllocationsJson: fmt.Sprintf(`[{"item_id":%d,"amount_cents":500,"cancel_quantity":1}]`, it.ID)}
+	first, err := r.RefundPhysical(ctx, o.ID, 7, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	replayed, err := r.RefundPhysical(ctx, o.ID, 7, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.ID != replayed.ID || d.Client.RefundOrder.Query().CountX(ctx) != 1 || d.Client.WalletAccount.Query().OnlyX(ctx).Available != 500 || d.Client.Product.GetX(ctx, p.ID).PhysicalStock != 1 || d.Client.OutboxEvent.Query().CountX(ctx) != 1 {
+		t.Fatal("replayed refund duplicated wallet credit, inventory, receipt or event")
+	}
+	if d.Client.Order.GetX(ctx, o.ID).Status != "refunded" {
+		t.Fatal("full refund state lost on replay")
 	}
 }
 
@@ -191,4 +218,40 @@ func TestPhysicalRefundHistoryIsScopedAndDetailed(t *testing.T) {
 	if e != nil || len(rows) != 0 {
 		t.Fatal("refund history cursor duplicated receipt")
 	}
+}
+
+func TestReviewPartialCancelRetryWithoutMoney(t *testing.T) {
+	ctx := context.Background()
+	d, r, _, _, _, _ := newCallbackEnv(t)
+	r.outbox = data.NewOutboxWriter(d)
+	p := d.Client.Product.Create().SetName("Review").SetSlug("cancel-retry").SetGoodsType("physical").SetPrice(500).SetPhysicalStock(0).SaveX(ctx)
+	o := d.Client.Order.Create().SetOrderNo("CANCEL-RETRY").SetCommerceVersion(1).SetStatus("paid").SetTotalAmount(2000).SaveX(ctx)
+	it := d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(p.ID).SetQuantity(4).SetUnitPrice(500).SetAmount(2000).SetPaidAmount(2000).SetGoodsType("physical").SetFulfillmentType("shipping").SetFulfillmentStatus("pending").SaveX(ctx)
+	req := &adminv1.CreateRefundRequest{Channel: "gateway", RequestKey: "partial-cancel-request", ExpectedRefundedCents: refundPtr(0), ItemAllocationsJson: fmt.Sprintf(`[{"item_id":%d,"cancel_quantity":1}]`, it.ID)}
+	if _, err := r.RefundPhysical(ctx, o.ID, 7, req); err != nil {
+		t.Fatal(err)
+	}
+	_, err := r.RefundPhysical(ctx, o.ID, 7, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d.Client.OrderItem.GetX(ctx, it.ID).CanceledQuantity != 1 || d.Client.Product.GetX(ctx, p.ID).PhysicalStock != 1 || d.Client.RefundOrder.Query().CountX(ctx) != 1 {
+		t.Fatal("retry mutated stock or cancellation")
+	}
+	req.ItemAllocationsJson = fmt.Sprintf(`[{"item_id":%d,"cancel_quantity":2}]`, it.ID)
+	if _, err = r.RefundPhysical(ctx, o.ID, 7, req); err == nil {
+		t.Fatal("changed retry accepted")
+	}
+	req.RequestKey = ""
+	if _, err = r.RefundPhysical(ctx, o.ID, 7, req); err == nil {
+		t.Fatal("unkeyed cancellation accepted")
+	}
+	req.RequestKey = "second-cancel-request"
+	if _, err = r.RefundPhysical(ctx, o.ID, 7, req); err != nil {
+		t.Fatal("new cancellation rejected", err)
+	}
+	if d.Client.OrderItem.GetX(ctx, it.ID).CanceledQuantity != 3 || d.Client.Product.GetX(ctx, p.ID).PhysicalStock != 3 {
+		t.Fatal("new cancellation totals")
+	}
+
 }

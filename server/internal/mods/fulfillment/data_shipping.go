@@ -111,7 +111,9 @@ func (s *AdminFulfillmentService) UpdateShipping(ctx context.Context, req *admin
 		if req.Received {
 			return data.ReceivePhysicalShipment(ctx, s.data, req.OrderNo, req.ShipmentId, "admin", aid)
 		}
-		if e = data.LockPhysicalOrder(ctx, s.data, o); e != nil {
+		// A refund does not invalidate an existing parcel. Only corrections may
+		// operate on refunded orders; new shipments and address changes remain blocked.
+		if e = data.LockPhysicalOrder(ctx, s.data, o, req.ShipmentId > 0); e != nil {
 			return e
 		}
 		c := data.Client(ctx, s.data)

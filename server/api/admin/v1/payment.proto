@@ -210,6 +210,7 @@ message Payment {
 }
 
 message CreateRefundRequest {
+  string request_key = 11; // physical refund idempotency; required for cancellation without money
   string item_allocations_json = 8;
   bool external_confirmed = 9;
   string external_reference = 10;

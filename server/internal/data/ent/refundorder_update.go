@@ -89,6 +89,46 @@ func (_u *RefundOrderUpdate) ClearItemAllocations() *RefundOrderUpdate {
 	return _u
 }
 
+// SetRequestKey sets the "request_key" field.
+func (_u *RefundOrderUpdate) SetRequestKey(v string) *RefundOrderUpdate {
+	_u.mutation.SetRequestKey(v)
+	return _u
+}
+
+// SetNillableRequestKey sets the "request_key" field if the given value is not nil.
+func (_u *RefundOrderUpdate) SetNillableRequestKey(v *string) *RefundOrderUpdate {
+	if v != nil {
+		_u.SetRequestKey(*v)
+	}
+	return _u
+}
+
+// ClearRequestKey clears the value of the "request_key" field.
+func (_u *RefundOrderUpdate) ClearRequestKey() *RefundOrderUpdate {
+	_u.mutation.ClearRequestKey()
+	return _u
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (_u *RefundOrderUpdate) SetRequestHash(v string) *RefundOrderUpdate {
+	_u.mutation.SetRequestHash(v)
+	return _u
+}
+
+// SetNillableRequestHash sets the "request_hash" field if the given value is not nil.
+func (_u *RefundOrderUpdate) SetNillableRequestHash(v *string) *RefundOrderUpdate {
+	if v != nil {
+		_u.SetRequestHash(*v)
+	}
+	return _u
+}
+
+// ClearRequestHash clears the value of the "request_hash" field.
+func (_u *RefundOrderUpdate) ClearRequestHash() *RefundOrderUpdate {
+	_u.mutation.ClearRequestHash()
+	return _u
+}
+
 // SetShippingAmount sets the "shipping_amount" field.
 func (_u *RefundOrderUpdate) SetShippingAmount(v int64) *RefundOrderUpdate {
 	_u.mutation.ResetShippingAmount()
@@ -280,6 +320,16 @@ func (_u *RefundOrderUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *RefundOrderUpdate) check() error {
+	if v, ok := _u.mutation.RequestKey(); ok {
+		if err := refundorder.RequestKeyValidator(v); err != nil {
+			return &ValidationError{Name: "request_key", err: fmt.Errorf(`ent: validator failed for field "RefundOrder.request_key": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RequestHash(); ok {
+		if err := refundorder.RequestHashValidator(v); err != nil {
+			return &ValidationError{Name: "request_hash", err: fmt.Errorf(`ent: validator failed for field "RefundOrder.request_hash": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Channel(); ok {
 		if err := refundorder.ChannelValidator(v); err != nil {
 			return &ValidationError{Name: "channel", err: fmt.Errorf(`ent: validator failed for field "RefundOrder.channel": %w`, err)}
@@ -332,6 +382,18 @@ func (_u *RefundOrderUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if _u.mutation.ItemAllocationsCleared() {
 		_spec.ClearField(refundorder.FieldItemAllocations, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.RequestKey(); ok {
+		_spec.SetField(refundorder.FieldRequestKey, field.TypeString, value)
+	}
+	if _u.mutation.RequestKeyCleared() {
+		_spec.ClearField(refundorder.FieldRequestKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestHash(); ok {
+		_spec.SetField(refundorder.FieldRequestHash, field.TypeString, value)
+	}
+	if _u.mutation.RequestHashCleared() {
+		_spec.ClearField(refundorder.FieldRequestHash, field.TypeString)
 	}
 	if value, ok := _u.mutation.ShippingAmount(); ok {
 		_spec.SetField(refundorder.FieldShippingAmount, field.TypeInt64, value)
@@ -477,6 +539,46 @@ func (_u *RefundOrderUpdateOne) AppendItemAllocations(v []map[string]int64) *Ref
 // ClearItemAllocations clears the value of the "item_allocations" field.
 func (_u *RefundOrderUpdateOne) ClearItemAllocations() *RefundOrderUpdateOne {
 	_u.mutation.ClearItemAllocations()
+	return _u
+}
+
+// SetRequestKey sets the "request_key" field.
+func (_u *RefundOrderUpdateOne) SetRequestKey(v string) *RefundOrderUpdateOne {
+	_u.mutation.SetRequestKey(v)
+	return _u
+}
+
+// SetNillableRequestKey sets the "request_key" field if the given value is not nil.
+func (_u *RefundOrderUpdateOne) SetNillableRequestKey(v *string) *RefundOrderUpdateOne {
+	if v != nil {
+		_u.SetRequestKey(*v)
+	}
+	return _u
+}
+
+// ClearRequestKey clears the value of the "request_key" field.
+func (_u *RefundOrderUpdateOne) ClearRequestKey() *RefundOrderUpdateOne {
+	_u.mutation.ClearRequestKey()
+	return _u
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (_u *RefundOrderUpdateOne) SetRequestHash(v string) *RefundOrderUpdateOne {
+	_u.mutation.SetRequestHash(v)
+	return _u
+}
+
+// SetNillableRequestHash sets the "request_hash" field if the given value is not nil.
+func (_u *RefundOrderUpdateOne) SetNillableRequestHash(v *string) *RefundOrderUpdateOne {
+	if v != nil {
+		_u.SetRequestHash(*v)
+	}
+	return _u
+}
+
+// ClearRequestHash clears the value of the "request_hash" field.
+func (_u *RefundOrderUpdateOne) ClearRequestHash() *RefundOrderUpdateOne {
+	_u.mutation.ClearRequestHash()
 	return _u
 }
 
@@ -684,6 +786,16 @@ func (_u *RefundOrderUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *RefundOrderUpdateOne) check() error {
+	if v, ok := _u.mutation.RequestKey(); ok {
+		if err := refundorder.RequestKeyValidator(v); err != nil {
+			return &ValidationError{Name: "request_key", err: fmt.Errorf(`ent: validator failed for field "RefundOrder.request_key": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RequestHash(); ok {
+		if err := refundorder.RequestHashValidator(v); err != nil {
+			return &ValidationError{Name: "request_hash", err: fmt.Errorf(`ent: validator failed for field "RefundOrder.request_hash": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Channel(); ok {
 		if err := refundorder.ChannelValidator(v); err != nil {
 			return &ValidationError{Name: "channel", err: fmt.Errorf(`ent: validator failed for field "RefundOrder.channel": %w`, err)}
@@ -753,6 +865,18 @@ func (_u *RefundOrderUpdateOne) sqlSave(ctx context.Context) (_node *RefundOrder
 	}
 	if _u.mutation.ItemAllocationsCleared() {
 		_spec.ClearField(refundorder.FieldItemAllocations, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.RequestKey(); ok {
+		_spec.SetField(refundorder.FieldRequestKey, field.TypeString, value)
+	}
+	if _u.mutation.RequestKeyCleared() {
+		_spec.ClearField(refundorder.FieldRequestKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestHash(); ok {
+		_spec.SetField(refundorder.FieldRequestHash, field.TypeString, value)
+	}
+	if _u.mutation.RequestHashCleared() {
+		_spec.ClearField(refundorder.FieldRequestHash, field.TypeString)
 	}
 	if value, ok := _u.mutation.ShippingAmount(); ok {
 		_spec.SetField(refundorder.FieldShippingAmount, field.TypeInt64, value)

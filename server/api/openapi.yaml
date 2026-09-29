@@ -8801,6 +8801,8 @@ components:
                 - channel
             type: object
             properties:
+                requestKey:
+                    type: string
                 itemAllocationsJson:
                     type: string
                 externalConfirmed:

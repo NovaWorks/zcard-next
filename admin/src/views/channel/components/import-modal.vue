@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { newRequestId } from "../../../../../packages/request-id";
 // 上游商品导入弹窗（ D）：预览分类树 → 勾选商品 → 定价策略（四模式）→
 // 类目映射（上游分类 → 本地分类）→ 存为连接默认。已导入商品标注（重导 = 更新）。
 import { filterGroups, selectProducts, matchedRule, type CategoryRule } from "./import-selection";
@@ -375,7 +376,7 @@ async function submit() {
     if (pricing.mode === "percent") payload.markup_percent = pricing.markupPercent;
     if (pricing.mode === "fixed") payload.markup_amount_cents = yuanToFen(pricing.markupAmountYuan);
     const signature = JSON.stringify(payload);
-    if (signature !== submission.signature) submission = { signature, key: crypto.randomUUID() };
+    if (signature !== submission.signature) submission = { signature, key: newRequestId() };
     payload.request_key = submission.key;
     const { data, error } = await importSupplyProducts(props.connection.id, payload as any);
     if (error) {

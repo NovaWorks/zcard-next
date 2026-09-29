@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { newRequestId } from "../../../../../packages/request-id";
 import { ref, reactive, computed, onMounted, h } from "vue";
 import { NButton, NTag, NSpace, NPopconfirm } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
@@ -492,7 +493,7 @@ const showGrant = ref(false),
   grantKey = ref(""),
   userOptions = ref<{ label: string; value: number }[]>([]);
 function newKey() {
-  return crypto.randomUUID().replaceAll("-", "");
+  return newRequestId().replaceAll("-", "");
 }
 async function searchUsers(keyword = "") {
   const { data, error } = await fetchUsers({ keyword, page_size: 30 });

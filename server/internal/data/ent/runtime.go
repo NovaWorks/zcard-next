@@ -2573,16 +2573,24 @@ func init() {
 	refundorder.DefaultUpdatedAt = refundorderDescUpdatedAt.Default.(func() time.Time)
 	// refundorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	refundorder.UpdateDefaultUpdatedAt = refundorderDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// refundorderDescRequestKey is the schema descriptor for request_key field.
+	refundorderDescRequestKey := refundorderFields[4].Descriptor()
+	// refundorder.RequestKeyValidator is a validator for the "request_key" field. It is called by the builders before save.
+	refundorder.RequestKeyValidator = refundorderDescRequestKey.Validators[0].(func(string) error)
+	// refundorderDescRequestHash is the schema descriptor for request_hash field.
+	refundorderDescRequestHash := refundorderFields[5].Descriptor()
+	// refundorder.RequestHashValidator is a validator for the "request_hash" field. It is called by the builders before save.
+	refundorder.RequestHashValidator = refundorderDescRequestHash.Validators[0].(func(string) error)
 	// refundorderDescShippingAmount is the schema descriptor for shipping_amount field.
-	refundorderDescShippingAmount := refundorderFields[4].Descriptor()
+	refundorderDescShippingAmount := refundorderFields[6].Descriptor()
 	// refundorder.DefaultShippingAmount holds the default value on creation for the shipping_amount field.
 	refundorder.DefaultShippingAmount = refundorderDescShippingAmount.Default.(int64)
 	// refundorderDescFeeAmount is the schema descriptor for fee_amount field.
-	refundorderDescFeeAmount := refundorderFields[5].Descriptor()
+	refundorderDescFeeAmount := refundorderFields[7].Descriptor()
 	// refundorder.DefaultFeeAmount holds the default value on creation for the fee_amount field.
 	refundorder.DefaultFeeAmount = refundorderDescFeeAmount.Default.(int64)
 	// refundorderDescUpstreamRefundID is the schema descriptor for upstream_refund_id field.
-	refundorderDescUpstreamRefundID := refundorderFields[10].Descriptor()
+	refundorderDescUpstreamRefundID := refundorderFields[12].Descriptor()
 	// refundorder.UpstreamRefundIDValidator is a validator for the "upstream_refund_id" field. It is called by the builders before save.
 	refundorder.UpstreamRefundIDValidator = refundorderDescUpstreamRefundID.Validators[0].(func(string) error)
 	resellerbalanceaccountFields := schema.ResellerBalanceAccount{}.Fields()

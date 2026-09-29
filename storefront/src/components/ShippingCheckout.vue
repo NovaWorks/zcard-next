@@ -8,6 +8,7 @@ import {
   emptyAddress,
   type RegionData,
 } from "../../../packages/shipping";
+import { newRequestId } from "../../../packages/request-id";
 const dialog = ref<HTMLDialogElement>();
 const address = reactive(emptyAddress());
 const regions = ref<RegionData>({});
@@ -72,49 +73,58 @@ async function submit() {
   if (!body.value || busy.value) return;
   busy.value = true;
   error.value = "";
-  const input = { ...body.value, shipping_address: { ...address } };
-  if (!quote.value) {
-    const r = await quoteOrder(input);
+  try {
+    const input = { ...body.value, shipping_address: { ...address } };
+    if (!quote.value) {
+      const r = await quoteOrder(input);
+      busy.value = false;
+      if (r.error) {
+        error.value = r.error;
+        return;
+      }
+      quote.value = r.data!;
+      return;
+    }
+    const signature = JSON.stringify(input);
+    let storageKey = "";
+    let key = "";
+    try {
+      const bytes = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(signature),
+      );
+      storageKey =
+        "shipping-checkout:" +
+        Array.from(new Uint8Array(bytes))
+          .map((x) => x.toString(16).padStart(2, "0"))
+          .join("");
+      key = sessionStorage.getItem(storageKey) || newRequestId();
+      sessionStorage.setItem(storageKey, key);
+    } catch {
+      key = retrySignature === signature && retryKey.value ? retryKey.value : newRequestId();
+    }
+    retrySignature = signature;
+    retryKey.value = key;
+    const r = await createOrder({ ...input, quote_key: quote.value.quote_key }, key);
     busy.value = false;
     if (r.error) {
       error.value = r.error;
       return;
     }
-    quote.value = r.data!;
-    return;
+    if (storageKey)
+      try {
+        sessionStorage.removeItem(storageKey);
+      } catch {}
+    retryKey.value = "";
+    close(r.data);
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : "提交失败，请重试";
+  } finally {
+    busy.value = false;
   }
-  let storageKey = "";
-  let key = "";
-  try {
-    const bytes = await crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(JSON.stringify(input)),
-    );
-    storageKey =
-      "shipping-checkout:" +
-      Array.from(new Uint8Array(bytes))
-        .map((x) => x.toString(16).padStart(2, "0"))
-        .join("");
-    key = sessionStorage.getItem(storageKey) || crypto.randomUUID();
-    sessionStorage.setItem(storageKey, key);
-  } catch {
-    key = retryKey.value || crypto.randomUUID();
-  }
-  retryKey.value = key;
-  const r = await createOrder({ ...input, quote_key: quote.value.quote_key }, key);
-  busy.value = false;
-  if (r.error) {
-    error.value = r.error;
-    return;
-  }
-  if (storageKey)
-    try {
-      sessionStorage.removeItem(storageKey);
-    } catch {}
-  retryKey.value = "";
-  close(r.data);
 }
 const retryKey = ref("");
+let retrySignature = "";
 defineExpose({ open });
 </script>
 <template>

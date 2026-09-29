@@ -47,6 +47,7 @@ export function cancelOrder(orderNo: string, reason: string) {
 // ── 退款（payment 域，order:refund 超管专属）──
 
 export function createRefund(data: {
+  request_key?: string;
   item_allocations_json?: string;
   external_confirmed?: boolean;
   external_reference?: string;

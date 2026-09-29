@@ -1422,6 +1422,7 @@ func (x *Payment) GetDriverSnapshot() string {
 
 type CreateRefundRequest struct {
 	state                    protoimpl.MessageState `protogen:"open.v1"`
+	RequestKey               string                 `protobuf:"bytes,11,opt,name=request_key,json=requestKey,proto3" json:"request_key,omitempty"` // physical refund idempotency; required for cancellation without money
 	ItemAllocationsJson      string                 `protobuf:"bytes,8,opt,name=item_allocations_json,json=itemAllocationsJson,proto3" json:"item_allocations_json,omitempty"`
 	ExternalConfirmed        bool                   `protobuf:"varint,9,opt,name=external_confirmed,json=externalConfirmed,proto3" json:"external_confirmed,omitempty"`
 	ExternalReference        string                 `protobuf:"bytes,10,opt,name=external_reference,json=externalReference,proto3" json:"external_reference,omitempty"`
@@ -1464,6 +1465,13 @@ func (x *CreateRefundRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateRefundRequest.ProtoReflect.Descriptor instead.
 func (*CreateRefundRequest) Descriptor() ([]byte, []int) {
 	return file_admin_v1_payment_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *CreateRefundRequest) GetRequestKey() string {
+	if x != nil {
+		return x.RequestKey
+	}
+	return ""
 }
 
 func (x *CreateRefundRequest) GetItemAllocationsJson() string {
@@ -1940,8 +1948,10 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\rreview_reason\x18\f \x01(\tR\freviewReason\x12\x1d\n" +
 	"\n" +
 	"expires_at\x18\r \x01(\x03R\texpiresAt\x12'\n" +
-	"\x0fdriver_snapshot\x18\x0e \x01(\tR\x0edriverSnapshot\"\xfb\x03\n" +
-	"\x13CreateRefundRequest\x122\n" +
+	"\x0fdriver_snapshot\x18\x0e \x01(\tR\x0edriverSnapshot\"\x9c\x04\n" +
+	"\x13CreateRefundRequest\x12\x1f\n" +
+	"\vrequest_key\x18\v \x01(\tR\n" +
+	"requestKey\x122\n" +
 	"\x15item_allocations_json\x18\b \x01(\tR\x13itemAllocationsJson\x12-\n" +
 	"\x12external_confirmed\x18\t \x01(\bR\x11externalConfirmed\x12-\n" +
 	"\x12external_reference\x18\n" +

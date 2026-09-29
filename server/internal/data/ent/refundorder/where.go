@@ -75,6 +75,16 @@ func Amount(v int64) predicate.RefundOrder {
 	return predicate.RefundOrder(sql.FieldEQ(FieldAmount, v))
 }
 
+// RequestKey applies equality check predicate on the "request_key" field. It's identical to RequestKeyEQ.
+func RequestKey(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldEQ(FieldRequestKey, v))
+}
+
+// RequestHash applies equality check predicate on the "request_hash" field. It's identical to RequestHashEQ.
+func RequestHash(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldEQ(FieldRequestHash, v))
+}
+
 // ShippingAmount applies equality check predicate on the "shipping_amount" field. It's identical to ShippingAmountEQ.
 func ShippingAmount(v int64) predicate.RefundOrder {
 	return predicate.RefundOrder(sql.FieldEQ(FieldShippingAmount, v))
@@ -248,6 +258,156 @@ func ItemAllocationsIsNil() predicate.RefundOrder {
 // ItemAllocationsNotNil applies the NotNil predicate on the "item_allocations" field.
 func ItemAllocationsNotNil() predicate.RefundOrder {
 	return predicate.RefundOrder(sql.FieldNotNull(FieldItemAllocations))
+}
+
+// RequestKeyEQ applies the EQ predicate on the "request_key" field.
+func RequestKeyEQ(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldEQ(FieldRequestKey, v))
+}
+
+// RequestKeyNEQ applies the NEQ predicate on the "request_key" field.
+func RequestKeyNEQ(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldNEQ(FieldRequestKey, v))
+}
+
+// RequestKeyIn applies the In predicate on the "request_key" field.
+func RequestKeyIn(vs ...string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldIn(FieldRequestKey, vs...))
+}
+
+// RequestKeyNotIn applies the NotIn predicate on the "request_key" field.
+func RequestKeyNotIn(vs ...string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldNotIn(FieldRequestKey, vs...))
+}
+
+// RequestKeyGT applies the GT predicate on the "request_key" field.
+func RequestKeyGT(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldGT(FieldRequestKey, v))
+}
+
+// RequestKeyGTE applies the GTE predicate on the "request_key" field.
+func RequestKeyGTE(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldGTE(FieldRequestKey, v))
+}
+
+// RequestKeyLT applies the LT predicate on the "request_key" field.
+func RequestKeyLT(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldLT(FieldRequestKey, v))
+}
+
+// RequestKeyLTE applies the LTE predicate on the "request_key" field.
+func RequestKeyLTE(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldLTE(FieldRequestKey, v))
+}
+
+// RequestKeyContains applies the Contains predicate on the "request_key" field.
+func RequestKeyContains(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldContains(FieldRequestKey, v))
+}
+
+// RequestKeyHasPrefix applies the HasPrefix predicate on the "request_key" field.
+func RequestKeyHasPrefix(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldHasPrefix(FieldRequestKey, v))
+}
+
+// RequestKeyHasSuffix applies the HasSuffix predicate on the "request_key" field.
+func RequestKeyHasSuffix(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldHasSuffix(FieldRequestKey, v))
+}
+
+// RequestKeyIsNil applies the IsNil predicate on the "request_key" field.
+func RequestKeyIsNil() predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldIsNull(FieldRequestKey))
+}
+
+// RequestKeyNotNil applies the NotNil predicate on the "request_key" field.
+func RequestKeyNotNil() predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldNotNull(FieldRequestKey))
+}
+
+// RequestKeyEqualFold applies the EqualFold predicate on the "request_key" field.
+func RequestKeyEqualFold(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldEqualFold(FieldRequestKey, v))
+}
+
+// RequestKeyContainsFold applies the ContainsFold predicate on the "request_key" field.
+func RequestKeyContainsFold(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldContainsFold(FieldRequestKey, v))
+}
+
+// RequestHashEQ applies the EQ predicate on the "request_hash" field.
+func RequestHashEQ(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldEQ(FieldRequestHash, v))
+}
+
+// RequestHashNEQ applies the NEQ predicate on the "request_hash" field.
+func RequestHashNEQ(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldNEQ(FieldRequestHash, v))
+}
+
+// RequestHashIn applies the In predicate on the "request_hash" field.
+func RequestHashIn(vs ...string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldIn(FieldRequestHash, vs...))
+}
+
+// RequestHashNotIn applies the NotIn predicate on the "request_hash" field.
+func RequestHashNotIn(vs ...string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldNotIn(FieldRequestHash, vs...))
+}
+
+// RequestHashGT applies the GT predicate on the "request_hash" field.
+func RequestHashGT(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldGT(FieldRequestHash, v))
+}
+
+// RequestHashGTE applies the GTE predicate on the "request_hash" field.
+func RequestHashGTE(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldGTE(FieldRequestHash, v))
+}
+
+// RequestHashLT applies the LT predicate on the "request_hash" field.
+func RequestHashLT(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldLT(FieldRequestHash, v))
+}
+
+// RequestHashLTE applies the LTE predicate on the "request_hash" field.
+func RequestHashLTE(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldLTE(FieldRequestHash, v))
+}
+
+// RequestHashContains applies the Contains predicate on the "request_hash" field.
+func RequestHashContains(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldContains(FieldRequestHash, v))
+}
+
+// RequestHashHasPrefix applies the HasPrefix predicate on the "request_hash" field.
+func RequestHashHasPrefix(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldHasPrefix(FieldRequestHash, v))
+}
+
+// RequestHashHasSuffix applies the HasSuffix predicate on the "request_hash" field.
+func RequestHashHasSuffix(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldHasSuffix(FieldRequestHash, v))
+}
+
+// RequestHashIsNil applies the IsNil predicate on the "request_hash" field.
+func RequestHashIsNil() predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldIsNull(FieldRequestHash))
+}
+
+// RequestHashNotNil applies the NotNil predicate on the "request_hash" field.
+func RequestHashNotNil() predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldNotNull(FieldRequestHash))
+}
+
+// RequestHashEqualFold applies the EqualFold predicate on the "request_hash" field.
+func RequestHashEqualFold(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldEqualFold(FieldRequestHash, v))
+}
+
+// RequestHashContainsFold applies the ContainsFold predicate on the "request_hash" field.
+func RequestHashContainsFold(v string) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldContainsFold(FieldRequestHash, v))
 }
 
 // ShippingAmountEQ applies the EQ predicate on the "shipping_amount" field.

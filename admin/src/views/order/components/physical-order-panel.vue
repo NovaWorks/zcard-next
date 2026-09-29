@@ -24,13 +24,14 @@ import {
   regionOptions,
   type RegionData,
 } from "../../../../../packages/shipping";
+import { newRequestId } from "../../../../../packages/request-id";
 const props = defineProps<{ order: any }>();
 const emit = defineEmits<{ refresh: [] }>();
 const busy = ref(false);
 const selected = ref<number[]>([]);
 const carrier = ref("");
 const tracking = ref("");
-let shipKey = crypto.randomUUID();
+let shipKey = "";
 const packages = computed(() => shipments(props.order.shipments_json));
 const editable = computed(() =>
   [
@@ -51,6 +52,7 @@ const pending = computed(() =>
 );
 const refundRows = ref<any[]>([]);
 const showRefund = ref(false);
+let refundKey = "";
 const refundHistory = ref<any[]>([]);
 const historyLoading = ref(false);
 const historyError = ref("");
@@ -167,20 +169,24 @@ async function act(path: string, body: any) {
   }
 }
 async function ship() {
-  if (
-    await act("ship", {
-      item_ids: selected.value,
-      carrier: carrier.value,
-      tracking_no: tracking.value,
-      request_key: shipKey,
-    })
-  ) {
-    shipKey = crypto.randomUUID();
-    carrier.value = "";
-    tracking.value = "";
-  }
+  try {
+    shipKey ||= newRequestId();
+    if (
+      await act("ship", {
+        item_ids: selected.value,
+        carrier: carrier.value,
+        tracking_no: tracking.value,
+        request_key: shipKey,
+      })
+    ) {
+      shipKey = "";
+      carrier.value = "";
+      tracking.value = "";
+    }
+  } catch (error) { window.$message?.error(error instanceof Error ? error.message : "发货失败，请重试"); }
 }
 function startRefund() {
+  refundKey = "";
   refundRows.value = (props.order.items || []).map((it: any) => ({
     ...it,
     amount: 0,
@@ -223,7 +229,9 @@ async function refund() {
   if (busy.value) return;
   busy.value = true;
   try {
+    refundKey ||= newRequestId();
     const r = await createRefund({
+      request_key: refundKey,
       order_no: props.order.order_no,
       amount_cents: refundTotal.value,
       fee_cents: yuanToFen(refundFee.value || 0),
@@ -249,6 +257,8 @@ async function refund() {
       window.$message?.success("退款及取消记录已保存");
       emit("refresh");
     }
+  } catch (error) {
+    window.$message?.error(error instanceof Error ? error.message : "退款请求失败，请重试");
   } finally {
     busy.value = false;
   }
@@ -261,23 +271,26 @@ function editPackage(p: any) {
 const returnItem = ref<any>();
 const returnQty = ref(1);
 const returnReason = ref("");
-let returnKey = crypto.randomUUID();
+let returnKey = "";
 function startReturn(it: any) {
   returnItem.value = it;
   returnQty.value = 1;
   returnReason.value = "";
-  returnKey = crypto.randomUUID();
+  returnKey = "";
 }
 async function restock() {
-  if (
-    await act("restock", {
-      item_id: returnItem.value.id,
-      quantity: returnQty.value,
-      reason: returnReason.value,
-      request_key: returnKey,
-    })
-  )
-    returnItem.value = null;
+  try {
+    returnKey ||= newRequestId();
+    if (
+      await act("restock", {
+        item_id: returnItem.value.id,
+        quantity: returnQty.value,
+        reason: returnReason.value,
+        request_key: returnKey,
+      })
+    )
+      returnItem.value = null;
+  } catch (error) { window.$message?.error(error instanceof Error ? error.message : "入库失败，请重试"); }
 }
 </script>
 <template>

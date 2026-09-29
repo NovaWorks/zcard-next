@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { newRequestId } from "../../../packages/request-id";
 import { ref, computed, watch, onMounted, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { authState, refreshAuth } from "@/auth";
@@ -128,7 +129,7 @@ async function draw() {
   const id = activity.value.id;
   const currentName = keyName();
   try {
-    const key = pendingKey.value || crypto.randomUUID().replace(/-/g, "");
+    const key = pendingKey.value || newRequestId().replace(/-/g, "");
     savePending(key);
     const r = await drawLottery(id, key);
     if (r.error || !r.data) {

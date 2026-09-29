@@ -63,6 +63,9 @@ func (r *DeliveryRepoImpl) ManualDeliver(ctx context.Context, orderNo, content, 
 		if target == nil {
 			return fmt.Errorf("请选择本订单中需要补发的商品")
 		}
+		if target.CanceledQuantity > 0 || target.FulfillmentStatus == "refunded" {
+			return fmt.Errorf("该商品已取消或退款，不能补发")
+		}
 
 		if target.FulfillmentType == orderitem.FulfillmentTypeManual && target.AssignedAdminID != 0 && target.AssignedAdminID != adminID {
 			return fmt.Errorf("该商品已由其他管理员领取")
@@ -132,7 +135,11 @@ func (r *DeliveryRepoImpl) ManualDeliver(ctx context.Context, orderNo, content, 
 			}
 		}
 		// Release local reserved cards replaced by manual delivery, not unrelated items.
-		if _, err := client.Card.Update().Where(card.OrderID(o.ID), card.ProductID(target.ProductID), card.SkuID(target.SkuID), card.StatusEQ(card.StatusReserved)).SetStatus(card.StatusAvailable).ClearOrderID().ClearLockedAt().Save(ctx); err != nil {
+		skuFilter := card.SkuID(target.SkuID)
+		if target.SkuID == 0 {
+			skuFilter = card.Or(card.SkuID(0), card.SkuIDIsNil())
+		}
+		if _, err := client.Card.Update().Where(card.OrderID(o.ID), card.ProductID(target.ProductID), skuFilter, card.StatusEQ(card.StatusReserved)).SetStatus(card.StatusAvailable).ClearOrderID().ClearLockedAt().Save(ctx); err != nil {
 			return err
 		}
 		if _, err := client.RefundOrder.Update().Where(refundorder.OrderID(o.ID), refundorder.StatusEQ(refundorder.StatusCreated), refundorder.ChannelEQ(refundorder.ChannelUpstream)).SetStatus(refundorder.StatusFailed).SetReason("旧自动退款未执行，管理员已选择人工补发").Save(ctx); err != nil {
