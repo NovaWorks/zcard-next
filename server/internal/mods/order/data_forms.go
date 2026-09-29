@@ -66,6 +66,20 @@ func (uc *OrderUsecase) prepareServices(ctx context.Context, in CreateOrderInput
 			}
 		}
 		v := serviceItem{mode: data.FulfillmentMode(p, sku), name: p.Name}
+		if v.mode == "shipping" {
+			if p.UpstreamSourceID != 0 {
+				return nil, fmt.Errorf("实体商品不支持上游代发")
+			}
+			if sku == nil {
+				n, e := c.ProductSku.Query().Where(productsku.ProductID(p.ID)).Count(ctx)
+				if e != nil {
+					return nil, e
+				}
+				if n > 0 {
+					return nil, fmt.Errorf("order.SKU_INVALID: 请选择实体规格")
+				}
+			}
+		}
 		if v.mode == "reuse" {
 			if it.Quantity != 1 {
 				return nil, fmt.Errorf("重复发货规格每单限购一份")

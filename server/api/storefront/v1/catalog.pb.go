@@ -416,14 +416,19 @@ func (x *FlashOffer) GetPerUserLimit() int32 {
 }
 
 type Product struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	FulfillmentMode string                 `protobuf:"bytes,21,opt,name=fulfillment_mode,json=fulfillmentMode,proto3" json:"fulfillment_mode,omitempty"`
-	ManualStock     int64                  `protobuf:"varint,22,opt,name=manual_stock,json=manualStock,proto3" json:"manual_stock,omitempty"`
-	Id              uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Slug            string                 `protobuf:"bytes,3,opt,name=slug,proto3" json:"slug,omitempty"`
-	Description     string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"` // 已 sanitize 的 Markdown/HTML
-	Cover           string                 `protobuf:"bytes,5,opt,name=cover,proto3" json:"cover,omitempty"`
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	GoodsType         string                 `protobuf:"bytes,50,opt,name=goods_type,json=goodsType,proto3" json:"goods_type,omitempty"`
+	ShippingMode      string                 `protobuf:"bytes,51,opt,name=shipping_mode,json=shippingMode,proto3" json:"shipping_mode,omitempty"`
+	ShippingFeeCents  int64                  `protobuf:"varint,52,opt,name=shipping_fee_cents,json=shippingFeeCents,proto3" json:"shipping_fee_cents,omitempty"`
+	ShippingCountries []string               `protobuf:"bytes,53,rep,name=shipping_countries,json=shippingCountries,proto3" json:"shipping_countries,omitempty"`
+	PhysicalStock     int64                  `protobuf:"varint,54,opt,name=physical_stock,json=physicalStock,proto3" json:"physical_stock,omitempty"`
+	FulfillmentMode   string                 `protobuf:"bytes,21,opt,name=fulfillment_mode,json=fulfillmentMode,proto3" json:"fulfillment_mode,omitempty"`
+	ManualStock       int64                  `protobuf:"varint,22,opt,name=manual_stock,json=manualStock,proto3" json:"manual_stock,omitempty"`
+	Id                uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name              string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Slug              string                 `protobuf:"bytes,3,opt,name=slug,proto3" json:"slug,omitempty"`
+	Description       string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"` // 已 sanitize 的 Markdown/HTML
+	Cover             string                 `protobuf:"bytes,5,opt,name=cover,proto3" json:"cover,omitempty"`
 	// 售价（分，基础货币）
 	PriceCents int64 `protobuf:"varint,6,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
 	// 库存类型 card/url/code
@@ -483,6 +488,41 @@ func (x *Product) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Product.ProtoReflect.Descriptor instead.
 func (*Product) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Product) GetGoodsType() string {
+	if x != nil {
+		return x.GoodsType
+	}
+	return ""
+}
+
+func (x *Product) GetShippingMode() string {
+	if x != nil {
+		return x.ShippingMode
+	}
+	return ""
+}
+
+func (x *Product) GetShippingFeeCents() int64 {
+	if x != nil {
+		return x.ShippingFeeCents
+	}
+	return 0
+}
+
+func (x *Product) GetShippingCountries() []string {
+	if x != nil {
+		return x.ShippingCountries
+	}
+	return nil
+}
+
+func (x *Product) GetPhysicalStock() int64 {
+	if x != nil {
+		return x.PhysicalStock
+	}
+	return 0
 }
 
 func (x *Product) GetFulfillmentMode() string {
@@ -969,8 +1009,14 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"priceCents\x12\x15\n" +
 	"\x06end_at\x18\x02 \x01(\x03R\x05endAt\x12\x1c\n" +
 	"\tremaining\x18\x03 \x01(\x05R\tremaining\x12$\n" +
-	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\x98\a\n" +
-	"\aProduct\x12)\n" +
+	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\xe0\b\n" +
+	"\aProduct\x12\x1d\n" +
+	"\n" +
+	"goods_type\x182 \x01(\tR\tgoodsType\x12#\n" +
+	"\rshipping_mode\x183 \x01(\tR\fshippingMode\x12,\n" +
+	"\x12shipping_fee_cents\x184 \x01(\x03R\x10shippingFeeCents\x12-\n" +
+	"\x12shipping_countries\x185 \x03(\tR\x11shippingCountries\x12%\n" +
+	"\x0ephysical_stock\x186 \x01(\x03R\rphysicalStock\x12)\n" +
 	"\x10fulfillment_mode\x18\x15 \x01(\tR\x0ffulfillmentMode\x12!\n" +
 	"\fmanual_stock\x18\x16 \x01(\x03R\vmanualStock\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +

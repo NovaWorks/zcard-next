@@ -23,6 +23,10 @@ const (
 	FieldOrderID = "order_id"
 	// FieldAmount holds the string denoting the amount field in the database.
 	FieldAmount = "amount"
+	// FieldItemAllocations holds the string denoting the item_allocations field in the database.
+	FieldItemAllocations = "item_allocations"
+	// FieldShippingAmount holds the string denoting the shipping_amount field in the database.
+	FieldShippingAmount = "shipping_amount"
 	// FieldFeeAmount holds the string denoting the fee_amount field in the database.
 	FieldFeeAmount = "fee_amount"
 	// FieldChannel holds the string denoting the channel field in the database.
@@ -55,6 +59,8 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldOrderID,
 	FieldAmount,
+	FieldItemAllocations,
+	FieldShippingAmount,
 	FieldFeeAmount,
 	FieldChannel,
 	FieldStatus,
@@ -80,6 +86,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultShippingAmount holds the default value on creation for the "shipping_amount" field.
+	DefaultShippingAmount int64
 	// DefaultFeeAmount holds the default value on creation for the "fee_amount" field.
 	DefaultFeeAmount int64
 	// UpstreamRefundIDValidator is a validator for the "upstream_refund_id" field. It is called by the builders before save.
@@ -164,6 +172,11 @@ func ByOrderID(opts ...sql.OrderTermOption) OrderOption {
 // ByAmount orders the results by the amount field.
 func ByAmount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAmount, opts...).ToFunc()
+}
+
+// ByShippingAmount orders the results by the shipping_amount field.
+func ByShippingAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldShippingAmount, opts...).ToFunc()
 }
 
 // ByFeeAmount orders the results by the fee_amount field.

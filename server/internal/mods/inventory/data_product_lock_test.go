@@ -20,3 +20,17 @@ func TestLockedProductBlocksRestockButAllowsOrderReservation(t *testing.T) {
 		t.Fatal("lock blocked order reservation", e)
 	}
 }
+
+func TestPhysicalProductCannotImportCards(t *testing.T) {
+	r, d := newTestRepo(t)
+	ctx := context.Background()
+	id := seedCards(t, d, 1)
+	d.Client.Product.UpdateOneID(id).SetGoodsType("physical").ExecX(ctx)
+	before := d.Client.Card.Query().CountX(ctx)
+	if _, e := r.ImportConfirm(ctx, ImportInput{ProductID: id, Lines: []string{"must-not-import"}}); e == nil {
+		t.Fatal("physical cards imported")
+	}
+	if d.Client.Card.Query().CountX(ctx) != before || d.Client.CardImport.Query().CountX(ctx) != 0 {
+		t.Fatal("rejected import mutated inventory")
+	}
+}

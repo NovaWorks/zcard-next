@@ -24,19 +24,20 @@ const (
 )
 
 type ListOrdersRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	Cursor        uint64                 `protobuf:"varint,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
-	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
-	Keyword       string                 `protobuf:"bytes,4,opt,name=keyword,proto3" json:"keyword,omitempty"` // 订单号或联系方式（包含匹配）。
-	StartTime     int64                  `protobuf:"varint,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	EndTime       int64                  `protobuf:"varint,6,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
-	TimeField     string                 `protobuf:"bytes,7,opt,name=time_field,json=timeField,proto3" json:"time_field,omitempty"` // created/paid
-	ChannelId     uint64                 `protobuf:"varint,8,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
-	ChannelCode   string                 `protobuf:"bytes,9,opt,name=channel_code,json=channelCode,proto3" json:"channel_code,omitempty"` // 历史无 channel_id 流水
-	ProductId     uint64                 `protobuf:"varint,10,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ShippingStatus string                 `protobuf:"bytes,20,opt,name=shipping_status,json=shippingStatus,proto3" json:"shipping_status,omitempty"`
+	Status         string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	Cursor         uint64                 `protobuf:"varint,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	Limit          int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	Keyword        string                 `protobuf:"bytes,4,opt,name=keyword,proto3" json:"keyword,omitempty"` // 订单号或联系方式（包含匹配）。
+	StartTime      int64                  `protobuf:"varint,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	EndTime        int64                  `protobuf:"varint,6,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	TimeField      string                 `protobuf:"bytes,7,opt,name=time_field,json=timeField,proto3" json:"time_field,omitempty"` // created/paid
+	ChannelId      uint64                 `protobuf:"varint,8,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	ChannelCode    string                 `protobuf:"bytes,9,opt,name=channel_code,json=channelCode,proto3" json:"channel_code,omitempty"` // 历史无 channel_id 流水
+	ProductId      uint64                 `protobuf:"varint,10,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ListOrdersRequest) Reset() {
@@ -67,6 +68,13 @@ func (x *ListOrdersRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ListOrdersRequest.ProtoReflect.Descriptor instead.
 func (*ListOrdersRequest) Descriptor() ([]byte, []int) {
 	return file_admin_v1_order_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ListOrdersRequest) GetShippingStatus() string {
+	if x != nil {
+		return x.ShippingStatus
+	}
+	return ""
 }
 
 func (x *ListOrdersRequest) GetStatus() string {
@@ -238,6 +246,11 @@ func (x *GetAdminOrderRequest) GetOrderNo() string {
 // AdminOrder 管理面订单（含成本；StripCostPrice 由 service 判权限）。
 type AdminOrder struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
+	ShippingStatus   string                 `protobuf:"bytes,40,opt,name=shipping_status,json=shippingStatus,proto3" json:"shipping_status,omitempty"`
+	ShippingCents    int64                  `protobuf:"varint,41,opt,name=shipping_cents,json=shippingCents,proto3" json:"shipping_cents,omitempty"`
+	ShippingAddress  map[string]string      `protobuf:"bytes,42,rep,name=shipping_address,json=shippingAddress,proto3" json:"shipping_address,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ShipmentsJson    string                 `protobuf:"bytes,43,opt,name=shipments_json,json=shipmentsJson,proto3" json:"shipments_json,omitempty"`
+	CommerceVersion  int32                  `protobuf:"varint,44,opt,name=commerce_version,json=commerceVersion,proto3" json:"commerce_version,omitempty"`
 	PaidTotalCents   int64                  `protobuf:"varint,21,opt,name=paid_total_cents,json=paidTotalCents,proto3" json:"paid_total_cents,omitempty"`
 	PaidFeeCents     int64                  `protobuf:"varint,22,opt,name=paid_fee_cents,json=paidFeeCents,proto3" json:"paid_fee_cents,omitempty"`
 	RefundedFeeCents int64                  `protobuf:"varint,23,opt,name=refunded_fee_cents,json=refundedFeeCents,proto3" json:"refunded_fee_cents,omitempty"`
@@ -293,6 +306,41 @@ func (x *AdminOrder) ProtoReflect() protoreflect.Message {
 // Deprecated: Use AdminOrder.ProtoReflect.Descriptor instead.
 func (*AdminOrder) Descriptor() ([]byte, []int) {
 	return file_admin_v1_order_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AdminOrder) GetShippingStatus() string {
+	if x != nil {
+		return x.ShippingStatus
+	}
+	return ""
+}
+
+func (x *AdminOrder) GetShippingCents() int64 {
+	if x != nil {
+		return x.ShippingCents
+	}
+	return 0
+}
+
+func (x *AdminOrder) GetShippingAddress() map[string]string {
+	if x != nil {
+		return x.ShippingAddress
+	}
+	return nil
+}
+
+func (x *AdminOrder) GetShipmentsJson() string {
+	if x != nil {
+		return x.ShipmentsJson
+	}
+	return ""
+}
+
+func (x *AdminOrder) GetCommerceVersion() int32 {
+	if x != nil {
+		return x.CommerceVersion
+	}
+	return 0
 }
 
 func (x *AdminOrder) GetPaidTotalCents() int64 {
@@ -457,28 +505,37 @@ func (x *AdminOrder) GetExpiryReason() string {
 }
 
 type AdminOrderItem struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	FormAnswersJson     string                 `protobuf:"bytes,18,opt,name=form_answers_json,json=formAnswersJson,proto3" json:"form_answers_json,omitempty"`
-	AssignedAdminId     uint64                 `protobuf:"varint,19,opt,name=assigned_admin_id,json=assignedAdminId,proto3" json:"assigned_admin_id,omitempty"`
-	Id                  uint64                 `protobuf:"varint,17,opt,name=id,proto3" json:"id,omitempty"` // 订单商品项 ID，人工补发使用
-	ProductId           uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	SkuId               uint64                 `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
-	Quantity            int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	UnitPriceCents      int64                  `protobuf:"varint,4,opt,name=unit_price_cents,json=unitPriceCents,proto3" json:"unit_price_cents,omitempty"`
-	AmountCents         int64                  `protobuf:"varint,5,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
-	FulfillmentType     string                 `protobuf:"bytes,6,opt,name=fulfillment_type,json=fulfillmentType,proto3" json:"fulfillment_type,omitempty"`
-	FulfillmentStatus   string                 `protobuf:"bytes,7,opt,name=fulfillment_status,json=fulfillmentStatus,proto3" json:"fulfillment_status,omitempty"`
-	Name                string                 `protobuf:"bytes,8,opt,name=name,proto3" json:"name,omitempty"`                                                             // 商品名（联查当前）
-	SkuName             string                 `protobuf:"bytes,9,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`                                        // SKU 名快照
-	CostCents           int64                  `protobuf:"varint,10,opt,name=cost_cents,json=costCents,proto3" json:"cost_cents,omitempty"`                                // 成本快照（分）
-	IsSelf              bool                   `protobuf:"varint,11,opt,name=is_self,json=isSelf,proto3" json:"is_self,omitempty"`                                         // 自营（upstream_source_id 为空）
-	UpstreamSourceId    uint64                 `protobuf:"varint,12,opt,name=upstream_source_id,json=upstreamSourceId,proto3" json:"upstream_source_id,omitempty"`         // 货源连接 ID
-	UpstreamSourceName  string                 `protobuf:"bytes,13,opt,name=upstream_source_name,json=upstreamSourceName,proto3" json:"upstream_source_name,omitempty"`    // 上游渠道名
-	UpstreamDriver      string                 `protobuf:"bytes,14,opt,name=upstream_driver,json=upstreamDriver,proto3" json:"upstream_driver,omitempty"`                  // 上游驱动（zcard/dujiao_next/acg_faka）
-	UpstreamProductCode string                 `protobuf:"bytes,15,opt,name=upstream_product_code,json=upstreamProductCode,proto3" json:"upstream_product_code,omitempty"` // 上游商品标识
-	UpstreamUrl         string                 `protobuf:"bytes,16,opt,name=upstream_url,json=upstreamUrl,proto3" json:"upstream_url,omitempty"`                           // 上游地址（base_url）
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	GoodsType             string                 `protobuf:"bytes,30,opt,name=goods_type,json=goodsType,proto3" json:"goods_type,omitempty"`
+	PaidCents             int64                  `protobuf:"varint,31,opt,name=paid_cents,json=paidCents,proto3" json:"paid_cents,omitempty"`
+	ShippingCents         int64                  `protobuf:"varint,32,opt,name=shipping_cents,json=shippingCents,proto3" json:"shipping_cents,omitempty"`
+	RefundedCents         int64                  `protobuf:"varint,33,opt,name=refunded_cents,json=refundedCents,proto3" json:"refunded_cents,omitempty"`
+	RefundedShippingCents int64                  `protobuf:"varint,34,opt,name=refunded_shipping_cents,json=refundedShippingCents,proto3" json:"refunded_shipping_cents,omitempty"`
+	CanceledQuantity      int32                  `protobuf:"varint,35,opt,name=canceled_quantity,json=canceledQuantity,proto3" json:"canceled_quantity,omitempty"`
+	ShippedQuantity       int32                  `protobuf:"varint,36,opt,name=shipped_quantity,json=shippedQuantity,proto3" json:"shipped_quantity,omitempty"`
+	ReceivedQuantity      int32                  `protobuf:"varint,37,opt,name=received_quantity,json=receivedQuantity,proto3" json:"received_quantity,omitempty"`
+	ReturnedQuantity      int32                  `protobuf:"varint,38,opt,name=returned_quantity,json=returnedQuantity,proto3" json:"returned_quantity,omitempty"`
+	FormAnswersJson       string                 `protobuf:"bytes,18,opt,name=form_answers_json,json=formAnswersJson,proto3" json:"form_answers_json,omitempty"`
+	AssignedAdminId       uint64                 `protobuf:"varint,19,opt,name=assigned_admin_id,json=assignedAdminId,proto3" json:"assigned_admin_id,omitempty"`
+	Id                    uint64                 `protobuf:"varint,17,opt,name=id,proto3" json:"id,omitempty"` // 订单商品项 ID，人工补发使用
+	ProductId             uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	SkuId                 uint64                 `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	Quantity              int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	UnitPriceCents        int64                  `protobuf:"varint,4,opt,name=unit_price_cents,json=unitPriceCents,proto3" json:"unit_price_cents,omitempty"`
+	AmountCents           int64                  `protobuf:"varint,5,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
+	FulfillmentType       string                 `protobuf:"bytes,6,opt,name=fulfillment_type,json=fulfillmentType,proto3" json:"fulfillment_type,omitempty"`
+	FulfillmentStatus     string                 `protobuf:"bytes,7,opt,name=fulfillment_status,json=fulfillmentStatus,proto3" json:"fulfillment_status,omitempty"`
+	Name                  string                 `protobuf:"bytes,8,opt,name=name,proto3" json:"name,omitempty"`                                                             // 商品名（联查当前）
+	SkuName               string                 `protobuf:"bytes,9,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`                                        // SKU 名快照
+	CostCents             int64                  `protobuf:"varint,10,opt,name=cost_cents,json=costCents,proto3" json:"cost_cents,omitempty"`                                // 成本快照（分）
+	IsSelf                bool                   `protobuf:"varint,11,opt,name=is_self,json=isSelf,proto3" json:"is_self,omitempty"`                                         // 自营（upstream_source_id 为空）
+	UpstreamSourceId      uint64                 `protobuf:"varint,12,opt,name=upstream_source_id,json=upstreamSourceId,proto3" json:"upstream_source_id,omitempty"`         // 货源连接 ID
+	UpstreamSourceName    string                 `protobuf:"bytes,13,opt,name=upstream_source_name,json=upstreamSourceName,proto3" json:"upstream_source_name,omitempty"`    // 上游渠道名
+	UpstreamDriver        string                 `protobuf:"bytes,14,opt,name=upstream_driver,json=upstreamDriver,proto3" json:"upstream_driver,omitempty"`                  // 上游驱动（zcard/dujiao_next/acg_faka）
+	UpstreamProductCode   string                 `protobuf:"bytes,15,opt,name=upstream_product_code,json=upstreamProductCode,proto3" json:"upstream_product_code,omitempty"` // 上游商品标识
+	UpstreamUrl           string                 `protobuf:"bytes,16,opt,name=upstream_url,json=upstreamUrl,proto3" json:"upstream_url,omitempty"`                           // 上游地址（base_url）
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *AdminOrderItem) Reset() {
@@ -509,6 +566,69 @@ func (x *AdminOrderItem) ProtoReflect() protoreflect.Message {
 // Deprecated: Use AdminOrderItem.ProtoReflect.Descriptor instead.
 func (*AdminOrderItem) Descriptor() ([]byte, []int) {
 	return file_admin_v1_order_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *AdminOrderItem) GetGoodsType() string {
+	if x != nil {
+		return x.GoodsType
+	}
+	return ""
+}
+
+func (x *AdminOrderItem) GetPaidCents() int64 {
+	if x != nil {
+		return x.PaidCents
+	}
+	return 0
+}
+
+func (x *AdminOrderItem) GetShippingCents() int64 {
+	if x != nil {
+		return x.ShippingCents
+	}
+	return 0
+}
+
+func (x *AdminOrderItem) GetRefundedCents() int64 {
+	if x != nil {
+		return x.RefundedCents
+	}
+	return 0
+}
+
+func (x *AdminOrderItem) GetRefundedShippingCents() int64 {
+	if x != nil {
+		return x.RefundedShippingCents
+	}
+	return 0
+}
+
+func (x *AdminOrderItem) GetCanceledQuantity() int32 {
+	if x != nil {
+		return x.CanceledQuantity
+	}
+	return 0
+}
+
+func (x *AdminOrderItem) GetShippedQuantity() int32 {
+	if x != nil {
+		return x.ShippedQuantity
+	}
+	return 0
+}
+
+func (x *AdminOrderItem) GetReceivedQuantity() int32 {
+	if x != nil {
+		return x.ReceivedQuantity
+	}
+	return 0
+}
+
+func (x *AdminOrderItem) GetReturnedQuantity() int32 {
+	if x != nil {
+		return x.ReturnedQuantity
+	}
+	return 0
 }
 
 func (x *AdminOrderItem) GetFormAnswersJson() string {
@@ -904,8 +1024,9 @@ var File_admin_v1_order_proto protoreflect.FileDescriptor
 
 const file_admin_v1_order_proto_rawDesc = "" +
 	"\n" +
-	"\x14admin/v1/order.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xad\x02\n" +
-	"\x11ListOrdersRequest\x12\x16\n" +
+	"\x14admin/v1/order.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xd6\x02\n" +
+	"\x11ListOrdersRequest\x12'\n" +
+	"\x0fshipping_status\x18\x14 \x01(\tR\x0eshippingStatus\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x16\n" +
 	"\x06cursor\x18\x02 \x01(\x04R\x06cursor\x12\x14\n" +
 	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x18\n" +
@@ -926,9 +1047,14 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"\vnext_cursor\x18\x02 \x01(\x04R\n" +
 	"nextCursor\"6\n" +
 	"\x14GetAdminOrderRequest\x12\x1e\n" +
-	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\"\xde\x06\n" +
+	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\"\xa4\t\n" +
 	"\n" +
-	"AdminOrder\x12(\n" +
+	"AdminOrder\x12'\n" +
+	"\x0fshipping_status\x18( \x01(\tR\x0eshippingStatus\x12%\n" +
+	"\x0eshipping_cents\x18) \x01(\x03R\rshippingCents\x12^\n" +
+	"\x10shipping_address\x18* \x03(\v23.zcard.api.admin.v1.AdminOrder.ShippingAddressEntryR\x0fshippingAddress\x12%\n" +
+	"\x0eshipments_json\x18+ \x01(\tR\rshipmentsJson\x12)\n" +
+	"\x10commerce_version\x18, \x01(\x05R\x0fcommerceVersion\x12(\n" +
 	"\x10paid_total_cents\x18\x15 \x01(\x03R\x0epaidTotalCents\x12$\n" +
 	"\x0epaid_fee_cents\x18\x16 \x01(\x03R\fpaidFeeCents\x12,\n" +
 	"\x12refunded_fee_cents\x18\x17 \x01(\x03R\x10refundedFeeCents\x12%\n" +
@@ -956,8 +1082,22 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"\x0fexpiry_retry_at\x18\x10 \x01(\x03R\rexpiryRetryAt\x12'\n" +
 	"\x0fexpiry_attempts\x18\x11 \x01(\x05R\x0eexpiryAttempts\x12#\n" +
 	"\rexpiry_review\x18\x12 \x01(\bR\fexpiryReview\x12#\n" +
-	"\rexpiry_reason\x18\x13 \x01(\tR\fexpiryReason\"\xb8\x05\n" +
-	"\x0eAdminOrderItem\x12*\n" +
+	"\rexpiry_reason\x18\x13 \x01(\tR\fexpiryReason\x1aB\n" +
+	"\x14ShippingAddressEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xae\b\n" +
+	"\x0eAdminOrderItem\x12\x1d\n" +
+	"\n" +
+	"goods_type\x18\x1e \x01(\tR\tgoodsType\x12\x1d\n" +
+	"\n" +
+	"paid_cents\x18\x1f \x01(\x03R\tpaidCents\x12%\n" +
+	"\x0eshipping_cents\x18  \x01(\x03R\rshippingCents\x12%\n" +
+	"\x0erefunded_cents\x18! \x01(\x03R\rrefundedCents\x126\n" +
+	"\x17refunded_shipping_cents\x18\" \x01(\x03R\x15refundedShippingCents\x12+\n" +
+	"\x11canceled_quantity\x18# \x01(\x05R\x10canceledQuantity\x12)\n" +
+	"\x10shipped_quantity\x18$ \x01(\x05R\x0fshippedQuantity\x12+\n" +
+	"\x11received_quantity\x18% \x01(\x05R\x10receivedQuantity\x12+\n" +
+	"\x11returned_quantity\x18& \x01(\x05R\x10returnedQuantity\x12*\n" +
 	"\x11form_answers_json\x18\x12 \x01(\tR\x0fformAnswersJson\x12*\n" +
 	"\x11assigned_admin_id\x18\x13 \x01(\x04R\x0fassignedAdminId\x12\x0e\n" +
 	"\x02id\x18\x11 \x01(\x04R\x02id\x12\x1d\n" +
@@ -1021,7 +1161,7 @@ func file_admin_v1_order_proto_rawDescGZIP() []byte {
 	return file_admin_v1_order_proto_rawDescData
 }
 
-var file_admin_v1_order_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_admin_v1_order_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_admin_v1_order_proto_goTypes = []any{
 	(*ListOrdersRequest)(nil),    // 0: zcard.api.admin.v1.ListOrdersRequest
 	(*ListOrdersReply)(nil),      // 1: zcard.api.admin.v1.ListOrdersReply
@@ -1032,26 +1172,28 @@ var file_admin_v1_order_proto_goTypes = []any{
 	(*StatusEvent)(nil),          // 6: zcard.api.admin.v1.StatusEvent
 	(*CancelOrderRequest)(nil),   // 7: zcard.api.admin.v1.CancelOrderRequest
 	(*DeleteOrdersRequest)(nil),  // 8: zcard.api.admin.v1.DeleteOrdersRequest
-	(*emptypb.Empty)(nil),        // 9: google.protobuf.Empty
+	nil,                          // 9: zcard.api.admin.v1.AdminOrder.ShippingAddressEntry
+	(*emptypb.Empty)(nil),        // 10: google.protobuf.Empty
 }
 var file_admin_v1_order_proto_depIdxs = []int32{
-	3, // 0: zcard.api.admin.v1.ListOrdersReply.orders:type_name -> zcard.api.admin.v1.AdminOrder
-	4, // 1: zcard.api.admin.v1.AdminOrder.items:type_name -> zcard.api.admin.v1.AdminOrderItem
-	5, // 2: zcard.api.admin.v1.AdminOrder.amount_lines:type_name -> zcard.api.admin.v1.AmountLine
-	6, // 3: zcard.api.admin.v1.AdminOrder.status_events:type_name -> zcard.api.admin.v1.StatusEvent
-	0, // 4: zcard.api.admin.v1.AdminOrderService.ListOrders:input_type -> zcard.api.admin.v1.ListOrdersRequest
-	2, // 5: zcard.api.admin.v1.AdminOrderService.GetOrder:input_type -> zcard.api.admin.v1.GetAdminOrderRequest
-	7, // 6: zcard.api.admin.v1.AdminOrderService.CancelOrder:input_type -> zcard.api.admin.v1.CancelOrderRequest
-	8, // 7: zcard.api.admin.v1.AdminOrderService.DeleteOrders:input_type -> zcard.api.admin.v1.DeleteOrdersRequest
-	1, // 8: zcard.api.admin.v1.AdminOrderService.ListOrders:output_type -> zcard.api.admin.v1.ListOrdersReply
-	3, // 9: zcard.api.admin.v1.AdminOrderService.GetOrder:output_type -> zcard.api.admin.v1.AdminOrder
-	9, // 10: zcard.api.admin.v1.AdminOrderService.CancelOrder:output_type -> google.protobuf.Empty
-	9, // 11: zcard.api.admin.v1.AdminOrderService.DeleteOrders:output_type -> google.protobuf.Empty
-	8, // [8:12] is the sub-list for method output_type
-	4, // [4:8] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	3,  // 0: zcard.api.admin.v1.ListOrdersReply.orders:type_name -> zcard.api.admin.v1.AdminOrder
+	9,  // 1: zcard.api.admin.v1.AdminOrder.shipping_address:type_name -> zcard.api.admin.v1.AdminOrder.ShippingAddressEntry
+	4,  // 2: zcard.api.admin.v1.AdminOrder.items:type_name -> zcard.api.admin.v1.AdminOrderItem
+	5,  // 3: zcard.api.admin.v1.AdminOrder.amount_lines:type_name -> zcard.api.admin.v1.AmountLine
+	6,  // 4: zcard.api.admin.v1.AdminOrder.status_events:type_name -> zcard.api.admin.v1.StatusEvent
+	0,  // 5: zcard.api.admin.v1.AdminOrderService.ListOrders:input_type -> zcard.api.admin.v1.ListOrdersRequest
+	2,  // 6: zcard.api.admin.v1.AdminOrderService.GetOrder:input_type -> zcard.api.admin.v1.GetAdminOrderRequest
+	7,  // 7: zcard.api.admin.v1.AdminOrderService.CancelOrder:input_type -> zcard.api.admin.v1.CancelOrderRequest
+	8,  // 8: zcard.api.admin.v1.AdminOrderService.DeleteOrders:input_type -> zcard.api.admin.v1.DeleteOrdersRequest
+	1,  // 9: zcard.api.admin.v1.AdminOrderService.ListOrders:output_type -> zcard.api.admin.v1.ListOrdersReply
+	3,  // 10: zcard.api.admin.v1.AdminOrderService.GetOrder:output_type -> zcard.api.admin.v1.AdminOrder
+	10, // 11: zcard.api.admin.v1.AdminOrderService.CancelOrder:output_type -> google.protobuf.Empty
+	10, // 12: zcard.api.admin.v1.AdminOrderService.DeleteOrders:output_type -> google.protobuf.Empty
+	9,  // [9:13] is the sub-list for method output_type
+	5,  // [5:9] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_order_proto_init() }
@@ -1065,7 +1207,7 @@ func file_admin_v1_order_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_order_proto_rawDesc), len(file_admin_v1_order_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

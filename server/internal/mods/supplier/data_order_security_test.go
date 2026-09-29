@@ -104,7 +104,7 @@ func TestSupplyOrderHTTPAccountIsolation(t *testing.T) {
 	if code, _ := call("GET", path, "", false); code != 401 {
 		t.Fatalf("anonymous: %d", code)
 	}
-	start, end := time.Now().Add(-time.Hour), time.Now().Add(time.Hour)
+	start, end := time.Now().UTC().Add(-time.Hour), time.Now().UTC().Add(time.Hour)
 	code, body := call("GET", fmt.Sprintf("/api/supply/orders?start=%d&end=%d", start.Unix(), end.Unix()), "", true)
 	if code != 200 || strings.Contains(body, "same-no") || strings.Contains(body, "a-paid") {
 		t.Fatalf("list leaks: %d %s", code, body)

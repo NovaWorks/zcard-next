@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/migrations"
 	"io/fs"
 	"path/filepath"
@@ -53,7 +54,7 @@ func TestReferralUpgradePreservesUsers(t *testing.T) {
 	if u.Username != "old-user" || u.PasswordHash != "old-hash" || u.ManualLevelID != 12 || u.InviteL1 != 7 || u.PromoCode != "ABCDEFGH" || u.ReferralLevelID != 0 || u.InviteLevelID != 0 {
 		t.Fatal("old account changed", u)
 	}
-	if o := d.Client.Order.GetX(context.Background(), 43); o.TotalAmount != 900 || o.UserID != 42 {
+	if o := d.Client.Order.Query().Where(order.ID(43)).Select(order.FieldID, order.FieldTotalAmount, order.FieldUserID).OnlyX(context.Background()); o.TotalAmount != 900 || o.UserID != 42 {
 		t.Fatal("old order changed")
 	}
 	if _, err = d.Client.User.Create().SetUsername("old-user").Save(context.Background()); err == nil {

@@ -47,6 +47,7 @@ func (d *Dispatcher) WithBrandResolver(r notifyport.BrandResolver) *Dispatcher {
 var defaultChannels = map[string][]string{
 	events.AdminMFAChanged: {"telegram"},
 	"order.paid":           {"email", "inbox"},
+	"order.shipped":        {"email", "inbox"},
 	"order.delivered":      {"email", "inbox"},
 	"order.completed":      {"inbox"},
 	"order.canceled":       {"email", "inbox"},

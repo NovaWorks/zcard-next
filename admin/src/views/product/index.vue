@@ -1,4 +1,16 @@
 <script setup lang="ts">
+import { request as shippingRequest } from "@/service/request";
+import { countryOptions, type RegionData } from "../../../../packages/shipping";
+const shippingRegions = ref<RegionData>({});
+onMounted(async () => {
+  const r = await shippingRequest<{ data_json: string }>({
+    url: "/api/v1/storefront/shipping/regions",
+  });
+  if (r.data)
+    try {
+      shippingRegions.value = JSON.parse(r.data.data_json);
+    } catch {}
+});
 /**
  * 商品管理（/ 前端面，2026-08-17 表单补全）：
  * 全字段表单（分类/描述/封面+图集 media 上传/排序/上下架三态/发货模式/库存显示/积分价）
@@ -53,67 +65,128 @@ const skuPanel = ref<InstanceType<typeof SkuPanel> | null>(null);
 const editingId = ref(0);
 const deliveryProduct = ref<any>(null);
 const showDeliverySources = ref(false);
-function openDeliverySources(row:any){deliveryProduct.value=row;showDeliverySources.value=true;}
-async function deliverySaved(){loadList();independentlySaved.value=true;if(editingId.value===deliveryProduct.value?.id){const {data}=await fetchProduct(editingId.value);if(data){formData.fulfillment_mode=(data as any).fulfillment_mode||'auto';editingProduct.value=data;await skuPanel.value?.refreshDeliveryModes();}}}
+function openDeliverySources(row: any) {
+  deliveryProduct.value = row;
+  showDeliverySources.value = true;
+}
+async function deliverySaved() {
+  loadList();
+  independentlySaved.value = true;
+  if (editingId.value === deliveryProduct.value?.id) {
+    const { data } = await fetchProduct(editingId.value);
+    if (data) {
+      formData.fulfillment_mode = (data as any).fulfillment_mode || "auto";
+      editingProduct.value = data;
+      await skuPanel.value?.refreshDeliveryModes();
+    }
+  }
+}
 const editingProduct = ref<any>(null);
 const editorLocked = computed(() => !!editingProduct.value?.is_locked);
 const lockFilter = ref<string | null>(null);
 const showPlacements = ref(false);
-const batchReport = ref('');
+const batchReport = ref("");
 const batchFailures = ref<string[]>([]);
 const lockBusy = ref<number | null>(null);
-const pageLockedCount = computed(() => products.value.filter(p=>p.is_locked).length);
-const selectedCategoryName = computed(() => categories.value.find(c=>c.id===categoryFilter.value)?.name || '当前分类');
-async function changeLock(row:any) {
-  if(lockBusy.value!==null)return;
-  const next=!row.is_locked;
-  window.$dialog?.warning({title:next?'锁定商品？':'解锁商品？',content:next?`「${row.name}」锁定后不能修改或删除，批量操作及上游资料、价格、上下架同步会自动跳过。正常订单履约不受影响。`:`「${row.name}」将恢复编辑，并按原有规则参与后续上游同步。`,positiveText:next?'锁定商品':'解锁商品',negativeText:'取消',onPositiveClick:async()=>{
-    lockBusy.value=row.id;
-    try {const {data,error}=await setProductLock(row.id,next,Number(row.lock_version || 0));
-      if(error||!data){await loadList();return false}
-      checkedKeys.value=checkedKeys.value.filter(id=>id!==row.id);
-      if(editingId.value===row.id){editingProduct.value={...editingProduct.value,...data};}
-      window.$message?.success(next?'商品已锁定，批量操作将自动跳过':'商品已解锁');await loadList();
-    }finally{lockBusy.value=null}
-  }});
+const pageLockedCount = computed(() => products.value.filter((p) => p.is_locked).length);
+const selectedCategoryName = computed(
+  () => categories.value.find((c) => c.id === categoryFilter.value)?.name || "当前分类",
+);
+async function changeLock(row: any) {
+  if (lockBusy.value !== null) return;
+  const next = !row.is_locked;
+  window.$dialog?.warning({
+    title: next ? "锁定商品？" : "解锁商品？",
+    content: next
+      ? `「${row.name}」锁定后不能修改或删除，批量操作及上游资料、价格、上下架同步会自动跳过。正常订单履约不受影响。`
+      : `「${row.name}」将恢复编辑，并按原有规则参与后续上游同步。`,
+    positiveText: next ? "锁定商品" : "解锁商品",
+    negativeText: "取消",
+    onPositiveClick: async () => {
+      lockBusy.value = row.id;
+      try {
+        const { data, error } = await setProductLock(row.id, next, Number(row.lock_version || 0));
+        if (error || !data) {
+          await loadList();
+          return false;
+        }
+        checkedKeys.value = checkedKeys.value.filter((id) => id !== row.id);
+        if (editingId.value === row.id) {
+          editingProduct.value = { ...editingProduct.value, ...data };
+        }
+        window.$message?.success(next ? "商品已锁定，批量操作将自动跳过" : "商品已解锁");
+        await loadList();
+      } finally {
+        lockBusy.value = null;
+      }
+    },
+  });
 }
 
 const controlPanel = ref<InstanceType<typeof ControlPanel> | null>(null);
 const initialProduct = ref("");
 const independentlySaved = ref(false);
-const editorBusy = computed(() => saving.value || !!skuPanel.value?.saving || !!controlPanel.value?.saving);
-const hasUnsaved = computed(() => !!initialProduct.value && (JSON.stringify(buildPayload()) !== initialProduct.value || !!skuPanel.value?.hasPending || !!controlPanel.value?.hasPending));
+const editorBusy = computed(
+  () => saving.value || !!skuPanel.value?.saving || !!controlPanel.value?.saving,
+);
+const hasUnsaved = computed(
+  () =>
+    !!initialProduct.value &&
+    (JSON.stringify(buildPayload()) !== initialProduct.value ||
+      !!skuPanel.value?.hasPending ||
+      !!controlPanel.value?.hasPending),
+);
 let discardPrompt: Promise<boolean> | undefined;
 function confirmDiscard(): Promise<boolean> {
   if (!hasUnsaved.value) return Promise.resolve(true);
   if (discardPrompt) return discardPrompt;
-  discardPrompt = new Promise<boolean>(resolve => {
+  discardPrompt = new Promise<boolean>((resolve) => {
     const dialog = window.$dialog;
-    if (!dialog) { resolve(false); return; }
+    if (!dialog) {
+      resolve(false);
+      return;
+    }
     dialog.warning({
       title: "放弃未保存修改？",
-      content: independentlySaved.value ? "关闭将放弃尚未保存的内容。已单独保存或删除的规格、控件仍然生效。" : "本次尚未保存的商品、规格及控件输入将被放弃。",
-      positiveText: "放弃修改", negativeText: "继续编辑", maskClosable: false,
-      onPositiveClick: () => resolve(true), onNegativeClick: () => resolve(false), onClose: () => resolve(false), onEsc: () => resolve(false),
+      content: independentlySaved.value
+        ? "关闭将放弃尚未保存的内容。已单独保存或删除的规格、控件仍然生效。"
+        : "本次尚未保存的商品、规格及控件输入将被放弃。",
+      positiveText: "放弃修改",
+      negativeText: "继续编辑",
+      maskClosable: false,
+      onPositiveClick: () => resolve(true),
+      onNegativeClick: () => resolve(false),
+      onClose: () => resolve(false),
+      onEsc: () => resolve(false),
     });
-  }).finally(() => { discardPrompt = undefined; });
+  }).finally(() => {
+    discardPrompt = undefined;
+  });
   return discardPrompt;
 }
 async function requestClose() {
   if (editorBusy.value) return;
   if (await confirmDiscard()) showCreate.value = false;
 }
-function afterEditorLeave() { if (!showCreate.value) resetForm(); }
+function afterEditorLeave() {
+  if (!showCreate.value) resetForm();
+}
 onBeforeRouteLeave(async () => {
   if (!showCreate.value) return true;
-  if (editorBusy.value) { window.$message?.warning("正在保存，请稍后离开"); return false; }
-  if (!await confirmDiscard()) return false;
+  if (editorBusy.value) {
+    window.$message?.warning("正在保存，请稍后离开");
+    return false;
+  }
+  if (!(await confirmDiscard())) return false;
   showCreate.value = false;
   resetForm();
   return true;
 });
 function beforeUnload(event: BeforeUnloadEvent) {
-  if (showCreate.value && (hasUnsaved.value || editorBusy.value)) { event.preventDefault(); event.returnValue = ""; }
+  if (showCreate.value && (hasUnsaved.value || editorBusy.value)) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
 }
 onMounted(() => window.addEventListener("beforeunload", beforeUnload));
 onBeforeUnmount(() => window.removeEventListener("beforeunload", beforeUnload));
@@ -135,18 +208,14 @@ const inventoryTabs = [
 function currentFilters() {
   return {
     keyword: keyword.value || undefined,
-    is_locked:
-      lockFilter.value === null ? undefined : lockFilter.value === "locked",
+    is_locked: lockFilter.value === null ? undefined : lockFilter.value === "locked",
     status: statusFilter.value || undefined,
     inventory: inventoryFilter.value || undefined,
     restocked_only: restockedOnly.value || undefined,
     auto_listing:
-      autoListingFilter.value === null
-        ? undefined
-        : autoListingFilter.value === "enabled",
+      autoListingFilter.value === null ? undefined : autoListingFilter.value === "enabled",
     category_id: categoryFilter.value || undefined,
-    upstream_source_id:
-      (supplyFilter.value ?? 0) > 0 ? supplyFilter.value! : undefined,
+    upstream_source_id: (supplyFilter.value ?? 0) > 0 ? supplyFilter.value! : undefined,
     local_only: supplyFilter.value === 0 || undefined,
   };
 }
@@ -165,7 +234,10 @@ function listingSaved() {
 }
 function showRestocked() {
   const next = !restockedOnly.value;
-  if (next) { statusFilter.value = -1; inventoryFilter.value = 'available'; }
+  if (next) {
+    statusFilter.value = -1;
+    inventoryFilter.value = "available";
+  }
   restockedOnly.value = next;
   onSearch();
 }
@@ -187,8 +259,7 @@ async function checkChannelStock() {
   if (seq !== stockCheckSequence) return;
   if (r.error) {
     checkingStock.value = false;
-    stockCheckMessage.value =
-      "检查任务未能启动，请到货源任务列表查看是否已有任务运行。";
+    stockCheckMessage.value = "检查任务未能启动，请到货源任务列表查看是否已有任务运行。";
     return;
   }
   const task = (r.data as any)?.task || r.data;
@@ -233,9 +304,14 @@ const pageSize = ref(20);
 
 // 快捷筛选卡片（后端 status 口径：0=全部 1=上架 2=隐藏 -1=仅下架；low_stock=库存告急）
 const statusFilter = ref<number>(0);
-watch([statusFilter, inventoryFilter], () => {
-  if (restockedOnly.value && (statusFilter.value !== -1 || inventoryFilter.value !== 'available')) restockedOnly.value = false;
-}, { flush: 'sync' });
+watch(
+  [statusFilter, inventoryFilter],
+  () => {
+    if (restockedOnly.value && (statusFilter.value !== -1 || inventoryFilter.value !== "available"))
+      restockedOnly.value = false;
+  },
+  { flush: "sync" },
+);
 const categoryFilter = ref<number | null>(null); // 分类筛选（null=全部）
 const supplyFilter = ref<number | null>(null); // 渠道筛选（null=全部 0=自营 >0=渠道ID）
 const statusTabs = [
@@ -258,21 +334,45 @@ const checkedKeys = ref<number[]>([]);
 const showBatchContent = ref(false);
 const batchContentIDs = ref<number[]>([]);
 const batchContentCategory = ref<number | null>(null);
-const offPageSelected = computed(() => checkedKeys.value.filter(id => !products.value.some(p => p.id === id)).length);
+const offPageSelected = computed(
+  () => checkedKeys.value.filter((id) => !products.value.some((p) => p.id === id)).length,
+);
 const contentProtection = ref({ cover: false, description: false });
-watch([keyword, categoryFilter, supplyFilter, statusFilter, lockFilter, inventoryFilter, restockedOnly, autoListingFilter], () => { checkedKeys.value = []; }, { flush: "sync" });
+watch(
+  [
+    keyword,
+    categoryFilter,
+    supplyFilter,
+    statusFilter,
+    lockFilter,
+    inventoryFilter,
+    restockedOnly,
+    autoListingFilter,
+  ],
+  () => {
+    checkedKeys.value = [];
+  },
+  { flush: "sync" },
+);
 function updateCheckedKeys(keys: Array<string | number>) {
   if (loading.value) return;
-  const pageIDs = new Set(products.value.map(p => p.id));
-  checkedKeys.value = [...new Set([...checkedKeys.value.filter(id => !pageIDs.has(id)), ...keys.map(Number).filter(id=>!products.value.find(p=>p.id===id)?.is_locked)])];
+  const pageIDs = new Set(products.value.map((p) => p.id));
+  checkedKeys.value = [
+    ...new Set([
+      ...checkedKeys.value.filter((id) => !pageIDs.has(id)),
+      ...keys.map(Number).filter((id) => !products.value.find((p) => p.id === id)?.is_locked),
+    ]),
+  ];
 }
 function openBatchContent() {
   batchContentIDs.value = [...checkedKeys.value];
   batchContentCategory.value = categoryFilter.value;
   showBatchContent.value = true;
 }
-function contentSaved() { checkedKeys.value = []; loadList(); }
-
+function contentSaved() {
+  checkedKeys.value = [];
+  loadList();
+}
 
 // ── 单元格价格编辑（售价/成本）：铅笔图标 → 气泡输入（大厂轻量编辑模式）──
 // 金额纯文本居中展示；点笔弹 NPopover（受控显隐），气泡内输入金额 → 确定/Enter 保存、Esc 关闭。
@@ -284,7 +384,7 @@ function draftKey(row: any, field: "price" | "cost") {
 }
 
 async function commitCellEdit(row: any, field: "price" | "cost") {
-  if(row.is_locked)return;
+  if (row.is_locked) return;
   const key = draftKey(row, field);
   const draft = cellDraft[key];
   cellPopover[key] = false; // 无论成败先收气泡
@@ -317,7 +417,7 @@ async function commitCellEdit(row: any, field: "price" | "cost") {
 // 推荐开关（列表快速设置）：同改价套路——携带行内既有字段防全量语义清零
 // （status/sort/factory_price/points_required/stock_visible 在服务端恒写入，缺省即被置零）
 async function toggleRecommend(row: any) {
-  if(row.is_locked)return;
+  if (row.is_locked) return;
   const v = !row.is_recommend;
   const payload: Record<string, any> = {
     factory_price_cents: row.factory_price_cents || 0,
@@ -346,58 +446,59 @@ function priceLine(row: any, field: "price" | "cost") {
     // 改价铅笔仅 catalog:write 可见（渲染函数内求值，权限变更后随表格重渲染生效）
     checkAuth("catalog:write") && !row.is_locked
       ? h(
-      NPopover,
-      {
-        show: !!cellPopover[key],
-        placement: "left",
-        trigger: "click", // click 触发：点外部/再点铅笔 → onUpdateShow(false) 自动收起
-        onUpdateShow: (v: boolean) => {
-          cellPopover[key] = v;
-          if (v) cellDraft[key] = cents ? Number(centsToYuan(cents)) : 0; // 开气泡带入当前值
-        },
-      },
-      {
-        trigger: () =>
-          h(
-            "span",
-            {
-              class: "cursor-pointer text-12px text-gray-400 transition-colors hover:text-primary",
-              title: `修改${label}`,
+          NPopover,
+          {
+            show: !!cellPopover[key],
+            placement: "left",
+            trigger: "click", // click 触发：点外部/再点铅笔 → onUpdateShow(false) 自动收起
+            onUpdateShow: (v: boolean) => {
+              cellPopover[key] = v;
+              if (v) cellDraft[key] = cents ? Number(centsToYuan(cents)) : 0; // 开气泡带入当前值
             },
-            "✎",
-          ),
-        default: () =>
-          h("div", { class: "flex items-center gap-8px" }, [
-            h("span", { class: "text-13px whitespace-nowrap" }, `${label}(元)`),
-            h(NInputNumber, {
-              value: cellDraft[key] ?? 0,
-              size: "small",
-              min: field === "price" ? 0.01 : 0,
-              precision: 2,
-              showButton: false,
-              placeholder: label,
-              style: "width: 110px",
-              autofocus: true,
-              inputProps: {
-                onKeyup: (e: KeyboardEvent) => {
-                  if (e.key === "Enter") commitCellEdit(row, field);
-                  else if (e.key === "Escape") {
-                    cellDraft[key] = undefined as any;
-                    cellPopover[key] = false;
-                  }
+          },
+          {
+            trigger: () =>
+              h(
+                "span",
+                {
+                  class:
+                    "cursor-pointer text-12px text-gray-400 transition-colors hover:text-primary",
+                  title: `修改${label}`,
                 },
-              },
-              onUpdateValue: (v: number | null) => {
-                cellDraft[key] = v ?? 0;
-              },
-            }),
-            h(
-              NButton,
-              { size: "small", type: "primary", onClick: () => commitCellEdit(row, field) },
-              { default: () => "确定" },
-            ),
-          ]),
-      },
+                "✎",
+              ),
+            default: () =>
+              h("div", { class: "flex items-center gap-8px" }, [
+                h("span", { class: "text-13px whitespace-nowrap" }, `${label}(元)`),
+                h(NInputNumber, {
+                  value: cellDraft[key] ?? 0,
+                  size: "small",
+                  min: field === "price" ? 0.01 : 0,
+                  precision: 2,
+                  showButton: false,
+                  placeholder: label,
+                  style: "width: 110px",
+                  autofocus: true,
+                  inputProps: {
+                    onKeyup: (e: KeyboardEvent) => {
+                      if (e.key === "Enter") commitCellEdit(row, field);
+                      else if (e.key === "Escape") {
+                        cellDraft[key] = undefined as any;
+                        cellPopover[key] = false;
+                      }
+                    },
+                  },
+                  onUpdateValue: (v: number | null) => {
+                    cellDraft[key] = v ?? 0;
+                  },
+                }),
+                h(
+                  NButton,
+                  { size: "small", type: "primary", onClick: () => commitCellEdit(row, field) },
+                  { default: () => "确定" },
+                ),
+              ]),
+          },
         )
       : null,
   ]);
@@ -433,7 +534,8 @@ function priceCell(row: any) {
 
 // statsCell 库存/已售块：两行，标签定宽 + 数值紧邻（与价格块视觉一致）
 function statsCell(row: any) {
-  const stock = row.stock ?? (row.stock_status === "unknown" || row.stock_status === "stale" ? -2 : 0); // -1 = 不限（链接/兑换码类不入卡池；代发上游无限）
+  const stock =
+    row.stock ?? (row.stock_status === "unknown" || row.stock_status === "stale" ? -2 : 0); // -1 = 不限（链接/兑换码类不入卡池；代发上游无限）
   const sold = row.sold_count ?? 0;
   const line = (label: string, value: any) =>
     h("div", { class: "flex items-center gap-6px leading-20px" }, [
@@ -441,18 +543,40 @@ function statsCell(row: any) {
       value,
     ]);
   // 预警按后台阈值和实际规格计算，不能用商品合计掩盖缺货规格。
-  const stockNode = row.stock_status === 'stale'
-    ? h("span", { class: "text-12px", title: `上次同步：${row.stock_checked_at ? new Date(row.stock_checked_at * 1000).toLocaleString() : '未知'}。仅供参考，买家进入详情时重新查询。` }, row.stock_reference === -1 ? '上次不限' : `参考 ${row.stock_reference ?? 0} 件`)
-    : stock < -1
-    ? h("span", { class: "text-12px", title: "上游暂未返回库存，可到货源渠道执行同步；买家进入商品详情时会重新查询。" }, "上游未返回")
-    : stock === -1 ? h("span", {}, "不限")
-    : stock <= 0
-      ? h("span", { class: "font-medium text-red-500" }, "0 件")
-      : h("span", { class: row.low_stock_message ? "text-orange-500" : "" }, `${stock} 件`);
+  const stockNode =
+    row.stock_status === "stale"
+      ? h(
+          "span",
+          {
+            class: "text-12px",
+            title: `上次同步：${row.stock_checked_at ? new Date(row.stock_checked_at * 1000).toLocaleString() : "未知"}。仅供参考，买家进入详情时重新查询。`,
+          },
+          row.stock_reference === -1 ? "上次不限" : `参考 ${row.stock_reference ?? 0} 件`,
+        )
+      : stock < -1
+        ? h(
+            "span",
+            {
+              class: "text-12px",
+              title: "上游暂未返回库存，可到货源渠道执行同步；买家进入商品详情时会重新查询。",
+            },
+            "上游未返回",
+          )
+        : stock === -1
+          ? h("span", {}, "不限")
+          : stock <= 0
+            ? h("span", { class: "font-medium text-red-500" }, "0 件")
+            : h("span", { class: row.low_stock_message ? "text-orange-500" : "" }, `${stock} 件`);
   return h("div", { class: "flex flex-col gap-2px py-2px" }, [
     line("库存", stockNode),
     line("已售", h("span", {}, `${sold} 件`)),
-    row.low_stock_message ? h("span", { class: "text-12px text-orange-500 max-w-180px truncate", title: row.low_stock_message }, `预警：${row.low_stock_message}`) : null,
+    row.low_stock_message
+      ? h(
+          "span",
+          { class: "text-12px text-orange-500 max-w-180px truncate", title: row.low_stock_message },
+          `预警：${row.low_stock_message}`,
+        )
+      : null,
   ]);
 }
 
@@ -472,7 +596,14 @@ const formData = reactive({
   price_yuan: 0,
   factory_price_yuan: 0,
   points_required: 0,
-  stock_type: "card", fulfillment_mode:"auto", manual_stock:-1,
+  goods_type: "virtual",
+  shipping_mode: "free",
+  shipping_fee_yuan: 0,
+  shipping_countries: [] as string[],
+  physical_stock: 0,
+  stock_type: "card",
+  fulfillment_mode: "auto",
+  manual_stock: -1,
   direct_content: "",
   delivery_mode: "status",
   stock_visible: true,
@@ -497,7 +628,13 @@ const deliveryModeOptions = [
 const categoryTreeOptions = computed(() => {
   const map = new Map<number, any>();
   for (const c of categories.value)
-    map.set(c.id, { label: c.name, key: c.id, icon: c.icon, parent_id: c.parent_id || 0, children: [] });
+    map.set(c.id, {
+      label: c.name,
+      key: c.id,
+      icon: c.icon,
+      parent_id: c.parent_id || 0,
+      children: [],
+    });
   const roots: any[] = [];
   for (const node of map.values()) {
     const parent = map.get(node.parent_id);
@@ -525,7 +662,7 @@ function stepNext() {
 }
 
 const columns: DataTableColumns<any> = [
-  { type: "selection", disabled: (row:any) => !!row.is_locked },
+  { type: "selection", disabled: (row: any) => !!row.is_locked },
   { title: "ID", key: "id", width: 56 },
   {
     title: "封面",
@@ -569,11 +706,24 @@ const columns: DataTableColumns<any> = [
     title: "商品名",
     key: "name",
     minWidth: 140,
-    render: (row) => h("div", {class:"flex flex-col gap-4px"}, [
-      h("span",null,row.name),
-      row.is_locked ? h(NTag,{size:"small",bordered:false},{default:()=>"已锁定 · 批量操作自动跳过"}) : null,
-      row.is_recommend ? h(NTag,{size:"small",type:"warning",bordered:false},{default:()=>"首页推荐"}) : null,
-    ]),
+    render: (row) =>
+      h("div", { class: "flex flex-col gap-4px" }, [
+        h("span", null, row.name),
+        row.is_locked
+          ? h(
+              NTag,
+              { size: "small", bordered: false },
+              { default: () => "已锁定 · 批量操作自动跳过" },
+            )
+          : null,
+        row.is_recommend
+          ? h(
+              NTag,
+              { size: "small", type: "warning", bordered: false },
+              { default: () => "首页推荐" },
+            )
+          : null,
+      ]),
   },
   {
     title: "分类",
@@ -611,18 +761,30 @@ const columns: DataTableColumns<any> = [
         try {
           const tpl = JSON.parse(conn.settings || "{}").product_url_template;
           if (tpl && row.upstream_product_code) {
-            link = tpl.replaceAll("{base}", conn.base_url).replaceAll("{code}", row.upstream_product_code);
+            link = tpl
+              .replaceAll("{base}", conn.base_url)
+              .replaceAll("{code}", row.upstream_product_code);
           }
         } catch {
           /* 无模板 */
         }
       }
       return h("div", { class: "flex items-center gap-4px" }, [
-        h(NTag, { size: "small", bordered: false, type: "info" }, { default: () => `代发 · ${name}` }),
+        h(
+          NTag,
+          { size: "small", bordered: false, type: "info" },
+          { default: () => `代发 · ${name}` },
+        ),
         link
           ? h(
               "a",
-              { href: link, target: "_blank", rel: "noopener noreferrer", title: link, class: "text-12px text-blue-500 hover:underline" },
+              {
+                href: link,
+                target: "_blank",
+                rel: "noopener noreferrer",
+                title: link,
+                class: "text-12px text-blue-500 hover:underline",
+              },
               "↗",
             )
           : null,
@@ -640,47 +802,94 @@ const columns: DataTableColumns<any> = [
   },
   {
     title: "自动管理 / 原因",
-    key: "auto_listing", width: 230,
-    render: (row) => h('div',{class:'flex flex-col gap-4px'},[
-      h(NButton,{size:'small',text:true,type:row.auto_listing?'primary':'default',disabled:row.is_locked||!checkAuth('catalog:write'),onClick:()=>openListing([row.id],row.auto_listing?'disable':'enable')},{default:()=>row.is_locked?'已锁定 · 不自动调整':row.auto_listing?'自动上下架 · 已开启':'自动上下架 · 未开启'}),
-      row.listing_observed_at ? h('span',{class:'text-12px'},`检查于 ${new Date(Number(row.listing_observed_at)*1000).toLocaleString()}`) : null,
-      h('span',{class:'text-12px'},row.listing_message||({manual:'人工设置',stock_out:'缺货自动下架',upstream_unavailable:'上游不可售，需人工核实',stock_recovered:'补货自动恢复'} as Record<string,string>)[row.listing_reason]||'人工管理'),
-    ]),
+    key: "auto_listing",
+    width: 230,
+    render: (row) =>
+      h("div", { class: "flex flex-col gap-4px" }, [
+        h(
+          NButton,
+          {
+            size: "small",
+            text: true,
+            type: row.auto_listing ? "primary" : "default",
+            disabled: row.is_locked || !checkAuth("catalog:write"),
+            onClick: () => openListing([row.id], row.auto_listing ? "disable" : "enable"),
+          },
+          {
+            default: () =>
+              row.is_locked
+                ? "已锁定 · 不自动调整"
+                : row.auto_listing
+                  ? "自动上下架 · 已开启"
+                  : "自动上下架 · 未开启",
+          },
+        ),
+        row.listing_observed_at
+          ? h(
+              "span",
+              { class: "text-12px" },
+              `检查于 ${new Date(Number(row.listing_observed_at) * 1000).toLocaleString()}`,
+            )
+          : null,
+        h(
+          "span",
+          { class: "text-12px" },
+          row.listing_message ||
+            (
+              {
+                manual: "人工设置",
+                stock_out: "缺货自动下架",
+                upstream_unavailable: "上游不可售，需人工核实",
+                stock_recovered: "补货自动恢复",
+              } as Record<string, string>
+            )[row.listing_reason] ||
+            "人工管理",
+        ),
+      ]),
   },
   {
     title: "状态",
     key: "status",
     width: 84,
-    render: (row) => row.is_locked || !checkAuth("catalog:write") ? h(NTag,{size:"small",bordered:false},{default:()=>row.status===1?"已上架":row.status===2?"已隐藏":"已下架"}) :
-      // 标签即开关（大厂模式）：点击标签 Popconfirm 确认上下架
-      h(
-        NPopconfirm,
-        {
-          onPositiveClick: () =>
-            handleBatchStatus(
-              [row.id],
-              row.status === 1 ? 0 : 1,
-              row.status === 1 ? "下架" : "上架",
-            ),
-        },
-        {
-          trigger: () =>
-            h(
-              NTag,
-              {
-                type: row.status === 1 ? "success" : row.status === 2 ? "warning" : "default",
-                size: "small",
-                class: "cursor-pointer",
-                style: "cursor: pointer",
-              },
-              {
-                default: () =>
-                  `${row.status === 1 ? "上架" : row.status === 2 ? "隐藏" : "下架"}${row.status === 2 ? " ↻" : ""}`,
-              },
-            ),
-          default: () => `是否${row.status === 1 ? "下架" : "上架"}「${row.name}」？此操作会暂停自动上下架。`,
-        },
-      ),
+    render: (row) =>
+      row.is_locked || !checkAuth("catalog:write")
+        ? h(
+            NTag,
+            { size: "small", bordered: false },
+            {
+              default: () => (row.status === 1 ? "已上架" : row.status === 2 ? "已隐藏" : "已下架"),
+            },
+          )
+        : // 标签即开关（大厂模式）：点击标签 Popconfirm 确认上下架
+          h(
+            NPopconfirm,
+            {
+              onPositiveClick: () =>
+                handleBatchStatus(
+                  [row.id],
+                  row.status === 1 ? 0 : 1,
+                  row.status === 1 ? "下架" : "上架",
+                ),
+            },
+            {
+              trigger: () =>
+                h(
+                  NTag,
+                  {
+                    type: row.status === 1 ? "success" : row.status === 2 ? "warning" : "default",
+                    size: "small",
+                    class: "cursor-pointer",
+                    style: "cursor: pointer",
+                  },
+                  {
+                    default: () =>
+                      `${row.status === 1 ? "上架" : row.status === 2 ? "隐藏" : "下架"}${row.status === 2 ? " ↻" : ""}`,
+                  },
+                ),
+              default: () =>
+                `是否${row.status === 1 ? "下架" : "上架"}「${row.name}」？此操作会暂停自动上下架。`,
+            },
+          ),
   },
   {
     // 推荐列（标签即开关，与状态列同款）：点击切换首页推荐——列表直接可设，无需进编辑表单
@@ -712,7 +921,9 @@ const columns: DataTableColumns<any> = [
               { default: () => (row.is_recommend ? "⭐ 已推荐" : "设推荐") },
             ),
           default: () =>
-            row.is_recommend ? `取消「${row.name}」的首页推荐？` : `将「${row.name}」设为首页推荐（storefront 首页推荐位展示）？`,
+            row.is_recommend
+              ? `取消「${row.name}」的首页推荐？`
+              : `将「${row.name}」设为首页推荐（storefront 首页推荐位展示）？`,
         },
       );
     },
@@ -731,11 +942,28 @@ const columns: DataTableColumns<any> = [
               ? h(
                   NButton,
                   { size: "small", onClick: () => handleEdit(row) },
-                  { default: () => row.is_locked ? "查看" : "编辑" },
+                  { default: () => (row.is_locked ? "查看" : "编辑") },
                 )
               : null,
-            checkAuth("catalog:write") && row.upstream_source_id ? h(NButton,{size:"small",onClick:()=>openDeliverySources(row)},{default:()=>"发货设置"}) : null,
-            checkAuth("catalog:lock") ? h(NButton,{size:"small",loading:lockBusy.value===row.id,disabled:lockBusy.value!==null,onClick:()=>changeLock(row)},{default:()=>row.is_locked?"解锁":"锁定"}) : null,
+            checkAuth("catalog:write") && row.upstream_source_id
+              ? h(
+                  NButton,
+                  { size: "small", onClick: () => openDeliverySources(row) },
+                  { default: () => "发货设置" },
+                )
+              : null,
+            checkAuth("catalog:lock")
+              ? h(
+                  NButton,
+                  {
+                    size: "small",
+                    loading: lockBusy.value === row.id,
+                    disabled: lockBusy.value !== null,
+                    onClick: () => changeLock(row),
+                  },
+                  { default: () => (row.is_locked ? "解锁" : "锁定") },
+                )
+              : null,
             checkAuth("catalog:review_read")
               ? h(
                   NButton,
@@ -746,7 +974,15 @@ const columns: DataTableColumns<any> = [
             checkAuth("catalog:delete")
               ? h(
                   NButton,
-                  { size: "small", type: "error", disabled:!!row.is_locked, title:row.is_locked?"请先解锁后再删除":"删除商品", onClick: () => { deleteTarget.value = row; } },
+                  {
+                    size: "small",
+                    type: "error",
+                    disabled: !!row.is_locked,
+                    title: row.is_locked ? "请先解锁后再删除" : "删除商品",
+                    onClick: () => {
+                      deleteTarget.value = row;
+                    },
+                  },
                   { default: () => "删除" },
                 )
               : null,
@@ -769,7 +1005,8 @@ async function loadList() {
     if (sequence !== listSequence) return;
     if (!error && data) {
       products.value = (data as any).products || [];
-      const locked=new Set(products.value.filter(p=>p.is_locked).map(p=>p.id));checkedKeys.value=checkedKeys.value.filter(id=>!locked.has(id));
+      const locked = new Set(products.value.filter((p) => p.is_locked).map((p) => p.id));
+      checkedKeys.value = checkedKeys.value.filter((id) => !locked.has(id));
       total.value = (data as any).total || 0;
     }
   } finally {
@@ -853,7 +1090,9 @@ async function handleBatchStatus(ids: number[], status: number, label: string) {
   if (!ids.length) return;
   const { data, error } = await batchUpdateProductStatus(ids, status);
   if (!error) {
-    batchReport.value=`已${label} ${data?.updated || 0} 件，跳过锁定商品 ${data?.skipped_locked || 0} 件`;batchFailures.value=[];batchReport.value += "；人工设置已暂停相关商品自动上下架";
+    batchReport.value = `已${label} ${data?.updated || 0} 件，跳过锁定商品 ${data?.skipped_locked || 0} 件`;
+    batchFailures.value = [];
+    batchReport.value += "；人工设置已暂停相关商品自动上下架";
     window.$message?.success(batchReport.value);
     checkedKeys.value = [];
     loadList();
@@ -861,14 +1100,14 @@ async function handleBatchStatus(ids: number[], status: number, label: string) {
 }
 
 // 弹窗固定本次所选商品；取消或请求失败均保留原选择。
-const showClassifyProducts=ref(false);
+const showClassifyProducts = ref(false);
 const showBatchCategory = ref(false);
 const batchCategorySaving = ref(false);
 const batchCategoryIds = ref<number[]>([]);
 const batchCategoryId = ref<number | null>(null);
 const batchCategoryOptions = computed(() => {
-  const byId = new Map(categories.value.map(c => [c.id, c]));
-  return categories.value.map(c => {
+  const byId = new Map(categories.value.map((c) => [c.id, c]));
+  return categories.value.map((c) => {
     const names: string[] = [];
     const seen = new Set<number>();
     let node = c;
@@ -882,7 +1121,9 @@ const batchCategoryOptions = computed(() => {
     return { label: names.join(" / ") + (hidden ? "（已隐藏）" : ""), value: c.id, hidden };
   });
 });
-const batchCategoryTarget = computed(() => batchCategoryOptions.value.find(c => c.value === batchCategoryId.value));
+const batchCategoryTarget = computed(() =>
+  batchCategoryOptions.value.find((c) => c.value === batchCategoryId.value),
+);
 async function openBatchCategory() {
   if (!checkedKeys.value.length) return;
   batchCategoryIds.value = [...checkedKeys.value];
@@ -894,9 +1135,13 @@ async function saveBatchCategory() {
   if (!batchCategoryId.value || batchCategorySaving.value) return;
   batchCategorySaving.value = true;
   try {
-    const { data, error } = await batchUpdateProductCategory(batchCategoryIds.value, batchCategoryId.value);
+    const { data, error } = await batchUpdateProductCategory(
+      batchCategoryIds.value,
+      batchCategoryId.value,
+    );
     if (!error && data) {
-      batchReport.value=`已将 ${data.updated || 0} 件商品移至「${batchCategoryTarget.value?.label}」，跳过锁定商品 ${data.skipped_locked || 0} 件`;batchFailures.value=[];
+      batchReport.value = `已将 ${data.updated || 0} 件商品移至「${batchCategoryTarget.value?.label}」，跳过锁定商品 ${data.skipped_locked || 0} 件`;
+      batchFailures.value = [];
       window.$message?.success(batchReport.value);
       showBatchCategory.value = false;
       checkedKeys.value = [];
@@ -914,10 +1159,18 @@ async function handleBatchDelete() {
   batchDeleting.value = true;
   try {
     const results = await Promise.all(checkedKeys.value.map((id) => deleteProduct(id)));
-    const ok = results.filter(r=>!r.error).length;
-    const skipped=results.filter(r=>(r.error as any)?.response?.data?.reason==='catalog.PRODUCT_LOCKED').length;
-    batchFailures.value=results.flatMap((r,i)=>r.error && (r.error as any)?.response?.data?.reason!=='catalog.PRODUCT_LOCKED' ? [`${products.value.find(p=>p.id===checkedKeys.value[i])?.name || `商品 ${checkedKeys.value[i]}`}：${(r.error as any)?.response?.data?.message || '删除未成功，请刷新后重试'}`] : []);
-    batchReport.value=`已删除 ${ok} 件，跳过锁定商品 ${skipped} 件，失败 ${batchFailures.value.length} 件`;
+    const ok = results.filter((r) => !r.error).length;
+    const skipped = results.filter(
+      (r) => (r.error as any)?.response?.data?.reason === "catalog.PRODUCT_LOCKED",
+    ).length;
+    batchFailures.value = results.flatMap((r, i) =>
+      r.error && (r.error as any)?.response?.data?.reason !== "catalog.PRODUCT_LOCKED"
+        ? [
+            `${products.value.find((p) => p.id === checkedKeys.value[i])?.name || `商品 ${checkedKeys.value[i]}`}：${(r.error as any)?.response?.data?.message || "删除未成功，请刷新后重试"}`,
+          ]
+        : [],
+    );
+    batchReport.value = `已删除 ${ok} 件，跳过锁定商品 ${skipped} 件，失败 ${batchFailures.value.length} 件`;
     checkedKeys.value = [];
     loadList();
   } finally {
@@ -926,7 +1179,7 @@ async function handleBatchDelete() {
 }
 
 function resetForm() {
-  editingProduct.value=null;
+  editingProduct.value = null;
   independentlySaved.value = false;
   contentProtection.value = { cover: false, description: false };
   editingId.value = 0;
@@ -940,7 +1193,14 @@ function resetForm() {
     price_yuan: 0,
     factory_price_yuan: 0,
     points_required: 0,
-    stock_type: "card", fulfillment_mode:"auto", manual_stock:-1,
+    goods_type: "virtual",
+    shipping_mode: "free",
+    shipping_fee_yuan: 0,
+    shipping_countries: [] as string[],
+    physical_stock: 0,
+    stock_type: "card",
+    fulfillment_mode: "auto",
+    manual_stock: -1,
     direct_content: "",
     delivery_mode: "status",
     stock_visible: true,
@@ -956,9 +1216,9 @@ function resetForm() {
 async function handleEdit(row: any) {
   // 编辑取详情（列表行可能缺全字段）
   const { data, error } = await fetchProduct(row.id);
-  if(error || !data)return;
+  if (error || !data) return;
   const p = data;
-  editingProduct.value=p;
+  editingProduct.value = p;
   editingId.value = p.id;
   contentProtection.value = { cover: !!p.cover_protected, description: !!p.description_protected };
   Object.assign(formData, {
@@ -970,7 +1230,14 @@ async function handleEdit(row: any) {
     price_yuan: Number(centsToYuan(p.price_cents)),
     factory_price_yuan: p.factory_price_cents ? Number(centsToYuan(p.factory_price_cents)) : 0,
     points_required: p.points_required || 0,
-    stock_type: p.stock_type, fulfillment_mode:p.fulfillment_mode || "auto", manual_stock:Number(p.manual_stock ?? -1),
+    goods_type: p.goods_type || "virtual",
+    shipping_mode: p.shipping_mode || "free",
+    shipping_fee_yuan: centsToYuan(p.shipping_fee_cents || 0),
+    shipping_countries: p.shipping_countries || [],
+    physical_stock: Number(p.physical_stock || 0),
+    stock_type: p.stock_type,
+    fulfillment_mode: p.fulfillment_mode || "auto",
+    manual_stock: Number(p.manual_stock ?? -1),
     direct_content: "",
     directContentSet: undefined,
     delivery_mode: p.delivery_mode || "status",
@@ -998,7 +1265,19 @@ function buildPayload() {
     price_cents: yuanToFen(formData.price_yuan),
     factory_price_cents: yuanToFen(formData.factory_price_yuan || 0),
     points_required: formData.points_required || 0,
-    stock_type: formData.stock_type, fulfillment_mode:formData.fulfillment_mode, manual_stock:formData.manual_stock,
+    goods_type: formData.goods_type,
+    shipping_mode: formData.shipping_mode,
+    shipping_fee_cents: yuanToFen(formData.shipping_fee_yuan || 0),
+    shipping_countries: formData.shipping_countries,
+    ...(formData.goods_type === "physical"
+      ? {
+          physical_stock: formData.physical_stock,
+          expected_physical_stock: Number(editingProduct.value?.physical_stock || 0),
+        }
+      : {}),
+    stock_type: formData.stock_type,
+    fulfillment_mode: formData.goods_type === "physical" ? "auto" : formData.fulfillment_mode,
+    manual_stock: formData.manual_stock,
     ...(formData.direct_content ? { direct_content: formData.direct_content } : {}),
     delivery_mode: formData.delivery_mode,
     stock_visible: formData.stock_visible,
@@ -1010,13 +1289,16 @@ function buildPayload() {
 }
 
 async function handleSave() {
-  if(editorLocked.value)return;
+  if (editorLocked.value) return;
   if (editorBusy.value) return;
-  if (controlPanel.value?.hasPending) { window.$message?.warning("下单控件还有未保存输入，请先点击创建/更新控件或取消编辑"); return; }
+  if (controlPanel.value?.hasPending) {
+    window.$message?.warning("下单控件还有未保存输入，请先点击创建/更新控件或取消编辑");
+    return;
+  }
   if (!formData.name || formData.price_yuan <= 0) return;
   saving.value = true;
   try {
-    if (skuPanel.value && !await skuPanel.value.savePending()) return;
+    if (skuPanel.value && !(await skuPanel.value.savePending())) return;
     const payload = buildPayload();
     const { error } = editingId.value
       ? await updateProduct(editingId.value, payload)
@@ -1026,10 +1308,13 @@ async function handleSave() {
       showCreate.value = false;
       resetForm();
       loadList();
-    } else if ((error as any)?.response?.data?.reason === 'catalog.PRODUCT_LOCKED' && editingId.value) {
+    } else if (
+      (error as any)?.response?.data?.reason === "catalog.PRODUCT_LOCKED" &&
+      editingId.value
+    ) {
       const { data: latest } = await fetchProduct(editingId.value);
       if (latest) editingProduct.value = latest as any;
-      window.$message?.warning('商品已被锁定，未提交的输入仍保留在当前页面。');
+      window.$message?.warning("商品已被锁定，未提交的输入仍保留在当前页面。");
     }
   } finally {
     saving.value = false;
@@ -1062,9 +1347,11 @@ async function saveAndContinue() {
   }
 }
 
-
 onMounted(() => {
-  if (route.query.low_stock === "1") {statusFilter.value=0;inventoryFilter.value="low";}
+  if (route.query.low_stock === "1") {
+    statusFilter.value = 0;
+    inventoryFilter.value = "low";
+  }
   loadList();
   loadCategories();
   loadConnections();
@@ -1072,17 +1359,40 @@ onMounted(() => {
 </script>
 
 <template>
-  <ListingManagement v-model:show="showListing" :ids="listingIds" :filter="listingFilter" :initial-action="listingAction" :scope-label="listingScope" @saved="listingSaved" />
+  <ListingManagement
+    v-model:show="showListing"
+    :ids="listingIds"
+    :filter="listingFilter"
+    :initial-action="listingAction"
+    :scope-label="listingScope"
+    @saved="listingSaved"
+  />
   <div class="product-management min-h-500px flex flex-1 gap-16px overflow-hidden">
-    <DeleteProductModal :show="!!deleteTarget" :product="deleteTarget" @update:show="!$event && (deleteTarget = null)" @deleted="loadList" />
+    <DeleteProductModal
+      :show="!!deleteTarget"
+      :product="deleteTarget"
+      @update:show="!$event && (deleteTarget = null)"
+      @deleted="loadList"
+    />
     <!-- 左侧：分类树（大厂后台交互——左树筛选 + 右列表；悬停显示完整分类名） -->
     <NCard
       title="商品分类"
       class="product-category-card shrink-0"
-      :content-style="{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }"
+      :content-style="{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        overflow: 'hidden',
+      }"
     >
       <template #header-extra>
-        <NButton v-auth="'catalog:category_write'" size="tiny" quaternary @click="showCategory = true">管理</NButton>
+        <NButton
+          v-auth="'catalog:category_write'"
+          size="tiny"
+          quaternary
+          @click="showCategory = true"
+          >管理</NButton
+        >
       </template>
       <!-- 展开/收起独立成行（放 header 时窄屏与标题/管理按钮挤在一行会换行错位） -->
       <div class="mb-8px flex shrink-0 items-center gap-8px">
@@ -1106,7 +1416,12 @@ onMounted(() => {
     <NCard
       title="商品管理"
       class="product-list-card min-w-0 flex-1"
-      :content-style="{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }"
+      :content-style="{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        overflow: 'hidden',
+      }"
     >
       <div class="mb-16px flex shrink-0 flex-wrap items-center gap-12px">
         <NButton
@@ -1119,12 +1434,7 @@ onMounted(() => {
         >
           新增商品
         </NButton>
-        <NButton
-          v-auth="'catalog:category_write'"
-          @click="showCategory = true"
-        >
-          分类管理
-        </NButton>
+        <NButton v-auth="'catalog:category_write'" @click="showCategory = true"> 分类管理 </NButton>
         <NInput
           v-model:value="keyword"
           placeholder="搜索商品名"
@@ -1149,26 +1459,102 @@ onMounted(() => {
           {{ supplyFilter === 0 ? "✓ 仅自营" : "仅自营" }}
         </NButton>
         <NButton @click="onSearch">搜索</NButton>
-        <NButton v-auth="'catalog:write'" @click="loadCategories().then(()=>showClassifyProducts=true)">按关键词分类</NButton>
+        <NButton
+          v-auth="'catalog:write'"
+          @click="loadCategories().then(() => (showClassifyProducts = true))"
+          >按关键词分类</NButton
+        >
       </div>
 
       <div class="mb-12px flex flex-wrap items-center gap-12px">
-        <NSelect v-model:value="lockFilter" :options="[{label:'已锁定',value:'locked'},{label:'未锁定',value:'unlocked'}]" placeholder="全部锁定状态" clearable style="width:170px" @update:value="onSearch" />
-        <template v-if="categoryFilter"><span>{{ selectedCategoryName }} · 包含子分类</span><NButton v-auth="'catalog:category_read'" @click="showPlacements=true">置顶与推荐</NButton></template>
-        <span v-if="pageLockedCount" class="text-13px">本页 {{ pageLockedCount }} 件已锁定，全选会自动跳过。</span>
+        <NSelect
+          v-model:value="lockFilter"
+          :options="[
+            { label: '已锁定', value: 'locked' },
+            { label: '未锁定', value: 'unlocked' },
+          ]"
+          placeholder="全部锁定状态"
+          clearable
+          style="width: 170px"
+          @update:value="onSearch"
+        />
+        <template v-if="categoryFilter"
+          ><span>{{ selectedCategoryName }} · 包含子分类</span
+          ><NButton v-auth="'catalog:category_read'" @click="showPlacements = true"
+            >置顶与推荐</NButton
+          ></template
+        >
+        <span v-if="pageLockedCount" class="text-13px"
+          >本页 {{ pageLockedCount }} 件已锁定，全选会自动跳过。</span
+        >
       </div>
-      <NAlert v-if="batchReport" :type="batchFailures.length?'warning':'success'" closable class="mb-12px" @close="batchReport=''">{{ batchReport }}<ul v-if="batchFailures.length"><li v-for="failure in batchFailures" :key="failure">{{ failure }}</li></ul></NAlert>
-      <div class="mb-8px flex flex-wrap items-center gap-8px shrink-0"><span>上架状态</span><FilterTabs v-model:value="statusFilter" :options="statusTabs" @change="onSearch" /></div>
-      <div class="mb-12px flex flex-wrap items-center gap-8px shrink-0"><span>库存状态</span><FilterTabs v-model:value="inventoryFilter" :options="inventoryTabs" @change="onSearch" /></div>
+      <NAlert
+        v-if="batchReport"
+        :type="batchFailures.length ? 'warning' : 'success'"
+        closable
+        class="mb-12px"
+        @close="batchReport = ''"
+        >{{ batchReport }}
+        <ul v-if="batchFailures.length">
+          <li v-for="failure in batchFailures" :key="failure">{{ failure }}</li>
+        </ul></NAlert
+      >
+      <div class="mb-8px flex flex-wrap items-center gap-8px shrink-0">
+        <span>上架状态</span
+        ><FilterTabs v-model:value="statusFilter" :options="statusTabs" @change="onSearch" />
+      </div>
       <div class="mb-12px flex flex-wrap items-center gap-8px shrink-0">
-        <NButton :type="restockedOnly?'primary':'default'" @click="showRestocked">{{ restockedOnly?'✓ ':'' }}补货待上架</NButton>
-        <NSelect v-model:value="autoListingFilter" :options="[{label:'自动管理已开启',value:'enabled'},{label:'自动管理未开启',value:'disabled'}]" clearable placeholder="全部管理方式" style="width:180px" @update:value="onSearch" />
-        <NButton v-auth="'catalog:write'" :disabled="loading||!total" @click="openListing()">管理全部筛选结果（{{ total }} 件）</NButton>
-        <NButton v-auth="'supply:sync'" :disabled="!supplyFilter||supplyFilter<0||checkingStock" :loading="checkingStock" @click="checkChannelStock">检查该货源库存与补货</NButton>
-        <span class="text-12px">{{ supplyFilter?'按所选货源后台检查':'选择一个货源后可检查库存' }}；待确认包含过期或查询失败，不能当作缺货。</span>
-        <NButton v-if="restockedOnly" text @click="restockedOnly=false;onSearch()">取消补货限定</NButton>
+        <span>库存状态</span
+        ><FilterTabs v-model:value="inventoryFilter" :options="inventoryTabs" @change="onSearch" />
       </div>
-      <NAlert v-if="stockCheckMessage" type="info" class="mb-12px" role="status" aria-live="polite">{{ stockCheckMessage }}</NAlert>
+      <div class="mb-12px flex flex-wrap items-center gap-8px shrink-0">
+        <NButton :type="restockedOnly ? 'primary' : 'default'" @click="showRestocked"
+          >{{ restockedOnly ? "✓ " : "" }}补货待上架</NButton
+        >
+        <NSelect
+          v-model:value="autoListingFilter"
+          :options="[
+            { label: '自动管理已开启', value: 'enabled' },
+            { label: '自动管理未开启', value: 'disabled' },
+          ]"
+          clearable
+          placeholder="全部管理方式"
+          style="width: 180px"
+          @update:value="onSearch"
+        />
+        <NButton v-auth="'catalog:write'" :disabled="loading || !total" @click="openListing()"
+          >管理全部筛选结果（{{ total }} 件）</NButton
+        >
+        <NButton
+          v-auth="'supply:sync'"
+          :disabled="!supplyFilter || supplyFilter < 0 || checkingStock"
+          :loading="checkingStock"
+          @click="checkChannelStock"
+          >检查该货源库存与补货</NButton
+        >
+        <span class="text-12px"
+          >{{
+            supplyFilter ? "按所选货源后台检查" : "选择一个货源后可检查库存"
+          }}；待确认包含过期或查询失败，不能当作缺货。</span
+        >
+        <NButton
+          v-if="restockedOnly"
+          text
+          @click="
+            restockedOnly = false;
+            onSearch();
+          "
+          >取消补货限定</NButton
+        >
+      </div>
+      <NAlert
+        v-if="stockCheckMessage"
+        type="info"
+        class="mb-12px"
+        role="status"
+        aria-live="polite"
+        >{{ stockCheckMessage }}</NAlert
+      >
 
       <!-- 批量操作条（勾选后出现） -->
       <div
@@ -1176,30 +1562,70 @@ onMounted(() => {
         class="mb-12px flex shrink-0 flex-wrap items-center gap-8px rounded-6px bg-primary-50 px-12px py-8px dark:bg-gray-800"
       >
         <span class="text-13px"
-          >已选 <b>{{ checkedKeys.length }}</b> 件<span v-if="pageLockedCount">，本页跳过 {{ pageLockedCount }} 件锁定商品</span><span v-if="offPageSelected">（其他页 {{ offPageSelected }} 件）</span></span
+          >已选 <b>{{ checkedKeys.length }}</b> 件<span v-if="pageLockedCount"
+            >，本页跳过 {{ pageLockedCount }} 件锁定商品</span
+          ><span v-if="offPageSelected">（其他页 {{ offPageSelected }} 件）</span></span
         >
         <NPopconfirm @positive-click="handleBatchStatus([...checkedKeys], 1, '上架')">
           <template #trigger>
-            <NButton v-auth="'catalog:write'" size="small" type="success" :disabled="!checkedKeys.length">批量上架</NButton>
+            <NButton
+              v-auth="'catalog:write'"
+              size="small"
+              type="success"
+              :disabled="!checkedKeys.length"
+              >批量上架</NButton
+            >
           </template>
           确定上架选中的 {{ checkedKeys.length }} 件商品？同时暂停这些商品的自动上下架。
         </NPopconfirm>
         <NPopconfirm @positive-click="handleBatchStatus([...checkedKeys], 0, '下架')">
           <template #trigger>
-            <NButton v-auth="'catalog:write'" size="small" type="warning" :disabled="!checkedKeys.length">批量下架</NButton>
+            <NButton
+              v-auth="'catalog:write'"
+              size="small"
+              type="warning"
+              :disabled="!checkedKeys.length"
+              >批量下架</NButton
+            >
           </template>
           确定下架选中的 {{ checkedKeys.length }} 件商品？同时暂停这些商品的自动上下架。
         </NPopconfirm>
-        <NButton v-auth="'catalog:write'" size="small" :disabled="!checkedKeys.length" @click="openListing(checkedKeys)">自动上下架设置</NButton>
-        <NButton v-auth="'catalog:write'" size="small" type="primary" @click="openBatchContent">批量修改内容</NButton>
-        <NButton v-auth="'catalog:write'" size="small" type="primary" :disabled="!checkedKeys.length" @click="openBatchCategory">修改分类</NButton>
+        <NButton
+          v-auth="'catalog:write'"
+          size="small"
+          :disabled="!checkedKeys.length"
+          @click="openListing(checkedKeys)"
+          >自动上下架设置</NButton
+        >
+        <NButton v-auth="'catalog:write'" size="small" type="primary" @click="openBatchContent"
+          >批量修改内容</NButton
+        >
+        <NButton
+          v-auth="'catalog:write'"
+          size="small"
+          type="primary"
+          :disabled="!checkedKeys.length"
+          @click="openBatchCategory"
+          >修改分类</NButton
+        >
         <NPopconfirm @positive-click="handleBatchDelete">
           <template #trigger>
-            <NButton v-auth="'catalog:delete'" size="small" type="error" :loading="batchDeleting" :disabled="!checkedKeys.length">批量删除</NButton>
+            <NButton
+              v-auth="'catalog:delete'"
+              size="small"
+              type="error"
+              :loading="batchDeleting"
+              :disabled="!checkedKeys.length"
+              >批量删除</NButton
+            >
           </template>
-          确定删除选中的 {{ checkedKeys.length }} 件商品？仅删除已下架且可删除的商品，保留历史订单；失败不影响其余商品。
+          确定删除选中的
+          {{ checkedKeys.length }}
+          件商品？仅删除已下架且可删除的商品，保留历史订单；失败不影响其余商品。
         </NPopconfirm>
-        <NButton v-if="checkedKeys.length" size="small" quaternary @click="checkedKeys = []">取消选择</NButton>
+        <NButton v-if="checkedKeys.length" size="small" quaternary @click="checkedKeys = []"
+          >取消选择</NButton
+        >
       </div>
 
       <NDataTable
@@ -1224,18 +1650,49 @@ onMounted(() => {
       />
     </NCard>
 
-    <CategoryPlacements v-model:show="showPlacements" :category-id="categoryFilter || 0" :category-name="selectedCategoryName" :categories="categories" />
-    <ClassifyProducts v-model:show="showClassifyProducts" :categories="batchCategoryOptions" @saved="loadList" />
-    <BatchContentModal v-model:show="showBatchContent" :ids="batchContentIDs" :category-id="batchContentCategory" :categories="batchCategoryOptions" @saved="contentSaved" />
+    <CategoryPlacements
+      v-model:show="showPlacements"
+      :category-id="categoryFilter || 0"
+      :category-name="selectedCategoryName"
+      :categories="categories"
+    />
+    <ClassifyProducts
+      v-model:show="showClassifyProducts"
+      :categories="batchCategoryOptions"
+      @saved="loadList"
+    />
+    <BatchContentModal
+      v-model:show="showBatchContent"
+      :ids="batchContentIDs"
+      :category-id="batchContentCategory"
+      :categories="batchCategoryOptions"
+      @saved="contentSaved"
+    />
 
-    <NModal v-model:show="showBatchCategory" preset="card" title="批量修改分类"
-      class="w-560px max-w-[calc(100vw-32px)]" :mask-closable="!batchCategorySaving" :closable="!batchCategorySaving" :close-on-esc="!batchCategorySaving">
-      <p class="mb-16px">将选中的 <b>{{ batchCategoryIds.length }}</b> 件商品移至同一个分类。</p>
+    <NModal
+      v-model:show="showBatchCategory"
+      preset="card"
+      title="批量修改分类"
+      class="w-560px max-w-[calc(100vw-32px)]"
+      :mask-closable="!batchCategorySaving"
+      :closable="!batchCategorySaving"
+      :close-on-esc="!batchCategorySaving"
+    >
+      <p class="mb-16px">
+        将选中的 <b>{{ batchCategoryIds.length }}</b> 件商品移至同一个分类。
+      </p>
       <NFormItem label="目标分类" required>
-        <NSelect v-model:value="batchCategoryId" :options="batchCategoryOptions" filterable
-          placeholder="搜索分类名称或完整路径" :disabled="batchCategorySaving" />
+        <NSelect
+          v-model:value="batchCategoryId"
+          :options="batchCategoryOptions"
+          filterable
+          placeholder="搜索分类名称或完整路径"
+          :disabled="batchCategorySaving"
+        />
       </NFormItem>
-      <p v-if="batchCategoryTarget" class="mb-12px break-words">目标：{{ batchCategoryTarget.label }}</p>
+      <p v-if="batchCategoryTarget" class="mb-12px break-words">
+        目标：{{ batchCategoryTarget.label }}
+      </p>
       <NAlert v-if="batchCategoryTarget?.hidden" type="warning" class="mb-12px">
         目标分类或其上级已隐藏，移入后这些商品将不在前台展示。
       </NAlert>
@@ -1243,208 +1700,379 @@ onMounted(() => {
       <template #footer>
         <div class="flex justify-end gap-8px">
           <NButton :disabled="batchCategorySaving" @click="showBatchCategory = false">取消</NButton>
-          <NButton type="primary" :loading="batchCategorySaving" :disabled="!batchCategoryId" @click="saveBatchCategory">确认修改</NButton>
+          <NButton
+            type="primary"
+            :loading="batchCategorySaving"
+            :disabled="!batchCategoryId"
+            @click="saveBatchCategory"
+            >确认修改</NButton
+          >
         </div>
       </template>
     </NModal>
 
-    <DeliverySources v-if="deliveryProduct" v-model:show="showDeliverySources" :product-id="deliveryProduct.id" :readonly="deliveryProduct.is_locked" @saved="deliverySaved" />
+    <DeliverySources
+      v-if="deliveryProduct"
+      v-model:show="showDeliverySources"
+      :product-id="deliveryProduct.id"
+      :readonly="deliveryProduct.is_locked"
+      @saved="deliverySaved"
+    />
     <!-- 新增/编辑弹窗（分步表单：基础 → 价格库存 → 商品描述 → 规格与控件 → 高级设置） -->
     <NModal
-       :show="showCreate" @update:show="!$event && requestClose()"
-      :closable="!editorBusy" :mask-closable="!editorBusy" :close-on-esc="!editorBusy" @after-leave="afterEditorLeave"
+      :show="showCreate"
+      @update:show="!$event && requestClose()"
+      :closable="!editorBusy"
+      :mask-closable="!editorBusy"
+      :close-on-esc="!editorBusy"
+      @after-leave="afterEditorLeave"
       preset="card"
       :title="editingId ? '编辑商品' : '新增商品'"
       class="w-780px"
-      :style="{ width: step === 3 || step === 4 ? '880px' : undefined, maxWidth: 'calc(100vw - 24px)' }"
+      :style="{
+        width: step === 3 || step === 4 ? '880px' : undefined,
+        maxWidth: 'calc(100vw - 24px)',
+      }"
       :class="step === 3 ? 'product-editor-step-modal' : undefined"
     >
-      <NAlert v-if="editorLocked" type="info" class="mb-12px">商品已锁定，暂不可修改或删除，批量操作会自动跳过。
-        <span v-if="editingProduct.locked_at">锁定时间：{{ new Date(editingProduct.locked_at*1000).toLocaleString() }}。</span>
-        <NButton v-if="checkAuth('catalog:lock')" text :loading="lockBusy===editingId" @click="changeLock(editingProduct)">解锁商品</NButton><span v-else>请联系有解锁权限的管理员。</span>
+      <NAlert v-if="editorLocked" type="info" class="mb-12px"
+        >商品已锁定，暂不可修改或删除，批量操作会自动跳过。
+        <span v-if="editingProduct.locked_at"
+          >锁定时间：{{ new Date(editingProduct.locked_at * 1000).toLocaleString() }}。</span
+        >
+        <NButton
+          v-if="checkAuth('catalog:lock')"
+          text
+          :loading="lockBusy === editingId"
+          @click="changeLock(editingProduct)"
+          >解锁商品</NButton
+        ><span v-else>请联系有解锁权限的管理员。</span>
       </NAlert>
       <div :inert="editorBusy || undefined">
-      <NAlert v-if="independentlySaved" type="info" class="mb-12px">已有内容单独保存并生效；关闭只放弃尚未保存的输入。</NAlert>
-      <NSteps
-        :current="step"
-        size="small"
-        class="mb-20px px-12px"
-        @update:current="(v: number) => (step = v)"
-      >
-        <NStep title="基础信息" />
-        <NStep title="价格库存" />
-        <NStep title="商品描述" />
-        <NStep title="规格与控件" />
-        <NStep title="高级设置" />
-      </NSteps>
+        <NAlert v-if="independentlySaved" type="info" class="mb-12px"
+          >已有内容单独保存并生效；关闭只放弃尚未保存的输入。</NAlert
+        >
+        <NSteps
+          :current="step"
+          size="small"
+          class="mb-20px px-12px"
+          @update:current="(v: number) => (step = v)"
+        >
+          <NStep title="基础信息" />
+          <NStep title="价格库存" />
+          <NStep title="商品描述" />
+          <NStep title="规格与控件" />
+          <NStep title="高级设置" />
+        </NSteps>
 
-      <!-- 商品描述步：完全展开（编辑器整高可见，不内滚）；其余步骤限高内滚 -->
-      <NScrollbar v-if="step !== 3" class="max-h-460px px-12px">
-        <!-- 第 1 步：基础信息 -->
-        <NForm v-if="step === 1" :model="formData" :disabled="editorLocked" label-placement="left" label-width="100">
-          <NFormItem label="商品名称" path="name" :rule="{ required: true }">
-            <NInput v-model:value="formData.name" placeholder="请输入商品名称" />
-          </NFormItem>
-          <NFormItem label="商品分类">
-            <div class="flex w-full items-center gap-8px">
-              <NTreeSelect
-                v-model:value="formData.category_id"
-                :options="categoryTreeOptions"
-                placeholder="按层级选择分类（可空）"
-                clearable
-                default-expand-all
-                class="flex-1"
-              />
-              <NButton
-                v-auth="'catalog:category_write'"
-                :disabled="editorLocked"
-                size="small"
-                quaternary
-                type="primary"
-                @click="showCategory = true"
+        <!-- 商品描述步：完全展开（编辑器整高可见，不内滚）；其余步骤限高内滚 -->
+        <NScrollbar v-if="step !== 3" class="max-h-460px px-12px">
+          <!-- 第 1 步：基础信息 -->
+          <NForm
+            v-if="step === 1"
+            :model="formData"
+            :disabled="editorLocked"
+            label-placement="left"
+            label-width="100"
+          >
+            <NFormItem label="商品名称" path="name" :rule="{ required: true }">
+              <NInput v-model:value="formData.name" placeholder="请输入商品名称" />
+            </NFormItem>
+            <NFormItem label="商品分类">
+              <div class="flex w-full items-center gap-8px">
+                <NTreeSelect
+                  v-model:value="formData.category_id"
+                  :options="categoryTreeOptions"
+                  placeholder="按层级选择分类（可空）"
+                  clearable
+                  default-expand-all
+                  class="flex-1"
+                />
+                <NButton
+                  v-auth="'catalog:category_write'"
+                  :disabled="editorLocked"
+                  size="small"
+                  quaternary
+                  type="primary"
+                  @click="showCategory = true"
+                >
+                  管理分类
+                </NButton>
+              </div>
+            </NFormItem>
+            <NFormItem label="商品类型"
+              ><NSelect
+                v-model:value="formData.goods_type"
+                :disabled="!!editingId"
+                :options="[
+                  { label: '虚拟商品', value: 'virtual' },
+                  { label: '实体商品（快递配送）', value: 'physical' },
+                ]"
+            /></NFormItem>
+            <template v-if="formData.goods_type === 'physical'">
+              <NFormItem label="运费方式"
+                ><NSelect
+                  v-model:value="formData.shipping_mode"
+                  :options="[
+                    { label: '包邮', value: 'free' },
+                    { label: '固定运费', value: 'fixed' },
+                  ]"
+              /></NFormItem>
+              <NFormItem v-if="formData.shipping_mode === 'fixed'" label="运费（元）"
+                ><NInputNumber
+                  v-model:value="formData.shipping_fee_yuan"
+                  :min="0.01"
+                  :precision="2"
+              /></NFormItem>
+              <NFormItem label="配送国家"
+                ><NSelect
+                  v-model:value="formData.shipping_countries"
+                  multiple
+                  filterable
+                  :options="countryOptions(shippingRegions)"
+                  placeholder="选择可配送的国家或地区"
+              /></NFormItem>
+              <NFormItem label="可售库存"
+                ><div>
+                  <NInputNumber
+                    v-model:value="formData.physical_stock"
+                    :min="0"
+                    :max="100000000"
+                    :precision="0"
+                  />
+                  <p class="text-12px opacity-60">
+                    无规格商品使用此库存；多规格请在规格中调整。新增首个规格前须清空此库存；已有无规格订单请新建商品。数量不含待付款预占。
+                  </p>
+                </div></NFormItem
               >
-                管理分类
-              </NButton>
-            </div>
-          </NFormItem>
-          <NButton v-if="editingId && checkAuth('catalog:write')" class="mb-12px" @click="openDeliverySources(editingProduct)">发货设置：上游采购 / 我的卡密 / 重复发货</NButton>
-          <NFormItem label="交付方式"><NSelect v-model:value="formData.fulfillment_mode" :disabled="['local','reuse'].includes(formData.fulfillment_mode)" :options="[{label:'自动交付',value:'auto'},{label:'人工服务',value:'manual'},{label:'我的卡密（请在发货设置修改）',value:'local',disabled:true},{label:'重复发货（请在发货设置修改）',value:'reuse',disabled:true}]" /></NFormItem>
-          <NFormItem label="人工可售总量"><div class="w-full"><NInputNumber v-model:value="formData.manual_stock" :min="-1" :precision="0" /><p class="text-12px opacity-60">-1 不限；包含已售及待付款占用，所有人工规格共享。取消或全额退款释放额度。</p></div></NFormItem>
-          <NFormItem v-if="formData.fulfillment_mode !== 'manual'" label="库存类型">
-            <NSelect v-model:value="formData.stock_type" :options="stockTypeOptions" />
-          </NFormItem>
-          <NFormItem v-if="formData.fulfillment_mode !== 'manual' && formData.stock_type !== 'card'" label="直发内容">
-            <div class="w-full">
-              <NInput
-                v-model:value="formData.direct_content"
-                type="textarea"
-                :rows="3"
-                :placeholder="directContentSet ? '已设置（加密存储不回显）——留空保持不变，填写则覆盖' : '买家支付后直接收到的内容，例如网盘链接、兑换码、资源口令等。同一内容会发给每个买家，可反复售卖。'"
-              />
-              <div class="mt-4px text-11px text-gray-400">
-                链接/兑换码商品无需导入卡密，买家付款后系统自动把该内容直接交付（库存显示「不限」）
-              </div>
-            </div>
-          </NFormItem>
-          <NFormItem label="状态">
-            <NRadioGroup v-model:value="formData.status">
-              <NSpace>
-                <NRadio :value="1">上架</NRadio>
-                <NRadio :value="0">下架</NRadio>
-                <NRadio :value="2">隐藏（会员可见）</NRadio>
-              </NSpace>
-            </NRadioGroup>
-          </NFormItem>
-        </NForm>
-
-        <!-- 第 2 步：价格库存 -->
-        <NForm v-else-if="step === 2" :model="formData" :disabled="editorLocked" label-placement="left" label-width="100">
-          <NFormItem label="售价（元）" path="price_yuan" :rule="{ required: true }">
-            <NInputNumber
-              v-model:value="formData.price_yuan"
-              :min="0.01"
-              :precision="2"
-              :step="0.01"
-              class="w-full"
-            />
-          </NFormItem>
-          <NFormItem label="成本价（元）">
-            <NInputNumber
-              v-model:value="formData.factory_price_yuan"
-              :min="0"
-              :precision="2"
-              :step="0.01"
-              class="w-full"
-            />
-          </NFormItem>
-          <NFormItem label="积分价">
-            <NInputNumber
-              v-model:value="formData.points_required"
-              :min="0"
-              :precision="0"
-              class="w-full"
-            />
-            <span class="ml-8px text-12px text-gray-400 whitespace-nowrap">0 = 不参与积分商城</span>
-          </NFormItem>
-          <NFormItem label="库存可见">
-            <NSwitch v-model:value="formData.stock_visible" />
-            <span class="ml-8px text-12px text-gray-400">关闭后前台不显示剩余库存</span>
-          </NFormItem>
-          <NFormItem label="首页推荐">
-            <NSwitch v-model:value="formData.is_recommend" />
-            <span class="ml-8px text-12px text-gray-400">开启后商品进入 storefront 首页「推荐商品」区块</span>
-          </NFormItem>
-          <NFormItem label="排序">
-            <NInputNumber v-model:value="formData.sort" :precision="0" class="w-full" />
-            <span class="ml-8px text-12px text-gray-400 whitespace-nowrap">小值靠前</span>
-          </NFormItem>
-        </NForm>
-
-        <!-- 高级设置（第 5 步，内滚容器内） -->
-        <NForm v-else :model="formData" :disabled="editorLocked" label-placement="left" label-width="100">
-          <NFormItem label="发货模式">
-            <NSelect v-model:value="formData.delivery_mode" :options="deliveryModeOptions" />
-          </NFormItem>
-          <NFormItem label="导入去重">
-            <NSwitch v-model:value="formData.dedup" />
-            <span class="ml-8px text-12px text-gray-400">卡密导入时按内容去重</span>
-          </NFormItem>
-        </NForm>
-      </NScrollbar>
-
-      <!-- 第 3 步：商品描述（完全展开——封面/图集/编辑器整高可见，不内滚；弹窗整体上移） -->
-      <div v-if="step === 3" class="px-12px">
-        <NAlert v-if="contentProtection.cover || contentProtection.description" type="info" class="mb-12px">
-          本地内容保护：{{ [contentProtection.cover ? '封面' : '', contentProtection.description ? '产品介绍' : ''].filter(Boolean).join('、') }}。
-          可在「批量修改内容」中选择该商品并恢复跟随上游。
-        </NAlert>
-        <NForm :model="formData" :disabled="editorLocked" label-placement="top">
-          <div class="flex gap-24px">
-            <NFormItem label="封面图" class="w-240px">
-              <MediaField :disabled="editorLocked" v-model:value="formData.cover" tip="建议 1:1，列表缩略图" />
-            </NFormItem>
-            <NFormItem label="详情图集" class="flex-1">
-              <MediaField :disabled="editorLocked" v-model:value="formData.images" multiple tip="详情页轮播，可多选" />
-            </NFormItem>
-          </div>
-          <NFormItem label="商品描述">
-            <div class="w-full">
-              <div v-if="editorLocked" class="break-words" v-html="formData.description" />
-              <RichEditor v-else
-                v-model="formData.description"
-                height="420px"
-                placeholder="商品详情（所见即所得；插图走素材库）"
-              />
-              <div class="mt-4px text-12px text-gray-400">
-                输出 HTML 入库前经服务端白名单 sanitize（防 XSS）；图片统一素材库可复用。
-              </div>
-            </div>
-          </NFormItem>
-        </NForm>
-      </div>
-
-      <!-- 第 4 步：规格与控件（面板内嵌——编辑态直接生效；创建态先保存商品） -->
-      <div v-if="showCreate" v-show="step === 4" class="px-12px">
-        <template v-if="editingId">
-          <NAlert type="info" class="mb-12px">规格的「保存/全部保存/删除」及控件的「创建/更新/删除」会立即生效，关闭商品窗口不会撤销。其余未保存输入可通过取消放弃。</NAlert>
-          <NCard size="small" title="SKU 多规格" class="mb-12px">
-            <SkuPanel ref="skuPanel" :key="editingId" :product-id="editingId" :readonly="editorLocked" @persisted="independentlySaved = true" />
-          </NCard>
-          <NCard size="small" title="下单填写信息">
-            <ControlPanel ref="controlPanel" :product-id="editingId" :readonly="editorLocked" @persisted="independentlySaved = true" />
-          </NCard>
-        </template>
-        <NCard v-else size="small" class="py-40px">
-          <NEmpty description="SKU 规格与下单控件挂在已保存的商品上">
-            <template #extra>
-              <NButton type="primary" :loading="saving" @click="saveAndContinue">
-                保存商品并配置
-              </NButton>
+              <p class="mb-12px text-12px opacity-60">
+                同一商品多件或多规格，每单只收一次运费。多个商品的运费相加。
+              </p>
             </template>
-          </NEmpty>
-        </NCard>
-      </div>
+            <NButton
+              v-if="formData.goods_type !== 'physical' && editingId && checkAuth('catalog:write')"
+              class="mb-12px"
+              @click="openDeliverySources(editingProduct)"
+              >发货设置：上游采购 / 我的卡密 / 重复发货</NButton
+            >
+            <NFormItem v-if="formData.goods_type !== 'physical'" label="交付方式"
+              ><NSelect
+                v-model:value="formData.fulfillment_mode"
+                :disabled="['local', 'reuse'].includes(formData.fulfillment_mode)"
+                :options="[
+                  { label: '自动交付', value: 'auto' },
+                  { label: '人工服务', value: 'manual' },
+                  { label: '我的卡密（请在发货设置修改）', value: 'local', disabled: true },
+                  { label: '重复发货（请在发货设置修改）', value: 'reuse', disabled: true },
+                ]"
+            /></NFormItem>
+            <NFormItem v-if="formData.goods_type !== 'physical'" label="人工可售总量"
+              ><div class="w-full">
+                <NInputNumber v-model:value="formData.manual_stock" :min="-1" :precision="0" />
+                <p class="text-12px opacity-60">
+                  -1 不限；包含已售及待付款占用，所有人工规格共享。取消或全额退款释放额度。
+                </p>
+              </div></NFormItem
+            >
+            <NFormItem
+              v-if="formData.goods_type !== 'physical' && formData.fulfillment_mode !== 'manual'"
+              label="库存类型"
+            >
+              <NSelect v-model:value="formData.stock_type" :options="stockTypeOptions" />
+            </NFormItem>
+            <NFormItem
+              v-if="
+                formData.goods_type !== 'physical' &&
+                formData.fulfillment_mode !== 'manual' &&
+                formData.stock_type !== 'card'
+              "
+              label="直发内容"
+            >
+              <div class="w-full">
+                <NInput
+                  v-model:value="formData.direct_content"
+                  type="textarea"
+                  :rows="3"
+                  :placeholder="
+                    directContentSet
+                      ? '已设置（加密存储不回显）——留空保持不变，填写则覆盖'
+                      : '买家支付后直接收到的内容，例如网盘链接、兑换码、资源口令等。同一内容会发给每个买家，可反复售卖。'
+                  "
+                />
+                <div class="mt-4px text-11px text-gray-400">
+                  链接/兑换码商品无需导入卡密，买家付款后系统自动把该内容直接交付（库存显示「不限」）
+                </div>
+              </div>
+            </NFormItem>
+            <NFormItem label="状态">
+              <NRadioGroup v-model:value="formData.status">
+                <NSpace>
+                  <NRadio :value="1">上架</NRadio>
+                  <NRadio :value="0">下架</NRadio>
+                  <NRadio :value="2">隐藏（会员可见）</NRadio>
+                </NSpace>
+              </NRadioGroup>
+            </NFormItem>
+          </NForm>
 
+          <!-- 第 2 步：价格库存 -->
+          <NForm
+            v-else-if="step === 2"
+            :model="formData"
+            :disabled="editorLocked"
+            label-placement="left"
+            label-width="100"
+          >
+            <NFormItem label="售价（元）" path="price_yuan" :rule="{ required: true }">
+              <NInputNumber
+                v-model:value="formData.price_yuan"
+                :min="0.01"
+                :precision="2"
+                :step="0.01"
+                class="w-full"
+              />
+            </NFormItem>
+            <NFormItem label="成本价（元）">
+              <NInputNumber
+                v-model:value="formData.factory_price_yuan"
+                :min="0"
+                :precision="2"
+                :step="0.01"
+                class="w-full"
+              />
+            </NFormItem>
+            <NFormItem v-if="formData.goods_type !== 'physical'" label="积分价">
+              <NInputNumber
+                v-model:value="formData.points_required"
+                :min="0"
+                :precision="0"
+                class="w-full"
+              />
+              <span class="ml-8px text-12px text-gray-400 whitespace-nowrap"
+                >0 = 不参与积分商城</span
+              >
+            </NFormItem>
+            <NFormItem label="库存可见">
+              <NSwitch v-model:value="formData.stock_visible" />
+              <span class="ml-8px text-12px text-gray-400">关闭后前台不显示剩余库存</span>
+            </NFormItem>
+            <NFormItem label="首页推荐">
+              <NSwitch v-model:value="formData.is_recommend" />
+              <span class="ml-8px text-12px text-gray-400"
+                >开启后商品进入 storefront 首页「推荐商品」区块</span
+              >
+            </NFormItem>
+            <NFormItem label="排序">
+              <NInputNumber v-model:value="formData.sort" :precision="0" class="w-full" />
+              <span class="ml-8px text-12px text-gray-400 whitespace-nowrap">小值靠前</span>
+            </NFormItem>
+          </NForm>
+
+          <!-- 高级设置（第 5 步，内滚容器内） -->
+          <NForm
+            v-else
+            :model="formData"
+            :disabled="editorLocked"
+            label-placement="left"
+            label-width="100"
+          >
+            <NFormItem v-if="formData.goods_type !== 'physical'" label="发货模式">
+              <NSelect v-model:value="formData.delivery_mode" :options="deliveryModeOptions" />
+            </NFormItem>
+            <NFormItem label="导入去重">
+              <NSwitch v-model:value="formData.dedup" />
+              <span class="ml-8px text-12px text-gray-400">卡密导入时按内容去重</span>
+            </NFormItem>
+          </NForm>
+        </NScrollbar>
+
+        <!-- 第 3 步：商品描述（完全展开——封面/图集/编辑器整高可见，不内滚；弹窗整体上移） -->
+        <div v-if="step === 3" class="px-12px">
+          <NAlert
+            v-if="contentProtection.cover || contentProtection.description"
+            type="info"
+            class="mb-12px"
+          >
+            本地内容保护：{{
+              [
+                contentProtection.cover ? "封面" : "",
+                contentProtection.description ? "产品介绍" : "",
+              ]
+                .filter(Boolean)
+                .join("、")
+            }}。 可在「批量修改内容」中选择该商品并恢复跟随上游。
+          </NAlert>
+          <NForm :model="formData" :disabled="editorLocked" label-placement="top">
+            <div class="flex gap-24px">
+              <NFormItem label="封面图" class="w-240px">
+                <MediaField
+                  :disabled="editorLocked"
+                  v-model:value="formData.cover"
+                  tip="建议 1:1，列表缩略图"
+                />
+              </NFormItem>
+              <NFormItem label="详情图集" class="flex-1">
+                <MediaField
+                  :disabled="editorLocked"
+                  v-model:value="formData.images"
+                  multiple
+                  tip="详情页轮播，可多选"
+                />
+              </NFormItem>
+            </div>
+            <NFormItem label="商品描述">
+              <div class="w-full">
+                <div v-if="editorLocked" class="break-words" v-html="formData.description" />
+                <RichEditor
+                  v-else
+                  v-model="formData.description"
+                  height="420px"
+                  placeholder="商品详情（所见即所得；插图走素材库）"
+                />
+                <div class="mt-4px text-12px text-gray-400">
+                  输出 HTML 入库前经服务端白名单 sanitize（防 XSS）；图片统一素材库可复用。
+                </div>
+              </div>
+            </NFormItem>
+          </NForm>
+        </div>
+
+        <!-- 第 4 步：规格与控件（面板内嵌——编辑态直接生效；创建态先保存商品） -->
+        <div v-if="showCreate" v-show="step === 4" class="px-12px">
+          <template v-if="editingId">
+            <NAlert type="info" class="mb-12px"
+              >规格的「保存/全部保存/删除」及控件的「创建/更新/删除」会立即生效，关闭商品窗口不会撤销。其余未保存输入可通过取消放弃。</NAlert
+            >
+            <NCard size="small" title="SKU 多规格" class="mb-12px">
+              <SkuPanel
+                ref="skuPanel"
+                :key="editingId"
+                :product-id="editingId"
+                :physical="formData.goods_type === 'physical'"
+                :readonly="editorLocked"
+                @persisted="independentlySaved = true"
+              />
+            </NCard>
+            <NCard size="small" title="下单填写信息">
+              <ControlPanel
+                ref="controlPanel"
+                :product-id="editingId"
+                :physical="formData.goods_type === 'physical'"
+                :readonly="editorLocked"
+                @persisted="independentlySaved = true"
+              />
+            </NCard>
+          </template>
+          <NCard v-else size="small" class="py-40px">
+            <NEmpty description="SKU 规格与下单控件挂在已保存的商品上">
+              <template #extra>
+                <NButton type="primary" :loading="saving" @click="saveAndContinue">
+                  保存商品并配置
+                </NButton>
+              </template>
+            </NEmpty>
+          </NCard>
+        </div>
       </div>
       <template #footer>
         <div class="flex items-center justify-between">
@@ -1452,8 +2080,16 @@ onMounted(() => {
           <NSpace>
             <NButton :disabled="editorBusy" @click="requestClose">取消</NButton>
             <NButton v-if="step > 1" :disabled="editorBusy" @click="stepPrev">上一步</NButton>
-            <NButton v-if="step < stepCount" :disabled="editorBusy" type="primary" @click="stepNext">下一步</NButton>
-            <NButton v-else-if="!editorLocked" type="primary" :disabled="editorBusy" :loading="saving" @click="handleSave">
+            <NButton v-if="step < stepCount" :disabled="editorBusy" type="primary" @click="stepNext"
+              >下一步</NButton
+            >
+            <NButton
+              v-else-if="!editorLocked"
+              type="primary"
+              :disabled="editorBusy"
+              :loading="saving"
+              @click="handleSave"
+            >
               {{ editingId ? "保存" : "创建" }}
             </NButton>
           </NSpace>
@@ -1467,11 +2103,8 @@ onMounted(() => {
       @refresh="loadCategories"
       @created="(id: number) => (formData.category_id = id)"
     />
-  <!-- 评价管理抽屉 -->
-  <ReviewsDrawer
-    v-model:show="showReviews"
-    :product="reviewProduct"
-  />
+    <!-- 评价管理抽屉 -->
+    <ReviewsDrawer v-model:show="showReviews" :product="reviewProduct" />
   </div>
 </template>
 
@@ -1481,7 +2114,10 @@ onMounted(() => {
   min-height: 0;
   align-self: flex-start;
   /* 使用后台实际的顶栏、标签栏和页脚尺寸，避免小高度窗口中被页脚遮挡。 */
-  max-height: calc(100dvh - var(--soy-header-height, 56px) - var(--soy-tab-height, 48px) - var(--soy-footer-height, 72px) - 32px);
+  max-height: calc(
+    100dvh - var(--soy-header-height, 56px) - var(--soy-tab-height, 48px) -
+      var(--soy-footer-height, 72px) - 32px
+  );
 }
 
 .product-category-scroll {
@@ -1494,10 +2130,21 @@ onMounted(() => {
 }
 
 @media (max-width: 767px) {
-  .product-management { flex-direction: column; overflow: auto; }
-  .product-category-card { width: 100%; max-height: 200px; }
-  .product-list-card { flex: none; min-height: 600px; }
-  .product-list-card .n-data-table { min-height: 260px; }
+  .product-management {
+    flex-direction: column;
+    overflow: auto;
+  }
+  .product-category-card {
+    width: 100%;
+    max-height: 200px;
+  }
+  .product-list-card {
+    flex: none;
+    min-height: 600px;
+  }
+  .product-list-card .n-data-table {
+    min-height: 260px;
+  }
 }
 
 /* 商品描述步（第 3 步）：编辑器整高展开后弹窗整体上移，保证底部按钮可见 */
@@ -1507,13 +2154,27 @@ onMounted(() => {
 
 /* 分类树：图标前缀对齐 + 长名单行省略（悬停 title 看全名），多分类不眼花 */
 .cat-node .n-tree-node-content__prefix {
-  display: inline-flex; align-items: center; flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
 }
-.cat-node .n-tree-node-content { min-width: 0; }
-.cat-node.n-tree-node { height: auto; }
-.cat-prefix { font-size: 13px; line-height: 1; }
+.cat-node .n-tree-node-content {
+  min-width: 0;
+}
+.cat-node.n-tree-node {
+  height: auto;
+}
+.cat-prefix {
+  font-size: 13px;
+  line-height: 1;
+}
 .cat-node .n-tree-node-content__text {
-  display: block; min-width: 0; max-width: none;
-  white-space: normal; overflow-wrap: anywhere; line-height: 1.6; padding: 4px 0;
+  display: block;
+  min-width: 0;
+  max-width: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+  padding: 4px 0;
 }
 </style>

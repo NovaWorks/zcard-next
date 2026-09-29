@@ -57,6 +57,9 @@ func (r *DeliveryRepoImpl) ManualDeliver(ctx context.Context, orderNo, content, 
 				}
 			}
 		}
+		if target != nil && target.GoodsType == "physical" {
+			return fmt.Errorf("实体商品请使用快递发货操作")
+		}
 		if target == nil {
 			return fmt.Errorf("请选择本订单中需要补发的商品")
 		}

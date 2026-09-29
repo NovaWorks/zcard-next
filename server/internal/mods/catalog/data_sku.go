@@ -12,6 +12,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryactivity"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryprize"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
@@ -20,6 +21,8 @@ import (
 
 // SkuInput SKU 创建/更新输入（price_cents=0 表示继承商品价）。
 type SkuInput struct {
+	PhysicalStock                     *int64
+	ExpectedPhysicalStock             *int64
 	FulfillmentMode                   string
 	ProductID                         uint64
 	Name                              string
@@ -47,6 +50,27 @@ func (r *ProductRepoImpl) createSku(ctx context.Context, in SkuInput) (*ent.Prod
 	if e != nil {
 		return nil, e
 	}
+	if parent.GoodsType == "physical" {
+		c := data.Client(ctx, r.data)
+		hasSKU, err := c.ProductSku.Query().Where(productsku.ProductID(parent.ID)).Exist(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !hasSKU {
+			used, err := c.OrderItem.Query().Where(orderitem.ProductID(parent.ID)).Exist(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if parent.PhysicalStock != 0 || used {
+				return nil, fmt.Errorf("新增实体规格前须清空商品级库存；已有无规格订单的商品请新建商品，避免取消和退货库存归属改变")
+			}
+		}
+
+		in.FulfillmentMode = "follow"
+		if in.PhysicalStock != nil && (*in.PhysicalStock < 0 || *in.PhysicalStock > 100000000) {
+			return nil, fmt.Errorf("库存不能为负")
+		}
+	}
 	if parent.FulfillmentMode == "reuse" || parent.FulfillmentMode == "local" {
 		return nil, fmt.Errorf("默认规格已配置本地发货，请先切换发货来源，再新增规格")
 	}
@@ -72,6 +96,7 @@ func (r *ProductRepoImpl) createSku(ctx context.Context, in SkuInput) (*ent.Prod
 		SetName(in.Name).
 		SetSpecValues(in.SpecValues).
 		SetStockOffset(in.StockOffset)
+	create.SetNillablePhysicalStock(in.PhysicalStock)
 	if in.FulfillmentMode != "" {
 		create.SetFulfillmentMode(in.FulfillmentMode)
 	}
@@ -92,6 +117,16 @@ func (r *ProductRepoImpl) updateSku(ctx context.Context, id uint64, in SkuInput)
 	current, e := data.Client(ctx, r.data).ProductSku.Get(ctx, id)
 	if e != nil {
 		return nil, e
+	}
+	parent, e := data.Client(ctx, r.data).Product.Get(ctx, current.ProductID)
+	if e != nil {
+		return nil, e
+	}
+	if parent.GoodsType == "physical" {
+		if in.FulfillmentMode != "" && in.FulfillmentMode != "follow" && in.FulfillmentMode != "auto" {
+			return nil, fmt.Errorf("实体规格仅支持快递配送")
+		}
+		in.FulfillmentMode = "follow"
 	}
 	if in.FulfillmentMode != "" && in.FulfillmentMode != current.FulfillmentMode && (in.FulfillmentMode == "local" || in.FulfillmentMode == "reuse" || current.FulfillmentMode == "local" || current.FulfillmentMode == "reuse") {
 		return nil, fmt.Errorf("请在发货设置中更改规格的内容来源")
@@ -122,6 +157,21 @@ func (r *ProductRepoImpl) updateSku(ctx context.Context, id uint64, in SkuInput)
 	if in.Name != "" {
 		q.SetName(in.Name)
 	}
+	if in.PhysicalStock != nil {
+		if in.ExpectedPhysicalStock == nil || *in.ExpectedPhysicalStock != current.PhysicalStock {
+			return nil, fmt.Errorf("规格库存已变化，请刷新后调整")
+		}
+		p, e := data.Client(ctx, r.data).Product.Get(ctx, current.ProductID)
+		if e != nil {
+			return nil, e
+		}
+		if p.GoodsType != "physical" {
+			return nil, fmt.Errorf("非实体商品不支持实物库存")
+		}
+		if e = data.AdjustPhysicalStock(ctx, r.data, p, id, *in.PhysicalStock); e != nil {
+			return nil, e
+		}
+	}
 	if in.SpecValues != nil {
 		q.SetSpecValues(in.SpecValues)
 	}
@@ -146,6 +196,26 @@ func (r *ProductRepoImpl) updateSku(ctx context.Context, id uint64, in SkuInput)
 // DeleteSku 删除 SKU。
 func (r *ProductRepoImpl) deleteSku(ctx context.Context, id uint64) error {
 	c := data.Client(ctx, r.data)
+	sk, e := c.ProductSku.Get(ctx, id)
+	if e != nil {
+		return e
+	}
+	p, e := c.Product.Get(ctx, sk.ProductID)
+	if e != nil {
+		return e
+	}
+	if p.GoodsType == "physical" {
+		if sk.PhysicalStock != 0 {
+			return fmt.Errorf("规格仍有可售库存，请先调整库存为零再删除")
+		}
+		used, e := c.OrderItem.Query().Where(orderitem.SkuID(id)).Exist(ctx)
+		if e != nil {
+			return e
+		}
+		if used {
+			return fmt.Errorf("实体规格已有订单，不能删除")
+		}
+	}
 	activities, err := c.LotteryActivity.Query().Where(lotteryactivity.Published(true), lotteryactivity.StatusNotIn("ended", "archived")).IDs(ctx)
 	if err != nil {
 		return err
@@ -188,6 +258,8 @@ func (r *ProductRepoImpl) ListSkus(ctx context.Context, productID uint64) ([]por
 		mode := data.FulfillmentMode(p, s)
 		stock := int64(-2)
 		switch mode {
+		case "shipping":
+			stock = s.PhysicalStock
 		case "reuse":
 			stock, err = data.LocalSKUStock(ctx, r.data, p, s)
 		case "manual":
@@ -259,7 +331,10 @@ func (r *ProductRepoImpl) CreateSku(ctx context.Context, in SkuInput) (out *ent.
 
 		var inner error
 		out, inner = r.createSku(ctx, in)
-		return inner
+		if inner != nil {
+			return inner
+		}
+		return data.Client(ctx, r.data).Product.UpdateOneID(in.ProductID).AddLockVersion(1).Exec(ctx)
 	})
 	return
 }
@@ -294,6 +369,9 @@ func (r *ProductRepoImpl) DeleteSku(ctx context.Context, id uint64) error {
 			return e
 		}
 
-		return r.deleteSku(ctx, id)
+		if e := r.deleteSku(ctx, id); e != nil {
+			return e
+		}
+		return data.Client(ctx, r.data).Product.UpdateOneID(row.ProductID).AddLockVersion(1).Exec(ctx)
 	})
 }

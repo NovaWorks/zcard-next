@@ -26,6 +26,7 @@
         <p>已付款，{{ order.status === 'partially_delivered' ? '部分商品已发货，其余商品' : '商品' }}正在安排发货。请勿重复付款；长时间未发货请凭订单号联系客服。</p>
         <button class="btn secondary" @click="loadOrder">刷新订单状态</button>
       </div>
+      <ShippingDetails v-if="Number(order.commerce_version)===1" :order="order" :password="password" @refresh="loadOrder" />
       <div class="od-body">
         <!-- 左列：商品清单（grid 行式：PC 四列对齐表头；移动端每行两行块状——大厂订单详情同构） -->
         <div class="card od-items">
@@ -36,12 +37,12 @@
             </div>
             <div v-for="(it, i) in order.items" :key="i" class="od-item">
               <div class="od-item-name">{{ it.product_name }}
-                <p class="muted">{{it.fulfillment_type === 'manual' ? '人工服务' : it.fulfillment_type === 'upstream' ? '上游交付' : '自动交付'}} · {{itemStatus(it.fulfillment_status)}}</p>
+                <p class="muted">{{it.goods_type === 'physical' ? '快递配送' : it.fulfillment_type === 'manual' ? '人工服务' : it.fulfillment_type === 'upstream' ? '上游交付' : '自动交付'}} · {{itemStatus(it.fulfillment_status)}}</p>
                 <dl v-if="answers(it.form_answers_json).length" class="od-answers"><div v-for="(a,j) in answers(it.form_answers_json)" :key="j"><dt>{{a.name}}</dt><dd>{{a.value}}</dd></div></dl>
               </div>
               <div class="od-item-price">{{ formatMoney(it.unit_price_cents) }}</div>
               <div class="od-item-qty">×{{ it.quantity }}</div>
-              <div class="od-item-sub">{{ formatMoney(it.amount_cents ?? it.unit_price_cents * it.quantity) }}</div>
+              <div class="od-item-sub">{{ formatMoney(Number(order.commerce_version)===1?it.paid_cents || 0:it.amount_cents ?? it.unit_price_cents * it.quantity) }}</div>
             </div>
           </div>
         </div>
@@ -65,7 +66,7 @@
               <router-link
                 class="btn secondary od-action-btn"
                 :to="`/fetch?order_no=${order.order_no}`"
-                v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(order.status)"
+                v-if="order.items.some(it=>it.goods_type!=='physical') && ['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(order.status)"
               >查看交付结果</router-link>
               <button class="btn secondary od-action-btn" v-if="isLoggedIn && order.status === 'pending_payment'" @click="cancelOrder">取消订单</button>
             </div>
@@ -81,6 +82,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { getOrder, getOrderPassword, rememberOrderPassword, cancelMyOrder, type OrderDetail } from '@/api';
+import ShippingDetails from "@/components/ShippingDetails.vue";
 import OrderReview from '@/components/OrderReview.vue';
 import { getToken, formatMoney } from '@/api/client';
 
@@ -113,7 +115,7 @@ async function cancelOrder() {
 }
 
 function answers(raw?:string):{name:string;value:string}[]{try{const x=JSON.parse(raw || '[]');return Array.isArray(x)?x:[]}catch{return []}}
-function itemStatus(s?:string){return ({pending:'待处理',delivering:'处理中',manual:'待人工核对',failed:'处理异常',delivered:'已完成交付',refunded:'已退款'} as Record<string,string>)[s || 'pending'] || s;}
+function itemStatus(s?:string){return ({shipped:'已发货',received:'已收货',pending:'待处理',delivering:'处理中',manual:'待人工核对',failed:'处理异常',delivered:'已完成交付',refunded:'已退款'} as Record<string,string>)[s || 'pending'] || s;}
 function statusText(s: string): string {
   return ({
     pending_payment: '待支付', paid: '已支付', fulfilling: '履约中', partially_delivered: '部分发货',

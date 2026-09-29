@@ -84,8 +84,11 @@ func (r *DeliveryRepoImpl) updateDeliveryProgress(ctx context.Context, o *ent.Or
 	}
 	all, any := len(items) > 0, false
 	for _, it := range items {
+		if it.CanceledQuantity >= it.Quantity || it.GoodsType == "physical" {
+			continue
+		}
 		n := counts[it.ID]
-		if n >= int(it.Quantity) {
+		if n >= int(it.Quantity-it.CanceledQuantity) {
 			if err := client.OrderItem.UpdateOneID(it.ID).SetFulfillmentStatus("delivered").Exec(ctx); err != nil {
 				return err
 			}
@@ -93,6 +96,9 @@ func (r *DeliveryRepoImpl) updateDeliveryProgress(ctx context.Context, o *ent.Or
 			all = false
 		}
 		any = any || n > 0
+	}
+	if o.CommerceVersion > 0 {
+		return data.RefreshPhysicalProgress(ctx, r.data, o)
 	}
 	next := order.StatusFulfilling
 	if all {

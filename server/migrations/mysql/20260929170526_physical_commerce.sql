@@ -1,0 +1,16 @@
+-- Modify "order_amount_lines" table
+ALTER TABLE `order_amount_lines` MODIFY COLUMN `type` enum('base_price','sku_adjust','member_discount','group_discount','promo_discount','coupon_discount','points_discount','subsite_markup','fee','tax','rounding_adjust','shipping') NOT NULL;
+-- Modify "order_items" table
+ALTER TABLE `order_items` MODIFY COLUMN `fulfillment_type` enum('auto','manual','upstream','reuse','shipping') NOT NULL, ADD COLUMN `goods_type` varchar(255) NOT NULL DEFAULT "virtual", ADD COLUMN `paid_amount` bigint NOT NULL DEFAULT 0, ADD COLUMN `shipping_amount` bigint NOT NULL DEFAULT 0, ADD COLUMN `refunded_amount` bigint NOT NULL DEFAULT 0, ADD COLUMN `refunded_shipping` bigint NOT NULL DEFAULT 0, ADD COLUMN `canceled_quantity` int NOT NULL DEFAULT 0, ADD COLUMN `shipped_quantity` int NOT NULL DEFAULT 0, ADD COLUMN `received_quantity` int NOT NULL DEFAULT 0, ADD COLUMN `returned_quantity` int NOT NULL DEFAULT 0;
+-- Modify "orders" table
+ALTER TABLE `orders` ADD COLUMN `commerce_version` int NOT NULL DEFAULT 0, ADD COLUMN `shipping_amount` bigint NOT NULL DEFAULT 0, ADD COLUMN `shipping_status` varchar(255) NOT NULL DEFAULT "none", ADD COLUMN `shipping_address` json NULL, ADD COLUMN `request_hash` varchar(255) NOT NULL DEFAULT "";
+-- Modify "product_skus" table
+ALTER TABLE `product_skus` ADD COLUMN `physical_stock` bigint NOT NULL DEFAULT 0;
+-- Modify "products" table
+ALTER TABLE `products` ADD COLUMN `goods_type` varchar(255) NOT NULL DEFAULT "virtual", ADD COLUMN `shipping_mode` varchar(255) NOT NULL DEFAULT "free", ADD COLUMN `shipping_fee` bigint NOT NULL DEFAULT 0, ADD COLUMN `shipping_countries` json NULL, ADD COLUMN `physical_stock` bigint NOT NULL DEFAULT 0;
+-- Modify "refund_orders" table
+ALTER TABLE `refund_orders` ADD COLUMN `item_allocations` json NULL, ADD COLUMN `shipping_amount` bigint NOT NULL DEFAULT 0;
+-- Create "physical_stock_movements" table
+CREATE TABLE `physical_stock_movements` (`id` bigint unsigned NOT NULL AUTO_INCREMENT, `created_at` datetime(3) NOT NULL, `updated_at` datetime(3) NOT NULL, `subsite_id` bigint unsigned NOT NULL DEFAULT 0, `product_id` bigint unsigned NOT NULL, `sku_id` bigint unsigned NOT NULL DEFAULT 0, `order_id` bigint unsigned NOT NULL DEFAULT 0, `delta` bigint NOT NULL, `reference` varchar(180) NOT NULL, `reason` varchar(255) NOT NULL, PRIMARY KEY (`id`), INDEX `physicalstockmovement_order_id` (`order_id`), INDEX `physicalstockmovement_product_id_sku_id` (`product_id`, `sku_id`), UNIQUE INDEX `reference` (`reference`)) CHARSET utf8mb4 COLLATE utf8mb4_bin;
+-- Create "shipments" table
+CREATE TABLE `shipments` (`id` bigint unsigned NOT NULL AUTO_INCREMENT, `created_at` datetime(3) NOT NULL, `updated_at` datetime(3) NOT NULL, `subsite_id` bigint unsigned NOT NULL DEFAULT 0, `order_id` bigint unsigned NOT NULL, `carrier` varchar(100) NOT NULL, `tracking_no` varchar(100) NOT NULL, `items` json NOT NULL, `address` json NOT NULL, `status` varchar(255) NOT NULL DEFAULT "shipped", `admin_id` bigint unsigned NOT NULL, `request_key` varchar(128) NOT NULL, `received_at` bigint NOT NULL DEFAULT 0, PRIMARY KEY (`id`), UNIQUE INDEX `request_key` (`request_key`), INDEX `shipment_order_id` (`order_id`), INDEX `shipment_subsite_id_status` (`subsite_id`, `status`)) CHARSET utf8mb4 COLLATE utf8mb4_bin;

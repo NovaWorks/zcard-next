@@ -21,9 +21,10 @@
 
       <!-- 右栏：购买区 -->
       <div class="pd-buy">
+<p v-if="p.goods_type==='physical'" class="muted">实体商品 · {{p.shipping_mode==='fixed'?`运费 ${formatMoney(p.shipping_fee_cents || 0)} / 商品 / 订单`:'包邮'}}</p>
         <h1 class="pd-name">{{ p.name }}</h1>
         <div class="pd-sub">
-          <span class="tag">{{ manualDelivery ? '人工服务' : stockTypeLabel(p.stock_type) }}</span>
+          <span class="tag">{{ p.goods_type==='physical' ? '实体商品' : manualDelivery ? '人工服务' : stockTypeLabel(p.stock_type) }}</span>
           <span v-if="p.points_required && p.points_required > 0" class="tag pd-points-tag">{{ p.points_required }} 积分</span>
         </div>
 
@@ -45,7 +46,7 @@
 
         <!-- 服务保障 -->
         <div class="pd-assure">
-          <span>{{ manualDelivery ? '👤 人工处理' : '⚡ 自动发货' }}</span>
+          <span>{{ p.goods_type==='physical' ? '📦 快递配送' : manualDelivery ? '👤 人工处理' : '⚡ 自动发货' }}</span>
           <span>🛡️ 正品保障</span>
           <span>💬 售后无忧</span>
         </div>
@@ -177,9 +178,12 @@
   </div>
   <div v-else-if="error" class="error">{{ error }}</div>
   <div v-else class="muted" style="text-align: center; padding: 40px;">加载中…</div>
+ <ShippingCheckout ref="shippingCheckout" />
 </template>
 
 <script setup lang="ts">
+import ShippingCheckout from "@/components/ShippingCheckout.vue";
+const shippingCheckout=ref<InstanceType<typeof ShippingCheckout>>();
 import { loadPublicConfig } from '@/config';
 import OrderFields from '@/components/OrderFields.vue';
 import { useContentVideos } from "@/composables/useContentVideos";
@@ -478,7 +482,7 @@ async function applyProductSeo(product: Product) {
 
 /** 下单前校验（与后端 validateTradeRequirements 同口径） */
 function validateTradeFields(requireContact = true): boolean {
-  if (trade.value.queryPasswordRequired && queryPassword.value.trim().length < 4) {
+  if ((trade.value.queryPasswordRequired || (isGuest.value && p.value?.goods_type==='physical')) && queryPassword.value.trim().length < 4) {
     error.value = '请设置查询密码（至少 4 位，取货时使用）';
     return false;
   }
@@ -509,7 +513,7 @@ async function buy() {
   }
   submitting.value = true;
   error.value = '';
-  const { data, error: err } = await createOrder({
+  const input = {
     items: [{ product_id: p.value.id, sku_id: selectedSku.value || undefined, quantity: quantity.value, control_answers:controlAnswers.value }],
     query_password: queryPassword.value || undefined,
     contact: contact.value || undefined,
@@ -517,9 +521,13 @@ async function buy() {
     ref_code: getRefCode() || undefined,
     captcha_id: (isGuest.value && captchaCfg.value.order) ? captchaId.value : undefined,
     captcha_code: (isGuest.value && captchaCfg.value.order) ? captchaCode.value : undefined,
-  });
+  };
+  const {data,error:err}=p.value.goods_type==='physical'
+   ? {data:await shippingCheckout.value!.open(input,p.value.shipping_countries || []),error:null}
+   : await createOrder(input);
   submitting.value = false;
   if (err) { error.value = err; return; }
+  if(!data)return;
   rememberOrderPassword(data!.order_no, queryPassword.value); // 支付成功自动取货用
   router.push(`/payment/${data!.order_no}`);
 }

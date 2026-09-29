@@ -6,6 +6,8 @@ package order
 import (
 	"context"
 	"fmt"
+	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 	"testing"
 	"time"
 
@@ -231,5 +233,31 @@ func TestGuestOrderRequiresCorrectPassword(t *testing.T) {
 		} else if err == nil {
 			t.Fatal("wrong password disclosed order")
 		}
+	}
+}
+
+type reviewLockedGate struct {
+	auditport.RiskGate
+	calls int
+}
+
+func (g *reviewLockedGate) IsLocked(context.Context, string) (bool, error) {
+	g.calls++
+	return true, nil
+}
+func TestReviewAddressQueryRespectsPasswordLock(t *testing.T) {
+	d, uc, _ := newIdemEnv(t)
+	ctx := context.Background()
+	gate := &reviewLockedGate{}
+	uc.Gate = gate
+	hash, e := crypto.HashPassword("1234")
+	if e != nil {
+		t.Fatal(e)
+	}
+	o := d.Client.Order.Create().SetOrderNo("REVIEW-ADDRESS").SetCommerceVersion(1).SetQueryPasswordHash(hash).SetShippingAddress(map[string]string{"name": "Test Buyer", "phone": "+14155550100", "address": "Test Street"}).SaveX(ctx)
+	svc := NewStoreOrderService(uc, nil)
+	got, e := svc.GetOrder(ctx, &storefrontv1.GetOrderRequest{OrderNo: o.OrderNo, QueryPassword: "1234"})
+	if e == nil {
+		t.Fatalf("address returned despite locked password gate; gate checks=%d, address present=%t", gate.calls, len(got.ShippingAddress) > 0)
 	}
 }

@@ -262,6 +262,7 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 	}
 
 	return &storefrontv1.Product{
+		GoodsType: p.GoodsType, ShippingMode: p.ShippingMode, ShippingFeeCents: p.ShippingFee, ShippingCountries: p.ShippingCountries,
 		Id:              p.ID,
 		Name:            p.Name,
 		Slug:            p.Slug,

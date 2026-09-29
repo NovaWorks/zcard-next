@@ -478,3 +478,12 @@ func toPromoPB(p *ent.Promotion) *adminv1.PromotionItem {
 	}
 	return out
 }
+
+// EligibleItems exposes the exact scoped rows for order-line refund allocation.
+func (r *CouponRepoImpl) EligibleItems(ctx context.Context, id, level uint64, items []port.CartItem) ([]port.CartItem, error) {
+	c, e := data.Client(ctx, r.data).Coupon.Get(ctx, id)
+	if e != nil {
+		return nil, e
+	}
+	return scopeItems(c.Scope, items, level), nil
+}

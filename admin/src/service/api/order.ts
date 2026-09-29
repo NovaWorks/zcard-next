@@ -2,7 +2,19 @@ import { request } from "../request";
 
 // ── 订单管理 ──
 
-export function fetchOrders(params?: { status?: string; cursor?: number; limit?: number; keyword?: string; start_time?: number; end_time?: number; time_field?: string; channel_id?: number; channel_code?: string; product_id?: number }) {
+export function fetchOrders(params?: {
+  status?: string;
+  shipping_status?: string;
+  cursor?: number;
+  limit?: number;
+  keyword?: string;
+  start_time?: number;
+  end_time?: number;
+  time_field?: string;
+  channel_id?: number;
+  channel_code?: string;
+  product_id?: number;
+}) {
   return request({
     url: "/api/v1/admin/orders",
     method: "get",
@@ -11,7 +23,11 @@ export function fetchOrders(params?: { status?: string; cursor?: number; limit?:
 }
 
 export function deleteOrders(orderNos: string[]) {
-  return request({ url: "/api/v1/admin/orders/delete", method: "post", data: { order_nos: orderNos } });
+  return request({
+    url: "/api/v1/admin/orders/delete",
+    method: "post",
+    data: { order_nos: orderNos },
+  });
 }
 
 export function fetchOrder(orderNo: string) {
@@ -31,6 +47,9 @@ export function cancelOrder(orderNo: string, reason: string) {
 // ── 退款（payment 域，order:refund 超管专属）──
 
 export function createRefund(data: {
+  item_allocations_json?: string;
+  external_confirmed?: boolean;
+  external_reference?: string;
   expected_refunded_cents: number;
   expected_refunded_fee_cents?: number;
   fee_cents?: number;
@@ -42,22 +61,43 @@ export function createRefund(data: {
   return request({ url: "/api/v1/admin/refunds", method: "post", data });
 }
 
-export function fetchRefunds(status?: string) {
-  return request({ url: "/api/v1/admin/refunds", params: status ? { status } : {} });
+export function fetchRefunds(status?: string, order_no?: string, before_id?: number) {
+  return request({ url: "/api/v1/admin/refunds", params: {status, order_no, before_id} });
 }
 
 // ── 履约（fulfillment 域）──
 
 export function fetchPendingDeliveries(page = 1, pageSize = 20) {
-  return request({ url: "/api/v1/admin/fulfillment/pending", params: { page, page_size: pageSize } });
+  return request({
+    url: "/api/v1/admin/fulfillment/pending",
+    params: { page, page_size: pageSize },
+  });
 }
 
-export function manualDeliver(orderNo: string, data: { order_item_id?: number; service_content?:string; content?: string; logistics_no?: string; remark?: string }) {
+export function manualDeliver(
+  orderNo: string,
+  data: {
+    order_item_id?: number;
+    service_content?: string;
+    content?: string;
+    logistics_no?: string;
+    remark?: string;
+  },
+) {
   return request({ url: `/api/v1/admin/fulfillment/${orderNo}/deliver`, method: "post", data });
 }
 
 export function fetchDeliveries(orderNo: string, page = 1, pageSize = 20, orderItemId?: number) {
-  return request({ url: "/api/v1/admin/fulfillment", params: { order_no: orderNo, page, page_size: pageSize, order_item_id: orderItemId } });
+  return request({
+    url: "/api/v1/admin/fulfillment",
+    params: { order_no: orderNo, page, page_size: pageSize, order_item_id: orderItemId },
+  });
 }
 
-export function startService(orderNo:string,itemId:number){return request({url:`/api/v1/admin/fulfillment/${orderNo}/start`,method:'post',data:{order_item_id:itemId}})}
+export function startService(orderNo: string, itemId: number) {
+  return request({
+    url: `/api/v1/admin/fulfillment/${orderNo}/start`,
+    method: "post",
+    data: { order_item_id: itemId },
+  });
+}

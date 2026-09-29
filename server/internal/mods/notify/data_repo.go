@@ -128,6 +128,15 @@ func (r *NotifyRepo) Template(ctx context.Context, eventType, channel, locale st
 	}
 	if err != nil {
 		if ent.IsNotFound(err) {
+			if eventType == "order.shipped" {
+				exists, e := data.Client(ctx, r.data).NotifyTemplate.Query().Where(notifytemplate.EventType(eventType), notifytemplate.ChannelEQ(notifytemplate.Channel(channel)), notifytemplate.Locale(locale)).Exist(ctx)
+				if e != nil {
+					return nil, e
+				}
+				if !exists {
+					return &ent.NotifyTemplate{SubjectTpl: "订单 {{.order_no}} 的包裹已寄出", BodyTpl: "快递公司：{{.carrier}}；快递单号：{{.tracking_no}}。请在订单详情查看配送信息。", Enabled: true}, nil
+				}
+			}
 			return nil, ErrNotFound
 		}
 		return nil, err

@@ -47,6 +47,24 @@ type OrderItem struct {
 	Amount int64 `json:"amount,omitempty"`
 	// 成本快照（分）
 	Cost int64 `json:"cost,omitempty"`
+	// GoodsType holds the value of the "goods_type" field.
+	GoodsType string `json:"goods_type,omitempty"`
+	// PaidAmount holds the value of the "paid_amount" field.
+	PaidAmount int64 `json:"paid_amount,omitempty"`
+	// ShippingAmount holds the value of the "shipping_amount" field.
+	ShippingAmount int64 `json:"shipping_amount,omitempty"`
+	// RefundedAmount holds the value of the "refunded_amount" field.
+	RefundedAmount int64 `json:"refunded_amount,omitempty"`
+	// RefundedShipping holds the value of the "refunded_shipping" field.
+	RefundedShipping int64 `json:"refunded_shipping,omitempty"`
+	// CanceledQuantity holds the value of the "canceled_quantity" field.
+	CanceledQuantity int32 `json:"canceled_quantity,omitempty"`
+	// ShippedQuantity holds the value of the "shipped_quantity" field.
+	ShippedQuantity int32 `json:"shipped_quantity,omitempty"`
+	// ReceivedQuantity holds the value of the "received_quantity" field.
+	ReceivedQuantity int32 `json:"received_quantity,omitempty"`
+	// ReturnedQuantity holds the value of the "returned_quantity" field.
+	ReturnedQuantity int32 `json:"returned_quantity,omitempty"`
 	// 履约类型
 	FulfillmentType orderitem.FulfillmentType `json:"fulfillment_type,omitempty"`
 	// DeliverySourceID holds the value of the "delivery_source_id" field.
@@ -90,9 +108,9 @@ func (*OrderItem) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case orderitem.FieldFormAnswers, orderitem.FieldCommissionSnapshot, orderitem.FieldProfitSnapshot:
 			values[i] = new([]byte)
-		case orderitem.FieldID, orderitem.FieldSubsiteID, orderitem.FieldOrderID, orderitem.FieldProductID, orderitem.FieldSkuID, orderitem.FieldAssignedAdminID, orderitem.FieldUnitPrice, orderitem.FieldQuantity, orderitem.FieldAmount, orderitem.FieldCost, orderitem.FieldDeliverySourceID:
+		case orderitem.FieldID, orderitem.FieldSubsiteID, orderitem.FieldOrderID, orderitem.FieldProductID, orderitem.FieldSkuID, orderitem.FieldAssignedAdminID, orderitem.FieldUnitPrice, orderitem.FieldQuantity, orderitem.FieldAmount, orderitem.FieldCost, orderitem.FieldPaidAmount, orderitem.FieldShippingAmount, orderitem.FieldRefundedAmount, orderitem.FieldRefundedShipping, orderitem.FieldCanceledQuantity, orderitem.FieldShippedQuantity, orderitem.FieldReceivedQuantity, orderitem.FieldReturnedQuantity, orderitem.FieldDeliverySourceID:
 			values[i] = new(sql.NullInt64)
-		case orderitem.FieldProductName, orderitem.FieldSkuName, orderitem.FieldFulfillmentType, orderitem.FieldFulfillmentStatus:
+		case orderitem.FieldProductName, orderitem.FieldSkuName, orderitem.FieldGoodsType, orderitem.FieldFulfillmentType, orderitem.FieldFulfillmentStatus:
 			values[i] = new(sql.NullString)
 		case orderitem.FieldCreatedAt, orderitem.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -202,6 +220,60 @@ func (_m *OrderItem) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field cost", values[i])
 			} else if value.Valid {
 				_m.Cost = value.Int64
+			}
+		case orderitem.FieldGoodsType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field goods_type", values[i])
+			} else if value.Valid {
+				_m.GoodsType = value.String
+			}
+		case orderitem.FieldPaidAmount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field paid_amount", values[i])
+			} else if value.Valid {
+				_m.PaidAmount = value.Int64
+			}
+		case orderitem.FieldShippingAmount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field shipping_amount", values[i])
+			} else if value.Valid {
+				_m.ShippingAmount = value.Int64
+			}
+		case orderitem.FieldRefundedAmount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field refunded_amount", values[i])
+			} else if value.Valid {
+				_m.RefundedAmount = value.Int64
+			}
+		case orderitem.FieldRefundedShipping:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field refunded_shipping", values[i])
+			} else if value.Valid {
+				_m.RefundedShipping = value.Int64
+			}
+		case orderitem.FieldCanceledQuantity:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field canceled_quantity", values[i])
+			} else if value.Valid {
+				_m.CanceledQuantity = int32(value.Int64)
+			}
+		case orderitem.FieldShippedQuantity:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field shipped_quantity", values[i])
+			} else if value.Valid {
+				_m.ShippedQuantity = int32(value.Int64)
+			}
+		case orderitem.FieldReceivedQuantity:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field received_quantity", values[i])
+			} else if value.Valid {
+				_m.ReceivedQuantity = int32(value.Int64)
+			}
+		case orderitem.FieldReturnedQuantity:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field returned_quantity", values[i])
+			} else if value.Valid {
+				_m.ReturnedQuantity = int32(value.Int64)
 			}
 		case orderitem.FieldFulfillmentType:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -319,6 +391,33 @@ func (_m *OrderItem) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("cost=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Cost))
+	builder.WriteString(", ")
+	builder.WriteString("goods_type=")
+	builder.WriteString(_m.GoodsType)
+	builder.WriteString(", ")
+	builder.WriteString("paid_amount=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PaidAmount))
+	builder.WriteString(", ")
+	builder.WriteString("shipping_amount=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ShippingAmount))
+	builder.WriteString(", ")
+	builder.WriteString("refunded_amount=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RefundedAmount))
+	builder.WriteString(", ")
+	builder.WriteString("refunded_shipping=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RefundedShipping))
+	builder.WriteString(", ")
+	builder.WriteString("canceled_quantity=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CanceledQuantity))
+	builder.WriteString(", ")
+	builder.WriteString("shipped_quantity=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ShippedQuantity))
+	builder.WriteString(", ")
+	builder.WriteString("received_quantity=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ReceivedQuantity))
+	builder.WriteString(", ")
+	builder.WriteString("returned_quantity=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ReturnedQuantity))
 	builder.WriteString(", ")
 	builder.WriteString("fulfillment_type=")
 	builder.WriteString(fmt.Sprintf("%v", _m.FulfillmentType))

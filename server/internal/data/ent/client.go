@@ -59,6 +59,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pageview"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/physicalstockmovement"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointtransaction"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/post"
@@ -88,6 +89,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/securityauditlog"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/session"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/shipment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/stockalert"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
@@ -206,6 +208,8 @@ type Client struct {
 	Payment *PaymentClient
 	// PaymentChannel is the client for interacting with the PaymentChannel builders.
 	PaymentChannel *PaymentChannelClient
+	// PhysicalStockMovement is the client for interacting with the PhysicalStockMovement builders.
+	PhysicalStockMovement *PhysicalStockMovementClient
 	// PointAccount is the client for interacting with the PointAccount builders.
 	PointAccount *PointAccountClient
 	// PointTransaction is the client for interacting with the PointTransaction builders.
@@ -264,6 +268,8 @@ type Client struct {
 	Session *SessionClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
+	// Shipment is the client for interacting with the Shipment builders.
+	Shipment *ShipmentClient
 	// StockAlert is the client for interacting with the StockAlert builders.
 	StockAlert *StockAlertClient
 	// SupplierAccount is the client for interacting with the SupplierAccount builders.
@@ -365,6 +371,7 @@ func (c *Client) init() {
 	c.PageView = NewPageViewClient(c.config)
 	c.Payment = NewPaymentClient(c.config)
 	c.PaymentChannel = NewPaymentChannelClient(c.config)
+	c.PhysicalStockMovement = NewPhysicalStockMovementClient(c.config)
 	c.PointAccount = NewPointAccountClient(c.config)
 	c.PointTransaction = NewPointTransactionClient(c.config)
 	c.Post = NewPostClient(c.config)
@@ -394,6 +401,7 @@ func (c *Client) init() {
 	c.SecurityAuditLog = NewSecurityAuditLogClient(c.config)
 	c.Session = NewSessionClient(c.config)
 	c.Setting = NewSettingClient(c.config)
+	c.Shipment = NewShipmentClient(c.config)
 	c.StockAlert = NewStockAlertClient(c.config)
 	c.SupplierAccount = NewSupplierAccountClient(c.config)
 	c.SupplierLedgerEntry = NewSupplierLedgerEntryClient(c.config)
@@ -553,6 +561,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PageView:                 NewPageViewClient(cfg),
 		Payment:                  NewPaymentClient(cfg),
 		PaymentChannel:           NewPaymentChannelClient(cfg),
+		PhysicalStockMovement:    NewPhysicalStockMovementClient(cfg),
 		PointAccount:             NewPointAccountClient(cfg),
 		PointTransaction:         NewPointTransactionClient(cfg),
 		Post:                     NewPostClient(cfg),
@@ -582,6 +591,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		SecurityAuditLog:         NewSecurityAuditLogClient(cfg),
 		Session:                  NewSessionClient(cfg),
 		Setting:                  NewSettingClient(cfg),
+		Shipment:                 NewShipmentClient(cfg),
 		StockAlert:               NewStockAlertClient(cfg),
 		SupplierAccount:          NewSupplierAccountClient(cfg),
 		SupplierLedgerEntry:      NewSupplierLedgerEntryClient(cfg),
@@ -668,6 +678,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PageView:                 NewPageViewClient(cfg),
 		Payment:                  NewPaymentClient(cfg),
 		PaymentChannel:           NewPaymentChannelClient(cfg),
+		PhysicalStockMovement:    NewPhysicalStockMovementClient(cfg),
 		PointAccount:             NewPointAccountClient(cfg),
 		PointTransaction:         NewPointTransactionClient(cfg),
 		Post:                     NewPostClient(cfg),
@@ -697,6 +708,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		SecurityAuditLog:         NewSecurityAuditLogClient(cfg),
 		Session:                  NewSessionClient(cfg),
 		Setting:                  NewSettingClient(cfg),
+		Shipment:                 NewShipmentClient(cfg),
 		StockAlert:               NewStockAlertClient(cfg),
 		SupplierAccount:          NewSupplierAccountClient(cfg),
 		SupplierLedgerEntry:      NewSupplierLedgerEntryClient(cfg),
@@ -758,20 +770,20 @@ func (c *Client) Use(hooks ...Hook) {
 		c.MemberLevel, c.MemberProductGroup, c.Notification, c.NotificationLog,
 		c.NotifyBroadcast, c.NotifyTemplate, c.Order, c.OrderAmountLine,
 		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.PageView,
-		c.Payment, c.PaymentChannel, c.PointAccount, c.PointTransaction, c.Post,
-		c.PostCategory, c.ProcessedEvent, c.ProcurementItem, c.ProcurementOrder,
-		c.Product, c.ProductContentBatch, c.ProductControl, c.ProductDeliverySource,
-		c.ProductSku, c.Promotion, c.RechargeOrder, c.ReconciliationItem,
-		c.ReconciliationJob, c.RefundOrder, c.ResellerBalanceAccount,
-		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
-		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
-		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.StockAlert,
-		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
-		c.SupplyCatalogSnapshot, c.SupplyConnection, c.SupplyImportItem,
-		c.SupplyMapping, c.SupplyNonce, c.SupplyOrder, c.SupplySyncTask, c.Tag,
-		c.Ticket, c.TicketMessage, c.User, c.UserGroup, c.UserSession, c.V1IDMap,
-		c.VirtualReview, c.VisitLog, c.WalletAccount, c.WalletTransaction,
-		c.Withdrawal,
+		c.Payment, c.PaymentChannel, c.PhysicalStockMovement, c.PointAccount,
+		c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
+		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductContentBatch,
+		c.ProductControl, c.ProductDeliverySource, c.ProductSku, c.Promotion,
+		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
+		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
+		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
+		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
+		c.Shipment, c.StockAlert, c.SupplierAccount, c.SupplierLedgerEntry,
+		c.SupplierProductPrice, c.SupplyCatalogSnapshot, c.SupplyConnection,
+		c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce, c.SupplyOrder,
+		c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User, c.UserGroup,
+		c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog, c.WalletAccount,
+		c.WalletTransaction, c.Withdrawal,
 	} {
 		n.Use(hooks...)
 	}
@@ -790,20 +802,20 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.MemberLevel, c.MemberProductGroup, c.Notification, c.NotificationLog,
 		c.NotifyBroadcast, c.NotifyTemplate, c.Order, c.OrderAmountLine,
 		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.PageView,
-		c.Payment, c.PaymentChannel, c.PointAccount, c.PointTransaction, c.Post,
-		c.PostCategory, c.ProcessedEvent, c.ProcurementItem, c.ProcurementOrder,
-		c.Product, c.ProductContentBatch, c.ProductControl, c.ProductDeliverySource,
-		c.ProductSku, c.Promotion, c.RechargeOrder, c.ReconciliationItem,
-		c.ReconciliationJob, c.RefundOrder, c.ResellerBalanceAccount,
-		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
-		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
-		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.StockAlert,
-		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
-		c.SupplyCatalogSnapshot, c.SupplyConnection, c.SupplyImportItem,
-		c.SupplyMapping, c.SupplyNonce, c.SupplyOrder, c.SupplySyncTask, c.Tag,
-		c.Ticket, c.TicketMessage, c.User, c.UserGroup, c.UserSession, c.V1IDMap,
-		c.VirtualReview, c.VisitLog, c.WalletAccount, c.WalletTransaction,
-		c.Withdrawal,
+		c.Payment, c.PaymentChannel, c.PhysicalStockMovement, c.PointAccount,
+		c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
+		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductContentBatch,
+		c.ProductControl, c.ProductDeliverySource, c.ProductSku, c.Promotion,
+		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
+		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
+		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
+		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
+		c.Shipment, c.StockAlert, c.SupplierAccount, c.SupplierLedgerEntry,
+		c.SupplierProductPrice, c.SupplyCatalogSnapshot, c.SupplyConnection,
+		c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce, c.SupplyOrder,
+		c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User, c.UserGroup,
+		c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog, c.WalletAccount,
+		c.WalletTransaction, c.Withdrawal,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -900,6 +912,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Payment.mutate(ctx, m)
 	case *PaymentChannelMutation:
 		return c.PaymentChannel.mutate(ctx, m)
+	case *PhysicalStockMovementMutation:
+		return c.PhysicalStockMovement.mutate(ctx, m)
 	case *PointAccountMutation:
 		return c.PointAccount.mutate(ctx, m)
 	case *PointTransactionMutation:
@@ -958,6 +972,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Session.mutate(ctx, m)
 	case *SettingMutation:
 		return c.Setting.mutate(ctx, m)
+	case *ShipmentMutation:
+		return c.Shipment.mutate(ctx, m)
 	case *StockAlertMutation:
 		return c.StockAlert.mutate(ctx, m)
 	case *SupplierAccountMutation:
@@ -7053,6 +7069,139 @@ func (c *PaymentChannelClient) mutate(ctx context.Context, m *PaymentChannelMuta
 	}
 }
 
+// PhysicalStockMovementClient is a client for the PhysicalStockMovement schema.
+type PhysicalStockMovementClient struct {
+	config
+}
+
+// NewPhysicalStockMovementClient returns a client for the PhysicalStockMovement from the given config.
+func NewPhysicalStockMovementClient(c config) *PhysicalStockMovementClient {
+	return &PhysicalStockMovementClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `physicalstockmovement.Hooks(f(g(h())))`.
+func (c *PhysicalStockMovementClient) Use(hooks ...Hook) {
+	c.hooks.PhysicalStockMovement = append(c.hooks.PhysicalStockMovement, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `physicalstockmovement.Intercept(f(g(h())))`.
+func (c *PhysicalStockMovementClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PhysicalStockMovement = append(c.inters.PhysicalStockMovement, interceptors...)
+}
+
+// Create returns a builder for creating a PhysicalStockMovement entity.
+func (c *PhysicalStockMovementClient) Create() *PhysicalStockMovementCreate {
+	mutation := newPhysicalStockMovementMutation(c.config, OpCreate)
+	return &PhysicalStockMovementCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PhysicalStockMovement entities.
+func (c *PhysicalStockMovementClient) CreateBulk(builders ...*PhysicalStockMovementCreate) *PhysicalStockMovementCreateBulk {
+	return &PhysicalStockMovementCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PhysicalStockMovementClient) MapCreateBulk(slice any, setFunc func(*PhysicalStockMovementCreate, int)) *PhysicalStockMovementCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PhysicalStockMovementCreateBulk{err: fmt.Errorf("calling to PhysicalStockMovementClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PhysicalStockMovementCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PhysicalStockMovementCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PhysicalStockMovement.
+func (c *PhysicalStockMovementClient) Update() *PhysicalStockMovementUpdate {
+	mutation := newPhysicalStockMovementMutation(c.config, OpUpdate)
+	return &PhysicalStockMovementUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PhysicalStockMovementClient) UpdateOne(_m *PhysicalStockMovement) *PhysicalStockMovementUpdateOne {
+	mutation := newPhysicalStockMovementMutation(c.config, OpUpdateOne, withPhysicalStockMovement(_m))
+	return &PhysicalStockMovementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PhysicalStockMovementClient) UpdateOneID(id uint64) *PhysicalStockMovementUpdateOne {
+	mutation := newPhysicalStockMovementMutation(c.config, OpUpdateOne, withPhysicalStockMovementID(id))
+	return &PhysicalStockMovementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PhysicalStockMovement.
+func (c *PhysicalStockMovementClient) Delete() *PhysicalStockMovementDelete {
+	mutation := newPhysicalStockMovementMutation(c.config, OpDelete)
+	return &PhysicalStockMovementDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PhysicalStockMovementClient) DeleteOne(_m *PhysicalStockMovement) *PhysicalStockMovementDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PhysicalStockMovementClient) DeleteOneID(id uint64) *PhysicalStockMovementDeleteOne {
+	builder := c.Delete().Where(physicalstockmovement.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PhysicalStockMovementDeleteOne{builder}
+}
+
+// Query returns a query builder for PhysicalStockMovement.
+func (c *PhysicalStockMovementClient) Query() *PhysicalStockMovementQuery {
+	return &PhysicalStockMovementQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePhysicalStockMovement},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PhysicalStockMovement entity by its id.
+func (c *PhysicalStockMovementClient) Get(ctx context.Context, id uint64) (*PhysicalStockMovement, error) {
+	return c.Query().Where(physicalstockmovement.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PhysicalStockMovementClient) GetX(ctx context.Context, id uint64) *PhysicalStockMovement {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PhysicalStockMovementClient) Hooks() []Hook {
+	return c.hooks.PhysicalStockMovement
+}
+
+// Interceptors returns the client interceptors.
+func (c *PhysicalStockMovementClient) Interceptors() []Interceptor {
+	return c.inters.PhysicalStockMovement
+}
+
+func (c *PhysicalStockMovementClient) mutate(ctx context.Context, m *PhysicalStockMovementMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PhysicalStockMovementCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PhysicalStockMovementUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PhysicalStockMovementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PhysicalStockMovementDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PhysicalStockMovement mutation op: %q", m.Op())
+	}
+}
+
 // PointAccountClient is a client for the PointAccount schema.
 type PointAccountClient struct {
 	config
@@ -10974,6 +11123,139 @@ func (c *SettingClient) mutate(ctx context.Context, m *SettingMutation) (Value, 
 	}
 }
 
+// ShipmentClient is a client for the Shipment schema.
+type ShipmentClient struct {
+	config
+}
+
+// NewShipmentClient returns a client for the Shipment from the given config.
+func NewShipmentClient(c config) *ShipmentClient {
+	return &ShipmentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `shipment.Hooks(f(g(h())))`.
+func (c *ShipmentClient) Use(hooks ...Hook) {
+	c.hooks.Shipment = append(c.hooks.Shipment, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `shipment.Intercept(f(g(h())))`.
+func (c *ShipmentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Shipment = append(c.inters.Shipment, interceptors...)
+}
+
+// Create returns a builder for creating a Shipment entity.
+func (c *ShipmentClient) Create() *ShipmentCreate {
+	mutation := newShipmentMutation(c.config, OpCreate)
+	return &ShipmentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Shipment entities.
+func (c *ShipmentClient) CreateBulk(builders ...*ShipmentCreate) *ShipmentCreateBulk {
+	return &ShipmentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ShipmentClient) MapCreateBulk(slice any, setFunc func(*ShipmentCreate, int)) *ShipmentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ShipmentCreateBulk{err: fmt.Errorf("calling to ShipmentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ShipmentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ShipmentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Shipment.
+func (c *ShipmentClient) Update() *ShipmentUpdate {
+	mutation := newShipmentMutation(c.config, OpUpdate)
+	return &ShipmentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ShipmentClient) UpdateOne(_m *Shipment) *ShipmentUpdateOne {
+	mutation := newShipmentMutation(c.config, OpUpdateOne, withShipment(_m))
+	return &ShipmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ShipmentClient) UpdateOneID(id uint64) *ShipmentUpdateOne {
+	mutation := newShipmentMutation(c.config, OpUpdateOne, withShipmentID(id))
+	return &ShipmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Shipment.
+func (c *ShipmentClient) Delete() *ShipmentDelete {
+	mutation := newShipmentMutation(c.config, OpDelete)
+	return &ShipmentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ShipmentClient) DeleteOne(_m *Shipment) *ShipmentDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ShipmentClient) DeleteOneID(id uint64) *ShipmentDeleteOne {
+	builder := c.Delete().Where(shipment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ShipmentDeleteOne{builder}
+}
+
+// Query returns a query builder for Shipment.
+func (c *ShipmentClient) Query() *ShipmentQuery {
+	return &ShipmentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeShipment},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Shipment entity by its id.
+func (c *ShipmentClient) Get(ctx context.Context, id uint64) (*Shipment, error) {
+	return c.Query().Where(shipment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ShipmentClient) GetX(ctx context.Context, id uint64) *Shipment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ShipmentClient) Hooks() []Hook {
+	return c.hooks.Shipment
+}
+
+// Interceptors returns the client interceptors.
+func (c *ShipmentClient) Interceptors() []Interceptor {
+	return c.inters.Shipment
+}
+
+func (c *ShipmentClient) mutate(ctx context.Context, m *ShipmentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ShipmentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ShipmentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ShipmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ShipmentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Shipment mutation op: %q", m.Op())
+	}
+}
+
 // StockAlertClient is a client for the StockAlert schema.
 type StockAlertClient struct {
 	config
@@ -14044,17 +14326,18 @@ type (
 		MediaCategory, MemberLevel, MemberProductGroup, Notification, NotificationLog,
 		NotifyBroadcast, NotifyTemplate, Order, OrderAmountLine, OrderDelivery,
 		OrderItem, OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel,
-		PointAccount, PointTransaction, Post, PostCategory, ProcessedEvent,
-		ProcurementItem, ProcurementOrder, Product, ProductContentBatch,
-		ProductControl, ProductDeliverySource, ProductSku, Promotion, RechargeOrder,
-		ReconciliationItem, ReconciliationJob, RefundOrder, ResellerBalanceAccount,
-		ResellerLedgerEntry, ResellerPricing, ResellerProfile, ResellerRelatedAccount,
-		ResellerSite, Review, RiskLockKey, RolePermission, SecurityAuditLog, Session,
-		Setting, StockAlert, SupplierAccount, SupplierLedgerEntry,
-		SupplierProductPrice, SupplyCatalogSnapshot, SupplyConnection,
-		SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag,
-		Ticket, TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview,
-		VisitLog, WalletAccount, WalletTransaction, Withdrawal []ent.Hook
+		PhysicalStockMovement, PointAccount, PointTransaction, Post, PostCategory,
+		ProcessedEvent, ProcurementItem, ProcurementOrder, Product,
+		ProductContentBatch, ProductControl, ProductDeliverySource, ProductSku,
+		Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
+		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
+		ResellerRelatedAccount, ResellerSite, Review, RiskLockKey, RolePermission,
+		SecurityAuditLog, Session, Setting, Shipment, StockAlert, SupplierAccount,
+		SupplierLedgerEntry, SupplierProductPrice, SupplyCatalogSnapshot,
+		SupplyConnection, SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder,
+		SupplySyncTask, Tag, Ticket, TicketMessage, User, UserGroup, UserSession,
+		V1IDMap, VirtualReview, VisitLog, WalletAccount, WalletTransaction,
+		Withdrawal []ent.Hook
 	}
 	inters struct {
 		AdminRole, AdminUser, AffiliateCommission, AuditLog, Banner, Card, CardImport,
@@ -14065,16 +14348,17 @@ type (
 		MediaCategory, MemberLevel, MemberProductGroup, Notification, NotificationLog,
 		NotifyBroadcast, NotifyTemplate, Order, OrderAmountLine, OrderDelivery,
 		OrderItem, OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel,
-		PointAccount, PointTransaction, Post, PostCategory, ProcessedEvent,
-		ProcurementItem, ProcurementOrder, Product, ProductContentBatch,
-		ProductControl, ProductDeliverySource, ProductSku, Promotion, RechargeOrder,
-		ReconciliationItem, ReconciliationJob, RefundOrder, ResellerBalanceAccount,
-		ResellerLedgerEntry, ResellerPricing, ResellerProfile, ResellerRelatedAccount,
-		ResellerSite, Review, RiskLockKey, RolePermission, SecurityAuditLog, Session,
-		Setting, StockAlert, SupplierAccount, SupplierLedgerEntry,
-		SupplierProductPrice, SupplyCatalogSnapshot, SupplyConnection,
-		SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag,
-		Ticket, TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview,
-		VisitLog, WalletAccount, WalletTransaction, Withdrawal []ent.Interceptor
+		PhysicalStockMovement, PointAccount, PointTransaction, Post, PostCategory,
+		ProcessedEvent, ProcurementItem, ProcurementOrder, Product,
+		ProductContentBatch, ProductControl, ProductDeliverySource, ProductSku,
+		Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
+		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
+		ResellerRelatedAccount, ResellerSite, Review, RiskLockKey, RolePermission,
+		SecurityAuditLog, Session, Setting, Shipment, StockAlert, SupplierAccount,
+		SupplierLedgerEntry, SupplierProductPrice, SupplyCatalogSnapshot,
+		SupplyConnection, SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder,
+		SupplySyncTask, Tag, Ticket, TicketMessage, User, UserGroup, UserSession,
+		V1IDMap, VirtualReview, VisitLog, WalletAccount, WalletTransaction,
+		Withdrawal []ent.Interceptor
 	}
 )

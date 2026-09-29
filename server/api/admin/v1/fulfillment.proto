@@ -10,6 +10,10 @@ import "google/protobuf/empty.proto";
 
 // AdminFulfillmentService 履约管理：待发货列表 + 手动交付。
 service AdminFulfillmentService {
+ rpc ShipOrder(ShipOrderRequest) returns (google.protobuf.Empty) { option (google.api.http) = { post: "/api/v1/admin/fulfillment/{order_no}/ship" body: "*" }; }
+ rpc UpdateShipping(UpdateShippingRequest) returns (google.protobuf.Empty) { option (google.api.http) = { post: "/api/v1/admin/fulfillment/{order_no}/shipping" body: "*" }; }
+ rpc RestockReturn(RestockReturnRequest) returns (google.protobuf.Empty) { option (google.api.http) = { post: "/api/v1/admin/fulfillment/{order_no}/restock" body: "*" }; }
+
   rpc StartService(StartServiceRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = { post: "/api/v1/admin/fulfillment/{order_no}/start" body: "*" };
   }
@@ -91,3 +95,7 @@ message DeliveryRecord {
 }
 
 message StartServiceRequest { string order_no = 1; uint64 order_item_id = 2; }
+
+message ShipOrderRequest { string order_no = 1; repeated uint64 item_ids = 2; string carrier = 3; string tracking_no = 4; string request_key = 5; }
+message UpdateShippingRequest { string order_no = 1; uint64 shipment_id = 2; string carrier = 3; string tracking_no = 4; map<string,string> address = 5; bool received = 6; string reason = 7; }
+message RestockReturnRequest { string order_no = 1; uint64 item_id = 2; int32 quantity = 3; string request_key = 4; string reason = 5; }

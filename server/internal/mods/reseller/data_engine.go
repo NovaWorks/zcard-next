@@ -46,17 +46,23 @@ func (s *SettleService) OnOrderRefunded(ctx context.Context, env events.Envelope
 	}
 	// 订单快照（subsite_profit 为利润基数；主站单/无利润单无动作）
 	o, err := data.Client(ctx, s.repo.data).Order.Get(ctx, p.OrderID)
-	if err != nil || o.SubsiteID == 0 || o.SubsiteProfit <= 0 {
+	if err != nil {
+		return err
+	}
+	if o.CommerceVersion == 1 {
+		return s.reconcilePhysical(ctx, o.ID)
+	}
+	if o.SubsiteID == 0 || o.SubsiteProfit <= 0 {
 		return nil
 	}
 	if err := s.repo.RefundDeduct(ctx, o.SubsiteID, o.ID, o.SubsiteProfit, p.RefundRatio); err != nil {
-		s.log.Warn("reseller.refund_deduct_failed", "order_id", p.OrderID, "err", err)
+		return err
 	}
 	return nil
 }
 
 // OnOrderPaid 订阅 order.paid：按订单快照分站利润入账（幂等 ACK）。
-func (s *SettleService) OnOrderPaid(ctx context.Context, env events.Envelope) error {
+func (s *SettleService) onOrderPaid(ctx context.Context, env events.Envelope) error {
 	var p settlePaidPayload
 	if err := json.Unmarshal(env.Payload, &p); err != nil {
 		return nil // 载荷不合法：ACK 不重试（order 侧契约破坏属异常路径）
@@ -69,7 +75,8 @@ func (s *SettleService) OnOrderPaid(ctx context.Context, env events.Envelope) er
 		OrderID:   p.OrderID,
 		Amount:    money.Cents(p.SubsiteProfit),
 	}); err != nil {
-		s.log.Warn("reseller.settle_failed", "order_id", p.OrderID, "err", err)
+		return err
 	}
+
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/migrations"
 	"io/fs"
@@ -54,10 +55,12 @@ func TestImportDeliveryUpgradePreservesLegacyOrders(t *testing.T) {
 	// This test deliberately stops at an older schema. Select only columns
 	// present at that migration instead of all columns in the current Ent model.
 	p := d.Client.Product.Query().Where(product.ID(42)).Select(product.FieldCategoryProtected, product.FieldIsLocked, product.FieldPrice).OnlyX(ctx)
-	it := d.Client.OrderItem.GetX(ctx, 45)
+	it := d.Client.OrderItem.Query().Where(orderitem.ID(45)).Select(orderitem.FieldID, orderitem.FieldDeliverySourceID, orderitem.FieldFulfillmentType).OnlyX(ctx)
 	if p.CategoryProtected || !p.IsLocked || p.Price != 999 || it.DeliverySourceID != 0 || it.FulfillmentType != "upstream" {
 		t.Fatal("legacy rows mutated")
 	}
 	d.Client.ProductDeliverySource.Create().SetProductID(42).SetCurrentKey("0:42:0").SaveX(ctx)
-	d.Client.OrderItem.UpdateOneID(45).SetFulfillmentType("reuse").ExecX(ctx)
+	if _, e := d.Client.OrderItem.Update().Where(orderitem.ID(45)).SetFulfillmentType("reuse").Save(ctx); e != nil {
+		t.Fatal(e)
+	}
 }

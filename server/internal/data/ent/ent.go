@@ -56,6 +56,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pageview"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/physicalstockmovement"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointtransaction"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/post"
@@ -85,6 +86,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/securityauditlog"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/session"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/shipment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/stockalert"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
@@ -212,6 +214,7 @@ func checkColumn(t, c string) error {
 			pageview.Table:                 pageview.ValidColumn,
 			payment.Table:                  payment.ValidColumn,
 			paymentchannel.Table:           paymentchannel.ValidColumn,
+			physicalstockmovement.Table:    physicalstockmovement.ValidColumn,
 			pointaccount.Table:             pointaccount.ValidColumn,
 			pointtransaction.Table:         pointtransaction.ValidColumn,
 			post.Table:                     post.ValidColumn,
@@ -241,6 +244,7 @@ func checkColumn(t, c string) error {
 			securityauditlog.Table:         securityauditlog.ValidColumn,
 			session.Table:                  session.ValidColumn,
 			setting.Table:                  setting.ValidColumn,
+			shipment.Table:                 shipment.ValidColumn,
 			stockalert.Table:               stockalert.ValidColumn,
 			supplieraccount.Table:          supplieraccount.ValidColumn,
 			supplierledgerentry.Table:      supplierledgerentry.ValidColumn,

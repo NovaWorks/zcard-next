@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	placement "github.com/NovaWorks/zcard-next/server/internal/data/ent/categoryproductplacement"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"strings"
 	"time"
 
@@ -179,6 +180,9 @@ func (r *ProductRepoImpl) GetAdmin(ctx context.Context, subsiteID, id uint64) (*
 
 // CreateProduct 创建商品（description 已 sanitize）。
 func (r *ProductRepoImpl) createProduct(ctx context.Context, in port.ProductInput) (*ent.Product, error) {
+	if err := r.validatePhysicalProduct(ctx, nil, &in); err != nil {
+		return nil, err
+	}
 	if in.FulfillmentMode == "local" || in.FulfillmentMode == "reuse" {
 		return nil, fmt.Errorf("请先创建商品，再配置发货来源")
 	}
@@ -197,6 +201,7 @@ func (r *ProductRepoImpl) createProduct(ctx context.Context, in port.ProductInpu
 		SetPrice(in.Price).
 		SetFactoryPrice(in.FactoryPrice).
 		SetStockType(product.StockType(in.StockType))
+	create.SetNillableGoodsType(in.GoodsType).SetNillableShippingMode(in.ShippingMode).SetNillableShippingFee(in.ShippingFee).SetNillablePhysicalStock(in.PhysicalStock).SetShippingCountries(in.ShippingCountries)
 	if in.FulfillmentMode != "" {
 		create.SetFulfillmentMode(in.FulfillmentMode)
 	}
@@ -237,6 +242,9 @@ func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.
 	if err != nil {
 		return nil, err
 	}
+	if err := r.validatePhysicalProduct(ctx, current, &in); err != nil {
+		return nil, err
+	}
 	if in.StockType != "" && in.StockType != string(current.StockType) {
 		owned, e := data.HasLocalDelivery(ctx, data.Client(ctx, r.data), current)
 		if e != nil {
@@ -264,6 +272,23 @@ func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.
 		}
 	}
 	q := data.Client(ctx, r.data).Product.UpdateOneID(id).Where(product.StatusGTE(0), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID))
+	q.SetNillableGoodsType(in.GoodsType).SetNillableShippingMode(in.ShippingMode).SetNillableShippingFee(in.ShippingFee)
+	if in.GoodsType != nil || in.ShippingMode != nil {
+		q.SetShippingCountries(in.ShippingCountries)
+	}
+	if current.GoodsType == "physical" {
+		q.AddLockVersion(1)
+	}
+	if in.PhysicalStock != nil && current.GoodsType == "physical" {
+		if in.ExpectedPhysicalStock == nil || *in.ExpectedPhysicalStock != current.PhysicalStock {
+			return nil, fmt.Errorf("库存已变化，请刷新后重新调整")
+		}
+		if err := data.AdjustPhysicalStock(ctx, r.data, current, 0, *in.PhysicalStock); err != nil {
+			return nil, err
+		}
+	} else {
+		q.SetNillablePhysicalStock(in.PhysicalStock)
+	}
 	if in.Name != "" {
 		q.SetName(in.Name)
 	}
@@ -625,6 +650,7 @@ func (r *ProductRepoImpl) DeleteTag(ctx context.Context, id uint64) error {
 // ToAdminPB 转 admin 协议对象。
 func ToAdminPB(p *ent.Product) *adminv1.AdminProduct {
 	out := &adminv1.AdminProduct{
+		GoodsType: p.GoodsType, ShippingMode: p.ShippingMode, ShippingFeeCents: p.ShippingFee, ShippingCountries: p.ShippingCountries, PhysicalStock: p.PhysicalStock,
 		FulfillmentMode: p.FulfillmentMode, ManualStock: &p.ManualStock,
 		Id: p.ID, CategoryId: p.CategoryID, Name: p.Name, Slug: p.Slug,
 		Description: p.Description, Cover: p.Cover, Images: p.Images,
@@ -1096,7 +1122,7 @@ func (r *ProductRepoImpl) ListForSupply(ctx context.Context, f port.AdminFilter)
 	for _, v := range skus {
 		blocked = append(blocked, v.ProductID)
 	}
-	q := data.Client(ctx, r.data).Product.Query().Where(product.StatusGTE(0), data.VisibleProductCategory(hidden)).Where(product.FulfillmentModeNotIn("manual", "local", "reuse"), product.IDNotIn(blocked...))
+	q := data.Client(ctx, r.data).Product.Query().Where(product.GoodsTypeNEQ("physical"), product.StatusGTE(0), data.VisibleProductCategory(hidden)).Where(product.FulfillmentModeNotIn("manual", "local", "reuse"), product.IDNotIn(blocked...))
 	if f.Status >= 0 {
 		q = q.Where(product.Status(int8(f.Status)))
 	}
@@ -1190,6 +1216,15 @@ func (r *ProductRepoImpl) DeleteProduct(ctx context.Context, id uint64) error {
 		old, e := data.Client(ctx, r.data).Product.Get(ctx, id)
 		if e != nil {
 			return e
+		}
+		if old.GoodsType == "physical" {
+			used, e := data.Client(ctx, r.data).OrderItem.Query().Where(orderitem.ProductID(id)).Exist(ctx)
+			if e != nil {
+				return e
+			}
+			if used {
+				return fmt.Errorf("实体商品已有订单，请下架商品")
+			}
 		}
 		if e = r.deleteProduct(ctx, id); e != nil {
 			return e

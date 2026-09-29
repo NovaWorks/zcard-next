@@ -43,6 +43,24 @@ const (
 	FieldAmount = "amount"
 	// FieldCost holds the string denoting the cost field in the database.
 	FieldCost = "cost"
+	// FieldGoodsType holds the string denoting the goods_type field in the database.
+	FieldGoodsType = "goods_type"
+	// FieldPaidAmount holds the string denoting the paid_amount field in the database.
+	FieldPaidAmount = "paid_amount"
+	// FieldShippingAmount holds the string denoting the shipping_amount field in the database.
+	FieldShippingAmount = "shipping_amount"
+	// FieldRefundedAmount holds the string denoting the refunded_amount field in the database.
+	FieldRefundedAmount = "refunded_amount"
+	// FieldRefundedShipping holds the string denoting the refunded_shipping field in the database.
+	FieldRefundedShipping = "refunded_shipping"
+	// FieldCanceledQuantity holds the string denoting the canceled_quantity field in the database.
+	FieldCanceledQuantity = "canceled_quantity"
+	// FieldShippedQuantity holds the string denoting the shipped_quantity field in the database.
+	FieldShippedQuantity = "shipped_quantity"
+	// FieldReceivedQuantity holds the string denoting the received_quantity field in the database.
+	FieldReceivedQuantity = "received_quantity"
+	// FieldReturnedQuantity holds the string denoting the returned_quantity field in the database.
+	FieldReturnedQuantity = "returned_quantity"
 	// FieldFulfillmentType holds the string denoting the fulfillment_type field in the database.
 	FieldFulfillmentType = "fulfillment_type"
 	// FieldDeliverySourceID holds the string denoting the delivery_source_id field in the database.
@@ -83,6 +101,15 @@ var Columns = []string{
 	FieldQuantity,
 	FieldAmount,
 	FieldCost,
+	FieldGoodsType,
+	FieldPaidAmount,
+	FieldShippingAmount,
+	FieldRefundedAmount,
+	FieldRefundedShipping,
+	FieldCanceledQuantity,
+	FieldShippedQuantity,
+	FieldReceivedQuantity,
+	FieldReturnedQuantity,
 	FieldFulfillmentType,
 	FieldDeliverySourceID,
 	FieldFulfillmentStatus,
@@ -117,6 +144,24 @@ var (
 	SkuNameValidator func(string) error
 	// DefaultCost holds the default value on creation for the "cost" field.
 	DefaultCost int64
+	// DefaultGoodsType holds the default value on creation for the "goods_type" field.
+	DefaultGoodsType string
+	// DefaultPaidAmount holds the default value on creation for the "paid_amount" field.
+	DefaultPaidAmount int64
+	// DefaultShippingAmount holds the default value on creation for the "shipping_amount" field.
+	DefaultShippingAmount int64
+	// DefaultRefundedAmount holds the default value on creation for the "refunded_amount" field.
+	DefaultRefundedAmount int64
+	// DefaultRefundedShipping holds the default value on creation for the "refunded_shipping" field.
+	DefaultRefundedShipping int64
+	// DefaultCanceledQuantity holds the default value on creation for the "canceled_quantity" field.
+	DefaultCanceledQuantity int32
+	// DefaultShippedQuantity holds the default value on creation for the "shipped_quantity" field.
+	DefaultShippedQuantity int32
+	// DefaultReceivedQuantity holds the default value on creation for the "received_quantity" field.
+	DefaultReceivedQuantity int32
+	// DefaultReturnedQuantity holds the default value on creation for the "returned_quantity" field.
+	DefaultReturnedQuantity int32
 	// DefaultFulfillmentStatus holds the default value on creation for the "fulfillment_status" field.
 	DefaultFulfillmentStatus string
 	// FulfillmentStatusValidator is a validator for the "fulfillment_status" field. It is called by the builders before save.
@@ -132,6 +177,7 @@ const (
 	FulfillmentTypeManual   FulfillmentType = "manual"
 	FulfillmentTypeUpstream FulfillmentType = "upstream"
 	FulfillmentTypeReuse    FulfillmentType = "reuse"
+	FulfillmentTypeShipping FulfillmentType = "shipping"
 )
 
 func (ft FulfillmentType) String() string {
@@ -141,7 +187,7 @@ func (ft FulfillmentType) String() string {
 // FulfillmentTypeValidator is a validator for the "fulfillment_type" field enum values. It is called by the builders before save.
 func FulfillmentTypeValidator(ft FulfillmentType) error {
 	switch ft {
-	case FulfillmentTypeAuto, FulfillmentTypeManual, FulfillmentTypeUpstream, FulfillmentTypeReuse:
+	case FulfillmentTypeAuto, FulfillmentTypeManual, FulfillmentTypeUpstream, FulfillmentTypeReuse, FulfillmentTypeShipping:
 		return nil
 	default:
 		return fmt.Errorf("orderitem: invalid enum value for fulfillment_type field: %q", ft)
@@ -219,6 +265,51 @@ func ByAmount(opts ...sql.OrderTermOption) OrderOption {
 // ByCost orders the results by the cost field.
 func ByCost(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCost, opts...).ToFunc()
+}
+
+// ByGoodsType orders the results by the goods_type field.
+func ByGoodsType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGoodsType, opts...).ToFunc()
+}
+
+// ByPaidAmount orders the results by the paid_amount field.
+func ByPaidAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPaidAmount, opts...).ToFunc()
+}
+
+// ByShippingAmount orders the results by the shipping_amount field.
+func ByShippingAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldShippingAmount, opts...).ToFunc()
+}
+
+// ByRefundedAmount orders the results by the refunded_amount field.
+func ByRefundedAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRefundedAmount, opts...).ToFunc()
+}
+
+// ByRefundedShipping orders the results by the refunded_shipping field.
+func ByRefundedShipping(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRefundedShipping, opts...).ToFunc()
+}
+
+// ByCanceledQuantity orders the results by the canceled_quantity field.
+func ByCanceledQuantity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCanceledQuantity, opts...).ToFunc()
+}
+
+// ByShippedQuantity orders the results by the shipped_quantity field.
+func ByShippedQuantity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldShippedQuantity, opts...).ToFunc()
+}
+
+// ByReceivedQuantity orders the results by the received_quantity field.
+func ByReceivedQuantity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReceivedQuantity, opts...).ToFunc()
+}
+
+// ByReturnedQuantity orders the results by the returned_quantity field.
+func ByReturnedQuantity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReturnedQuantity, opts...).ToFunc()
 }
 
 // ByFulfillmentType orders the results by the fulfillment_type field.

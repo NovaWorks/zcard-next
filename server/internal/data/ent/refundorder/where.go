@@ -75,6 +75,11 @@ func Amount(v int64) predicate.RefundOrder {
 	return predicate.RefundOrder(sql.FieldEQ(FieldAmount, v))
 }
 
+// ShippingAmount applies equality check predicate on the "shipping_amount" field. It's identical to ShippingAmountEQ.
+func ShippingAmount(v int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldEQ(FieldShippingAmount, v))
+}
+
 // FeeAmount applies equality check predicate on the "fee_amount" field. It's identical to FeeAmountEQ.
 func FeeAmount(v int64) predicate.RefundOrder {
 	return predicate.RefundOrder(sql.FieldEQ(FieldFeeAmount, v))
@@ -233,6 +238,56 @@ func AmountLT(v int64) predicate.RefundOrder {
 // AmountLTE applies the LTE predicate on the "amount" field.
 func AmountLTE(v int64) predicate.RefundOrder {
 	return predicate.RefundOrder(sql.FieldLTE(FieldAmount, v))
+}
+
+// ItemAllocationsIsNil applies the IsNil predicate on the "item_allocations" field.
+func ItemAllocationsIsNil() predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldIsNull(FieldItemAllocations))
+}
+
+// ItemAllocationsNotNil applies the NotNil predicate on the "item_allocations" field.
+func ItemAllocationsNotNil() predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldNotNull(FieldItemAllocations))
+}
+
+// ShippingAmountEQ applies the EQ predicate on the "shipping_amount" field.
+func ShippingAmountEQ(v int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldEQ(FieldShippingAmount, v))
+}
+
+// ShippingAmountNEQ applies the NEQ predicate on the "shipping_amount" field.
+func ShippingAmountNEQ(v int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldNEQ(FieldShippingAmount, v))
+}
+
+// ShippingAmountIn applies the In predicate on the "shipping_amount" field.
+func ShippingAmountIn(vs ...int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldIn(FieldShippingAmount, vs...))
+}
+
+// ShippingAmountNotIn applies the NotIn predicate on the "shipping_amount" field.
+func ShippingAmountNotIn(vs ...int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldNotIn(FieldShippingAmount, vs...))
+}
+
+// ShippingAmountGT applies the GT predicate on the "shipping_amount" field.
+func ShippingAmountGT(v int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldGT(FieldShippingAmount, v))
+}
+
+// ShippingAmountGTE applies the GTE predicate on the "shipping_amount" field.
+func ShippingAmountGTE(v int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldGTE(FieldShippingAmount, v))
+}
+
+// ShippingAmountLT applies the LT predicate on the "shipping_amount" field.
+func ShippingAmountLT(v int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldLT(FieldShippingAmount, v))
+}
+
+// ShippingAmountLTE applies the LTE predicate on the "shipping_amount" field.
+func ShippingAmountLTE(v int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldLTE(FieldShippingAmount, v))
 }
 
 // FeeAmountEQ applies the EQ predicate on the "fee_amount" field.

@@ -194,6 +194,11 @@ message GetProductRequest {
 
 // AdminProduct 管理面商品（含成本价等敏感字段）。
 message AdminProduct {
+  string goods_type = 50;
+  string shipping_mode = 51;
+  int64 shipping_fee_cents = 52;
+  repeated string shipping_countries = 53;
+  int64 physical_stock = 54;
   string fulfillment_mode = 30;
   optional int64 manual_stock = 31;
   uint64 id = 1;
@@ -243,6 +248,11 @@ message AdminProduct {
 }
 
 message CreateProductRequest {
+  optional string goods_type = 50;
+  optional string shipping_mode = 51;
+  optional int64 shipping_fee_cents = 52;
+  repeated string shipping_countries = 53;
+  optional int64 physical_stock = 54;
   string fulfillment_mode = 17;
   optional int64 manual_stock = 18;
   string name = 1 [(google.api.field_behavior) = REQUIRED];
@@ -267,6 +277,12 @@ message CreateProductRequest {
 }
 
 message UpdateProductRequest {
+ optional int64 expected_physical_stock = 55;
+  optional string goods_type = 50;
+  optional string shipping_mode = 51;
+  optional int64 shipping_fee_cents = 52;
+  repeated string shipping_countries = 53;
+  optional int64 physical_stock = 54;
   string fulfillment_mode = 17;
   optional int64 manual_stock = 18;
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
@@ -518,6 +534,7 @@ message SkuList {
 
 // Sku 管理面多规格（含成本价）。
 message Sku {
+  optional int64 physical_stock = 20;
   string fulfillment_mode = 9;
   uint64 id = 1;
   uint64 product_id = 2;
@@ -530,6 +547,7 @@ message Sku {
 }
 
 message CreateSkuRequest {
+  optional int64 physical_stock = 20;
   string fulfillment_mode = 8;
   uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
   string name = 2 [(google.api.field_behavior) = REQUIRED];
@@ -541,6 +559,8 @@ message CreateSkuRequest {
 }
 
 message UpdateSkuRequest {
+ optional int64 expected_physical_stock = 21;
+  optional int64 physical_stock = 20;
   string fulfillment_mode = 8;
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
   string name = 2;

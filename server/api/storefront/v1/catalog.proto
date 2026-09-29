@@ -79,6 +79,11 @@ message FlashOffer {
 }
 
 message Product {
+  string goods_type = 50;
+  string shipping_mode = 51;
+  int64 shipping_fee_cents = 52;
+  repeated string shipping_countries = 53;
+  int64 physical_stock = 54;
   string fulfillment_mode = 21;
   int64 manual_stock = 22;
   uint64 id = 1;

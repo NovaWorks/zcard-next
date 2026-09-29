@@ -105,3 +105,7 @@ func toLocalEntry(e port.Entry) Entry {
 func ProvidePortWallet(repo *WalletRepoImpl) port.Wallet {
 	return portWalletAdapter{repo: repo}
 }
+
+func (a portPointsAdapter) PointRevokeInTx(ctx context.Context, e port.PointEntry) error {
+	return a.repo.PointRevokeInTx(ctx, PointEntry{UserID: e.UserID, Direction: e.Direction, Type: e.Type, Amount: e.Amount, Reference: e.Reference, OrderID: e.OrderID, Remark: e.Remark})
+}

@@ -9,7 +9,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/outboxevent"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
 )
@@ -26,17 +26,12 @@ func NewOutboxWriter(d *Data) *OutboxWriter { return &OutboxWriter{data: d} }
 // dedupe_key 冲突（同事件重复发布，如订单重复回调）幂等返回 nil。
 // 租户信息由各模块事件载荷自带（outbox_events 表无 subsite_id 列，数据库架构 ）。
 func (w *OutboxWriter) Write(ctx context.Context, module, typ, aggregateID, dedupeKey string, payload json.RawMessage) error {
-	_, err := Client(ctx, w.data).OutboxEvent.Create().
+	return Client(ctx, w.data).OutboxEvent.Create().
 		SetModule(module).
 		SetType(typ).
 		SetAggregateID(aggregateID).
 		SetDedupeKey(dedupeKey).
-		SetPayload(payload).
-		Save(ctx)
-	if ent.IsConstraintError(err) {
-		return nil
-	}
-	return err
+		SetPayload(payload).OnConflictColumns(outboxevent.FieldDedupeKey).Ignore().Exec(ctx)
 }
 
 var _ events.Writer = (*OutboxWriter)(nil)

@@ -24,12 +24,14 @@ const (
 )
 
 type CreateOrderRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Items         []*OrderItemInput      `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	GuestContact  string                 `protobuf:"bytes,2,opt,name=guest_contact,json=guestContact,proto3" json:"guest_contact,omitempty"`
-	QueryPassword string                 `protobuf:"bytes,3,opt,name=query_password,json=queryPassword,proto3" json:"query_password,omitempty"`
-	Contact       string                 `protobuf:"bytes,4,opt,name=contact,proto3" json:"contact,omitempty"`
-	CouponCode    string                 `protobuf:"bytes,5,opt,name=coupon_code,json=couponCode,proto3" json:"coupon_code,omitempty"`
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ShippingAddress map[string]string      `protobuf:"bytes,11,rep,name=shipping_address,json=shippingAddress,proto3" json:"shipping_address,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	QuoteKey        string                 `protobuf:"bytes,12,opt,name=quote_key,json=quoteKey,proto3" json:"quote_key,omitempty"`
+	Items           []*OrderItemInput      `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	GuestContact    string                 `protobuf:"bytes,2,opt,name=guest_contact,json=guestContact,proto3" json:"guest_contact,omitempty"`
+	QueryPassword   string                 `protobuf:"bytes,3,opt,name=query_password,json=queryPassword,proto3" json:"query_password,omitempty"`
+	Contact         string                 `protobuf:"bytes,4,opt,name=contact,proto3" json:"contact,omitempty"`
+	CouponCode      string                 `protobuf:"bytes,5,opt,name=coupon_code,json=couponCode,proto3" json:"coupon_code,omitempty"`
 	// 控件答案（key=控件 ID 字符串，value=答案；多选用逗号分隔）
 	ControlAnswers map[string]string `protobuf:"bytes,6,rep,name=control_answers,json=controlAnswers,proto3" json:"control_answers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// 积分兑换下单（：全部商品须为积分商品；积分同事务扣款，订单直落 paid）
@@ -71,6 +73,20 @@ func (x *CreateOrderRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateOrderRequest.ProtoReflect.Descriptor instead.
 func (*CreateOrderRequest) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_order_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *CreateOrderRequest) GetShippingAddress() map[string]string {
+	if x != nil {
+		return x.ShippingAddress
+	}
+	return nil
+}
+
+func (x *CreateOrderRequest) GetQuoteKey() string {
+	if x != nil {
+		return x.QuoteKey
+	}
+	return ""
 }
 
 func (x *CreateOrderRequest) GetItems() []*OrderItemInput {
@@ -213,6 +229,8 @@ func (x *OrderItemInput) GetQuantity() int32 {
 
 type CreateOrderReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	ShippingCents int64                  `protobuf:"varint,4,opt,name=shipping_cents,json=shippingCents,proto3" json:"shipping_cents,omitempty"`
+	QuoteKey      string                 `protobuf:"bytes,5,opt,name=quote_key,json=quoteKey,proto3" json:"quote_key,omitempty"`
 	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
 	TotalCents    int64                  `protobuf:"varint,2,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
 	ExpiresAt     int64                  `protobuf:"varint,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
@@ -248,6 +266,20 @@ func (x *CreateOrderReply) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateOrderReply.ProtoReflect.Descriptor instead.
 func (*CreateOrderReply) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_order_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CreateOrderReply) GetShippingCents() int64 {
+	if x != nil {
+		return x.ShippingCents
+	}
+	return 0
+}
+
+func (x *CreateOrderReply) GetQuoteKey() string {
+	if x != nil {
+		return x.QuoteKey
+	}
+	return ""
 }
 
 func (x *CreateOrderReply) GetOrderNo() string {
@@ -325,6 +357,11 @@ func (x *GetOrderRequest) GetQueryPassword() string {
 
 type GetOrderReply struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
+	ShippingStatus   string                 `protobuf:"bytes,11,opt,name=shipping_status,json=shippingStatus,proto3" json:"shipping_status,omitempty"`
+	ShippingCents    int64                  `protobuf:"varint,12,opt,name=shipping_cents,json=shippingCents,proto3" json:"shipping_cents,omitempty"`
+	ShippingAddress  map[string]string      `protobuf:"bytes,13,rep,name=shipping_address,json=shippingAddress,proto3" json:"shipping_address,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ShipmentsJson    string                 `protobuf:"bytes,14,opt,name=shipments_json,json=shipmentsJson,proto3" json:"shipments_json,omitempty"`
+	CommerceVersion  int32                  `protobuf:"varint,15,opt,name=commerce_version,json=commerceVersion,proto3" json:"commerce_version,omitempty"`
 	RefundedCents    int64                  `protobuf:"varint,9,opt,name=refunded_cents,json=refundedCents,proto3" json:"refunded_cents,omitempty"`
 	RefundedFeeCents int64                  `protobuf:"varint,10,opt,name=refunded_fee_cents,json=refundedFeeCents,proto3" json:"refunded_fee_cents,omitempty"`
 	OrderNo          string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
@@ -367,6 +404,41 @@ func (x *GetOrderReply) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetOrderReply.ProtoReflect.Descriptor instead.
 func (*GetOrderReply) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_order_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetOrderReply) GetShippingStatus() string {
+	if x != nil {
+		return x.ShippingStatus
+	}
+	return ""
+}
+
+func (x *GetOrderReply) GetShippingCents() int64 {
+	if x != nil {
+		return x.ShippingCents
+	}
+	return 0
+}
+
+func (x *GetOrderReply) GetShippingAddress() map[string]string {
+	if x != nil {
+		return x.ShippingAddress
+	}
+	return nil
+}
+
+func (x *GetOrderReply) GetShipmentsJson() string {
+	if x != nil {
+		return x.ShipmentsJson
+	}
+	return ""
+}
+
+func (x *GetOrderReply) GetCommerceVersion() int32 {
+	if x != nil {
+		return x.CommerceVersion
+	}
+	return 0
 }
 
 func (x *GetOrderReply) GetRefundedCents() int64 {
@@ -441,6 +513,12 @@ func (x *GetOrderReply) GetPaidFeeCents() int64 {
 
 type OrderItemReply struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
+	GoodsType         string                 `protobuf:"bytes,11,opt,name=goods_type,json=goodsType,proto3" json:"goods_type,omitempty"`
+	PaidCents         int64                  `protobuf:"varint,12,opt,name=paid_cents,json=paidCents,proto3" json:"paid_cents,omitempty"`
+	ShippingCents     int64                  `protobuf:"varint,13,opt,name=shipping_cents,json=shippingCents,proto3" json:"shipping_cents,omitempty"`
+	ShippedQuantity   int32                  `protobuf:"varint,14,opt,name=shipped_quantity,json=shippedQuantity,proto3" json:"shipped_quantity,omitempty"`
+	ReceivedQuantity  int32                  `protobuf:"varint,15,opt,name=received_quantity,json=receivedQuantity,proto3" json:"received_quantity,omitempty"`
+	CanceledQuantity  int32                  `protobuf:"varint,16,opt,name=canceled_quantity,json=canceledQuantity,proto3" json:"canceled_quantity,omitempty"`
 	Id                uint64                 `protobuf:"varint,5,opt,name=id,proto3" json:"id,omitempty"`
 	SkuName           string                 `protobuf:"bytes,6,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`
 	FulfillmentType   string                 `protobuf:"bytes,7,opt,name=fulfillment_type,json=fulfillmentType,proto3" json:"fulfillment_type,omitempty"`
@@ -483,6 +561,48 @@ func (x *OrderItemReply) ProtoReflect() protoreflect.Message {
 // Deprecated: Use OrderItemReply.ProtoReflect.Descriptor instead.
 func (*OrderItemReply) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_order_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *OrderItemReply) GetGoodsType() string {
+	if x != nil {
+		return x.GoodsType
+	}
+	return ""
+}
+
+func (x *OrderItemReply) GetPaidCents() int64 {
+	if x != nil {
+		return x.PaidCents
+	}
+	return 0
+}
+
+func (x *OrderItemReply) GetShippingCents() int64 {
+	if x != nil {
+		return x.ShippingCents
+	}
+	return 0
+}
+
+func (x *OrderItemReply) GetShippedQuantity() int32 {
+	if x != nil {
+		return x.ShippedQuantity
+	}
+	return 0
+}
+
+func (x *OrderItemReply) GetReceivedQuantity() int32 {
+	if x != nil {
+		return x.ReceivedQuantity
+	}
+	return 0
+}
+
+func (x *OrderItemReply) GetCanceledQuantity() int32 {
+	if x != nil {
+		return x.CanceledQuantity
+	}
+	return 0
 }
 
 func (x *OrderItemReply) GetId() uint64 {
@@ -835,6 +955,7 @@ func (x *ListMyOrdersReply) GetTotal() int64 {
 // MyOrderItem 我的订单行（金额/状态/时间；卡密取回走 GetOrder）。
 type MyOrderItem struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
+	ShippingStatus     string                 `protobuf:"bytes,9,opt,name=shipping_status,json=shippingStatus,proto3" json:"shipping_status,omitempty"`
 	OrderNo            string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
 	Status             string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
 	TotalCents         int64                  `protobuf:"varint,3,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
@@ -875,6 +996,13 @@ func (x *MyOrderItem) ProtoReflect() protoreflect.Message {
 // Deprecated: Use MyOrderItem.ProtoReflect.Descriptor instead.
 func (*MyOrderItem) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_order_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *MyOrderItem) GetShippingStatus() string {
+	if x != nil {
+		return x.ShippingStatus
+	}
+	return ""
 }
 
 func (x *MyOrderItem) GetOrderNo() string {
@@ -977,12 +1105,162 @@ func (x *CancelMyOrderRequest) GetOrderNo() string {
 	return ""
 }
 
+type ShippingRegionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Country       string                 `protobuf:"bytes,1,opt,name=country,proto3" json:"country,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ShippingRegionsRequest) Reset() {
+	*x = ShippingRegionsRequest{}
+	mi := &file_storefront_v1_order_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShippingRegionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShippingRegionsRequest) ProtoMessage() {}
+
+func (x *ShippingRegionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_order_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ShippingRegionsRequest.ProtoReflect.Descriptor instead.
+func (*ShippingRegionsRequest) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_order_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ShippingRegionsRequest) GetCountry() string {
+	if x != nil {
+		return x.Country
+	}
+	return ""
+}
+
+type ShippingRegionsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DataJson      string                 `protobuf:"bytes,1,opt,name=data_json,json=dataJson,proto3" json:"data_json,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ShippingRegionsReply) Reset() {
+	*x = ShippingRegionsReply{}
+	mi := &file_storefront_v1_order_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShippingRegionsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShippingRegionsReply) ProtoMessage() {}
+
+func (x *ShippingRegionsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_order_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ShippingRegionsReply.ProtoReflect.Descriptor instead.
+func (*ShippingRegionsReply) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_order_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ShippingRegionsReply) GetDataJson() string {
+	if x != nil {
+		return x.DataJson
+	}
+	return ""
+}
+
+type ReceiveShipmentRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	ShipmentId    uint64                 `protobuf:"varint,2,opt,name=shipment_id,json=shipmentId,proto3" json:"shipment_id,omitempty"`
+	QueryPassword string                 `protobuf:"bytes,3,opt,name=query_password,json=queryPassword,proto3" json:"query_password,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReceiveShipmentRequest) Reset() {
+	*x = ReceiveShipmentRequest{}
+	mi := &file_storefront_v1_order_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReceiveShipmentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReceiveShipmentRequest) ProtoMessage() {}
+
+func (x *ReceiveShipmentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_order_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReceiveShipmentRequest.ProtoReflect.Descriptor instead.
+func (*ReceiveShipmentRequest) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_order_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ReceiveShipmentRequest) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *ReceiveShipmentRequest) GetShipmentId() uint64 {
+	if x != nil {
+		return x.ShipmentId
+	}
+	return 0
+}
+
+func (x *ReceiveShipmentRequest) GetQueryPassword() string {
+	if x != nil {
+		return x.QueryPassword
+	}
+	return ""
+}
+
 var File_storefront_v1_order_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_order_proto_rawDesc = "" +
 	"\n" +
-	"\x19storefront/v1/order.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x88\x04\n" +
-	"\x12CreateOrderRequest\x12B\n" +
+	"\x19storefront/v1/order.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xd6\x05\n" +
+	"\x12CreateOrderRequest\x12k\n" +
+	"\x10shipping_address\x18\v \x03(\v2@.zcard.api.storefront.v1.CreateOrderRequest.ShippingAddressEntryR\x0fshippingAddress\x12\x1b\n" +
+	"\tquote_key\x18\f \x01(\tR\bquoteKey\x12B\n" +
 	"\x05items\x18\x01 \x03(\v2'.zcard.api.storefront.v1.OrderItemInputB\x03\xe0A\x02R\x05items\x12#\n" +
 	"\rguest_contact\x18\x02 \x01(\tR\fguestContact\x12%\n" +
 	"\x0equery_password\x18\x03 \x01(\tR\rqueryPassword\x12\x18\n" +
@@ -996,7 +1274,10 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\n" +
 	"captcha_id\x18\t \x01(\tR\tcaptchaId\x12!\n" +
 	"\fcaptcha_code\x18\n" +
-	" \x01(\tR\vcaptchaCode\x1aA\n" +
+	" \x01(\tR\vcaptchaCode\x1aB\n" +
+	"\x14ShippingAddressEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aA\n" +
 	"\x13ControlAnswersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x95\x02\n" +
@@ -1008,8 +1289,10 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\bquantity\x18\x03 \x01(\x05B\x03\xe0A\x02R\bquantity\x1aA\n" +
 	"\x13ControlAnswersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"m\n" +
-	"\x10CreateOrderReply\x12\x19\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xb1\x01\n" +
+	"\x10CreateOrderReply\x12%\n" +
+	"\x0eshipping_cents\x18\x04 \x01(\x03R\rshippingCents\x12\x1b\n" +
+	"\tquote_key\x18\x05 \x01(\tR\bquoteKey\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x1f\n" +
 	"\vtotal_cents\x18\x02 \x01(\x03R\n" +
 	"totalCents\x12\x1d\n" +
@@ -1017,8 +1300,13 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"expires_at\x18\x03 \x01(\x03R\texpiresAt\"X\n" +
 	"\x0fGetOrderRequest\x12\x1e\n" +
 	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12%\n" +
-	"\x0equery_password\x18\x02 \x01(\tR\rqueryPassword\"\x85\x03\n" +
-	"\rGetOrderReply\x12%\n" +
+	"\x0equery_password\x18\x02 \x01(\tR\rqueryPassword\"\xd3\x05\n" +
+	"\rGetOrderReply\x12'\n" +
+	"\x0fshipping_status\x18\v \x01(\tR\x0eshippingStatus\x12%\n" +
+	"\x0eshipping_cents\x18\f \x01(\x03R\rshippingCents\x12f\n" +
+	"\x10shipping_address\x18\r \x03(\v2;.zcard.api.storefront.v1.GetOrderReply.ShippingAddressEntryR\x0fshippingAddress\x12%\n" +
+	"\x0eshipments_json\x18\x0e \x01(\tR\rshipmentsJson\x12)\n" +
+	"\x10commerce_version\x18\x0f \x01(\x05R\x0fcommerceVersion\x12%\n" +
 	"\x0erefunded_cents\x18\t \x01(\x03R\rrefundedCents\x12,\n" +
 	"\x12refunded_fee_cents\x18\n" +
 	" \x01(\x03R\x10refundedFeeCents\x12\x19\n" +
@@ -1032,8 +1320,19 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\x06 \x01(\x03R\texpiresAt\x12(\n" +
 	"\x10paid_total_cents\x18\a \x01(\x03R\x0epaidTotalCents\x12$\n" +
-	"\x0epaid_fee_cents\x18\b \x01(\x03R\fpaidFeeCents\"\xec\x02\n" +
-	"\x0eOrderItemReply\x12\x0e\n" +
+	"\x0epaid_fee_cents\x18\b \x01(\x03R\fpaidFeeCents\x1aB\n" +
+	"\x14ShippingAddressEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd6\x04\n" +
+	"\x0eOrderItemReply\x12\x1d\n" +
+	"\n" +
+	"goods_type\x18\v \x01(\tR\tgoodsType\x12\x1d\n" +
+	"\n" +
+	"paid_cents\x18\f \x01(\x03R\tpaidCents\x12%\n" +
+	"\x0eshipping_cents\x18\r \x01(\x03R\rshippingCents\x12)\n" +
+	"\x10shipped_quantity\x18\x0e \x01(\x05R\x0fshippedQuantity\x12+\n" +
+	"\x11received_quantity\x18\x0f \x01(\x05R\x10receivedQuantity\x12+\n" +
+	"\x11canceled_quantity\x18\x10 \x01(\x05R\x10canceledQuantity\x12\x0e\n" +
 	"\x02id\x18\x05 \x01(\x04R\x02id\x12\x19\n" +
 	"\bsku_name\x18\x06 \x01(\tR\askuName\x12)\n" +
 	"\x10fulfillment_type\x18\a \x01(\tR\x0ffulfillmentType\x12-\n" +
@@ -1065,8 +1364,9 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\x06status\x18\x03 \x01(\tR\x06status\"g\n" +
 	"\x11ListMyOrdersReply\x12<\n" +
 	"\x06orders\x18\x01 \x03(\v2$.zcard.api.storefront.v1.MyOrderItemR\x06orders\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"\x99\x02\n" +
-	"\vMyOrderItem\x12\x19\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xc2\x02\n" +
+	"\vMyOrderItem\x12'\n" +
+	"\x0fshipping_status\x18\t \x01(\tR\x0eshippingStatus\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x1f\n" +
 	"\vtotal_cents\x18\x03 \x01(\x03R\n" +
@@ -1080,8 +1380,21 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\x0fproduct_summary\x18\a \x01(\tR\x0eproductSummary\x120\n" +
 	"\x14manual_pending_count\x18\b \x01(\x05R\x12manualPendingCount\"6\n" +
 	"\x14CancelMyOrderRequest\x12\x1e\n" +
-	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo2\xed\x05\n" +
-	"\x11StoreOrderService\x12\x8b\x01\n" +
+	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\"2\n" +
+	"\x16ShippingRegionsRequest\x12\x18\n" +
+	"\acountry\x18\x01 \x01(\tR\acountry\"3\n" +
+	"\x14ShippingRegionsReply\x12\x1b\n" +
+	"\tdata_json\x18\x01 \x01(\tR\bdataJson\"{\n" +
+	"\x16ReceiveShipmentRequest\x12\x19\n" +
+	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x1f\n" +
+	"\vshipment_id\x18\x02 \x01(\x04R\n" +
+	"shipmentId\x12%\n" +
+	"\x0equery_password\x18\x03 \x01(\tR\rqueryPassword2\xb7\t\n" +
+	"\x11StoreOrderService\x12\x90\x01\n" +
+	"\n" +
+	"QuoteOrder\x12+.zcard.api.storefront.v1.CreateOrderRequest\x1a).zcard.api.storefront.v1.CreateOrderReply\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/storefront/orders/quote\x12\x9e\x01\n" +
+	"\x0fShippingRegions\x12/.zcard.api.storefront.v1.ShippingRegionsRequest\x1a-.zcard.api.storefront.v1.ShippingRegionsReply\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/storefront/shipping/regions\x12\x93\x01\n" +
+	"\x0fReceiveShipment\x12/.zcard.api.storefront.v1.ReceiveShipmentRequest\x1a\x16.google.protobuf.Empty\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/storefront/orders/{order_no}/receive\x12\x8b\x01\n" +
 	"\vCreateOrder\x12+.zcard.api.storefront.v1.CreateOrderRequest\x1a).zcard.api.storefront.v1.CreateOrderReply\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/v1/storefront/orders\x12\x8a\x01\n" +
 	"\bGetOrder\x12(.zcard.api.storefront.v1.GetOrderRequest\x1a&.zcard.api.storefront.v1.GetOrderReply\",\x82\xd3\xe4\x93\x02&\x12$/api/v1/storefront/orders/{order_no}\x12\x8e\x01\n" +
 	"\fListMyOrders\x12,.zcard.api.storefront.v1.ListMyOrdersRequest\x1a*.zcard.api.storefront.v1.ListMyOrdersReply\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/api/v1/storefront/my-orders\x12\x9a\x01\n" +
@@ -1100,7 +1413,7 @@ func file_storefront_v1_order_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_order_proto_rawDescData
 }
 
-var file_storefront_v1_order_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_storefront_v1_order_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_storefront_v1_order_proto_goTypes = []any{
 	(*CreateOrderRequest)(nil),     // 0: zcard.api.storefront.v1.CreateOrderRequest
 	(*OrderItemInput)(nil),         // 1: zcard.api.storefront.v1.OrderItemInput
@@ -1115,32 +1428,45 @@ var file_storefront_v1_order_proto_goTypes = []any{
 	(*ListMyOrdersReply)(nil),      // 10: zcard.api.storefront.v1.ListMyOrdersReply
 	(*MyOrderItem)(nil),            // 11: zcard.api.storefront.v1.MyOrderItem
 	(*CancelMyOrderRequest)(nil),   // 12: zcard.api.storefront.v1.CancelMyOrderRequest
-	nil,                            // 13: zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
-	nil,                            // 14: zcard.api.storefront.v1.OrderItemInput.ControlAnswersEntry
-	(*emptypb.Empty)(nil),          // 15: google.protobuf.Empty
+	(*ShippingRegionsRequest)(nil), // 13: zcard.api.storefront.v1.ShippingRegionsRequest
+	(*ShippingRegionsReply)(nil),   // 14: zcard.api.storefront.v1.ShippingRegionsReply
+	(*ReceiveShipmentRequest)(nil), // 15: zcard.api.storefront.v1.ReceiveShipmentRequest
+	nil,                            // 16: zcard.api.storefront.v1.CreateOrderRequest.ShippingAddressEntry
+	nil,                            // 17: zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
+	nil,                            // 18: zcard.api.storefront.v1.OrderItemInput.ControlAnswersEntry
+	nil,                            // 19: zcard.api.storefront.v1.GetOrderReply.ShippingAddressEntry
+	(*emptypb.Empty)(nil),          // 20: google.protobuf.Empty
 }
 var file_storefront_v1_order_proto_depIdxs = []int32{
-	1,  // 0: zcard.api.storefront.v1.CreateOrderRequest.items:type_name -> zcard.api.storefront.v1.OrderItemInput
-	13, // 1: zcard.api.storefront.v1.CreateOrderRequest.control_answers:type_name -> zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
-	14, // 2: zcard.api.storefront.v1.OrderItemInput.control_answers:type_name -> zcard.api.storefront.v1.OrderItemInput.ControlAnswersEntry
-	5,  // 3: zcard.api.storefront.v1.GetOrderReply.items:type_name -> zcard.api.storefront.v1.OrderItemReply
-	8,  // 4: zcard.api.storefront.v1.ListGuestOrdersReply.orders:type_name -> zcard.api.storefront.v1.GuestOrderItem
-	11, // 5: zcard.api.storefront.v1.ListMyOrdersReply.orders:type_name -> zcard.api.storefront.v1.MyOrderItem
-	0,  // 6: zcard.api.storefront.v1.StoreOrderService.CreateOrder:input_type -> zcard.api.storefront.v1.CreateOrderRequest
-	3,  // 7: zcard.api.storefront.v1.StoreOrderService.GetOrder:input_type -> zcard.api.storefront.v1.GetOrderRequest
-	9,  // 8: zcard.api.storefront.v1.StoreOrderService.ListMyOrders:input_type -> zcard.api.storefront.v1.ListMyOrdersRequest
-	6,  // 9: zcard.api.storefront.v1.StoreOrderService.ListGuestOrders:input_type -> zcard.api.storefront.v1.ListGuestOrdersRequest
-	12, // 10: zcard.api.storefront.v1.StoreOrderService.CancelMyOrder:input_type -> zcard.api.storefront.v1.CancelMyOrderRequest
-	2,  // 11: zcard.api.storefront.v1.StoreOrderService.CreateOrder:output_type -> zcard.api.storefront.v1.CreateOrderReply
-	4,  // 12: zcard.api.storefront.v1.StoreOrderService.GetOrder:output_type -> zcard.api.storefront.v1.GetOrderReply
-	10, // 13: zcard.api.storefront.v1.StoreOrderService.ListMyOrders:output_type -> zcard.api.storefront.v1.ListMyOrdersReply
-	7,  // 14: zcard.api.storefront.v1.StoreOrderService.ListGuestOrders:output_type -> zcard.api.storefront.v1.ListGuestOrdersReply
-	15, // 15: zcard.api.storefront.v1.StoreOrderService.CancelMyOrder:output_type -> google.protobuf.Empty
-	11, // [11:16] is the sub-list for method output_type
-	6,  // [6:11] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	16, // 0: zcard.api.storefront.v1.CreateOrderRequest.shipping_address:type_name -> zcard.api.storefront.v1.CreateOrderRequest.ShippingAddressEntry
+	1,  // 1: zcard.api.storefront.v1.CreateOrderRequest.items:type_name -> zcard.api.storefront.v1.OrderItemInput
+	17, // 2: zcard.api.storefront.v1.CreateOrderRequest.control_answers:type_name -> zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
+	18, // 3: zcard.api.storefront.v1.OrderItemInput.control_answers:type_name -> zcard.api.storefront.v1.OrderItemInput.ControlAnswersEntry
+	19, // 4: zcard.api.storefront.v1.GetOrderReply.shipping_address:type_name -> zcard.api.storefront.v1.GetOrderReply.ShippingAddressEntry
+	5,  // 5: zcard.api.storefront.v1.GetOrderReply.items:type_name -> zcard.api.storefront.v1.OrderItemReply
+	8,  // 6: zcard.api.storefront.v1.ListGuestOrdersReply.orders:type_name -> zcard.api.storefront.v1.GuestOrderItem
+	11, // 7: zcard.api.storefront.v1.ListMyOrdersReply.orders:type_name -> zcard.api.storefront.v1.MyOrderItem
+	0,  // 8: zcard.api.storefront.v1.StoreOrderService.QuoteOrder:input_type -> zcard.api.storefront.v1.CreateOrderRequest
+	13, // 9: zcard.api.storefront.v1.StoreOrderService.ShippingRegions:input_type -> zcard.api.storefront.v1.ShippingRegionsRequest
+	15, // 10: zcard.api.storefront.v1.StoreOrderService.ReceiveShipment:input_type -> zcard.api.storefront.v1.ReceiveShipmentRequest
+	0,  // 11: zcard.api.storefront.v1.StoreOrderService.CreateOrder:input_type -> zcard.api.storefront.v1.CreateOrderRequest
+	3,  // 12: zcard.api.storefront.v1.StoreOrderService.GetOrder:input_type -> zcard.api.storefront.v1.GetOrderRequest
+	9,  // 13: zcard.api.storefront.v1.StoreOrderService.ListMyOrders:input_type -> zcard.api.storefront.v1.ListMyOrdersRequest
+	6,  // 14: zcard.api.storefront.v1.StoreOrderService.ListGuestOrders:input_type -> zcard.api.storefront.v1.ListGuestOrdersRequest
+	12, // 15: zcard.api.storefront.v1.StoreOrderService.CancelMyOrder:input_type -> zcard.api.storefront.v1.CancelMyOrderRequest
+	2,  // 16: zcard.api.storefront.v1.StoreOrderService.QuoteOrder:output_type -> zcard.api.storefront.v1.CreateOrderReply
+	14, // 17: zcard.api.storefront.v1.StoreOrderService.ShippingRegions:output_type -> zcard.api.storefront.v1.ShippingRegionsReply
+	20, // 18: zcard.api.storefront.v1.StoreOrderService.ReceiveShipment:output_type -> google.protobuf.Empty
+	2,  // 19: zcard.api.storefront.v1.StoreOrderService.CreateOrder:output_type -> zcard.api.storefront.v1.CreateOrderReply
+	4,  // 20: zcard.api.storefront.v1.StoreOrderService.GetOrder:output_type -> zcard.api.storefront.v1.GetOrderReply
+	10, // 21: zcard.api.storefront.v1.StoreOrderService.ListMyOrders:output_type -> zcard.api.storefront.v1.ListMyOrdersReply
+	7,  // 22: zcard.api.storefront.v1.StoreOrderService.ListGuestOrders:output_type -> zcard.api.storefront.v1.ListGuestOrdersReply
+	20, // 23: zcard.api.storefront.v1.StoreOrderService.CancelMyOrder:output_type -> google.protobuf.Empty
+	16, // [16:24] is the sub-list for method output_type
+	8,  // [8:16] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_order_proto_init() }
@@ -1154,7 +1480,7 @@ func file_storefront_v1_order_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_order_proto_rawDesc), len(file_storefront_v1_order_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

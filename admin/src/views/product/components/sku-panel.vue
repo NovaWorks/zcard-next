@@ -7,17 +7,28 @@
  *      新行逐条创建、已有行逐条更新、行内删除；不再用独立表单，杜绝溢出。
  */
 import { ref, computed, watch, h } from "vue";
-import { NButton, NTag, NSpace, NPopconfirm, NInput, NInputNumber, NEmpty, NSelect } from "naive-ui";
+import {
+  NButton,
+  NTag,
+  NSpace,
+  NPopconfirm,
+  NInput,
+  NInputNumber,
+  NEmpty,
+  NSelect,
+} from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { checkAuth } from "@/directives";
 import { fetchSkus, createSku, updateSku, deleteSku } from "@/service/api";
 import { centsToYuan, yuanToFen } from "@/utils/money";
 
-const props = defineProps<{ productId: number; readonly?: boolean }>();
+const props = defineProps<{ productId: number; readonly?: boolean; physical?: boolean }>();
 const emit = defineEmits<{ (e: "persisted"): void }>();
 
 interface SkuRow {
- fulfillment_mode: string;
+  physical_stock: number;
+  original_physical_stock: number;
+  fulfillment_mode: string;
   id: number; // 0 = 新行
   name: string;
   spec_values: Record<string, string>;
@@ -56,7 +67,10 @@ async function load() {
         spec_values: s.spec_values || {},
         price_yuan: s.price_cents ? Number(centsToYuan(s.price_cents)) : 0,
         cost_yuan: s.cost_cents ? Number(centsToYuan(s.cost_cents)) : 0,
-        stock_offset: s.stock_offset || 0, fulfillment_mode:s.fulfillment_mode || "follow",
+        physical_stock: Number(s.physical_stock || 0),
+        original_physical_stock: Number(s.physical_stock || 0),
+        stock_offset: s.stock_offset || 0,
+        fulfillment_mode: s.fulfillment_mode || "follow",
         dirty: false,
       }));
       // 规格定义从已有 SKU 反推（继续加值/加维度）
@@ -133,7 +147,10 @@ function generate(quiet = false) {
       spec_values: combo,
       price_yuan: 0,
       cost_yuan: 0,
-      stock_offset: 0, fulfillment_mode:"follow",
+      physical_stock: 0,
+      original_physical_stock: 0,
+      stock_offset: 0,
+      fulfillment_mode: "follow",
       dirty: true,
     });
     added++;
@@ -145,15 +162,33 @@ function generate(quiet = false) {
 
 // Parent and row buttons share the same persistence path; failed rows stay dirty.
 async function persistRow(row: SkuRow): Promise<boolean> {
-  if (!row.name.trim()) { window.$message?.warning("规格名不能为空"); return false; }
-  const payload = { name: row.name.trim(), spec_values: row.spec_values,
-    price_cents: yuanToFen(row.price_yuan || 0), cost_cents: yuanToFen(row.cost_yuan || 0), stock_offset: row.stock_offset || 0, fulfillment_mode:row.fulfillment_mode };
-  const { data, error } = row.id ? await updateSku(row.id, payload) : await createSku(props.productId, payload);
+  if (!row.name.trim()) {
+    window.$message?.warning("规格名不能为空");
+    return false;
+  }
+  const payload = {
+    ...(props.physical
+      ? { physical_stock: row.physical_stock, expected_physical_stock: row.original_physical_stock }
+      : {}),
+    name: row.name.trim(),
+    spec_values: row.spec_values,
+    price_cents: yuanToFen(row.price_yuan || 0),
+    cost_cents: yuanToFen(row.cost_yuan || 0),
+    stock_offset: row.stock_offset || 0,
+    fulfillment_mode: props.physical ? "follow" : row.fulfillment_mode,
+  };
+  const { data, error } = row.id
+    ? await updateSku(row.id, payload)
+    : await createSku(props.productId, payload);
   if (error) return false;
   if (!row.id) {
-    if (!(data as any)?.id) { window.$message?.error("规格保存结果不完整，请刷新核对"); return false; }
+    if (!(data as any)?.id) {
+      window.$message?.error("规格保存结果不完整，请刷新核对");
+      return false;
+    }
     row.id = Number((data as any).id);
   }
+  row.original_physical_stock = row.physical_stock;
   row.dirty = false;
   emit("persisted");
   return true;
@@ -161,28 +196,48 @@ async function persistRow(row: SkuRow): Promise<boolean> {
 async function saveRow(row: SkuRow) {
   if (saving.value) return;
   saving.value = true;
-  try { if (await persistRow(row)) window.$message?.success("规格已保存"); }
-  finally { saving.value = false; }
+  try {
+    if (await persistRow(row)) window.$message?.success("规格已保存");
+  } finally {
+    saving.value = false;
+  }
 }
 async function savePending(): Promise<boolean> {
   if (saving.value) return false;
   // A populated definition is also a draft: the main Save button persists its combinations.
   if (definitionsDirty.value) {
-    if (specs.value.some(s => !s.name.trim() || !s.values.trim())) { window.$message?.warning("请补全规格名和规格值"); return false; }
+    if (specs.value.some((s) => !s.name.trim() || !s.values.trim())) {
+      window.$message?.warning("请补全规格名和规格值");
+      return false;
+    }
     generate(true);
   }
   if (!pendingRows.value.length) return true;
   saving.value = true;
   try {
-    for (const row of [...pendingRows.value]) if (!await persistRow(row)) return false;
+    for (const row of [...pendingRows.value]) if (!(await persistRow(row))) return false;
     return true;
-  } finally { saving.value = false; }
+  } finally {
+    saving.value = false;
+  }
 }
-async function saveAll() { if (await savePending()) window.$message?.success("规格已全部保存"); }
+async function saveAll() {
+  if (await savePending()) window.$message?.success("规格已全部保存");
+}
 const hasPending = computed(() => definitionsDirty.value || pendingRows.value.length > 0);
 // A separately saved delivery policy updates only that field, preserving price/name drafts.
-async function refreshDeliveryModes(){const {data,error}=await fetchSkus(props.productId);if(!error&&data){const fresh=new Map(((data as any).skus||[]).map((s:any)=>[Number(s.id),s.fulfillment_mode||'follow']));for(const row of rows.value){if(fresh.has(Number(row.id)))row.fulfillment_mode=String(fresh.get(Number(row.id)));}}}
-defineExpose({ savePending, hasPending, saving,refreshDeliveryModes });
+async function refreshDeliveryModes() {
+  const { data, error } = await fetchSkus(props.productId);
+  if (!error && data) {
+    const fresh = new Map(
+      ((data as any).skus || []).map((s: any) => [Number(s.id), s.fulfillment_mode || "follow"]),
+    );
+    for (const row of rows.value) {
+      if (fresh.has(Number(row.id))) row.fulfillment_mode = String(fresh.get(Number(row.id)));
+    }
+  }
+}
+defineExpose({ savePending, hasPending, saving, refreshDeliveryModes });
 
 async function handleDelete(row: SkuRow) {
   if (saving.value) return;
@@ -195,20 +250,23 @@ async function handleDelete(row: SkuRow) {
     }
     rows.value = rows.value.filter((r) => r !== row);
     window.$message?.success("已删除");
-  } finally { saving.value = false; }
+  } finally {
+    saving.value = false;
+  }
 }
 
 // 行内数字单元格（Enter/失焦暂存并标脏；宽度自适应列宽）
 function numCell(
   row: SkuRow,
-  field: "price_yuan" | "cost_yuan" | "stock_offset",
+  field: "price_yuan" | "cost_yuan" | "stock_offset" | "physical_stock",
   placeholder: string,
 ) {
-  return h(NInputNumber, {disabled:props.readonly,
+  return h(NInputNumber, {
+    disabled: props.readonly,
     value: row[field],
     size: "small",
     min: 0,
-    precision: field === "stock_offset" ? 0 : 2,
+    precision: ["stock_offset", "physical_stock"].includes(field) ? 0 : 2,
     placeholder,
     showButton: false,
     style: "width: 100%",
@@ -243,7 +301,8 @@ const columns: DataTableColumns<SkuRow> = [
     key: "name",
     minWidth: 110,
     render: (row) =>
-      h(NInput, {disabled:props.readonly,
+      h(NInput, {
+        disabled: props.readonly,
         value: row.name,
         size: "small",
         placeholder: "如：月卡",
@@ -254,8 +313,26 @@ const columns: DataTableColumns<SkuRow> = [
       }),
   },
   {
-    title: "交付方式", key:"fulfillment_mode", width:135,
-    render:(row)=>h(NSelect,{disabled:props.readonly||['reuse','local'].includes(row.fulfillment_mode),value:row.fulfillment_mode, options:[{label:'我的卡密（发货设置）',value:'local',disabled:true},{label:'重复发货（发货设置）',value:'reuse',disabled:true},{label:'跟随商品',value:'follow'},{label:'自动',value:'auto'},{label:'人工',value:'manual'}],onUpdateValue:(v:string)=>{row.fulfillment_mode=v;row.dirty=true;}})
+    title: "交付方式",
+    key: "fulfillment_mode",
+    width: 135,
+    render: (row) =>
+      h(NSelect, {
+        disabled:
+          props.readonly || props.physical || ["reuse", "local"].includes(row.fulfillment_mode),
+        value: row.fulfillment_mode,
+        options: [
+          { label: "我的卡密（发货设置）", value: "local", disabled: true },
+          { label: "重复发货（发货设置）", value: "reuse", disabled: true },
+          { label: "跟随商品", value: "follow" },
+          { label: "自动", value: "auto" },
+          { label: "人工", value: "manual" },
+        ],
+        onUpdateValue: (v: string) => {
+          row.fulfillment_mode = v;
+          row.dirty = true;
+        },
+      }),
   },
   {
     title: "售价(元)",
@@ -271,10 +348,10 @@ const columns: DataTableColumns<SkuRow> = [
     render: (row) => numCell(row, "cost_yuan", "成本"),
   },
   {
-    title: "库存位",
+    title: props.physical ? "可售库存" : "库存位",
     key: "stock_offset",
     width: 80,
-    render: (row) => numCell(row, "stock_offset", "0"),
+    render: (row) => numCell(row, props.physical ? "physical_stock" : "stock_offset", "0"),
   },
   {
     title: "状态",
@@ -297,7 +374,7 @@ const columns: DataTableColumns<SkuRow> = [
         { size: "small" },
         {
           default: () => [
-            (!props.readonly && checkAuth("catalog:sku_write"))
+            !props.readonly && checkAuth("catalog:sku_write")
               ? h(
                   NButton,
                   {
@@ -311,7 +388,7 @@ const columns: DataTableColumns<SkuRow> = [
                   { default: () => "保存" },
                 )
               : null,
-            (!props.readonly && checkAuth("catalog:sku_write"))
+            !props.readonly && checkAuth("catalog:sku_write")
               ? h(
                   NPopconfirm,
                   { onPositiveClick: () => handleDelete(row) },
@@ -338,7 +415,15 @@ const columns: DataTableColumns<SkuRow> = [
     <!-- ① 规格定义区（顶部标签对齐控件面板风格） -->
     <NCard size="small" class="mb-12px" title="规格设置">
       <template #header-extra>
-        <NButton :disabled="props.readonly" v-auth="'catalog:sku_write'" size="tiny" quaternary type="primary" @click="addSpec">+ 添加规格</NButton>
+        <NButton
+          :disabled="props.readonly"
+          v-auth="'catalog:sku_write'"
+          size="tiny"
+          quaternary
+          type="primary"
+          @click="addSpec"
+          >+ 添加规格</NButton
+        >
       </template>
       <NEmpty
         v-if="!specs.length"
@@ -347,24 +432,42 @@ const columns: DataTableColumns<SkuRow> = [
       />
       <div v-for="(spec, i) in specs" :key="i" class="mb-8px flex flex-wrap items-center gap-8px">
         <span class="text-12px text-gray-400">规格{{ i + 1 }}</span>
-        <NInput :disabled="props.readonly"
+        <NInput
+          :disabled="props.readonly"
           v-model:value="spec.name"
           @update:value="definitionsDirty = true"
           size="small"
           placeholder="规格名（如 时长）"
           class="w-130px shrink-0"
         />
-        <NInput :disabled="props.readonly"
+        <NInput
+          :disabled="props.readonly"
           v-model:value="spec.values"
           @update:value="definitionsDirty = true"
           size="small"
           placeholder="规格值，逗号分隔（如 月卡,季卡,年卡）"
           class="min-w-220px flex-1"
         />
-        <NButton :disabled="props.readonly" v-auth="'catalog:sku_write'" size="small" quaternary type="error" @click="removeSpec(i)">删除</NButton>
+        <NButton
+          :disabled="props.readonly"
+          v-auth="'catalog:sku_write'"
+          size="small"
+          quaternary
+          type="error"
+          @click="removeSpec(i)"
+          >删除</NButton
+        >
       </div>
       <div class="mt-8px flex flex-wrap items-center gap-8px">
-        <NButton :disabled="props.readonly" v-auth="'catalog:sku_write'" size="small" type="primary" ghost @click="generate(false)">生成规格组合</NButton>
+        <NButton
+          :disabled="props.readonly"
+          v-auth="'catalog:sku_write'"
+          size="small"
+          type="primary"
+          ghost
+          @click="generate(false)"
+          >生成规格组合</NButton
+        >
         <NButton
           v-auth="'catalog:sku_write'"
           size="small"
@@ -381,7 +484,7 @@ const columns: DataTableColumns<SkuRow> = [
 
     <!-- ② 组合表格（行内编辑；scroll-x 兜底不截断） -->
     <NDataTable
-        :max-height="540"
+      :max-height="540"
       :columns="columns"
       :data="rows"
       :loading="loading"

@@ -120,6 +120,13 @@ func (r *WalletRepoImpl) PayWithdrawal(ctx context.Context, id uint64, receipt s
 		if w.Status != withdrawal.StatusApproved {
 			return fmt.Errorf("wallet.WITHDRAWAL_NOT_APPROVED")
 		}
+		n, e := client.Withdrawal.Update().Where(withdrawal.ID(id), withdrawal.StatusEQ(withdrawal.StatusApproved)).SetStatus(withdrawal.StatusPaid).Save(txCtx)
+		if e != nil {
+			return e
+		}
+		if n != 1 {
+			return fmt.Errorf("wallet.WITHDRAWAL_NOT_APPROVED")
+		}
 		// 佣金 FIFO 消耗（nil = 未装配佣金端口的旧部署，跳过——仅状态流转）
 		if r.commissions != nil {
 			if err := r.commissions.ConsumeAvailableFIFO(txCtx, w.UserID, w.Amount); err != nil {
@@ -137,4 +144,3 @@ func (r *WalletRepoImpl) PayWithdrawal(ctx context.Context, id uint64, receipt s
 	})
 	return w, err
 }
-

@@ -71,7 +71,7 @@ type paidPayload struct {
 }
 
 // OnOrderPaid 订阅 order.paid（幂等：UNIQUE(order_id,tier) 兜底 + processed_events）。
-func (s *AffiliateService) OnOrderPaid(ctx context.Context, env events.Envelope) error {
+func (s *AffiliateService) onOrderPaid(ctx context.Context, env events.Envelope) error {
 	var p paidPayload
 	if err := json.Unmarshal(env.Payload, &p); err != nil {
 		return nil // 载荷不合法：ACK 不重试（order 侧契约破坏属异常路径）
@@ -120,7 +120,7 @@ func (s *AffiliateService) OnOrderPaid(ctx context.Context, env events.Envelope)
 			if errors.Is(err, ErrDuplicate) {
 				continue // 幂等 ACK
 			}
-			s.log.Warn("affiliate.insert_failed", "order_id", p.OrderID, "tier", tier+1, "err", err)
+			return err
 		}
 	}
 	return nil
@@ -183,27 +183,8 @@ func (s *AffiliateService) ConfirmDue(ctx context.Context) {
 		return
 	}
 	for _, c := range rows {
-		if c.Amount >= 0 {
-			// 正佣金：wallet available 入账
-			if err := s.wallet.CreditInTx(ctx, walletport.Entry{
-				UserID: c.ReferrerID, Direction: "in", Type: "commission",
-				Amount: centsOf(c.Amount), Reference: refKey(c.ID),
-				Remark: "佣金到期确认",
-			}); err != nil {
-				s.log.Warn("affiliate.credit_failed", "id", c.ID, "err", err)
-				continue
-			}
-			_ = s.repo.MarkAvailable(ctx, c.ID)
-		} else {
-			// 负债行：尝试扣回（余额不足保持 pending——后续佣金入账后 cron 重试成功）
-			if err := s.wallet.DebitInTx(ctx, walletport.Entry{
-				UserID: c.ReferrerID, Direction: "out", Type: "commission_debt",
-				Amount: centsOf(-c.Amount), Reference: debtRefKey(c.ID),
-				Remark: "佣金负债抵扣",
-			}); err != nil {
-				continue // 余额不足：留待下轮（负债态抵扣后续佣金语义）
-			}
-			_ = s.repo.MarkAvailable(ctx, c.ID) // 负债已清
+		if e := s.confirmOne(ctx, c.ID); e != nil && s.log != nil {
+			s.log.Warn("affiliate.confirm_failed", "id", c.ID, "err", e)
 		}
 	}
 }
@@ -211,11 +192,15 @@ func (s *AffiliateService) ConfirmDue(ctx context.Context) {
 // OnOrderRefunded 订阅 order.refunded（逆向扣回）。
 func (s *AffiliateService) OnOrderRefunded(ctx context.Context, env events.Envelope) error {
 	var p struct {
-		OrderID     uint64 `json:"order_id"`
-		RefundRatio int64  `json:"refund_ratio"` // 万分比（部分退款；0 视为全额）
+		OrderID         uint64 `json:"order_id"`
+		RefundRatio     int64  `json:"refund_ratio"` // legacy
+		CommerceVersion int32  `json:"commerce_version"`
 	}
 	if err := json.Unmarshal(env.Payload, &p); err != nil {
 		return nil
+	}
+	if p.CommerceVersion == 1 {
+		return s.physicalRefund(ctx, p.OrderID)
 	}
 	ratio := p.RefundRatio
 	if ratio <= 0 {

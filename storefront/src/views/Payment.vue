@@ -41,7 +41,8 @@
       <div v-if="Number(order?.paid_fee_cents) > 0" class="muted">含支付手续费 {{ formatMoney(order?.paid_fee_cents || 0) }}</div>
       <!-- 自动取货：卡密直接展示（会话内记忆查询密码；失败降级提示去取货页） -->
       <DeliveryResults v-if="delivery?.items.length" :items="delivery.items" />
-      <div class="pay-fetch-hint">
+      <p v-if="Number(order?.commerce_version)===1" class="muted">实体商品已进入配送流程，请在订单详情查看包裹并确认收货。</p>
+      <div v-if="order?.items.some(i=>i.goods_type!=='physical')" class="pay-fetch-hint">
         <span>{{ ['delivered', 'completed'].includes(order?.status || '') ? '交付已完成，凭订单号与查询密码查看结果' : '已付款，正在安排交付。人工服务请在订单详情查看进度，请勿重复付款。' }}</span>
         <router-link class="btn btn-primary" :to="`/fetch?order_no=${orderNo}`">前往取货</router-link>
       </div>
@@ -289,7 +290,7 @@ onMounted(async () => {
 
 async function initializePayment() {
   if (!await refreshOrder()) return;
-  if (phase.value === 'success') { await loadDelivery(); if (!['delivered', 'completed'].includes(order.value?.status || '')) startPolling(); return; }
+  if (phase.value === 'success') { await loadDelivery(); if (!order.value?.commerce_version && !['delivered', 'completed'].includes(order.value?.status || '')) startPolling(); return; }
   if (phase.value === 'closed') return;
   const { data } = await fetchPaymentChannels();
   if (disposed) return;
@@ -346,7 +347,7 @@ function startPolling() {
     if (st && PAID_STATES.includes(st)) {
       phase.value = 'success';
       await loadDelivery();
-      if (['delivered', 'completed'].includes(st) || pollCount >= POLL_MAX) stopPolling();
+      if (order.value?.commerce_version || ['delivered', 'completed'].includes(st) || pollCount >= POLL_MAX) stopPolling();
       return;
     }
     if (phase.value === 'closed') { stopPolling(); return; }
@@ -361,7 +362,7 @@ function stopPolling() {
 async function checkOnce(manual = false) {
   await refreshOrder();
   decidePhase();
-  if (phase.value === 'success') { await loadDelivery(); if (!['delivered', 'completed'].includes(order.value?.status || '')) startPolling(); return; }
+  if (phase.value === 'success') { await loadDelivery(); if (!order.value?.commerce_version && !['delivered', 'completed'].includes(order.value?.status || '')) startPolling(); return; }
   if (manual && phase.value === 'waiting') window.alert('暂未检测到支付，请稍后再试');
   if (phase.value === 'qrcode' || phase.value === 'redirect' || phase.value === 'waiting') startPolling();
 }
@@ -457,8 +458,9 @@ function backToSelect() {
 
 // ── 支付成功：自动取货（会话内记忆的查询密码；失败降级去取货页）──
 async function loadDelivery() {
+ if(order.value?.items.every(i=>i.goods_type==='physical'))return;
   const pwd = getOrderPassword(orderNo);
-  if (!pwd) return; // 无密码记忆：模板降级显示「前往取货」
+  if (!pwd && !getToken()) return; // 游客使用查询密码，会员本人使用登录态。
   const { data } = await fetchDelivery(orderNo, pwd).catch(() => ({ data: null }));
   if (data) delivery.value = data;
 }

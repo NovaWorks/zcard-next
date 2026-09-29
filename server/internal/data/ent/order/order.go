@@ -39,6 +39,16 @@ const (
 	FieldQueryPasswordHash = "query_password_hash"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldCommerceVersion holds the string denoting the commerce_version field in the database.
+	FieldCommerceVersion = "commerce_version"
+	// FieldShippingAmount holds the string denoting the shipping_amount field in the database.
+	FieldShippingAmount = "shipping_amount"
+	// FieldShippingStatus holds the string denoting the shipping_status field in the database.
+	FieldShippingStatus = "shipping_status"
+	// FieldShippingAddress holds the string denoting the shipping_address field in the database.
+	FieldShippingAddress = "shipping_address"
+	// FieldRequestHash holds the string denoting the request_hash field in the database.
+	FieldRequestHash = "request_hash"
 	// FieldTotalAmount holds the string denoting the total_amount field in the database.
 	FieldTotalAmount = "total_amount"
 	// FieldCost holds the string denoting the cost field in the database.
@@ -164,6 +174,11 @@ var Columns = []string{
 	FieldGuestContact,
 	FieldQueryPasswordHash,
 	FieldStatus,
+	FieldCommerceVersion,
+	FieldShippingAmount,
+	FieldShippingStatus,
+	FieldShippingAddress,
+	FieldRequestHash,
 	FieldTotalAmount,
 	FieldCost,
 	FieldBaseCurrency,
@@ -225,6 +240,14 @@ var (
 	GuestContactValidator func(string) error
 	// QueryPasswordHashValidator is a validator for the "query_password_hash" field. It is called by the builders before save.
 	QueryPasswordHashValidator func(string) error
+	// DefaultCommerceVersion holds the default value on creation for the "commerce_version" field.
+	DefaultCommerceVersion int32
+	// DefaultShippingAmount holds the default value on creation for the "shipping_amount" field.
+	DefaultShippingAmount int64
+	// DefaultShippingStatus holds the default value on creation for the "shipping_status" field.
+	DefaultShippingStatus string
+	// DefaultRequestHash holds the default value on creation for the "request_hash" field.
+	DefaultRequestHash string
 	// DefaultTotalAmount holds the default value on creation for the "total_amount" field.
 	DefaultTotalAmount int64
 	// DefaultCost holds the default value on creation for the "cost" field.
@@ -353,6 +376,26 @@ func ByQueryPasswordHash(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByCommerceVersion orders the results by the commerce_version field.
+func ByCommerceVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCommerceVersion, opts...).ToFunc()
+}
+
+// ByShippingAmount orders the results by the shipping_amount field.
+func ByShippingAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldShippingAmount, opts...).ToFunc()
+}
+
+// ByShippingStatus orders the results by the shipping_status field.
+func ByShippingStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldShippingStatus, opts...).ToFunc()
+}
+
+// ByRequestHash orders the results by the request_hash field.
+func ByRequestHash(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestHash, opts...).ToFunc()
 }
 
 // ByTotalAmount orders the results by the total_amount field.

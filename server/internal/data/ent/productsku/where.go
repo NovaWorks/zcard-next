@@ -75,6 +75,11 @@ func ProductID(v uint64) predicate.ProductSku {
 	return predicate.ProductSku(sql.FieldEQ(FieldProductID, v))
 }
 
+// PhysicalStock applies equality check predicate on the "physical_stock" field. It's identical to PhysicalStockEQ.
+func PhysicalStock(v int64) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldEQ(FieldPhysicalStock, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.ProductSku {
 	return predicate.ProductSku(sql.FieldEQ(FieldName, v))
@@ -243,6 +248,46 @@ func ProductIDIn(vs ...uint64) predicate.ProductSku {
 // ProductIDNotIn applies the NotIn predicate on the "product_id" field.
 func ProductIDNotIn(vs ...uint64) predicate.ProductSku {
 	return predicate.ProductSku(sql.FieldNotIn(FieldProductID, vs...))
+}
+
+// PhysicalStockEQ applies the EQ predicate on the "physical_stock" field.
+func PhysicalStockEQ(v int64) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldEQ(FieldPhysicalStock, v))
+}
+
+// PhysicalStockNEQ applies the NEQ predicate on the "physical_stock" field.
+func PhysicalStockNEQ(v int64) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldNEQ(FieldPhysicalStock, v))
+}
+
+// PhysicalStockIn applies the In predicate on the "physical_stock" field.
+func PhysicalStockIn(vs ...int64) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldIn(FieldPhysicalStock, vs...))
+}
+
+// PhysicalStockNotIn applies the NotIn predicate on the "physical_stock" field.
+func PhysicalStockNotIn(vs ...int64) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldNotIn(FieldPhysicalStock, vs...))
+}
+
+// PhysicalStockGT applies the GT predicate on the "physical_stock" field.
+func PhysicalStockGT(v int64) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldGT(FieldPhysicalStock, v))
+}
+
+// PhysicalStockGTE applies the GTE predicate on the "physical_stock" field.
+func PhysicalStockGTE(v int64) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldGTE(FieldPhysicalStock, v))
+}
+
+// PhysicalStockLT applies the LT predicate on the "physical_stock" field.
+func PhysicalStockLT(v int64) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldLT(FieldPhysicalStock, v))
+}
+
+// PhysicalStockLTE applies the LTE predicate on the "physical_stock" field.
+func PhysicalStockLTE(v int64) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldLTE(FieldPhysicalStock, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.

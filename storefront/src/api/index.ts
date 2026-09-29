@@ -34,6 +34,7 @@ export interface Sku {
 }
 
 export interface Product {
+ goods_type?:string; shipping_mode?:string; shipping_fee_cents?:number; shipping_countries?:string[];
  fulfillment_mode?: string; manual_stock?: number;
   flash_sale?: FlashOffer;
   id: number;
@@ -73,6 +74,7 @@ export interface ListProductsReply {
 }
 
 export interface CreateOrderReply {
+ shipping_cents?:number;quote_key?:string;
   order_no: string;
   total_cents: number;
   expires_at: number;
@@ -143,7 +145,8 @@ export function getProduct(id: number) {
   return api.get<Product>(`/products/${id}`);
 }
 
-export function createOrder(body: {
+export interface CreateOrderInput {
+ shipping_address?:Record<string,string>;quote_key?:string;
   items: { product_id: number; sku_id?: number; quantity: number; control_answers?: Record<string,string> }[];
   guest_contact?: string;
   query_password?: string;
@@ -154,9 +157,9 @@ export function createOrder(body: {
   ref_code?: string;    // 推广归因码（游客/无链用户下单实时归因）
   captcha_id?: string;  // 图形验证码（captcha_order 开启时游客必填）
   captcha_code?: string;
-}) {
-  return api.post<CreateOrderReply>('/orders', body);
 }
+export function createOrder(body:CreateOrderInput, key?:string) { return api.post<CreateOrderReply>('/orders',body,key?{'Idempotency-Key':key}:undefined); }
+export function quoteOrder(body:CreateOrderInput) { return api.post<CreateOrderReply>('/orders/quote',body); }
 
 export interface MethodItem {
   recommended?: boolean;
@@ -361,6 +364,7 @@ export function removeCart(id: number) {
 // ── 我的订单（ 补全）──
 
 export interface MyOrderItem {
+  shipping_status?: string;
   order_no: string;
   status: string;
   total_cents: number;
@@ -397,6 +401,7 @@ export function listGuestOrders(contact: string) {
 // ── 订单详情（GetOrder：登录态本人或查询密码）──
 
 export interface OrderItemReply {
+ goods_type?:string;paid_cents?:number;shipping_cents?:number;shipped_quantity?:number;received_quantity?:number;canceled_quantity?:number;
  id?: number; sku_name?: string; fulfillment_type?: string; fulfillment_status?: string; form_answers_json?: string; amount_cents?: number;
   product_id: number;
   product_name: string;
@@ -405,6 +410,7 @@ export interface OrderItemReply {
 }
 
 export interface OrderDetail {
+ commerce_version?:number;shipping_status?:string;shipping_cents?:number;shipping_address?:Record<string,string>;shipments_json?:string;
  refunded_cents?: number; refunded_fee_cents?: number;
   paid_total_cents?: number;
   paid_fee_cents?: number;

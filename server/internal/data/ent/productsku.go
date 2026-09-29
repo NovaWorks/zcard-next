@@ -27,6 +27,8 @@ type ProductSku struct {
 	SubsiteID uint64 `json:"subsite_id,omitempty"`
 	// 所属商品（硬外键 → products）
 	ProductID uint64 `json:"product_id,omitempty"`
+	// PhysicalStock holds the value of the "physical_stock" field.
+	PhysicalStock int64 `json:"physical_stock,omitempty"`
 	// 规格名（如「月卡」）
 	Name string `json:"name,omitempty"`
 	// 规格值组合 {规格: 值}
@@ -74,7 +76,7 @@ func (*ProductSku) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case productsku.FieldSpecValues:
 			values[i] = new([]byte)
-		case productsku.FieldID, productsku.FieldSubsiteID, productsku.FieldProductID, productsku.FieldPrice, productsku.FieldCost, productsku.FieldStockOffset:
+		case productsku.FieldID, productsku.FieldSubsiteID, productsku.FieldProductID, productsku.FieldPhysicalStock, productsku.FieldPrice, productsku.FieldCost, productsku.FieldStockOffset:
 			values[i] = new(sql.NullInt64)
 		case productsku.FieldName, productsku.FieldFulfillmentMode, productsku.FieldUpstreamSkuID:
 			values[i] = new(sql.NullString)
@@ -124,6 +126,12 @@ func (_m *ProductSku) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field product_id", values[i])
 			} else if value.Valid {
 				_m.ProductID = uint64(value.Int64)
+			}
+		case productsku.FieldPhysicalStock:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field physical_stock", values[i])
+			} else if value.Valid {
+				_m.PhysicalStock = value.Int64
 			}
 		case productsku.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -221,6 +229,9 @@ func (_m *ProductSku) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("product_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ProductID))
+	builder.WriteString(", ")
+	builder.WriteString("physical_stock=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PhysicalStock))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)

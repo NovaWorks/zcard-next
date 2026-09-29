@@ -10,6 +10,7 @@ import (
 
 // CartItem 管线购物车行（券范围判定输入）。
 type CartItem struct {
+	SkuID      uint64
 	ProductID  uint64
 	CategoryID uint64
 	Quantity   int32

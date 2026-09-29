@@ -55,6 +55,12 @@ func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product
 		for _, p := range products[start:end] {
 			byID[p.ID] = p
 			switch {
+			case p.GoodsType == "physical":
+				n, e := PhysicalAvailable(ctx, client, p)
+				if e != nil {
+					return nil, e
+				}
+				out[p.ID] = ProductStockSnapshot{Quantity: n, Status: "current"}
 			case p.FulfillmentMode == "manual" && p.UpstreamSourceID == 0:
 				n, err := ManualAvailable(ctx, client, p)
 				if err != nil {
@@ -101,7 +107,7 @@ func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product
 			grouped[sku.ProductID] = append(grouped[sku.ProductID], sku)
 		}
 		for _, p := range byID {
-			if p.UpstreamSourceID > 0 {
+			if p.UpstreamSourceID > 0 || p.GoodsType == "physical" {
 				continue
 			}
 			manual := p.FulfillmentMode == "manual" && len(grouped[p.ID]) == 0

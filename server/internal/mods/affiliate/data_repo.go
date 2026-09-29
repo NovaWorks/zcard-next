@@ -44,6 +44,13 @@ type CommissionRow struct {
 
 // Insert 幂等入账（UNIQUE(order_id, tier) 冲突 → ErrDuplicate）。
 func (r *CommissionRepo) Insert(ctx context.Context, row CommissionRow) error {
+	exists, e := data.Client(ctx, r.data).AffiliateCommission.Query().Where(affiliatecommission.OrderID(row.OrderID), affiliatecommission.Tier(row.Tier)).Exist(ctx)
+	if e != nil {
+		return e
+	}
+	if exists {
+		return ErrDuplicate
+	}
 	_, err := data.Client(ctx, r.data).AffiliateCommission.Create().
 		SetOrderID(row.OrderID).
 		SetBuyerID(row.BuyerID).
@@ -269,64 +276,62 @@ func (r *CommissionRepo) ConsumeAvailableFIFO(ctx context.Context, userID uint64
 	if amount <= 0 {
 		return fmt.Errorf("affiliate.WITHDRAW_AMOUNT_INVALID")
 	}
-	client := data.Client(ctx, r.data)
-	rows, err := client.AffiliateCommission.Query().
-		Where(
-			affiliatecommission.ReferrerID(userID),
-			affiliatecommission.StatusEQ(affiliatecommission.StatusAvailable),
-			affiliatecommission.AmountGT(0),
-		).
-		Order(ent.Asc(affiliatecommission.FieldID)).
-		All(ctx)
-	if err != nil {
-		return err
-	}
-	var avail int64
-	for _, c := range rows {
-		avail += c.Amount
-	}
-	if avail < amount {
-		return fmt.Errorf("affiliate.INSUFFICIENT_AVAILABLE: 可提佣金不足")
-	}
-	remain := amount
-	for _, c := range rows {
-		if remain <= 0 {
-			break
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		c := data.Client(ctx, r.data)
+		rows, err := c.AffiliateCommission.Query().Where(affiliatecommission.ReferrerID(userID), affiliatecommission.StatusEQ(affiliatecommission.StatusAvailable), affiliatecommission.AmountGT(0)).Order(ent.Asc(affiliatecommission.FieldID)).All(ctx)
+		if err != nil {
+			return err
 		}
-		if c.Amount <= remain {
-			// 整行消耗
-			if _, err := client.AffiliateCommission.UpdateOne(c).
-				SetStatus(affiliatecommission.StatusWithdrawn).
-				Save(ctx); err != nil {
-				return err
+		remaining := amount
+		for _, row := range rows {
+			if remaining == 0 {
+				break
 			}
-			remain -= c.Amount
-		} else {
-			// 拆分：原行保留余额，新行 withdrawn=已消耗部分（复制关键字段）
-			if _, err := client.AffiliateCommission.UpdateOne(c).
-				SetAmount(c.Amount - remain).
-				Save(ctx); err != nil {
-				return err
+			take := min(remaining, row.Amount)
+			q := c.AffiliateCommission.Update().Where(affiliatecommission.ID(row.ID), affiliatecommission.StatusEQ(affiliatecommission.StatusAvailable), affiliatecommission.Amount(row.Amount))
+			if take == row.Amount {
+				q.SetStatus(affiliatecommission.StatusWithdrawn)
+			} else {
+				q.AddAmount(-take)
 			}
-			// 拆分行 order_id 加 1e12 偏移规避 UNIQUE(order_id, tier)——
-			// 拆分行只服务提现统计（available/withdrawn 合计），不参与订单幂等
-			create := client.AffiliateCommission.Create().
-				SetReferrerID(c.ReferrerID).
-				SetOrderID(c.OrderID + 1_000_000_000_000).
-				SetBuyerID(c.BuyerID).
-				SetTier(c.Tier).
-				SetRate(c.Rate).
-				SetBaseAmount(c.BaseAmount).
-				SetAmount(remain).
-				SetStatus(affiliatecommission.StatusWithdrawn)
-			if !c.AvailableAt.IsZero() {
-				create.SetAvailableAt(c.AvailableAt)
+			n, e := q.Save(ctx)
+			if e != nil {
+				return e
 			}
-			if _, err := create.Save(ctx); err != nil {
-				return err
+			if n != 1 {
+				return fmt.Errorf("佣金已变化，请刷新后重试")
 			}
-			remain = 0
+			if take < row.Amount {
+				// Preserve the historical split-row identity, accumulating subsequent withdrawals.
+				split, e := c.AffiliateCommission.Query().Where(affiliatecommission.OrderID(row.OrderID+1_000_000_000_000), affiliatecommission.Tier(row.Tier)).Only(ctx)
+				if ent.IsNotFound(e) {
+					create := c.AffiliateCommission.Create().SetReferrerID(row.ReferrerID).SetOrderID(row.OrderID + 1_000_000_000_000).SetBuyerID(row.BuyerID).SetTier(row.Tier).SetRate(row.Rate).SetBaseAmount(row.BaseAmount).SetAmount(take).SetStatus(affiliatecommission.StatusWithdrawn)
+					if !row.AvailableAt.IsZero() {
+						create.SetAvailableAt(row.AvailableAt)
+					}
+					if e = create.Exec(ctx); e != nil {
+						return e
+					}
+				} else if e != nil {
+					return e
+				} else {
+					if split.ReferrerID != row.ReferrerID || split.BuyerID != row.BuyerID || (split.Status != affiliatecommission.StatusWithdrawn && split.Status != affiliatecommission.StatusReversed) {
+						return fmt.Errorf("历史提现分摊冲突，请核对")
+					}
+					n, e := c.AffiliateCommission.Update().Where(affiliatecommission.ID(split.ID), affiliatecommission.Amount(split.Amount), affiliatecommission.StatusEQ(split.Status)).AddAmount(take).SetStatus(affiliatecommission.StatusWithdrawn).Save(ctx)
+					if e != nil {
+						return e
+					}
+					if n != 1 {
+						return fmt.Errorf("提现分摊已变化，请重试")
+					}
+				}
+			}
+			remaining -= take
 		}
-	}
-	return nil
+		if remaining > 0 {
+			return fmt.Errorf("affiliate.INSUFFICIENT_AVAILABLE: 可提佣金不足")
+		}
+		return nil
+	})
 }

@@ -20,6 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	StoreOrderService_QuoteOrder_FullMethodName      = "/zcard.api.storefront.v1.StoreOrderService/QuoteOrder"
+	StoreOrderService_ShippingRegions_FullMethodName = "/zcard.api.storefront.v1.StoreOrderService/ShippingRegions"
+	StoreOrderService_ReceiveShipment_FullMethodName = "/zcard.api.storefront.v1.StoreOrderService/ReceiveShipment"
 	StoreOrderService_CreateOrder_FullMethodName     = "/zcard.api.storefront.v1.StoreOrderService/CreateOrder"
 	StoreOrderService_GetOrder_FullMethodName        = "/zcard.api.storefront.v1.StoreOrderService/GetOrder"
 	StoreOrderService_ListMyOrders_FullMethodName    = "/zcard.api.storefront.v1.StoreOrderService/ListMyOrders"
@@ -33,6 +36,9 @@ const (
 //
 // StoreOrderService 顾客下单。
 type StoreOrderServiceClient interface {
+	QuoteOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*CreateOrderReply, error)
+	ShippingRegions(ctx context.Context, in *ShippingRegionsRequest, opts ...grpc.CallOption) (*ShippingRegionsReply, error)
+	ReceiveShipment(ctx context.Context, in *ReceiveShipmentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// CreateOrder 下单（锁卡→算价→快照→事件；Idempotency-Key 头防重）。
 	CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*CreateOrderReply, error)
 	// GetOrder 凭单号+查询密码查单（三重门之一二：查询密码/登录态本人）。
@@ -52,6 +58,36 @@ type storeOrderServiceClient struct {
 
 func NewStoreOrderServiceClient(cc grpc.ClientConnInterface) StoreOrderServiceClient {
 	return &storeOrderServiceClient{cc}
+}
+
+func (c *storeOrderServiceClient) QuoteOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*CreateOrderReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateOrderReply)
+	err := c.cc.Invoke(ctx, StoreOrderService_QuoteOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeOrderServiceClient) ShippingRegions(ctx context.Context, in *ShippingRegionsRequest, opts ...grpc.CallOption) (*ShippingRegionsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ShippingRegionsReply)
+	err := c.cc.Invoke(ctx, StoreOrderService_ShippingRegions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeOrderServiceClient) ReceiveShipment(ctx context.Context, in *ReceiveShipmentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, StoreOrderService_ReceiveShipment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *storeOrderServiceClient) CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*CreateOrderReply, error) {
@@ -110,6 +146,9 @@ func (c *storeOrderServiceClient) CancelMyOrder(ctx context.Context, in *CancelM
 //
 // StoreOrderService 顾客下单。
 type StoreOrderServiceServer interface {
+	QuoteOrder(context.Context, *CreateOrderRequest) (*CreateOrderReply, error)
+	ShippingRegions(context.Context, *ShippingRegionsRequest) (*ShippingRegionsReply, error)
+	ReceiveShipment(context.Context, *ReceiveShipmentRequest) (*emptypb.Empty, error)
 	// CreateOrder 下单（锁卡→算价→快照→事件；Idempotency-Key 头防重）。
 	CreateOrder(context.Context, *CreateOrderRequest) (*CreateOrderReply, error)
 	// GetOrder 凭单号+查询密码查单（三重门之一二：查询密码/登录态本人）。
@@ -131,6 +170,15 @@ type StoreOrderServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedStoreOrderServiceServer struct{}
 
+func (UnimplementedStoreOrderServiceServer) QuoteOrder(context.Context, *CreateOrderRequest) (*CreateOrderReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method QuoteOrder not implemented")
+}
+func (UnimplementedStoreOrderServiceServer) ShippingRegions(context.Context, *ShippingRegionsRequest) (*ShippingRegionsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ShippingRegions not implemented")
+}
+func (UnimplementedStoreOrderServiceServer) ReceiveShipment(context.Context, *ReceiveShipmentRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReceiveShipment not implemented")
+}
 func (UnimplementedStoreOrderServiceServer) CreateOrder(context.Context, *CreateOrderRequest) (*CreateOrderReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateOrder not implemented")
 }
@@ -165,6 +213,60 @@ func RegisterStoreOrderServiceServer(s grpc.ServiceRegistrar, srv StoreOrderServ
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&StoreOrderService_ServiceDesc, srv)
+}
+
+func _StoreOrderService_QuoteOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreOrderServiceServer).QuoteOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreOrderService_QuoteOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreOrderServiceServer).QuoteOrder(ctx, req.(*CreateOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreOrderService_ShippingRegions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ShippingRegionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreOrderServiceServer).ShippingRegions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreOrderService_ShippingRegions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreOrderServiceServer).ShippingRegions(ctx, req.(*ShippingRegionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreOrderService_ReceiveShipment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReceiveShipmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreOrderServiceServer).ReceiveShipment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreOrderService_ReceiveShipment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreOrderServiceServer).ReceiveShipment(ctx, req.(*ReceiveShipmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _StoreOrderService_CreateOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -264,6 +366,18 @@ var StoreOrderService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.storefront.v1.StoreOrderService",
 	HandlerType: (*StoreOrderServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "QuoteOrder",
+			Handler:    _StoreOrderService_QuoteOrder_Handler,
+		},
+		{
+			MethodName: "ShippingRegions",
+			Handler:    _StoreOrderService_ShippingRegions_Handler,
+		},
+		{
+			MethodName: "ReceiveShipment",
+			Handler:    _StoreOrderService_ReceiveShipment_Handler,
+		},
 		{
 			MethodName: "CreateOrder",
 			Handler:    _StoreOrderService_CreateOrder_Handler,

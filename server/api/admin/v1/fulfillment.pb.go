@@ -625,6 +625,250 @@ func (x *StartServiceRequest) GetOrderItemId() uint64 {
 	return 0
 }
 
+type ShipOrderRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	ItemIds       []uint64               `protobuf:"varint,2,rep,packed,name=item_ids,json=itemIds,proto3" json:"item_ids,omitempty"`
+	Carrier       string                 `protobuf:"bytes,3,opt,name=carrier,proto3" json:"carrier,omitempty"`
+	TrackingNo    string                 `protobuf:"bytes,4,opt,name=tracking_no,json=trackingNo,proto3" json:"tracking_no,omitempty"`
+	RequestKey    string                 `protobuf:"bytes,5,opt,name=request_key,json=requestKey,proto3" json:"request_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ShipOrderRequest) Reset() {
+	*x = ShipOrderRequest{}
+	mi := &file_admin_v1_fulfillment_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShipOrderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShipOrderRequest) ProtoMessage() {}
+
+func (x *ShipOrderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_fulfillment_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ShipOrderRequest.ProtoReflect.Descriptor instead.
+func (*ShipOrderRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_fulfillment_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ShipOrderRequest) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *ShipOrderRequest) GetItemIds() []uint64 {
+	if x != nil {
+		return x.ItemIds
+	}
+	return nil
+}
+
+func (x *ShipOrderRequest) GetCarrier() string {
+	if x != nil {
+		return x.Carrier
+	}
+	return ""
+}
+
+func (x *ShipOrderRequest) GetTrackingNo() string {
+	if x != nil {
+		return x.TrackingNo
+	}
+	return ""
+}
+
+func (x *ShipOrderRequest) GetRequestKey() string {
+	if x != nil {
+		return x.RequestKey
+	}
+	return ""
+}
+
+type UpdateShippingRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	ShipmentId    uint64                 `protobuf:"varint,2,opt,name=shipment_id,json=shipmentId,proto3" json:"shipment_id,omitempty"`
+	Carrier       string                 `protobuf:"bytes,3,opt,name=carrier,proto3" json:"carrier,omitempty"`
+	TrackingNo    string                 `protobuf:"bytes,4,opt,name=tracking_no,json=trackingNo,proto3" json:"tracking_no,omitempty"`
+	Address       map[string]string      `protobuf:"bytes,5,rep,name=address,proto3" json:"address,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Received      bool                   `protobuf:"varint,6,opt,name=received,proto3" json:"received,omitempty"`
+	Reason        string                 `protobuf:"bytes,7,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateShippingRequest) Reset() {
+	*x = UpdateShippingRequest{}
+	mi := &file_admin_v1_fulfillment_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateShippingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateShippingRequest) ProtoMessage() {}
+
+func (x *UpdateShippingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_fulfillment_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateShippingRequest.ProtoReflect.Descriptor instead.
+func (*UpdateShippingRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_fulfillment_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *UpdateShippingRequest) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *UpdateShippingRequest) GetShipmentId() uint64 {
+	if x != nil {
+		return x.ShipmentId
+	}
+	return 0
+}
+
+func (x *UpdateShippingRequest) GetCarrier() string {
+	if x != nil {
+		return x.Carrier
+	}
+	return ""
+}
+
+func (x *UpdateShippingRequest) GetTrackingNo() string {
+	if x != nil {
+		return x.TrackingNo
+	}
+	return ""
+}
+
+func (x *UpdateShippingRequest) GetAddress() map[string]string {
+	if x != nil {
+		return x.Address
+	}
+	return nil
+}
+
+func (x *UpdateShippingRequest) GetReceived() bool {
+	if x != nil {
+		return x.Received
+	}
+	return false
+}
+
+func (x *UpdateShippingRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type RestockReturnRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	ItemId        uint64                 `protobuf:"varint,2,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	Quantity      int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	RequestKey    string                 `protobuf:"bytes,4,opt,name=request_key,json=requestKey,proto3" json:"request_key,omitempty"`
+	Reason        string                 `protobuf:"bytes,5,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RestockReturnRequest) Reset() {
+	*x = RestockReturnRequest{}
+	mi := &file_admin_v1_fulfillment_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestockReturnRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestockReturnRequest) ProtoMessage() {}
+
+func (x *RestockReturnRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_fulfillment_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RestockReturnRequest.ProtoReflect.Descriptor instead.
+func (*RestockReturnRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_fulfillment_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *RestockReturnRequest) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *RestockReturnRequest) GetItemId() uint64 {
+	if x != nil {
+		return x.ItemId
+	}
+	return 0
+}
+
+func (x *RestockReturnRequest) GetQuantity() int32 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+func (x *RestockReturnRequest) GetRequestKey() string {
+	if x != nil {
+		return x.RequestKey
+	}
+	return ""
+}
+
+func (x *RestockReturnRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
 var File_admin_v1_fulfillment_proto protoreflect.FileDescriptor
 
 const file_admin_v1_fulfillment_proto_rawDesc = "" +
@@ -684,8 +928,39 @@ const file_admin_v1_fulfillment_proto_rawDesc = "" +
 	" \x01(\tR\acontent\"T\n" +
 	"\x13StartServiceRequest\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\"\n" +
-	"\rorder_item_id\x18\x02 \x01(\x04R\vorderItemId2\xc2\x04\n" +
-	"\x17AdminFulfillmentService\x12\x86\x01\n" +
+	"\rorder_item_id\x18\x02 \x01(\x04R\vorderItemId\"\xa4\x01\n" +
+	"\x10ShipOrderRequest\x12\x19\n" +
+	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x19\n" +
+	"\bitem_ids\x18\x02 \x03(\x04R\aitemIds\x12\x18\n" +
+	"\acarrier\x18\x03 \x01(\tR\acarrier\x12\x1f\n" +
+	"\vtracking_no\x18\x04 \x01(\tR\n" +
+	"trackingNo\x12\x1f\n" +
+	"\vrequest_key\x18\x05 \x01(\tR\n" +
+	"requestKey\"\xd0\x02\n" +
+	"\x15UpdateShippingRequest\x12\x19\n" +
+	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x1f\n" +
+	"\vshipment_id\x18\x02 \x01(\x04R\n" +
+	"shipmentId\x12\x18\n" +
+	"\acarrier\x18\x03 \x01(\tR\acarrier\x12\x1f\n" +
+	"\vtracking_no\x18\x04 \x01(\tR\n" +
+	"trackingNo\x12P\n" +
+	"\aaddress\x18\x05 \x03(\v26.zcard.api.admin.v1.UpdateShippingRequest.AddressEntryR\aaddress\x12\x1a\n" +
+	"\breceived\x18\x06 \x01(\bR\breceived\x12\x16\n" +
+	"\x06reason\x18\a \x01(\tR\x06reason\x1a:\n" +
+	"\fAddressEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x9f\x01\n" +
+	"\x14RestockReturnRequest\x12\x19\n" +
+	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x17\n" +
+	"\aitem_id\x18\x02 \x01(\x04R\x06itemId\x12\x1a\n" +
+	"\bquantity\x18\x03 \x01(\x05R\bquantity\x12\x1f\n" +
+	"\vrequest_key\x18\x04 \x01(\tR\n" +
+	"requestKey\x12\x16\n" +
+	"\x06reason\x18\x05 \x01(\tR\x06reason2\xe0\a\n" +
+	"\x17AdminFulfillmentService\x12\x7f\n" +
+	"\tShipOrder\x12$.zcard.api.admin.v1.ShipOrderRequest\x1a\x16.google.protobuf.Empty\"4\x82\xd3\xe4\x93\x02.:\x01*\")/api/v1/admin/fulfillment/{order_no}/ship\x12\x8d\x01\n" +
+	"\x0eUpdateShipping\x12).zcard.api.admin.v1.UpdateShippingRequest\x1a\x16.google.protobuf.Empty\"8\x82\xd3\xe4\x93\x022:\x01*\"-/api/v1/admin/fulfillment/{order_no}/shipping\x12\x8a\x01\n" +
+	"\rRestockReturn\x12(.zcard.api.admin.v1.RestockReturnRequest\x1a\x16.google.protobuf.Empty\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/admin/fulfillment/{order_no}/restock\x12\x86\x01\n" +
 	"\fStartService\x12'.zcard.api.admin.v1.StartServiceRequest\x1a\x16.google.protobuf.Empty\"5\x82\xd3\xe4\x93\x02/:\x01*\"*/api/v1/admin/fulfillment/{order_no}/start\x12\x86\x01\n" +
 	"\vListPending\x12&.zcard.api.admin.v1.ListPendingRequest\x1a$.zcard.api.admin.v1.ListPendingReply\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/admin/fulfillment/pending\x12\x8a\x01\n" +
 	"\rManualDeliver\x12(.zcard.api.admin.v1.ManualDeliverRequest\x1a\x16.google.protobuf.Empty\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/admin/fulfillment/{order_no}/deliver\x12\x87\x01\n" +
@@ -703,7 +978,7 @@ func file_admin_v1_fulfillment_proto_rawDescGZIP() []byte {
 	return file_admin_v1_fulfillment_proto_rawDescData
 }
 
-var file_admin_v1_fulfillment_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_admin_v1_fulfillment_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_admin_v1_fulfillment_proto_goTypes = []any{
 	(*ListPendingRequest)(nil),    // 0: zcard.api.admin.v1.ListPendingRequest
 	(*ListPendingReply)(nil),      // 1: zcard.api.admin.v1.ListPendingReply
@@ -713,24 +988,35 @@ var file_admin_v1_fulfillment_proto_goTypes = []any{
 	(*ListDeliveriesReply)(nil),   // 5: zcard.api.admin.v1.ListDeliveriesReply
 	(*DeliveryRecord)(nil),        // 6: zcard.api.admin.v1.DeliveryRecord
 	(*StartServiceRequest)(nil),   // 7: zcard.api.admin.v1.StartServiceRequest
-	(*emptypb.Empty)(nil),         // 8: google.protobuf.Empty
+	(*ShipOrderRequest)(nil),      // 8: zcard.api.admin.v1.ShipOrderRequest
+	(*UpdateShippingRequest)(nil), // 9: zcard.api.admin.v1.UpdateShippingRequest
+	(*RestockReturnRequest)(nil),  // 10: zcard.api.admin.v1.RestockReturnRequest
+	nil,                           // 11: zcard.api.admin.v1.UpdateShippingRequest.AddressEntry
+	(*emptypb.Empty)(nil),         // 12: google.protobuf.Empty
 }
 var file_admin_v1_fulfillment_proto_depIdxs = []int32{
-	2, // 0: zcard.api.admin.v1.ListPendingReply.orders:type_name -> zcard.api.admin.v1.PendingOrder
-	6, // 1: zcard.api.admin.v1.ListDeliveriesReply.deliveries:type_name -> zcard.api.admin.v1.DeliveryRecord
-	7, // 2: zcard.api.admin.v1.AdminFulfillmentService.StartService:input_type -> zcard.api.admin.v1.StartServiceRequest
-	0, // 3: zcard.api.admin.v1.AdminFulfillmentService.ListPending:input_type -> zcard.api.admin.v1.ListPendingRequest
-	3, // 4: zcard.api.admin.v1.AdminFulfillmentService.ManualDeliver:input_type -> zcard.api.admin.v1.ManualDeliverRequest
-	4, // 5: zcard.api.admin.v1.AdminFulfillmentService.ListDeliveries:input_type -> zcard.api.admin.v1.ListDeliveriesRequest
-	8, // 6: zcard.api.admin.v1.AdminFulfillmentService.StartService:output_type -> google.protobuf.Empty
-	1, // 7: zcard.api.admin.v1.AdminFulfillmentService.ListPending:output_type -> zcard.api.admin.v1.ListPendingReply
-	8, // 8: zcard.api.admin.v1.AdminFulfillmentService.ManualDeliver:output_type -> google.protobuf.Empty
-	5, // 9: zcard.api.admin.v1.AdminFulfillmentService.ListDeliveries:output_type -> zcard.api.admin.v1.ListDeliveriesReply
-	6, // [6:10] is the sub-list for method output_type
-	2, // [2:6] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	2,  // 0: zcard.api.admin.v1.ListPendingReply.orders:type_name -> zcard.api.admin.v1.PendingOrder
+	6,  // 1: zcard.api.admin.v1.ListDeliveriesReply.deliveries:type_name -> zcard.api.admin.v1.DeliveryRecord
+	11, // 2: zcard.api.admin.v1.UpdateShippingRequest.address:type_name -> zcard.api.admin.v1.UpdateShippingRequest.AddressEntry
+	8,  // 3: zcard.api.admin.v1.AdminFulfillmentService.ShipOrder:input_type -> zcard.api.admin.v1.ShipOrderRequest
+	9,  // 4: zcard.api.admin.v1.AdminFulfillmentService.UpdateShipping:input_type -> zcard.api.admin.v1.UpdateShippingRequest
+	10, // 5: zcard.api.admin.v1.AdminFulfillmentService.RestockReturn:input_type -> zcard.api.admin.v1.RestockReturnRequest
+	7,  // 6: zcard.api.admin.v1.AdminFulfillmentService.StartService:input_type -> zcard.api.admin.v1.StartServiceRequest
+	0,  // 7: zcard.api.admin.v1.AdminFulfillmentService.ListPending:input_type -> zcard.api.admin.v1.ListPendingRequest
+	3,  // 8: zcard.api.admin.v1.AdminFulfillmentService.ManualDeliver:input_type -> zcard.api.admin.v1.ManualDeliverRequest
+	4,  // 9: zcard.api.admin.v1.AdminFulfillmentService.ListDeliveries:input_type -> zcard.api.admin.v1.ListDeliveriesRequest
+	12, // 10: zcard.api.admin.v1.AdminFulfillmentService.ShipOrder:output_type -> google.protobuf.Empty
+	12, // 11: zcard.api.admin.v1.AdminFulfillmentService.UpdateShipping:output_type -> google.protobuf.Empty
+	12, // 12: zcard.api.admin.v1.AdminFulfillmentService.RestockReturn:output_type -> google.protobuf.Empty
+	12, // 13: zcard.api.admin.v1.AdminFulfillmentService.StartService:output_type -> google.protobuf.Empty
+	1,  // 14: zcard.api.admin.v1.AdminFulfillmentService.ListPending:output_type -> zcard.api.admin.v1.ListPendingReply
+	12, // 15: zcard.api.admin.v1.AdminFulfillmentService.ManualDeliver:output_type -> google.protobuf.Empty
+	5,  // 16: zcard.api.admin.v1.AdminFulfillmentService.ListDeliveries:output_type -> zcard.api.admin.v1.ListDeliveriesReply
+	10, // [10:17] is the sub-list for method output_type
+	3,  // [3:10] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_fulfillment_proto_init() }
@@ -744,7 +1030,7 @@ func file_admin_v1_fulfillment_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_fulfillment_proto_rawDesc), len(file_admin_v1_fulfillment_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

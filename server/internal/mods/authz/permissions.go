@@ -257,6 +257,9 @@ func init() {
 		Perm{Code: "giftcard:read", Desc: "礼品卡批次列表", Domain: "wallet",
 			Op: "zcard.api.admin.v1.AdminWalletService/ListGiftcardBatches", Method: "GET", Path: "/api/v1/admin/wallet/giftcard-batches"},
 
+		Perm{Code: "order:deliver", Desc: "实体物流管理", Domain: "fulfillment", AdminOnly: true, Op: "zcard.api.admin.v1.AdminFulfillmentService/ShipOrder", Method: "POST", Path: "/api/v1/admin/fulfillment/{order_no}/ship"},
+		Perm{Code: "order:deliver", Desc: "实体物流管理", Domain: "fulfillment", AdminOnly: true, Op: "zcard.api.admin.v1.AdminFulfillmentService/UpdateShipping", Method: "POST", Path: "/api/v1/admin/fulfillment/{order_no}/shipping"},
+		Perm{Code: "order:deliver", Desc: "实体物流管理", Domain: "fulfillment", AdminOnly: true, Op: "zcard.api.admin.v1.AdminFulfillmentService/RestockReturn", Method: "POST", Path: "/api/v1/admin/fulfillment/{order_no}/restock"},
 		// ── 履约（fulfillment，）─────────────────
 		Perm{Code: "order:view_delivery", Desc: "查看交付记录", Domain: "fulfillment",
 			Op: "zcard.api.admin.v1.AdminFulfillmentService/ListDeliveries", Method: "GET", Path: "/api/v1/admin/fulfillment"},

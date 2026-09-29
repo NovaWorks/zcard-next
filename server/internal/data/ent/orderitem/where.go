@@ -120,6 +120,51 @@ func Cost(v int64) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldCost, v))
 }
 
+// GoodsType applies equality check predicate on the "goods_type" field. It's identical to GoodsTypeEQ.
+func GoodsType(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldGoodsType, v))
+}
+
+// PaidAmount applies equality check predicate on the "paid_amount" field. It's identical to PaidAmountEQ.
+func PaidAmount(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldPaidAmount, v))
+}
+
+// ShippingAmount applies equality check predicate on the "shipping_amount" field. It's identical to ShippingAmountEQ.
+func ShippingAmount(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldShippingAmount, v))
+}
+
+// RefundedAmount applies equality check predicate on the "refunded_amount" field. It's identical to RefundedAmountEQ.
+func RefundedAmount(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldRefundedAmount, v))
+}
+
+// RefundedShipping applies equality check predicate on the "refunded_shipping" field. It's identical to RefundedShippingEQ.
+func RefundedShipping(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldRefundedShipping, v))
+}
+
+// CanceledQuantity applies equality check predicate on the "canceled_quantity" field. It's identical to CanceledQuantityEQ.
+func CanceledQuantity(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldCanceledQuantity, v))
+}
+
+// ShippedQuantity applies equality check predicate on the "shipped_quantity" field. It's identical to ShippedQuantityEQ.
+func ShippedQuantity(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldShippedQuantity, v))
+}
+
+// ReceivedQuantity applies equality check predicate on the "received_quantity" field. It's identical to ReceivedQuantityEQ.
+func ReceivedQuantity(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldReceivedQuantity, v))
+}
+
+// ReturnedQuantity applies equality check predicate on the "returned_quantity" field. It's identical to ReturnedQuantityEQ.
+func ReturnedQuantity(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldReturnedQuantity, v))
+}
+
 // DeliverySourceID applies equality check predicate on the "delivery_source_id" field. It's identical to DeliverySourceIDEQ.
 func DeliverySourceID(v uint64) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldDeliverySourceID, v))
@@ -708,6 +753,391 @@ func CostLT(v int64) predicate.OrderItem {
 // CostLTE applies the LTE predicate on the "cost" field.
 func CostLTE(v int64) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldLTE(FieldCost, v))
+}
+
+// GoodsTypeEQ applies the EQ predicate on the "goods_type" field.
+func GoodsTypeEQ(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldGoodsType, v))
+}
+
+// GoodsTypeNEQ applies the NEQ predicate on the "goods_type" field.
+func GoodsTypeNEQ(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldGoodsType, v))
+}
+
+// GoodsTypeIn applies the In predicate on the "goods_type" field.
+func GoodsTypeIn(vs ...string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldGoodsType, vs...))
+}
+
+// GoodsTypeNotIn applies the NotIn predicate on the "goods_type" field.
+func GoodsTypeNotIn(vs ...string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldGoodsType, vs...))
+}
+
+// GoodsTypeGT applies the GT predicate on the "goods_type" field.
+func GoodsTypeGT(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldGoodsType, v))
+}
+
+// GoodsTypeGTE applies the GTE predicate on the "goods_type" field.
+func GoodsTypeGTE(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldGoodsType, v))
+}
+
+// GoodsTypeLT applies the LT predicate on the "goods_type" field.
+func GoodsTypeLT(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldGoodsType, v))
+}
+
+// GoodsTypeLTE applies the LTE predicate on the "goods_type" field.
+func GoodsTypeLTE(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldGoodsType, v))
+}
+
+// GoodsTypeContains applies the Contains predicate on the "goods_type" field.
+func GoodsTypeContains(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldContains(FieldGoodsType, v))
+}
+
+// GoodsTypeHasPrefix applies the HasPrefix predicate on the "goods_type" field.
+func GoodsTypeHasPrefix(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldHasPrefix(FieldGoodsType, v))
+}
+
+// GoodsTypeHasSuffix applies the HasSuffix predicate on the "goods_type" field.
+func GoodsTypeHasSuffix(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldHasSuffix(FieldGoodsType, v))
+}
+
+// GoodsTypeEqualFold applies the EqualFold predicate on the "goods_type" field.
+func GoodsTypeEqualFold(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEqualFold(FieldGoodsType, v))
+}
+
+// GoodsTypeContainsFold applies the ContainsFold predicate on the "goods_type" field.
+func GoodsTypeContainsFold(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldContainsFold(FieldGoodsType, v))
+}
+
+// PaidAmountEQ applies the EQ predicate on the "paid_amount" field.
+func PaidAmountEQ(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldPaidAmount, v))
+}
+
+// PaidAmountNEQ applies the NEQ predicate on the "paid_amount" field.
+func PaidAmountNEQ(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldPaidAmount, v))
+}
+
+// PaidAmountIn applies the In predicate on the "paid_amount" field.
+func PaidAmountIn(vs ...int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldPaidAmount, vs...))
+}
+
+// PaidAmountNotIn applies the NotIn predicate on the "paid_amount" field.
+func PaidAmountNotIn(vs ...int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldPaidAmount, vs...))
+}
+
+// PaidAmountGT applies the GT predicate on the "paid_amount" field.
+func PaidAmountGT(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldPaidAmount, v))
+}
+
+// PaidAmountGTE applies the GTE predicate on the "paid_amount" field.
+func PaidAmountGTE(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldPaidAmount, v))
+}
+
+// PaidAmountLT applies the LT predicate on the "paid_amount" field.
+func PaidAmountLT(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldPaidAmount, v))
+}
+
+// PaidAmountLTE applies the LTE predicate on the "paid_amount" field.
+func PaidAmountLTE(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldPaidAmount, v))
+}
+
+// ShippingAmountEQ applies the EQ predicate on the "shipping_amount" field.
+func ShippingAmountEQ(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldShippingAmount, v))
+}
+
+// ShippingAmountNEQ applies the NEQ predicate on the "shipping_amount" field.
+func ShippingAmountNEQ(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldShippingAmount, v))
+}
+
+// ShippingAmountIn applies the In predicate on the "shipping_amount" field.
+func ShippingAmountIn(vs ...int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldShippingAmount, vs...))
+}
+
+// ShippingAmountNotIn applies the NotIn predicate on the "shipping_amount" field.
+func ShippingAmountNotIn(vs ...int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldShippingAmount, vs...))
+}
+
+// ShippingAmountGT applies the GT predicate on the "shipping_amount" field.
+func ShippingAmountGT(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldShippingAmount, v))
+}
+
+// ShippingAmountGTE applies the GTE predicate on the "shipping_amount" field.
+func ShippingAmountGTE(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldShippingAmount, v))
+}
+
+// ShippingAmountLT applies the LT predicate on the "shipping_amount" field.
+func ShippingAmountLT(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldShippingAmount, v))
+}
+
+// ShippingAmountLTE applies the LTE predicate on the "shipping_amount" field.
+func ShippingAmountLTE(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldShippingAmount, v))
+}
+
+// RefundedAmountEQ applies the EQ predicate on the "refunded_amount" field.
+func RefundedAmountEQ(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldRefundedAmount, v))
+}
+
+// RefundedAmountNEQ applies the NEQ predicate on the "refunded_amount" field.
+func RefundedAmountNEQ(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldRefundedAmount, v))
+}
+
+// RefundedAmountIn applies the In predicate on the "refunded_amount" field.
+func RefundedAmountIn(vs ...int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldRefundedAmount, vs...))
+}
+
+// RefundedAmountNotIn applies the NotIn predicate on the "refunded_amount" field.
+func RefundedAmountNotIn(vs ...int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldRefundedAmount, vs...))
+}
+
+// RefundedAmountGT applies the GT predicate on the "refunded_amount" field.
+func RefundedAmountGT(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldRefundedAmount, v))
+}
+
+// RefundedAmountGTE applies the GTE predicate on the "refunded_amount" field.
+func RefundedAmountGTE(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldRefundedAmount, v))
+}
+
+// RefundedAmountLT applies the LT predicate on the "refunded_amount" field.
+func RefundedAmountLT(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldRefundedAmount, v))
+}
+
+// RefundedAmountLTE applies the LTE predicate on the "refunded_amount" field.
+func RefundedAmountLTE(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldRefundedAmount, v))
+}
+
+// RefundedShippingEQ applies the EQ predicate on the "refunded_shipping" field.
+func RefundedShippingEQ(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldRefundedShipping, v))
+}
+
+// RefundedShippingNEQ applies the NEQ predicate on the "refunded_shipping" field.
+func RefundedShippingNEQ(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldRefundedShipping, v))
+}
+
+// RefundedShippingIn applies the In predicate on the "refunded_shipping" field.
+func RefundedShippingIn(vs ...int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldRefundedShipping, vs...))
+}
+
+// RefundedShippingNotIn applies the NotIn predicate on the "refunded_shipping" field.
+func RefundedShippingNotIn(vs ...int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldRefundedShipping, vs...))
+}
+
+// RefundedShippingGT applies the GT predicate on the "refunded_shipping" field.
+func RefundedShippingGT(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldRefundedShipping, v))
+}
+
+// RefundedShippingGTE applies the GTE predicate on the "refunded_shipping" field.
+func RefundedShippingGTE(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldRefundedShipping, v))
+}
+
+// RefundedShippingLT applies the LT predicate on the "refunded_shipping" field.
+func RefundedShippingLT(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldRefundedShipping, v))
+}
+
+// RefundedShippingLTE applies the LTE predicate on the "refunded_shipping" field.
+func RefundedShippingLTE(v int64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldRefundedShipping, v))
+}
+
+// CanceledQuantityEQ applies the EQ predicate on the "canceled_quantity" field.
+func CanceledQuantityEQ(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldCanceledQuantity, v))
+}
+
+// CanceledQuantityNEQ applies the NEQ predicate on the "canceled_quantity" field.
+func CanceledQuantityNEQ(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldCanceledQuantity, v))
+}
+
+// CanceledQuantityIn applies the In predicate on the "canceled_quantity" field.
+func CanceledQuantityIn(vs ...int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldCanceledQuantity, vs...))
+}
+
+// CanceledQuantityNotIn applies the NotIn predicate on the "canceled_quantity" field.
+func CanceledQuantityNotIn(vs ...int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldCanceledQuantity, vs...))
+}
+
+// CanceledQuantityGT applies the GT predicate on the "canceled_quantity" field.
+func CanceledQuantityGT(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldCanceledQuantity, v))
+}
+
+// CanceledQuantityGTE applies the GTE predicate on the "canceled_quantity" field.
+func CanceledQuantityGTE(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldCanceledQuantity, v))
+}
+
+// CanceledQuantityLT applies the LT predicate on the "canceled_quantity" field.
+func CanceledQuantityLT(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldCanceledQuantity, v))
+}
+
+// CanceledQuantityLTE applies the LTE predicate on the "canceled_quantity" field.
+func CanceledQuantityLTE(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldCanceledQuantity, v))
+}
+
+// ShippedQuantityEQ applies the EQ predicate on the "shipped_quantity" field.
+func ShippedQuantityEQ(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldShippedQuantity, v))
+}
+
+// ShippedQuantityNEQ applies the NEQ predicate on the "shipped_quantity" field.
+func ShippedQuantityNEQ(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldShippedQuantity, v))
+}
+
+// ShippedQuantityIn applies the In predicate on the "shipped_quantity" field.
+func ShippedQuantityIn(vs ...int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldShippedQuantity, vs...))
+}
+
+// ShippedQuantityNotIn applies the NotIn predicate on the "shipped_quantity" field.
+func ShippedQuantityNotIn(vs ...int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldShippedQuantity, vs...))
+}
+
+// ShippedQuantityGT applies the GT predicate on the "shipped_quantity" field.
+func ShippedQuantityGT(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldShippedQuantity, v))
+}
+
+// ShippedQuantityGTE applies the GTE predicate on the "shipped_quantity" field.
+func ShippedQuantityGTE(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldShippedQuantity, v))
+}
+
+// ShippedQuantityLT applies the LT predicate on the "shipped_quantity" field.
+func ShippedQuantityLT(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldShippedQuantity, v))
+}
+
+// ShippedQuantityLTE applies the LTE predicate on the "shipped_quantity" field.
+func ShippedQuantityLTE(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldShippedQuantity, v))
+}
+
+// ReceivedQuantityEQ applies the EQ predicate on the "received_quantity" field.
+func ReceivedQuantityEQ(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldReceivedQuantity, v))
+}
+
+// ReceivedQuantityNEQ applies the NEQ predicate on the "received_quantity" field.
+func ReceivedQuantityNEQ(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldReceivedQuantity, v))
+}
+
+// ReceivedQuantityIn applies the In predicate on the "received_quantity" field.
+func ReceivedQuantityIn(vs ...int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldReceivedQuantity, vs...))
+}
+
+// ReceivedQuantityNotIn applies the NotIn predicate on the "received_quantity" field.
+func ReceivedQuantityNotIn(vs ...int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldReceivedQuantity, vs...))
+}
+
+// ReceivedQuantityGT applies the GT predicate on the "received_quantity" field.
+func ReceivedQuantityGT(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldReceivedQuantity, v))
+}
+
+// ReceivedQuantityGTE applies the GTE predicate on the "received_quantity" field.
+func ReceivedQuantityGTE(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldReceivedQuantity, v))
+}
+
+// ReceivedQuantityLT applies the LT predicate on the "received_quantity" field.
+func ReceivedQuantityLT(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldReceivedQuantity, v))
+}
+
+// ReceivedQuantityLTE applies the LTE predicate on the "received_quantity" field.
+func ReceivedQuantityLTE(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldReceivedQuantity, v))
+}
+
+// ReturnedQuantityEQ applies the EQ predicate on the "returned_quantity" field.
+func ReturnedQuantityEQ(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldReturnedQuantity, v))
+}
+
+// ReturnedQuantityNEQ applies the NEQ predicate on the "returned_quantity" field.
+func ReturnedQuantityNEQ(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldReturnedQuantity, v))
+}
+
+// ReturnedQuantityIn applies the In predicate on the "returned_quantity" field.
+func ReturnedQuantityIn(vs ...int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldReturnedQuantity, vs...))
+}
+
+// ReturnedQuantityNotIn applies the NotIn predicate on the "returned_quantity" field.
+func ReturnedQuantityNotIn(vs ...int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldReturnedQuantity, vs...))
+}
+
+// ReturnedQuantityGT applies the GT predicate on the "returned_quantity" field.
+func ReturnedQuantityGT(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldReturnedQuantity, v))
+}
+
+// ReturnedQuantityGTE applies the GTE predicate on the "returned_quantity" field.
+func ReturnedQuantityGTE(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldReturnedQuantity, v))
+}
+
+// ReturnedQuantityLT applies the LT predicate on the "returned_quantity" field.
+func ReturnedQuantityLT(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldReturnedQuantity, v))
+}
+
+// ReturnedQuantityLTE applies the LTE predicate on the "returned_quantity" field.
+func ReturnedQuantityLTE(v int32) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldReturnedQuantity, v))
 }
 
 // FulfillmentTypeEQ applies the EQ predicate on the "fulfillment_type" field.

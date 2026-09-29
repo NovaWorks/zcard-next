@@ -163,6 +163,11 @@ func ReadBodyJSON(r *http.Request) map[string]any {
 			m["content"] = "****"
 		}
 	}
+	if strings.HasPrefix(r.URL.Path, "/api/v1/admin/fulfillment/") && strings.HasSuffix(r.URL.Path, "/shipping") {
+		if _, ok := m["address"]; ok {
+			m["address"] = "****"
+		}
+	}
 	// Settings wrap secrets inside value_json, so field-name redaction alone is insufficient.
 	if r.URL.Path == "/api/v1/admin/settings/notify/telegram_bot_token" || r.URL.Path == "/api/v1/admin/settings/notify/telegram" {
 		for _, key := range []string{"value_json", "valueJson"} {

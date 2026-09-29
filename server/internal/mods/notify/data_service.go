@@ -193,6 +193,10 @@ func SampleVars(eventType string) map[string]string {
 		"user_id": "42", "amount": "1000", "site_name": "ZCard 商店",
 	}
 	switch eventType {
+	case "order.shipped":
+		base["carrier"] = "示例快递"
+		base["tracking_no"] = "TEST001"
+		base["shipment_id"] = "1"
 	case "order.delivered":
 		base["cards_count"] = "2"
 		base["fetch_url"] = "https://example.com/fetch"

@@ -17,6 +17,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -124,7 +125,7 @@ func main() {
 									if raw, ok := v.C.Default.(*atlasschema.RawExpr); ok {
 										literal := strings.Trim(raw.X, "() ")
 										_, number := strconv.ParseFloat(literal, 64)
-										if literal == "true" || literal == "false" || literal == "''" || number == nil {
+										if literal == "true" || literal == "false" || regexp.MustCompile(`^'([^']|'')*'$`).MatchString(literal) || number == nil {
 											v.C.Default = &atlasschema.Literal{V: literal}
 										}
 									}

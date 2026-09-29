@@ -210,6 +210,9 @@ message Payment {
 }
 
 message CreateRefundRequest {
+  string item_allocations_json = 8;
+  bool external_confirmed = 9;
+  string external_reference = 10;
   optional int64 expected_refunded_cents = 5; // confirmed cumulative succeeded refunds
   string order_no = 1 [(google.api.field_behavior) = REQUIRED];
   int64 amount_cents = 2;
@@ -221,6 +224,8 @@ message CreateRefundRequest {
 
 message ListRefundsRequest {
   string status = 1;
+  string order_no = 2;
+  uint64 before_id = 3;
 }
 
 message ListRefundsReply {
@@ -239,4 +244,7 @@ message RefundOrder {
   string upstream_refund_id = 8;
   int64 created_at = 9;
   int64 fee_cents = 10;
+  int64 shipping_cents = 11;
+  string item_allocations_json = 12;
+  uint64 operator_id = 13;
 }

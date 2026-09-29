@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import OrderAnswers from '@/components/common/order-answers.vue';
+import PhysicalOrderPanel from "./components/physical-order-panel.vue";
+import { shippingStatus } from "../../../../packages/shipping";
+import OrderAnswers from "@/components/common/order-answers.vue";
 import { orderStatusText as statusText, orderStatusType as statusType } from "@/utils/order-status";
 import TablePager from "@/components/common/table-pager.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
@@ -36,9 +38,15 @@ import { formatMoney, formatSignedMoney } from "@/utils/money";
 defineOptions({ name: "OrderManagement" });
 const route = useRoute();
 const router = useRouter();
-const reportFilter = computed(() => ({product_id: Number(route.query.product_id) || undefined,start_time: Number(route.query.start_time) || undefined, end_time: Number(route.query.end_time) || undefined, time_field: String(route.query.time_field || "created"), channel_id: Number(route.query.channel_id) || undefined, channel_code: String(route.query.channel_code || "") || undefined}));
+const reportFilter = computed(() => ({
+  product_id: Number(route.query.product_id) || undefined,
+  start_time: Number(route.query.start_time) || undefined,
+  end_time: Number(route.query.end_time) || undefined,
+  time_field: String(route.query.time_field || "created"),
+  channel_id: Number(route.query.channel_id) || undefined,
+  channel_code: String(route.query.channel_code || "") || undefined,
+}));
 const fromDashboard = computed(() => Boolean(reportFilter.value.start_time || route.query.status));
-
 
 const loading = ref(false);
 const orders = ref<any[]>([]);
@@ -47,6 +55,7 @@ const pageSize = ref(20);
 // 游标链：cursors[p-1] = 第 p 页起始游标（next_cursor = 满页时末行 ID；0 = 无更多）
 const cursors = ref<number[]>([0]);
 const hasMore = ref(false);
+const shippingFilter = ref("");
 const statusFilter = ref<string>(String(route.query.status || ""));
 const keywordInput = ref("");
 const keyword = ref("");
@@ -60,6 +69,7 @@ async function afterManualDeliver() {
   await loadOrders();
 }
 const detail = ref<{
+  [key: string]: any;
   order_no: string;
   status: string;
   total_cents: number;
@@ -75,7 +85,11 @@ const detail = ref<{
   guest_contact?: string;
   client_ip?: string;
   items?: {
- id?:number;name?:string;sku_name?:string;form_answers_json?:string;assigned_admin_id?:number;
+    id?: number;
+    name?: string;
+    sku_name?: string;
+    form_answers_json?: string;
+    assigned_admin_id?: number;
     is_self?: boolean;
     upstream_source_name?: string;
     upstream_driver?: string;
@@ -108,6 +122,7 @@ function fulfillmentTypeText(t: string) {
     auto: "自动发货",
     manual: "手动发货",
     upstream: "上游代发",
+    shipping: "快递配送",
   };
   return map[t] || t || "-";
 }
@@ -115,6 +130,9 @@ function fulfillmentTypeText(t: string) {
 function fulfillmentStatusText(s: string) {
   const map: Record<string, string> = {
     pending: "待处理",
+    shipped: "已寄出",
+    received: "已收货",
+    refunded: "已取消交付",
     delivering: "履约中",
     manual: "待人工补发",
     delivered: "已履约",
@@ -125,6 +143,7 @@ function fulfillmentStatusText(s: string) {
 
 function amountTypeText(t: string) {
   const map: Record<string, string> = {
+    shipping: "运费",
     base_price: "商品价",
     sku_adjust: "SKU 加价",
     member_discount: "会员折扣",
@@ -163,11 +182,23 @@ function eventDotColor(evt: any): string {
 
 // 事件排序（时间升序——后端已排，防御性再排一次）
 function sortedEvents(evts: any[]) {
-  return [...(evts || [])].map(evt => {
-    if (evt.event === 'completed' && evt.from_status && evt.from_status !== 'delivered') return { ...evt, event: 'fetch_pending', to_status: evt.from_status, reason: '旧版取货事件误记完成，以订单当前状态为准' };
-    if (evt.event === 'delivered' && ['fulfilling', 'partially_delivered'].includes(evt.to_status)) return { ...evt, event: evt.to_status };
-    return evt;
-  }).sort((a, b) => (a.created_at || 0) - (b.created_at || 0));
+  return [...(evts || [])]
+    .map((evt) => {
+      if (evt.event === "completed" && evt.from_status && evt.from_status !== "delivered")
+        return {
+          ...evt,
+          event: "fetch_pending",
+          to_status: evt.from_status,
+          reason: "旧版取货事件误记完成，以订单当前状态为准",
+        };
+      if (
+        evt.event === "delivered" &&
+        ["fulfilling", "partially_delivered"].includes(evt.to_status)
+      )
+        return { ...evt, event: evt.to_status };
+      return evt;
+    })
+    .sort((a, b) => (a.created_at || 0) - (b.created_at || 0));
 }
 
 function operatorText(op: string) {
@@ -182,6 +213,13 @@ function operatorText(op: string) {
 
 function eventText(evt: string) {
   const map: Record<string, string> = {
+    fulfillment_progress: "履约进度更新",
+    shipment_created: "快递发货",
+    shipment_corrected: "快递信息更正",
+    shipping_address_changed: "收货地址更正",
+    shipment_received: "确认收货",
+    return_restocked: "退货入库",
+    item_refund: "商品退款 / 取消",
     created: "创建订单",
     paid: "支付成功",
     fulfilled: "履约完成",
@@ -189,7 +227,8 @@ function eventText(evt: string) {
     completed: "订单完成",
     fetch_pending: "取货查询（待发货）",
     manual_delivered: "人工补发",
-    fulfillment_manual: "转人工处理", service_started:"开始处理服务",
+    fulfillment_manual: "转人工处理",
+    service_started: "开始处理服务",
     fulfilling: "等待发货",
     partially_delivered: "部分发货",
     canceled: "订单取消",
@@ -215,9 +254,25 @@ function formatTime(ts?: number) {
 const columns: DataTableColumns<any> = [
   { type: "selection", disabled: (row) => !canDelete(row) },
   { title: "订单号", key: "order_no", width: 200, ellipsis: { tooltip: true } },
-  { title: "订单商品", key: "items", minWidth: 240, render: (row) => row.items?.length
-    ? h("div", { class: "order-product-names" }, row.items.map((it: any) => h("div", {}, `${it.name || `商品 #${it.product_id}`}${it.sku_name ? ` · ${it.sku_name}` : ""} ×${it.quantity}`)))
-    : "—" },
+  {
+    title: "订单商品",
+    key: "items",
+    minWidth: 240,
+    render: (row) =>
+      row.items?.length
+        ? h(
+            "div",
+            { class: "order-product-names" },
+            row.items.map((it: any) =>
+              h(
+                "div",
+                {},
+                `${it.name || `商品 #${it.product_id}`}${it.sku_name ? ` · ${it.sku_name}` : ""} ×${it.quantity}`,
+              ),
+            ),
+          )
+        : "—",
+  },
   {
     title: "状态",
     key: "status",
@@ -230,12 +285,24 @@ const columns: DataTableColumns<any> = [
       ),
   },
   {
+    title: "配送状态",
+    key: "shipping_status",
+    width: 120,
+    render: (row) => (row.commerce_version === 1 ? shippingStatus(row.shipping_status) : "—"),
+  },
+  {
     title: "总额",
     key: "total_cents",
     width: 100,
     render: (row) => formatMoney(row.total_cents),
   },
-  { title: "联系方式", key: "contact", width: 140, ellipsis: { tooltip: true }, render: (row) => row.contact || row.guest_contact || "-" },
+  {
+    title: "联系方式",
+    key: "contact",
+    width: 140,
+    ellipsis: { tooltip: true },
+    render: (row) => row.contact || row.guest_contact || "-",
+  },
   {
     title: "创建时间",
     key: "created_at",
@@ -269,10 +336,19 @@ const columns: DataTableColumns<any> = [
                 )
               : null,
             canDelete(row)
-              ? h(NPopconfirm, { onPositiveClick: () => handleDelete([row.order_no]) }, {
-                  trigger: () => h(NButton, { size: "small", type: "error", disabled: deleting.value }, { default: () => "删除" }),
-                  default: () => "从管理列表删除该订单？关联支付及审计记录将保留。",
-                })
+              ? h(
+                  NPopconfirm,
+                  { onPositiveClick: () => handleDelete([row.order_no]) },
+                  {
+                    trigger: () =>
+                      h(
+                        NButton,
+                        { size: "small", type: "error", disabled: deleting.value },
+                        { default: () => "删除" },
+                      ),
+                    default: () => "从管理列表删除该订单？关联支付及审计记录将保留。",
+                  },
+                )
               : null,
           ],
         },
@@ -286,7 +362,8 @@ const itemColumns: DataTableColumns<any> = [
     key: "name",
     width: 180,
     ellipsis: { tooltip: true },
-    render: (row) => (row.name || `#${row.product_id}`) + (row.sku_name ? `（${row.sku_name}）` : ""),
+    render: (row) =>
+      (row.name || `#${row.product_id}`) + (row.sku_name ? `（${row.sku_name}）` : ""),
   },
   { title: "数量", key: "quantity", width: 60 },
   {
@@ -325,7 +402,11 @@ const itemColumns: DataTableColumns<any> = [
         { size: 4 },
         {
           default: () => [
-            h(NTag, { size: "small", bordered: false }, { default: () => fulfillmentTypeText(row.fulfillment_type) }),
+            h(
+              NTag,
+              { size: "small", bordered: false },
+              { default: () => fulfillmentTypeText(row.fulfillment_type) },
+            ),
             h(
               NTag,
               {
@@ -355,7 +436,12 @@ const amountColumns: DataTableColumns<any> = [
         { default: () => formatSignedMoney(row.amount_cents) },
       ),
   },
-  { title: "来源", key: "source_type", width: 100, render: (row) => sourceTypeText(row.source_type) },
+  {
+    title: "来源",
+    key: "source_type",
+    width: 100,
+    render: (row) => sourceTypeText(row.source_type),
+  },
 ];
 
 async function loadOrders() {
@@ -367,6 +453,7 @@ async function loadOrders() {
     const { data, error } = await fetchOrders({
       ...reportFilter.value,
       status: statusFilter.value || undefined,
+      shipping_status: shippingFilter.value || undefined,
       cursor: cur || undefined,
       limit: pageSize.value,
       keyword: keyword.value || undefined,
@@ -395,7 +482,11 @@ function clearSearch() {
 }
 
 function canDelete(row: any) {
-  return checkAuth("order:delete") && ["canceled", "expired"].includes(row.status) && !Number(row.paid_at);
+  return (
+    checkAuth("order:delete") &&
+    ["canceled", "expired"].includes(row.status) &&
+    !Number(row.paid_at)
+  );
 }
 
 async function handleDelete(orderNos: string[]) {
@@ -465,35 +556,57 @@ const showRefund = ref(false);
 const refunding = ref(false);
 const refundForm = reactive({
   expected_refunded_cents: 0,
-  expected_refunded_fee_cents: 0, fee_yuan: 0, max_fee_cents: 0,
+  expected_refunded_fee_cents: 0,
+  fee_yuan: 0,
+  max_fee_cents: 0,
   max_cents: 0,
   order_no: "",
   amount_yuan: 0,
   channel: "wallet" as string,
   reason: "",
 });
-const refundableStatuses = ["paid", "fulfilling", "delivered", "completed", "partially_delivered", "refunded"];
+const refundableStatuses = [
+  "paid",
+  "fulfilling",
+  "delivered",
+  "completed",
+  "partially_delivered",
+  "refunded",
+];
 
 async function openRefund(row: any) {
-  const {data,error}=await fetchOrder(row.order_no);
-  if(error || !data) return;
-  const current=data as any;
-  if (!current.user_id) { window.$message?.warning("游客订单没有会员余额，请核实其他退款方式"); return; }
-  refundForm.order_no=current.order_no;
-  refundForm.expected_refunded_cents=Number(current.refunded_cents || 0);
-  refundForm.max_cents=Number(current.total_cents)-refundForm.expected_refunded_cents;
-  refundForm.expected_refunded_fee_cents=Number(current.refunded_fee_cents || 0);
-  refundForm.max_fee_cents=Math.max(0, Number(current.paid_fee_cents || 0)-refundForm.expected_refunded_fee_cents);
-  refundForm.fee_yuan=Number((refundForm.max_fee_cents/100).toFixed(2));
-  if(refundForm.max_cents<=0 && refundForm.max_fee_cents<=0) {window.$message?.info("订单已全部退款");return;}
-  refundForm.amount_yuan=Number((refundForm.max_cents / 100).toFixed(2));
-  refundForm.channel="wallet";
-  refundForm.reason="";
-  showRefund.value=true;
+  const { data, error } = await fetchOrder(row.order_no);
+  if (error || !data) return;
+  const current = data as any;
+  if (!current.user_id) {
+    window.$message?.warning("游客订单没有会员余额，请核实其他退款方式");
+    return;
+  }
+  refundForm.order_no = current.order_no;
+  refundForm.expected_refunded_cents = Number(current.refunded_cents || 0);
+  refundForm.max_cents = Number(current.total_cents) - refundForm.expected_refunded_cents;
+  refundForm.expected_refunded_fee_cents = Number(current.refunded_fee_cents || 0);
+  refundForm.max_fee_cents = Math.max(
+    0,
+    Number(current.paid_fee_cents || 0) - refundForm.expected_refunded_fee_cents,
+  );
+  refundForm.fee_yuan = Number((refundForm.max_fee_cents / 100).toFixed(2));
+  if (refundForm.max_cents <= 0 && refundForm.max_fee_cents <= 0) {
+    window.$message?.info("订单已全部退款");
+    return;
+  }
+  refundForm.amount_yuan = Number((refundForm.max_cents / 100).toFixed(2));
+  refundForm.channel = "wallet";
+  refundForm.reason = "";
+  showRefund.value = true;
 }
 
 async function handleRefund() {
-  if (refunding.value || Number(refundForm.amount_yuan || 0) + Number(refundForm.fee_yuan || 0) <= 0) return;
+  if (
+    refunding.value ||
+    Number(refundForm.amount_yuan || 0) + Number(refundForm.fee_yuan || 0) <= 0
+  )
+    return;
   refunding.value = true;
   try {
     const { data, error } = await createRefund({
@@ -525,16 +638,20 @@ async function handleCancel(orderNo: string) {
 }
 
 const appStore = useAppStore();
-watch(() => route.fullPath, () => {
-  if (route.path !== "/order") return;
-  statusFilter.value = String(route.query.status || "");
-  keywordInput.value = "";
-  keyword.value = "";
-  resetOrderList();
-});
+watch(
+  () => route.fullPath,
+  () => {
+    if (route.path !== "/order") return;
+    statusFilter.value = String(route.query.status || "");
+    keywordInput.value = "";
+    keyword.value = "";
+    resetOrderList();
+  },
+);
 onMounted(async () => {
   await loadOrders();
-  if (typeof route.query.order_no === "string" && route.query.order_no) await handleDetail(route.query.order_no);
+  if (typeof route.query.order_no === "string" && route.query.order_no)
+    await handleDetail(route.query.order_no);
 });
 </script>
 
@@ -542,26 +659,89 @@ onMounted(async () => {
   <div class="order-page min-h-500px min-w-0 flex-col gap-16px">
     <NCard title="订单管理" class="flex-1">
       <div v-if="fromDashboard" class="mb-12px flex flex-wrap gap-8px items-center text-13px">
-        <span>工作台筛选<span v-if="reportFilter.start_time && reportFilter.end_time"> · {{ reportFilter.time_field === 'paid' ? '付款' : '创建' }}时间 {{ new Date(reportFilter.start_time * 1000).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}) }} — {{ new Date(reportFilter.end_time * 1000).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}) }}（北京时间）</span><span v-if="reportFilter.product_id"> · 商品 #{{ reportFilter.product_id }}</span><span v-if="reportFilter.channel_code"> · 渠道 {{ reportFilter.channel_code }}</span></span>
-        <NButton size="small" @click="router.replace({path:'/order',query:{}})">清除筛选</NButton>
+        <span
+          >工作台筛选<span v-if="reportFilter.start_time && reportFilter.end_time">
+            · {{ reportFilter.time_field === "paid" ? "付款" : "创建" }}时间
+            {{
+              new Date(reportFilter.start_time * 1000).toLocaleString("zh-CN", {
+                timeZone: "Asia/Shanghai",
+              })
+            }}
+            —
+            {{
+              new Date(reportFilter.end_time * 1000).toLocaleString("zh-CN", {
+                timeZone: "Asia/Shanghai",
+              })
+            }}（北京时间）</span
+          ><span v-if="reportFilter.product_id"> · 商品 #{{ reportFilter.product_id }}</span
+          ><span v-if="reportFilter.channel_code">
+            · 渠道 {{ reportFilter.channel_code }}</span
+          ></span
+        >
+        <NButton size="small" @click="router.replace({ path: '/order', query: {} })"
+          >清除筛选</NButton
+        >
       </div>
       <NTabs type="line">
         <NTabPane name="orders" tab="订单列表">
           <form class="mb-12px flex flex-wrap items-center gap-8px" @submit.prevent="searchOrders">
-            <NInput v-model:value="keywordInput" clearable :maxlength="150" placeholder="搜索订单号 / 联系方式" aria-label="搜索订单号或联系方式" style="width: 320px; max-width: 100%" @clear="clearSearch" />
+            <NInput
+              v-model:value="keywordInput"
+              clearable
+              :maxlength="150"
+              placeholder="搜索订单号 / 联系方式"
+              aria-label="搜索订单号或联系方式"
+              style="width: 320px; max-width: 100%"
+              @clear="clearSearch"
+            />
             <NButton attr-type="submit" type="primary">搜索</NButton>
             <NButton @click="clearSearch">重置</NButton>
-            <NPopconfirm v-if="checkAuth('order:delete')" @positive-click="handleDelete([...selectedOrders])">
-              <template #trigger><NButton type="error" :loading="deleting" :disabled="loading || !selectedOrders.length">删除所选（{{ selectedOrders.length }}）</NButton></template>
-              确认从管理列表删除选中的 {{ selectedOrders.length }} 条订单？仅支持已取消、已过期的未付款订单，关联支付及审计记录保留。
+            <NPopconfirm
+              v-if="checkAuth('order:delete')"
+              @positive-click="handleDelete([...selectedOrders])"
+            >
+              <template #trigger
+                ><NButton
+                  type="error"
+                  :loading="deleting"
+                  :disabled="loading || !selectedOrders.length"
+                  >删除所选（{{ selectedOrders.length }}）</NButton
+                ></template
+              >
+              确认从管理列表删除选中的
+              {{ selectedOrders.length }}
+              条订单？仅支持已取消、已过期的未付款订单，关联支付及审计记录保留。
             </NPopconfirm>
           </form>
           <div class="mb-16px flex flex-wrap items-center justify-between gap-12px">
-            <FilterTabs v-model:value="statusFilter" :options="statusTabs" @change="resetOrderList" />
+            <FilterTabs
+              v-model:value="statusFilter"
+              :options="statusTabs"
+              @change="resetOrderList"
+            />
+            <NSelect
+              v-model:value="shippingFilter"
+              class="w-180px"
+              :options="[
+                { label: '全部配送状态', value: '' },
+                ...['pending_payment', 'pending', 'partial', 'shipped', 'received', 'canceled'].map(
+                  (value) => ({ value, label: shippingStatus(value) }),
+                ),
+              ]"
+              @update:value="resetOrderList"
+            />
             <NButton @click="loadOrders">刷新</NButton>
           </div>
 
-          <NDataTable v-model:checked-row-keys="selectedOrders" :row-key="(row) => row.order_no" :columns="columns" :data="orders" :loading="loading" :max-height="appStore.isMobile ? undefined : 540" :scroll-x="1140" />
+          <NDataTable
+            v-model:checked-row-keys="selectedOrders"
+            :row-key="(row) => row.order_no"
+            :columns="columns"
+            :data="orders"
+            :loading="loading"
+            :max-height="appStore.isMobile ? undefined : 540"
+            :scroll-x="1140"
+          />
 
           <TablePager
             v-model:page="page"
@@ -583,22 +763,58 @@ onMounted(async () => {
         <NDescriptions :column="2" bordered size="small">
           <NDescriptionsItem label="订单号">{{ detail.order_no }}</NDescriptionsItem>
           <NDescriptionsItem label="状态">{{ statusText(detail.status) }}</NDescriptionsItem>
-          <NDescriptionsItem label="已退本金">{{ formatMoney(detail.refunded_cents || 0) }}</NDescriptionsItem>
-          <NDescriptionsItem label="支付手续费">{{ formatMoney(detail.paid_fee_cents || 0) }}</NDescriptionsItem>
-          <NDescriptionsItem label="已退手续费">{{ formatMoney(detail.refunded_fee_cents || 0) }}</NDescriptionsItem>
+          <NDescriptionsItem label="已退本金">{{
+            formatMoney(detail.refunded_cents || 0)
+          }}</NDescriptionsItem>
+          <NDescriptionsItem label="支付手续费">{{
+            formatMoney(detail.paid_fee_cents || 0)
+          }}</NDescriptionsItem>
+          <NDescriptionsItem label="已退手续费">{{
+            formatMoney(detail.refunded_fee_cents || 0)
+          }}</NDescriptionsItem>
           <NDescriptionsItem label="总额">{{ formatMoney(detail.total_cents) }}</NDescriptionsItem>
           <NDescriptionsItem label="成本">{{ formatMoney(detail.cost_cents) }}</NDescriptionsItem>
-          <NDescriptionsItem label="联系方式">{{ detail.contact || detail.guest_contact || "-" }}</NDescriptionsItem>
+          <NDescriptionsItem label="联系方式">{{
+            detail.contact || detail.guest_contact || "-"
+          }}</NDescriptionsItem>
           <NDescriptionsItem label="IP">{{ detail.client_ip || "-" }}</NDescriptionsItem>
-          <NDescriptionsItem label="付款截止">{{ detail.expired_at ? new Date(Number(detail.expired_at) * 1000).toLocaleString() : '未记录' }}</NDescriptionsItem>
-          <NDescriptionsItem label="超时处理">{{ detail.expiry_review ? '待人工核对' : detail.expiry_reason || '按付款截止时间处理' }}</NDescriptionsItem>
-          <NDescriptionsItem v-if="detail.expiry_reason" label="核对原因">{{ detail.expiry_reason }}</NDescriptionsItem>
-          <NDescriptionsItem v-if="detail.expiry_retry_at && !detail.expiry_review" label="下次核对">{{ new Date(Number(detail.expiry_retry_at) * 1000).toLocaleString() }}</NDescriptionsItem>
+          <NDescriptionsItem label="付款截止">{{
+            detail.expired_at
+              ? new Date(Number(detail.expired_at) * 1000).toLocaleString()
+              : "未记录"
+          }}</NDescriptionsItem>
+          <NDescriptionsItem label="超时处理">{{
+            detail.expiry_review ? "待人工核对" : detail.expiry_reason || "按付款截止时间处理"
+          }}</NDescriptionsItem>
+          <NDescriptionsItem v-if="detail.expiry_reason" label="核对原因">{{
+            detail.expiry_reason
+          }}</NDescriptionsItem>
+          <NDescriptionsItem
+            v-if="detail.expiry_retry_at && !detail.expiry_review"
+            label="下次核对"
+            >{{
+              new Date(Number(detail.expiry_retry_at) * 1000).toLocaleString()
+            }}</NDescriptionsItem
+          >
           <NDescriptionsItem label="订单属性">
             <NSpace :size="4">
-              <NTag v-if="hasDiscount(detail)" size="small" type="success" :bordered="false">已用折扣</NTag>
-              <NTag v-if="(detail.items || []).every((it) => it.is_self)" size="small" type="info" :bordered="false">自营</NTag>
-              <NTag v-else-if="(detail.items || []).some((it) => !it.is_self)" size="small" type="warning" :bordered="false">含上游商品</NTag>
+              <NTag v-if="hasDiscount(detail)" size="small" type="success" :bordered="false"
+                >已用折扣</NTag
+              >
+              <NTag
+                v-if="(detail.items || []).every((it) => it.is_self)"
+                size="small"
+                type="info"
+                :bordered="false"
+                >自营</NTag
+              >
+              <NTag
+                v-else-if="(detail.items || []).some((it) => !it.is_self)"
+                size="small"
+                type="warning"
+                :bordered="false"
+                >含上游商品</NTag
+              >
             </NSpace>
           </NDescriptionsItem>
         </NDescriptions>
@@ -608,13 +824,17 @@ onMounted(async () => {
           <NDivider>上游货源</NDivider>
           <NDescriptions :column="2" bordered size="small">
             <NDescriptionsItem label="上游渠道">{{
-              (detail.items || []).find((it) => it.upstream_source_name)?.upstream_source_name || "-"
+              (detail.items || []).find((it) => it.upstream_source_name)?.upstream_source_name ||
+              "-"
             }}</NDescriptionsItem>
             <NDescriptionsItem label="上游驱动">{{
               (detail.items || []).find((it) => it.upstream_driver)?.upstream_driver || "-"
             }}</NDescriptionsItem>
             <NDescriptionsItem label="上游商品编码" :span="2">
-              {{ (detail.items || []).find((it) => it.upstream_product_code)?.upstream_product_code || "-" }}
+              {{
+                (detail.items || []).find((it) => it.upstream_product_code)
+                  ?.upstream_product_code || "-"
+              }}
             </NDescriptionsItem>
             <NDescriptionsItem label="上游地址" :span="2">
               <a
@@ -630,10 +850,30 @@ onMounted(async () => {
             </NDescriptionsItem>
           </NDescriptions>
         </template>
+        <PhysicalOrderPanel
+          v-if="Number(detail.commerce_version) === 1"
+          :order="detail"
+          @refresh="afterManualDeliver"
+        />
         <NDivider>商品明细</NDivider>
-        <NDataTable :data="detail.items || []" :columns="itemColumns" size="small"  :max-height="540" />
+        <NDataTable
+          :data="detail.items || []"
+          :columns="itemColumns"
+          size="small"
+          :max-height="540"
+        />
         <!-- 卡密交付（完整明文；含取货次数/IP——客服核对场景） -->
-        <div v-for="it in detail.items || []" :key="it.id" class="my-12px rounded-6px border border-gray-200 p-12px"><b>{{it.name}} {{it.sku_name}} · 下单资料</b><OrderAnswers :value="it.form_answers_json" /><p v-if="it.assigned_admin_id" class="text-12px opacity-60">处理人 ID：{{it.assigned_admin_id}}</p></div>
+        <div
+          v-for="it in detail.items || []"
+          :key="it.id"
+          class="my-12px rounded-6px border border-gray-200 p-12px"
+        >
+          <b>{{ it.name }} {{ it.sku_name }} · 下单资料</b
+          ><OrderAnswers :value="it.form_answers_json" />
+          <p v-if="it.assigned_admin_id" class="text-12px opacity-60">
+            处理人 ID：{{ it.assigned_admin_id }}
+          </p>
+        </div>
         <NDivider>交付结果（{{ deliveries.length }} 条）</NDivider>
         <div v-if="deliveries.length" class="flex flex-col gap-8px">
           <div
@@ -642,39 +882,81 @@ onMounted(async () => {
             class="flex items-center gap-10px rounded-6px border border-gray-200 px-12px py-8px dark:border-gray-700"
           >
             <span class="w-24px shrink-0 text-12px text-gray-400">#{{ i + 1 }}</span>
-            <div class="min-w-0 flex-1"><span class="text-12px opacity-60">商品项 #{{d.order_item_id}}</span><pre class="whitespace-pre-wrap break-all text-13px">{{ d.content }}</pre></div>
-            <NTag size="small" :bordered="false" class="shrink-0">{{ d.kind === 'service' ? '服务完成' : deliverModeText(d.delivered_mode) }}</NTag>
+            <div class="min-w-0 flex-1">
+              <span class="text-12px opacity-60">商品项 #{{ d.order_item_id }}</span>
+              <pre class="whitespace-pre-wrap break-all text-13px">{{ d.content }}</pre>
+            </div>
+            <NTag size="small" :bordered="false" class="shrink-0">{{
+              d.kind === "service" ? "服务完成" : deliverModeText(d.delivered_mode)
+            }}</NTag>
             <span class="shrink-0 text-11px text-gray-400">取货 {{ d.fetch_count || 0 }} 次</span>
-            <NButton size="tiny" tertiary type="primary" class="shrink-0" @click="copyCard(d.content, i)">
+            <NButton
+              size="tiny"
+              tertiary
+              type="primary"
+              class="shrink-0"
+              @click="copyCard(d.content, i)"
+            >
               {{ copiedCard === i ? "已复制" : "复制" }}
             </NButton>
           </div>
         </div>
-        <div v-else class="text-12px opacity-50" style="padding: 4px 0;">暂无交付记录</div>
+        <div v-else class="text-12px opacity-50" style="padding: 4px 0">暂无交付记录</div>
         <NDivider>金额明细（{{ (detail.amount_lines || []).length }} 行）</NDivider>
-        <NDataTable :data="detail.amount_lines || []" :columns="amountColumns" size="small"  :max-height="540" />
+        <NDataTable
+          :data="detail.amount_lines || []"
+          :columns="amountColumns"
+          size="small"
+          :max-height="540"
+        />
         <NDivider>状态事件（{{ (detail.status_events || []).length }} 条）</NDivider>
         <!-- 横向时间线（大厂订单详情风格：圆点节点 + 连线 + 时间，可横向滚动） -->
-        <div style="display:flex;align-items:flex-start;overflow-x:auto;padding:4px 4px 8px;">
+        <div style="display: flex; align-items: flex-start; overflow-x: auto; padding: 4px 4px 8px">
           <div
             v-for="(evt, i) in sortedEvents(detail.status_events || [])"
             :key="i"
-            style="display:flex;align-items:flex-start;"
+            style="display: flex; align-items: flex-start"
           >
-            <div v-if="i > 0" style="width:28px;height:2px;margin-top:13px;background:#d0d7de;" />
-            <div style="min-width:96px;padding:0 4px;text-align:center;">
+            <div
+              v-if="i > 0"
+              style="width: 28px; height: 2px; margin-top: 13px; background: #d0d7de"
+            />
+            <div style="min-width: 96px; padding: 0 4px; text-align: center">
               <div
-                style="width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #d0d7de;margin:0 auto;"
-                :style="{ background: ['paid', 'delivered', 'completed', 'fulfilled'].includes(evt.event) ? '#18a058' : ['canceled', 'expired', 'refunded'].includes(evt.event) ? '#d03050' : '#2080f0' }"
+                style="
+                  width: 12px;
+                  height: 12px;
+                  border-radius: 50%;
+                  border: 2px solid #fff;
+                  box-shadow: 0 0 0 1px #d0d7de;
+                  margin: 0 auto;
+                "
+                :style="{
+                  background: ['paid', 'delivered', 'completed', 'fulfilled'].includes(evt.event)
+                    ? '#18a058'
+                    : ['canceled', 'expired', 'refunded'].includes(evt.event)
+                      ? '#d03050'
+                      : '#2080f0',
+                }"
               />
               <div
                 class="mt-8px text-12px font-500"
-                :style="{ color: ['paid', 'delivered', 'completed', 'fulfilled'].includes(evt.event) ? '#18a058' : ['canceled', 'expired', 'refunded'].includes(evt.event) ? '#d03050' : '#2080f0' }"
+                :style="{
+                  color: ['paid', 'delivered', 'completed', 'fulfilled'].includes(evt.event)
+                    ? '#18a058'
+                    : ['canceled', 'expired', 'refunded'].includes(evt.event)
+                      ? '#d03050'
+                      : '#2080f0',
+                }"
               >
                 {{ eventText(evt.event) }}
               </div>
               <div class="text-11px opacity-50 mt-2px">
-                {{ evt.from_status && evt.to_status ? statusText(evt.from_status) + " → " + statusText(evt.to_status) : "" }}
+                {{
+                  evt.from_status && evt.to_status
+                    ? statusText(evt.from_status) + " → " + statusText(evt.to_status)
+                    : ""
+                }}
               </div>
               <div class="text-11px opacity-60 mt-2px">{{ formatTime(evt.created_at) }}</div>
               <div class="text-11px opacity-50 mt-2px">
@@ -682,7 +964,11 @@ onMounted(async () => {
               </div>
             </div>
           </div>
-          <div v-if="(detail.status_events || []).length === 0" class="text-12px opacity-50" style="padding:8px 0;">
+          <div
+            v-if="(detail.status_events || []).length === 0"
+            class="text-12px opacity-50"
+            style="padding: 8px 0"
+          >
             暂无状态事件
           </div>
         </div>
@@ -690,8 +976,27 @@ onMounted(async () => {
       <template #footer>
         <div v-if="detail" class="flex justify-end gap-8px">
           <!-- NPopconfirm 的 trigger 槽必须恰好一个子节点：v-if 放在 Popconfirm 自身（空槽会抛 follower 错误） -->
-          <NButton v-if="checkAuth('procurement:read')" @click="router.push({ path: '/channel', query: { tab: 'procurement', order_no: detail.order_no } }); showDetail = false">关联采购单</NButton>
-          <NButton v-if="['paid', 'fulfilling', 'partially_delivered'].includes(detail.status) && checkAuth('order:deliver')" type="primary" @click="showManualDeliver = true">人工补发</NButton>
+          <NButton
+            v-if="checkAuth('procurement:read')"
+            @click="
+              router.push({
+                path: '/channel',
+                query: { tab: 'procurement', order_no: detail.order_no },
+              });
+              showDetail = false;
+            "
+            >关联采购单</NButton
+          >
+          <NButton
+            v-if="
+              ['paid', 'fulfilling', 'partially_delivered'].includes(detail.status) &&
+              detail.items?.some((it: any) => it.goods_type !== 'physical') &&
+              checkAuth('order:deliver')
+            "
+            type="primary"
+            @click="showManualDeliver = true"
+            >人工补发</NButton
+          >
           <NPopconfirm
             v-if="detail.status === 'pending_payment' && checkAuth('order:cancel')"
             @positive-click="handleCancel(detail.order_no)"
@@ -702,7 +1007,11 @@ onMounted(async () => {
             确定取消该订单？
           </NPopconfirm>
           <NButton
-            v-if="refundableStatuses.includes(detail.status) && checkAuth('order:refund')"
+            v-if="
+              !Number(detail.commerce_version) &&
+              refundableStatuses.includes(detail.status) &&
+              checkAuth('order:refund')
+            "
             size="small"
             type="error"
             @click="openRefund(detail)"
@@ -731,14 +1040,42 @@ onMounted(async () => {
             ]"
           />
         </NFormItem>
-        <p class="mb-12px text-13px">退款将进入下单会员余额；关联佣金或分站利润的订单须全额退款。</p>
+        <p class="mb-12px text-13px">
+          退款将进入下单会员余额；关联佣金或分站利润的订单须全额退款。
+        </p>
         <NFormItem label="退本金(元)" required>
-          <NInputNumber v-model:value="refundForm.amount_yuan" :min="0" :max="refundForm.max_cents / 100" :precision="2" class="w-full" />
+          <NInputNumber
+            v-model:value="refundForm.amount_yuan"
+            :min="0"
+            :max="refundForm.max_cents / 100"
+            :precision="2"
+            class="w-full"
+          />
         </NFormItem>
-        <NFormItem label="退手续费"><NInputNumber v-model:value="refundForm.fee_yuan" :min="0" :max="refundForm.max_fee_cents / 100" :precision="2" class="w-full" /></NFormItem>
-        <p class="text-12px mb-12px">合计退至余额 {{ formatMoney(Math.round((Number(refundForm.amount_yuan || 0) + Number(refundForm.fee_yuan || 0)) * 100)) }}。手续费单独退还，部分退款可调整或填 0。</p>
+        <NFormItem label="退手续费"
+          ><NInputNumber
+            v-model:value="refundForm.fee_yuan"
+            :min="0"
+            :max="refundForm.max_fee_cents / 100"
+            :precision="2"
+            class="w-full"
+        /></NFormItem>
+        <p class="text-12px mb-12px">
+          合计退至余额
+          {{
+            formatMoney(
+              Math.round(
+                (Number(refundForm.amount_yuan || 0) + Number(refundForm.fee_yuan || 0)) * 100,
+              ),
+            )
+          }}。手续费单独退还，部分退款可调整或填 0。
+        </p>
         <NFormItem label="原因">
-          <NInput v-model:value="refundForm.reason" placeholder="选填，会记入订单状态事件与审计" :maxlength="180" />
+          <NInput
+            v-model:value="refundForm.reason"
+            placeholder="选填，会记入订单状态事件与审计"
+            :maxlength="180"
+          />
         </NFormItem>
       </NForm>
       <template #action>
@@ -746,11 +1083,21 @@ onMounted(async () => {
         <NButton type="error" :loading="refunding" @click="handleRefund">确认退款到余额</NButton>
       </template>
     </NModal>
-    <ManualDeliverDialog v-model:show="showManualDeliver" :order-no="detail?.order_no || ''" @delivered="afterManualDeliver" />
+    <ManualDeliverDialog
+      v-model:show="showManualDeliver"
+      :order-no="detail?.order_no || ''"
+      @delivered="afterManualDeliver"
+    />
   </div>
 </template>
 
 <style scoped>
-.order-page { flex-shrink:0; }
-.order-product-names { white-space: normal; overflow-wrap: anywhere; line-height: 1.6; }
+.order-page {
+  flex-shrink: 0;
+}
+.order-product-names {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
 </style>

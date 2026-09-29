@@ -16,7 +16,7 @@
             autocomplete="off"
           />
           <button type="submit" class="query-btn" :disabled="loading">
-            {{ loading ? '查询中…' : '取货' }}
+            {{ loading ? '查询中…' : '查询' }}
           </button>
         </div>
         <div class="query-pwd-row">
@@ -35,7 +35,7 @@
 
     <!-- 未搜索：三步引导 -->
     <div v-if="!result && !error" class="guide-card">
-      <div class="guide-title">三步完成取货</div>
+      <div class="guide-title">三步查询订单</div>
       <div class="guide-steps">
         <div class="guide-step">
           <span class="guide-num">1</span>
@@ -55,7 +55,7 @@
           <span class="guide-num">3</span>
           <div>
             <b>查看交付结果</b>
-            <span class="muted">查看卡密或人工服务结果，未完成服务可查看进度</span>
+            <span class="muted">查看卡密、服务进度或实体商品物流</span>
           </div>
         </div>
       </div>
@@ -67,7 +67,7 @@
         <div class="result-head">
           <div>
             <div class="result-order">找到 {{ guestOrders.length }} 笔订单</div>
-            <div class="result-meta"><span class="muted">输入查询密码后点击对应订单取货</span></div>
+            <div class="result-meta"><span class="muted">输入查询密码后点击对应订单查看</span></div>
           </div>
         </div>
         <div v-for="o in guestOrders" :key="o.order_no" class="guest-order-row">
@@ -78,7 +78,7 @@
           <span class="guest-order-amount">{{ formatMoney(o.total_cents) }}</span>
           <span class="muted guest-order-time">{{ fmtTime(o.created_at) }}</span>
           <button class="btn btn-primary guest-order-btn" :disabled="loading" @click="pickOrder(o.order_no)">
-            {{ loading ? "…" : "取货" }}
+            {{ loading ? "…" : "查看订单" }}
           </button>
         </div>
       </div>
@@ -93,12 +93,14 @@
             <div class="result-order">订单号：{{ result.order_no }}</div>
             <div class="result-meta">
               <span :class="statusBadge(result.status)">{{ statusText(result.status) }}</span>
-              <span class="muted">已取 {{ result.fetch_count || 0 }} 次</span>
+              <span v-if="!physicalOnly" class="muted">已取 {{ result.fetch_count || 0 }} 次</span>
             </div>
           </div>
         </div>
 
-        <div v-if="['paid', 'fulfilling', 'partially_delivered'].includes(result.status)" class="card-list">
+        <ShippingDetails v-if="shippingOrder" :order="shippingOrder" :password="queryPassword" @refresh="pickOrder(result.order_no)" />
+        <div v-if="physicalOnly" class="card-list">{{ result.status === 'pending_payment' ? '订单尚未付款，请在订单详情中继续支付。' : ['canceled', 'expired', 'refunded'].includes(result.status) ? '订单已关闭或退款，请查看上方配送及取消记录。' : '此订单通过快递配送，请查看上方包裹进度。' }}</div>
+        <div v-else-if="['paid', 'fulfilling', 'partially_delivered'].includes(result.status)" class="card-list">
           <p>已付款，{{ result.items.length ? '部分商品已发货，其余商品' : '商品' }}正在安排发货。无需再次支付，也无需注册；稍后用此订单号和查询密码刷新取货。</p>
           <p>人工服务请在订单详情查看处理进度，需帮助时凭订单号联系客服。</p>
           <button class="btn btn-primary" :disabled="loading" @click="pickOrder(result.order_no)">刷新发货结果</button>
@@ -120,11 +122,12 @@
 </template>
 
 <script setup lang="ts">
+import ShippingDetails from '@/components/ShippingDetails.vue';
 import DeliveryResults from '@/components/DeliveryResults.vue';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { getOrderPassword, rememberOrderPassword, fetchDelivery, listGuestOrders, type FetchDeliveryReply, type GuestOrderItem } from '@/api';
-import { formatMoney } from '@/api/client';
+import { getOrder, getOrderPassword, rememberOrderPassword, fetchDelivery, listGuestOrders, type FetchDeliveryReply, type GuestOrderItem } from '@/api';
+import { getToken, formatMoney } from '@/api/client';
 
 const route = useRoute();
 const orderNo = ref('');
@@ -132,6 +135,8 @@ const queryPassword = ref('');
 const loading = ref(false);
 const error = ref('');
 const result = ref<FetchDeliveryReply | null>(null);
+const shippingOrder = ref<any>(null);
+const physicalOnly = computed(() => shippingOrder.value?.items?.length > 0 && shippingOrder.value.items.every((it: any) => it.goods_type === 'physical'));
 const copied = ref<number | null>(null);
 const copiedAll = ref(false);
 // 联系方式模式：游客按下单邮箱/手机号查订单列表
@@ -147,7 +152,7 @@ function looksLikeContact(v: string): boolean {
 // 支付成功/订单列表跳转时预填订单号
 onMounted(() => {
   const q = route.query.order_no;
-  if (typeof q === 'string' && q) { orderNo.value = q; queryPassword.value = getOrderPassword(q); if (queryPassword.value) pickOrder(q); }
+  if (typeof q === 'string' && q) { orderNo.value = q; queryPassword.value = getOrderPassword(q); if (queryPassword.value || getToken()) pickOrder(q); }
 });
 
 async function fetch() {
@@ -158,6 +163,7 @@ async function fetch() {
   }
   error.value = '';
   result.value = null;
+  shippingOrder.value = null;
   guestOrders.value = [];
 
   // 联系方式模式（邮箱/手机号）：先查订单列表，密码逐单验证取货
@@ -174,7 +180,7 @@ async function fetch() {
   }
 
   // 订单号模式：密码 + 直接取货
-  if (!queryPassword.value) {
+  if (!queryPassword.value && !getToken()) {
     error.value = '请填写查询密码';
     return;
   }
@@ -183,16 +189,19 @@ async function fetch() {
 
 /** 列表/直连取货：订单号 + 查询密码 → 卡密 */
 async function pickOrder(no: string) {
-  if (!queryPassword.value) {
+  if (!queryPassword.value && !getToken()) {
     error.value = '请填写查询密码';
     return;
   }
   loading.value = true;
   error.value = '';
   result.value = null;
+  shippingOrder.value = null;
   const { data, error: err } = await fetchDelivery(no, queryPassword.value);
+  if (err) { loading.value = false; error.value = err; return; }
+  const detail = await getOrder(no, queryPassword.value);
+  if (detail.data?.commerce_version === 1) shippingOrder.value = detail.data;
   loading.value = false;
-  if (err) { error.value = err; return; }
   result.value = data;
   if (data) rememberOrderPassword(no, queryPassword.value);
   guestOrders.value = []; // 取货成功收起列表

@@ -22,6 +22,8 @@ const (
 	FieldSubsiteID = "subsite_id"
 	// FieldProductID holds the string denoting the product_id field in the database.
 	FieldProductID = "product_id"
+	// FieldPhysicalStock holds the string denoting the physical_stock field in the database.
+	FieldPhysicalStock = "physical_stock"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldSpecValues holds the string denoting the spec_values field in the database.
@@ -56,6 +58,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldSubsiteID,
 	FieldProductID,
+	FieldPhysicalStock,
 	FieldName,
 	FieldSpecValues,
 	FieldPrice,
@@ -84,6 +87,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultSubsiteID holds the default value on creation for the "subsite_id" field.
 	DefaultSubsiteID uint64
+	// DefaultPhysicalStock holds the default value on creation for the "physical_stock" field.
+	DefaultPhysicalStock int64
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 	// DefaultFulfillmentMode holds the default value on creation for the "fulfillment_mode" field.
@@ -120,6 +125,11 @@ func BySubsiteID(opts ...sql.OrderTermOption) OrderOption {
 // ByProductID orders the results by the product_id field.
 func ByProductID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProductID, opts...).ToFunc()
+}
+
+// ByPhysicalStock orders the results by the physical_stock field.
+func ByPhysicalStock(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPhysicalStock, opts...).ToFunc()
 }
 
 // ByName orders the results by the name field.

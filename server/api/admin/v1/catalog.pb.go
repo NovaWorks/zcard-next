@@ -294,6 +294,11 @@ func (x *GetProductRequest) GetId() uint64 {
 // AdminProduct 管理面商品（含成本价等敏感字段）。
 type AdminProduct struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
+	GoodsType           string                 `protobuf:"bytes,50,opt,name=goods_type,json=goodsType,proto3" json:"goods_type,omitempty"`
+	ShippingMode        string                 `protobuf:"bytes,51,opt,name=shipping_mode,json=shippingMode,proto3" json:"shipping_mode,omitempty"`
+	ShippingFeeCents    int64                  `protobuf:"varint,52,opt,name=shipping_fee_cents,json=shippingFeeCents,proto3" json:"shipping_fee_cents,omitempty"`
+	ShippingCountries   []string               `protobuf:"bytes,53,rep,name=shipping_countries,json=shippingCountries,proto3" json:"shipping_countries,omitempty"`
+	PhysicalStock       int64                  `protobuf:"varint,54,opt,name=physical_stock,json=physicalStock,proto3" json:"physical_stock,omitempty"`
 	FulfillmentMode     string                 `protobuf:"bytes,30,opt,name=fulfillment_mode,json=fulfillmentMode,proto3" json:"fulfillment_mode,omitempty"`
 	ManualStock         *int64                 `protobuf:"varint,31,opt,name=manual_stock,json=manualStock,proto3,oneof" json:"manual_stock,omitempty"`
 	Id                  uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -371,6 +376,41 @@ func (x *AdminProduct) ProtoReflect() protoreflect.Message {
 // Deprecated: Use AdminProduct.ProtoReflect.Descriptor instead.
 func (*AdminProduct) Descriptor() ([]byte, []int) {
 	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AdminProduct) GetGoodsType() string {
+	if x != nil {
+		return x.GoodsType
+	}
+	return ""
+}
+
+func (x *AdminProduct) GetShippingMode() string {
+	if x != nil {
+		return x.ShippingMode
+	}
+	return ""
+}
+
+func (x *AdminProduct) GetShippingFeeCents() int64 {
+	if x != nil {
+		return x.ShippingFeeCents
+	}
+	return 0
+}
+
+func (x *AdminProduct) GetShippingCountries() []string {
+	if x != nil {
+		return x.ShippingCountries
+	}
+	return nil
+}
+
+func (x *AdminProduct) GetPhysicalStock() int64 {
+	if x != nil {
+		return x.PhysicalStock
+	}
+	return 0
 }
 
 func (x *AdminProduct) GetFulfillmentMode() string {
@@ -662,6 +702,11 @@ func (x *AdminProduct) GetLowStockMessage() string {
 
 type CreateProductRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
+	GoodsType         *string                `protobuf:"bytes,50,opt,name=goods_type,json=goodsType,proto3,oneof" json:"goods_type,omitempty"`
+	ShippingMode      *string                `protobuf:"bytes,51,opt,name=shipping_mode,json=shippingMode,proto3,oneof" json:"shipping_mode,omitempty"`
+	ShippingFeeCents  *int64                 `protobuf:"varint,52,opt,name=shipping_fee_cents,json=shippingFeeCents,proto3,oneof" json:"shipping_fee_cents,omitempty"`
+	ShippingCountries []string               `protobuf:"bytes,53,rep,name=shipping_countries,json=shippingCountries,proto3" json:"shipping_countries,omitempty"`
+	PhysicalStock     *int64                 `protobuf:"varint,54,opt,name=physical_stock,json=physicalStock,proto3,oneof" json:"physical_stock,omitempty"`
 	FulfillmentMode   string                 `protobuf:"bytes,17,opt,name=fulfillment_mode,json=fulfillmentMode,proto3" json:"fulfillment_mode,omitempty"`
 	ManualStock       *int64                 `protobuf:"varint,18,opt,name=manual_stock,json=manualStock,proto3,oneof" json:"manual_stock,omitempty"`
 	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -715,6 +760,41 @@ func (x *CreateProductRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateProductRequest.ProtoReflect.Descriptor instead.
 func (*CreateProductRequest) Descriptor() ([]byte, []int) {
 	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CreateProductRequest) GetGoodsType() string {
+	if x != nil && x.GoodsType != nil {
+		return *x.GoodsType
+	}
+	return ""
+}
+
+func (x *CreateProductRequest) GetShippingMode() string {
+	if x != nil && x.ShippingMode != nil {
+		return *x.ShippingMode
+	}
+	return ""
+}
+
+func (x *CreateProductRequest) GetShippingFeeCents() int64 {
+	if x != nil && x.ShippingFeeCents != nil {
+		return *x.ShippingFeeCents
+	}
+	return 0
+}
+
+func (x *CreateProductRequest) GetShippingCountries() []string {
+	if x != nil {
+		return x.ShippingCountries
+	}
+	return nil
+}
+
+func (x *CreateProductRequest) GetPhysicalStock() int64 {
+	if x != nil && x.PhysicalStock != nil {
+		return *x.PhysicalStock
+	}
+	return 0
 }
 
 func (x *CreateProductRequest) GetFulfillmentMode() string {
@@ -844,21 +924,27 @@ func (x *CreateProductRequest) GetIsRecommend() bool {
 }
 
 type UpdateProductRequest struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	FulfillmentMode   string                 `protobuf:"bytes,17,opt,name=fulfillment_mode,json=fulfillmentMode,proto3" json:"fulfillment_mode,omitempty"`
-	ManualStock       *int64                 `protobuf:"varint,18,opt,name=manual_stock,json=manualStock,proto3,oneof" json:"manual_stock,omitempty"`
-	Id                uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name              string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	CategoryId        uint64                 `protobuf:"varint,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	Description       string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Cover             string                 `protobuf:"bytes,5,opt,name=cover,proto3" json:"cover,omitempty"`
-	Images            []string               `protobuf:"bytes,6,rep,name=images,proto3" json:"images,omitempty"`
-	PriceCents        int64                  `protobuf:"varint,7,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
-	FactoryPriceCents int64                  `protobuf:"varint,8,opt,name=factory_price_cents,json=factoryPriceCents,proto3" json:"factory_price_cents,omitempty"`
-	DeliveryMode      string                 `protobuf:"bytes,9,opt,name=delivery_mode,json=deliveryMode,proto3" json:"delivery_mode,omitempty"`
-	StockVisible      bool                   `protobuf:"varint,10,opt,name=stock_visible,json=stockVisible,proto3" json:"stock_visible,omitempty"`
-	Sort              int32                  `protobuf:"varint,11,opt,name=sort,proto3" json:"sort,omitempty"`
-	Status            int32                  `protobuf:"varint,12,opt,name=status,proto3" json:"status,omitempty"`
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	ExpectedPhysicalStock *int64                 `protobuf:"varint,55,opt,name=expected_physical_stock,json=expectedPhysicalStock,proto3,oneof" json:"expected_physical_stock,omitempty"`
+	GoodsType             *string                `protobuf:"bytes,50,opt,name=goods_type,json=goodsType,proto3,oneof" json:"goods_type,omitempty"`
+	ShippingMode          *string                `protobuf:"bytes,51,opt,name=shipping_mode,json=shippingMode,proto3,oneof" json:"shipping_mode,omitempty"`
+	ShippingFeeCents      *int64                 `protobuf:"varint,52,opt,name=shipping_fee_cents,json=shippingFeeCents,proto3,oneof" json:"shipping_fee_cents,omitempty"`
+	ShippingCountries     []string               `protobuf:"bytes,53,rep,name=shipping_countries,json=shippingCountries,proto3" json:"shipping_countries,omitempty"`
+	PhysicalStock         *int64                 `protobuf:"varint,54,opt,name=physical_stock,json=physicalStock,proto3,oneof" json:"physical_stock,omitempty"`
+	FulfillmentMode       string                 `protobuf:"bytes,17,opt,name=fulfillment_mode,json=fulfillmentMode,proto3" json:"fulfillment_mode,omitempty"`
+	ManualStock           *int64                 `protobuf:"varint,18,opt,name=manual_stock,json=manualStock,proto3,oneof" json:"manual_stock,omitempty"`
+	Id                    uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	CategoryId            uint64                 `protobuf:"varint,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	Description           string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	Cover                 string                 `protobuf:"bytes,5,opt,name=cover,proto3" json:"cover,omitempty"`
+	Images                []string               `protobuf:"bytes,6,rep,name=images,proto3" json:"images,omitempty"`
+	PriceCents            int64                  `protobuf:"varint,7,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
+	FactoryPriceCents     int64                  `protobuf:"varint,8,opt,name=factory_price_cents,json=factoryPriceCents,proto3" json:"factory_price_cents,omitempty"`
+	DeliveryMode          string                 `protobuf:"bytes,9,opt,name=delivery_mode,json=deliveryMode,proto3" json:"delivery_mode,omitempty"`
+	StockVisible          bool                   `protobuf:"varint,10,opt,name=stock_visible,json=stockVisible,proto3" json:"stock_visible,omitempty"`
+	Sort                  int32                  `protobuf:"varint,11,opt,name=sort,proto3" json:"sort,omitempty"`
+	Status                int32                  `protobuf:"varint,12,opt,name=status,proto3" json:"status,omitempty"`
 	// 积分兑换价（0=不参与积分商城；）
 	PointsRequired int64 `protobuf:"varint,13,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
 	// 直发内容明文（空=保持不变；url/code 商品加密存储）
@@ -899,6 +985,48 @@ func (x *UpdateProductRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use UpdateProductRequest.ProtoReflect.Descriptor instead.
 func (*UpdateProductRequest) Descriptor() ([]byte, []int) {
 	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *UpdateProductRequest) GetExpectedPhysicalStock() int64 {
+	if x != nil && x.ExpectedPhysicalStock != nil {
+		return *x.ExpectedPhysicalStock
+	}
+	return 0
+}
+
+func (x *UpdateProductRequest) GetGoodsType() string {
+	if x != nil && x.GoodsType != nil {
+		return *x.GoodsType
+	}
+	return ""
+}
+
+func (x *UpdateProductRequest) GetShippingMode() string {
+	if x != nil && x.ShippingMode != nil {
+		return *x.ShippingMode
+	}
+	return ""
+}
+
+func (x *UpdateProductRequest) GetShippingFeeCents() int64 {
+	if x != nil && x.ShippingFeeCents != nil {
+		return *x.ShippingFeeCents
+	}
+	return 0
+}
+
+func (x *UpdateProductRequest) GetShippingCountries() []string {
+	if x != nil {
+		return x.ShippingCountries
+	}
+	return nil
+}
+
+func (x *UpdateProductRequest) GetPhysicalStock() int64 {
+	if x != nil && x.PhysicalStock != nil {
+		return *x.PhysicalStock
+	}
+	return 0
 }
 
 func (x *UpdateProductRequest) GetFulfillmentMode() string {
@@ -3053,6 +3181,7 @@ func (x *SkuList) GetSkus() []*Sku {
 // Sku 管理面多规格（含成本价）。
 type Sku struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
+	PhysicalStock   *int64                 `protobuf:"varint,20,opt,name=physical_stock,json=physicalStock,proto3,oneof" json:"physical_stock,omitempty"`
 	FulfillmentMode string                 `protobuf:"bytes,9,opt,name=fulfillment_mode,json=fulfillmentMode,proto3" json:"fulfillment_mode,omitempty"`
 	Id              uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	ProductId       uint64                 `protobuf:"varint,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
@@ -3094,6 +3223,13 @@ func (x *Sku) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Sku.ProtoReflect.Descriptor instead.
 func (*Sku) Descriptor() ([]byte, []int) {
 	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *Sku) GetPhysicalStock() int64 {
+	if x != nil && x.PhysicalStock != nil {
+		return *x.PhysicalStock
+	}
+	return 0
 }
 
 func (x *Sku) GetFulfillmentMode() string {
@@ -3161,6 +3297,7 @@ func (x *Sku) GetUpstreamSkuId() string {
 
 type CreateSkuRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
+	PhysicalStock   *int64                 `protobuf:"varint,20,opt,name=physical_stock,json=physicalStock,proto3,oneof" json:"physical_stock,omitempty"`
 	FulfillmentMode string                 `protobuf:"bytes,8,opt,name=fulfillment_mode,json=fulfillmentMode,proto3" json:"fulfillment_mode,omitempty"`
 	ProductId       uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
@@ -3201,6 +3338,13 @@ func (x *CreateSkuRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateSkuRequest.ProtoReflect.Descriptor instead.
 func (*CreateSkuRequest) Descriptor() ([]byte, []int) {
 	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *CreateSkuRequest) GetPhysicalStock() int64 {
+	if x != nil && x.PhysicalStock != nil {
+		return *x.PhysicalStock
+	}
+	return 0
 }
 
 func (x *CreateSkuRequest) GetFulfillmentMode() string {
@@ -3260,17 +3404,19 @@ func (x *CreateSkuRequest) GetUpstreamSkuId() string {
 }
 
 type UpdateSkuRequest struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	FulfillmentMode string                 `protobuf:"bytes,8,opt,name=fulfillment_mode,json=fulfillmentMode,proto3" json:"fulfillment_mode,omitempty"`
-	Id              uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	SpecValues      map[string]string      `protobuf:"bytes,3,rep,name=spec_values,json=specValues,proto3" json:"spec_values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	PriceCents      *int64                 `protobuf:"varint,4,opt,name=price_cents,json=priceCents,proto3,oneof" json:"price_cents,omitempty"`
-	CostCents       *int64                 `protobuf:"varint,5,opt,name=cost_cents,json=costCents,proto3,oneof" json:"cost_cents,omitempty"`
-	StockOffset     *int32                 `protobuf:"varint,6,opt,name=stock_offset,json=stockOffset,proto3,oneof" json:"stock_offset,omitempty"`
-	UpstreamSkuId   string                 `protobuf:"bytes,7,opt,name=upstream_sku_id,json=upstreamSkuId,proto3" json:"upstream_sku_id,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	ExpectedPhysicalStock *int64                 `protobuf:"varint,21,opt,name=expected_physical_stock,json=expectedPhysicalStock,proto3,oneof" json:"expected_physical_stock,omitempty"`
+	PhysicalStock         *int64                 `protobuf:"varint,20,opt,name=physical_stock,json=physicalStock,proto3,oneof" json:"physical_stock,omitempty"`
+	FulfillmentMode       string                 `protobuf:"bytes,8,opt,name=fulfillment_mode,json=fulfillmentMode,proto3" json:"fulfillment_mode,omitempty"`
+	Id                    uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	SpecValues            map[string]string      `protobuf:"bytes,3,rep,name=spec_values,json=specValues,proto3" json:"spec_values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	PriceCents            *int64                 `protobuf:"varint,4,opt,name=price_cents,json=priceCents,proto3,oneof" json:"price_cents,omitempty"`
+	CostCents             *int64                 `protobuf:"varint,5,opt,name=cost_cents,json=costCents,proto3,oneof" json:"cost_cents,omitempty"`
+	StockOffset           *int32                 `protobuf:"varint,6,opt,name=stock_offset,json=stockOffset,proto3,oneof" json:"stock_offset,omitempty"`
+	UpstreamSkuId         string                 `protobuf:"bytes,7,opt,name=upstream_sku_id,json=upstreamSkuId,proto3" json:"upstream_sku_id,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *UpdateSkuRequest) Reset() {
@@ -3301,6 +3447,20 @@ func (x *UpdateSkuRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use UpdateSkuRequest.ProtoReflect.Descriptor instead.
 func (*UpdateSkuRequest) Descriptor() ([]byte, []int) {
 	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *UpdateSkuRequest) GetExpectedPhysicalStock() int64 {
+	if x != nil && x.ExpectedPhysicalStock != nil {
+		return *x.ExpectedPhysicalStock
+	}
+	return 0
+}
+
+func (x *UpdateSkuRequest) GetPhysicalStock() int64 {
+	if x != nil && x.PhysicalStock != nil {
+		return *x.PhysicalStock
+	}
+	return 0
 }
 
 func (x *UpdateSkuRequest) GetFulfillmentMode() string {
@@ -5744,8 +5904,14 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"(\n" +
 	"\x11GetProductRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xb0\v\n" +
-	"\fAdminProduct\x12)\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xf8\f\n" +
+	"\fAdminProduct\x12\x1d\n" +
+	"\n" +
+	"goods_type\x182 \x01(\tR\tgoodsType\x12#\n" +
+	"\rshipping_mode\x183 \x01(\tR\fshippingMode\x12,\n" +
+	"\x12shipping_fee_cents\x184 \x01(\x03R\x10shippingFeeCents\x12-\n" +
+	"\x12shipping_countries\x185 \x03(\tR\x11shippingCountries\x12%\n" +
+	"\x0ephysical_stock\x186 \x01(\x03R\rphysicalStock\x12)\n" +
 	"\x10fulfillment_mode\x18\x1e \x01(\tR\x0ffulfillmentMode\x12&\n" +
 	"\fmanual_stock\x18\x1f \x01(\x03H\x00R\vmanualStock\x88\x01\x01\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1f\n" +
@@ -5794,10 +5960,16 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x11listing_restocked\x18' \x01(\bR\x10listingRestocked\x12.\n" +
 	"\x13listing_observed_at\x18( \x01(\x03R\x11listingObservedAt\x12*\n" +
 	"\x11low_stock_message\x18) \x01(\tR\x0flowStockMessageB\x0f\n" +
-	"\r_manual_stock\"\xfd\x04\n" +
-	"\x14CreateProductRequest\x12)\n" +
+	"\r_manual_stock\"\xa4\a\n" +
+	"\x14CreateProductRequest\x12\"\n" +
+	"\n" +
+	"goods_type\x182 \x01(\tH\x00R\tgoodsType\x88\x01\x01\x12(\n" +
+	"\rshipping_mode\x183 \x01(\tH\x01R\fshippingMode\x88\x01\x01\x121\n" +
+	"\x12shipping_fee_cents\x184 \x01(\x03H\x02R\x10shippingFeeCents\x88\x01\x01\x12-\n" +
+	"\x12shipping_countries\x185 \x03(\tR\x11shippingCountries\x12*\n" +
+	"\x0ephysical_stock\x186 \x01(\x03H\x03R\rphysicalStock\x88\x01\x01\x12)\n" +
 	"\x10fulfillment_mode\x18\x11 \x01(\tR\x0ffulfillmentMode\x12&\n" +
-	"\fmanual_stock\x18\x12 \x01(\x03H\x00R\vmanualStock\x88\x01\x01\x12\x17\n" +
+	"\fmanual_stock\x18\x12 \x01(\x03H\x04R\vmanualStock\x88\x01\x01\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x1f\n" +
 	"\vcategory_id\x18\x02 \x01(\x04R\n" +
 	"categoryId\x12 \n" +
@@ -5817,11 +5989,22 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x06status\x18\r \x01(\x05R\x06status\x12'\n" +
 	"\x0fpoints_required\x18\x0e \x01(\x03R\x0epointsRequired\x12%\n" +
 	"\x0edirect_content\x18\x0f \x01(\tR\rdirectContent\x12!\n" +
-	"\fis_recommend\x18\x10 \x01(\bR\visRecommendB\x0f\n" +
-	"\r_manual_stock\"\xed\x04\n" +
-	"\x14UpdateProductRequest\x12)\n" +
+	"\fis_recommend\x18\x10 \x01(\bR\visRecommendB\r\n" +
+	"\v_goods_typeB\x10\n" +
+	"\x0e_shipping_modeB\x15\n" +
+	"\x13_shipping_fee_centsB\x11\n" +
+	"\x0f_physical_stockB\x0f\n" +
+	"\r_manual_stock\"\xed\a\n" +
+	"\x14UpdateProductRequest\x12;\n" +
+	"\x17expected_physical_stock\x187 \x01(\x03H\x00R\x15expectedPhysicalStock\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"goods_type\x182 \x01(\tH\x01R\tgoodsType\x88\x01\x01\x12(\n" +
+	"\rshipping_mode\x183 \x01(\tH\x02R\fshippingMode\x88\x01\x01\x121\n" +
+	"\x12shipping_fee_cents\x184 \x01(\x03H\x03R\x10shippingFeeCents\x88\x01\x01\x12-\n" +
+	"\x12shipping_countries\x185 \x03(\tR\x11shippingCountries\x12*\n" +
+	"\x0ephysical_stock\x186 \x01(\x03H\x04R\rphysicalStock\x88\x01\x01\x12)\n" +
 	"\x10fulfillment_mode\x18\x11 \x01(\tR\x0ffulfillmentMode\x12&\n" +
-	"\fmanual_stock\x18\x12 \x01(\x03H\x00R\vmanualStock\x88\x01\x01\x12\x13\n" +
+	"\fmanual_stock\x18\x12 \x01(\x03H\x05R\vmanualStock\x88\x01\x01\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
 	"\vcategory_id\x18\x03 \x01(\x04R\n" +
@@ -5841,7 +6024,12 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x0edirect_content\x18\x0e \x01(\tR\rdirectContent\x12!\n" +
 	"\fis_recommend\x18\x0f \x01(\bR\visRecommend\x12\x1d\n" +
 	"\n" +
-	"stock_type\x18\x10 \x01(\tR\tstockTypeB\x0f\n" +
+	"stock_type\x18\x10 \x01(\tR\tstockTypeB\x1a\n" +
+	"\x18_expected_physical_stockB\r\n" +
+	"\v_goods_typeB\x10\n" +
+	"\x0e_shipping_modeB\x15\n" +
+	"\x13_shipping_fee_centsB\x11\n" +
+	"\x0f_physical_stockB\x0f\n" +
 	"\r_manual_stock\"\xa5\x01\n" +
 	"\x14DeleteProductRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12#\n" +
@@ -6017,8 +6205,9 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\"6\n" +
 	"\aSkuList\x12+\n" +
-	"\x04skus\x18\x01 \x03(\v2\x17.zcard.api.admin.v1.SkuR\x04skus\"\x87\x03\n" +
-	"\x03Sku\x12)\n" +
+	"\x04skus\x18\x01 \x03(\v2\x17.zcard.api.admin.v1.SkuR\x04skus\"\xc6\x03\n" +
+	"\x03Sku\x12*\n" +
+	"\x0ephysical_stock\x18\x14 \x01(\x03H\x00R\rphysicalStock\x88\x01\x01\x12)\n" +
 	"\x10fulfillment_mode\x18\t \x01(\tR\x0ffulfillmentMode\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
@@ -6034,8 +6223,10 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x0fupstream_sku_id\x18\b \x01(\tR\rupstreamSkuId\x1a=\n" +
 	"\x0fSpecValuesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x9b\x03\n" +
-	"\x10CreateSkuRequest\x12)\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x11\n" +
+	"\x0f_physical_stock\"\xda\x03\n" +
+	"\x10CreateSkuRequest\x12*\n" +
+	"\x0ephysical_stock\x18\x14 \x01(\x03H\x00R\rphysicalStock\x88\x01\x01\x12)\n" +
 	"\x10fulfillment_mode\x18\b \x01(\tR\x0ffulfillmentMode\x12\"\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x17\n" +
@@ -6050,22 +6241,27 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x0fupstream_sku_id\x18\a \x01(\tR\rupstreamSkuId\x1a=\n" +
 	"\x0fSpecValuesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xc6\x03\n" +
-	"\x10UpdateSkuRequest\x12)\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x11\n" +
+	"\x0f_physical_stock\"\xde\x04\n" +
+	"\x10UpdateSkuRequest\x12;\n" +
+	"\x17expected_physical_stock\x18\x15 \x01(\x03H\x00R\x15expectedPhysicalStock\x88\x01\x01\x12*\n" +
+	"\x0ephysical_stock\x18\x14 \x01(\x03H\x01R\rphysicalStock\x88\x01\x01\x12)\n" +
 	"\x10fulfillment_mode\x18\b \x01(\tR\x0ffulfillmentMode\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12U\n" +
 	"\vspec_values\x18\x03 \x03(\v24.zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntryR\n" +
 	"specValues\x12$\n" +
-	"\vprice_cents\x18\x04 \x01(\x03H\x00R\n" +
+	"\vprice_cents\x18\x04 \x01(\x03H\x02R\n" +
 	"priceCents\x88\x01\x01\x12\"\n" +
 	"\n" +
-	"cost_cents\x18\x05 \x01(\x03H\x01R\tcostCents\x88\x01\x01\x12&\n" +
-	"\fstock_offset\x18\x06 \x01(\x05H\x02R\vstockOffset\x88\x01\x01\x12&\n" +
+	"cost_cents\x18\x05 \x01(\x03H\x03R\tcostCents\x88\x01\x01\x12&\n" +
+	"\fstock_offset\x18\x06 \x01(\x05H\x04R\vstockOffset\x88\x01\x01\x12&\n" +
 	"\x0fupstream_sku_id\x18\a \x01(\tR\rupstreamSkuId\x1a=\n" +
 	"\x0fSpecValuesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x0e\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x1a\n" +
+	"\x18_expected_physical_stockB\x11\n" +
+	"\x0f_physical_stockB\x0e\n" +
 	"\f_price_centsB\r\n" +
 	"\v_cost_centsB\x0f\n" +
 	"\r_stock_offset\"'\n" +
@@ -6561,6 +6757,8 @@ func file_admin_v1_catalog_proto_init() {
 	file_admin_v1_catalog_proto_msgTypes[24].OneofWrappers = []any{}
 	file_admin_v1_catalog_proto_msgTypes[25].OneofWrappers = []any{}
 	file_admin_v1_catalog_proto_msgTypes[26].OneofWrappers = []any{}
+	file_admin_v1_catalog_proto_msgTypes[37].OneofWrappers = []any{}
+	file_admin_v1_catalog_proto_msgTypes[38].OneofWrappers = []any{}
 	file_admin_v1_catalog_proto_msgTypes[39].OneofWrappers = []any{}
 	file_admin_v1_catalog_proto_msgTypes[49].OneofWrappers = []any{}
 	type x struct{}

@@ -55,6 +55,9 @@ func (uc *OrderUsecase) cancelOrder(ctx context.Context, no, reason, operator st
 			}
 			q.Where(order.ExpiredAtLT(now), uc.expiryReviewFilter(now), order.Or(order.ExpiryRetryAtIsNil(), order.ExpiryRetryAtLTE(now)))
 		}
+		if o.CommerceVersion == 1 {
+			q.SetShippingStatus("canceled")
+		}
 		n, err := q.SetStatus(order.StatusCanceled).SetClosedAt(now).SetExpiryReview(false).SetExpiryReason("").ClearExpiryRetryAt().SetVersion(o.Version + 1).Save(ctx)
 		if err != nil {
 			return err
@@ -66,6 +69,9 @@ func (uc *OrderUsecase) cancelOrder(ctx context.Context, no, reason, operator st
 			return err
 		}
 		if err = uc.settleFlashReservations(ctx, o, false); err != nil {
+			return err
+		}
+		if err = data.ReleasePhysicalStock(ctx, uc.Data, o.ID, reason); err != nil {
 			return err
 		}
 		if err = uc.Inv.Release(ctx, o.ID); err != nil {

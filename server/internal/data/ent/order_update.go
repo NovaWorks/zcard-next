@@ -232,6 +232,88 @@ func (_u *OrderUpdate) SetNillableStatus(v *order.Status) *OrderUpdate {
 	return _u
 }
 
+// SetCommerceVersion sets the "commerce_version" field.
+func (_u *OrderUpdate) SetCommerceVersion(v int32) *OrderUpdate {
+	_u.mutation.ResetCommerceVersion()
+	_u.mutation.SetCommerceVersion(v)
+	return _u
+}
+
+// SetNillableCommerceVersion sets the "commerce_version" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableCommerceVersion(v *int32) *OrderUpdate {
+	if v != nil {
+		_u.SetCommerceVersion(*v)
+	}
+	return _u
+}
+
+// AddCommerceVersion adds value to the "commerce_version" field.
+func (_u *OrderUpdate) AddCommerceVersion(v int32) *OrderUpdate {
+	_u.mutation.AddCommerceVersion(v)
+	return _u
+}
+
+// SetShippingAmount sets the "shipping_amount" field.
+func (_u *OrderUpdate) SetShippingAmount(v int64) *OrderUpdate {
+	_u.mutation.ResetShippingAmount()
+	_u.mutation.SetShippingAmount(v)
+	return _u
+}
+
+// SetNillableShippingAmount sets the "shipping_amount" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableShippingAmount(v *int64) *OrderUpdate {
+	if v != nil {
+		_u.SetShippingAmount(*v)
+	}
+	return _u
+}
+
+// AddShippingAmount adds value to the "shipping_amount" field.
+func (_u *OrderUpdate) AddShippingAmount(v int64) *OrderUpdate {
+	_u.mutation.AddShippingAmount(v)
+	return _u
+}
+
+// SetShippingStatus sets the "shipping_status" field.
+func (_u *OrderUpdate) SetShippingStatus(v string) *OrderUpdate {
+	_u.mutation.SetShippingStatus(v)
+	return _u
+}
+
+// SetNillableShippingStatus sets the "shipping_status" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableShippingStatus(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetShippingStatus(*v)
+	}
+	return _u
+}
+
+// SetShippingAddress sets the "shipping_address" field.
+func (_u *OrderUpdate) SetShippingAddress(v map[string]string) *OrderUpdate {
+	_u.mutation.SetShippingAddress(v)
+	return _u
+}
+
+// ClearShippingAddress clears the value of the "shipping_address" field.
+func (_u *OrderUpdate) ClearShippingAddress() *OrderUpdate {
+	_u.mutation.ClearShippingAddress()
+	return _u
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (_u *OrderUpdate) SetRequestHash(v string) *OrderUpdate {
+	_u.mutation.SetRequestHash(v)
+	return _u
+}
+
+// SetNillableRequestHash sets the "request_hash" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableRequestHash(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetRequestHash(*v)
+	}
+	return _u
+}
+
 // SetTotalAmount sets the "total_amount" field.
 func (_u *OrderUpdate) SetTotalAmount(v int64) *OrderUpdate {
 	_u.mutation.ResetTotalAmount()
@@ -1172,6 +1254,30 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(order.FieldStatus, field.TypeEnum, value)
 	}
+	if value, ok := _u.mutation.CommerceVersion(); ok {
+		_spec.SetField(order.FieldCommerceVersion, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedCommerceVersion(); ok {
+		_spec.AddField(order.FieldCommerceVersion, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.ShippingAmount(); ok {
+		_spec.SetField(order.FieldShippingAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedShippingAmount(); ok {
+		_spec.AddField(order.FieldShippingAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.ShippingStatus(); ok {
+		_spec.SetField(order.FieldShippingStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ShippingAddress(); ok {
+		_spec.SetField(order.FieldShippingAddress, field.TypeJSON, value)
+	}
+	if _u.mutation.ShippingAddressCleared() {
+		_spec.ClearField(order.FieldShippingAddress, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.RequestHash(); ok {
+		_spec.SetField(order.FieldRequestHash, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.TotalAmount(); ok {
 		_spec.SetField(order.FieldTotalAmount, field.TypeInt64, value)
 	}
@@ -1827,6 +1933,88 @@ func (_u *OrderUpdateOne) SetStatus(v order.Status) *OrderUpdateOne {
 func (_u *OrderUpdateOne) SetNillableStatus(v *order.Status) *OrderUpdateOne {
 	if v != nil {
 		_u.SetStatus(*v)
+	}
+	return _u
+}
+
+// SetCommerceVersion sets the "commerce_version" field.
+func (_u *OrderUpdateOne) SetCommerceVersion(v int32) *OrderUpdateOne {
+	_u.mutation.ResetCommerceVersion()
+	_u.mutation.SetCommerceVersion(v)
+	return _u
+}
+
+// SetNillableCommerceVersion sets the "commerce_version" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableCommerceVersion(v *int32) *OrderUpdateOne {
+	if v != nil {
+		_u.SetCommerceVersion(*v)
+	}
+	return _u
+}
+
+// AddCommerceVersion adds value to the "commerce_version" field.
+func (_u *OrderUpdateOne) AddCommerceVersion(v int32) *OrderUpdateOne {
+	_u.mutation.AddCommerceVersion(v)
+	return _u
+}
+
+// SetShippingAmount sets the "shipping_amount" field.
+func (_u *OrderUpdateOne) SetShippingAmount(v int64) *OrderUpdateOne {
+	_u.mutation.ResetShippingAmount()
+	_u.mutation.SetShippingAmount(v)
+	return _u
+}
+
+// SetNillableShippingAmount sets the "shipping_amount" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableShippingAmount(v *int64) *OrderUpdateOne {
+	if v != nil {
+		_u.SetShippingAmount(*v)
+	}
+	return _u
+}
+
+// AddShippingAmount adds value to the "shipping_amount" field.
+func (_u *OrderUpdateOne) AddShippingAmount(v int64) *OrderUpdateOne {
+	_u.mutation.AddShippingAmount(v)
+	return _u
+}
+
+// SetShippingStatus sets the "shipping_status" field.
+func (_u *OrderUpdateOne) SetShippingStatus(v string) *OrderUpdateOne {
+	_u.mutation.SetShippingStatus(v)
+	return _u
+}
+
+// SetNillableShippingStatus sets the "shipping_status" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableShippingStatus(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetShippingStatus(*v)
+	}
+	return _u
+}
+
+// SetShippingAddress sets the "shipping_address" field.
+func (_u *OrderUpdateOne) SetShippingAddress(v map[string]string) *OrderUpdateOne {
+	_u.mutation.SetShippingAddress(v)
+	return _u
+}
+
+// ClearShippingAddress clears the value of the "shipping_address" field.
+func (_u *OrderUpdateOne) ClearShippingAddress() *OrderUpdateOne {
+	_u.mutation.ClearShippingAddress()
+	return _u
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (_u *OrderUpdateOne) SetRequestHash(v string) *OrderUpdateOne {
+	_u.mutation.SetRequestHash(v)
+	return _u
+}
+
+// SetNillableRequestHash sets the "request_hash" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableRequestHash(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetRequestHash(*v)
 	}
 	return _u
 }
@@ -2800,6 +2988,30 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(order.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.CommerceVersion(); ok {
+		_spec.SetField(order.FieldCommerceVersion, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedCommerceVersion(); ok {
+		_spec.AddField(order.FieldCommerceVersion, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.ShippingAmount(); ok {
+		_spec.SetField(order.FieldShippingAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedShippingAmount(); ok {
+		_spec.AddField(order.FieldShippingAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.ShippingStatus(); ok {
+		_spec.SetField(order.FieldShippingStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ShippingAddress(); ok {
+		_spec.SetField(order.FieldShippingAddress, field.TypeJSON, value)
+	}
+	if _u.mutation.ShippingAddressCleared() {
+		_spec.ClearField(order.FieldShippingAddress, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.RequestHash(); ok {
+		_spec.SetField(order.FieldRequestHash, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.TotalAmount(); ok {
 		_spec.SetField(order.FieldTotalAmount, field.TypeInt64, value)

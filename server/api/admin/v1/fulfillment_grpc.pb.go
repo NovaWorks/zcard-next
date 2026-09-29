@@ -20,6 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	AdminFulfillmentService_ShipOrder_FullMethodName      = "/zcard.api.admin.v1.AdminFulfillmentService/ShipOrder"
+	AdminFulfillmentService_UpdateShipping_FullMethodName = "/zcard.api.admin.v1.AdminFulfillmentService/UpdateShipping"
+	AdminFulfillmentService_RestockReturn_FullMethodName  = "/zcard.api.admin.v1.AdminFulfillmentService/RestockReturn"
 	AdminFulfillmentService_StartService_FullMethodName   = "/zcard.api.admin.v1.AdminFulfillmentService/StartService"
 	AdminFulfillmentService_ListPending_FullMethodName    = "/zcard.api.admin.v1.AdminFulfillmentService/ListPending"
 	AdminFulfillmentService_ManualDeliver_FullMethodName  = "/zcard.api.admin.v1.AdminFulfillmentService/ManualDeliver"
@@ -32,6 +35,9 @@ const (
 //
 // AdminFulfillmentService 履约管理：待发货列表 + 手动交付。
 type AdminFulfillmentServiceClient interface {
+	ShipOrder(ctx context.Context, in *ShipOrderRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UpdateShipping(ctx context.Context, in *UpdateShippingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RestockReturn(ctx context.Context, in *RestockReturnRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	StartService(ctx context.Context, in *StartServiceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// ListPending 待人工发货列表（manual_pending 状态订单）。
 	ListPending(ctx context.Context, in *ListPendingRequest, opts ...grpc.CallOption) (*ListPendingReply, error)
@@ -47,6 +53,36 @@ type adminFulfillmentServiceClient struct {
 
 func NewAdminFulfillmentServiceClient(cc grpc.ClientConnInterface) AdminFulfillmentServiceClient {
 	return &adminFulfillmentServiceClient{cc}
+}
+
+func (c *adminFulfillmentServiceClient) ShipOrder(ctx context.Context, in *ShipOrderRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminFulfillmentService_ShipOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminFulfillmentServiceClient) UpdateShipping(ctx context.Context, in *UpdateShippingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminFulfillmentService_UpdateShipping_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminFulfillmentServiceClient) RestockReturn(ctx context.Context, in *RestockReturnRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminFulfillmentService_RestockReturn_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *adminFulfillmentServiceClient) StartService(ctx context.Context, in *StartServiceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
@@ -95,6 +131,9 @@ func (c *adminFulfillmentServiceClient) ListDeliveries(ctx context.Context, in *
 //
 // AdminFulfillmentService 履约管理：待发货列表 + 手动交付。
 type AdminFulfillmentServiceServer interface {
+	ShipOrder(context.Context, *ShipOrderRequest) (*emptypb.Empty, error)
+	UpdateShipping(context.Context, *UpdateShippingRequest) (*emptypb.Empty, error)
+	RestockReturn(context.Context, *RestockReturnRequest) (*emptypb.Empty, error)
 	StartService(context.Context, *StartServiceRequest) (*emptypb.Empty, error)
 	// ListPending 待人工发货列表（manual_pending 状态订单）。
 	ListPending(context.Context, *ListPendingRequest) (*ListPendingReply, error)
@@ -112,6 +151,15 @@ type AdminFulfillmentServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAdminFulfillmentServiceServer struct{}
 
+func (UnimplementedAdminFulfillmentServiceServer) ShipOrder(context.Context, *ShipOrderRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ShipOrder not implemented")
+}
+func (UnimplementedAdminFulfillmentServiceServer) UpdateShipping(context.Context, *UpdateShippingRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateShipping not implemented")
+}
+func (UnimplementedAdminFulfillmentServiceServer) RestockReturn(context.Context, *RestockReturnRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RestockReturn not implemented")
+}
 func (UnimplementedAdminFulfillmentServiceServer) StartService(context.Context, *StartServiceRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method StartService not implemented")
 }
@@ -144,6 +192,60 @@ func RegisterAdminFulfillmentServiceServer(s grpc.ServiceRegistrar, srv AdminFul
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AdminFulfillmentService_ServiceDesc, srv)
+}
+
+func _AdminFulfillmentService_ShipOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ShipOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminFulfillmentServiceServer).ShipOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminFulfillmentService_ShipOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminFulfillmentServiceServer).ShipOrder(ctx, req.(*ShipOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminFulfillmentService_UpdateShipping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateShippingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminFulfillmentServiceServer).UpdateShipping(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminFulfillmentService_UpdateShipping_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminFulfillmentServiceServer).UpdateShipping(ctx, req.(*UpdateShippingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminFulfillmentService_RestockReturn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RestockReturnRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminFulfillmentServiceServer).RestockReturn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminFulfillmentService_RestockReturn_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminFulfillmentServiceServer).RestockReturn(ctx, req.(*RestockReturnRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AdminFulfillmentService_StartService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -225,6 +327,18 @@ var AdminFulfillmentService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.admin.v1.AdminFulfillmentService",
 	HandlerType: (*AdminFulfillmentServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ShipOrder",
+			Handler:    _AdminFulfillmentService_ShipOrder_Handler,
+		},
+		{
+			MethodName: "UpdateShipping",
+			Handler:    _AdminFulfillmentService_UpdateShipping_Handler,
+		},
+		{
+			MethodName: "RestockReturn",
+			Handler:    _AdminFulfillmentService_RestockReturn_Handler,
+		},
 		{
 			MethodName: "StartService",
 			Handler:    _AdminFulfillmentService_StartService_Handler,

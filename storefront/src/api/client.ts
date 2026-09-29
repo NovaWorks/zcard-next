@@ -35,7 +35,7 @@ interface ApiResult<T> {
   error: string | null;
 }
 
-async function request<T>(method: string, path: string, body?: unknown, params?: Record<string, string | number | boolean | undefined>, silent = false): Promise<ApiResult<T>> {
+async function request<T>(method: string, path: string, body?: unknown, params?: Record<string, string | number | boolean | undefined>, silent = false, headers: Record<string,string> = {}): Promise<ApiResult<T>> {
   if (method === 'GET' && path === '/config') {
     try { return { data: await loadPublicConfig(true) as T, error: null }; }
     catch { return { data: null, error: '店铺配置加载失败，请稍后重试' }; }
@@ -61,7 +61,7 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
       method,
       headers: {
         ...(body ? { 'Content-Type': 'application/json' } : {}),
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
+        ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers
       },
       body: body ? JSON.stringify(body) : undefined
     });
@@ -92,7 +92,7 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
 
 export const api = {
   get: <T>(path: string, params?: Record<string, string | number | boolean | undefined>) => request<T>('GET', path, undefined, params),
-  post: <T>(path: string, body: unknown) => request<T>('POST', path, body),
+  post: <T>(path: string, body: unknown, headers?: Record<string,string>) => request<T>('POST', path, body, undefined, false, headers),
   delete_: <T>(path: string) => request<T>('DELETE', path),
   // silent 变体：401 只清 token 不跳登录（游客可降级端点在调用方处理）
   getSilent: <T>(path: string, params?: Record<string, string | number | boolean | undefined>) => request<T>('GET', path, undefined, params, true),

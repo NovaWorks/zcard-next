@@ -497,16 +497,17 @@ func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.
 		Fn:       procureSvc.OnOrderPaid,
 	})
 	// 事件订阅注册（）：order.paid → 三级佣金入账；order.refunded → 逆向扣回
-	dp.Register(data.HandlerReg{Consumer: "affiliate.settle", Type: events.OrderPaid, Fn: affiliateSvc.OnOrderPaid})
-	dp.Register(data.HandlerReg{Consumer: "affiliate.reversal", Type: events.OrderRefunded, Fn: affiliateSvc.OnOrderRefunded})
+	dp.Register(data.HandlerReg{Consumer: "affiliate.settle", Type: events.OrderPaid, Fn: affiliateSvc.OnOrderPaid, Transactional: true})
+	dp.Register(data.HandlerReg{Consumer: "affiliate.reversal", Type: events.OrderRefunded, Fn: affiliateSvc.OnOrderRefunded, Transactional: true})
 	// 事件订阅注册（）：order.paid → 分站利润入账（订单快照 subsite_profit/profit_eligible）
-	dp.Register(data.HandlerReg{Consumer: "reseller.settle", Type: events.OrderPaid, Fn: resellerSettleSvc.OnOrderPaid})
+	dp.Register(data.HandlerReg{Consumer: "reseller.settle", Type: events.OrderPaid, Fn: resellerSettleSvc.OnOrderPaid, Transactional: true})
 	// 事件订阅注册（ ）：order.paid → 自动交付（reserved→used/即删 + 交付记录；幂等由 FulfillOrder 兜底）
-	dp.Register(data.HandlerReg{Consumer: "fulfillment.deliver", Type: events.OrderPaid, Fn: fulfillRepo.OnOrderPaid})
+	dp.Register(data.HandlerReg{Consumer: "fulfillment.deliver", Type: events.OrderPaid, Fn: fulfillRepo.OnOrderPaid, Transactional: true})
 	// 事件订阅注册（）：order.refunded → 分站利润扣回（refund_deduct 负行/负债态）
-	dp.Register(data.HandlerReg{Consumer: "reseller.reversal", Type: events.OrderRefunded, Fn: resellerSettleSvc.OnOrderRefunded})
+	dp.Register(data.HandlerReg{Consumer: "reseller.reversal", Type: events.OrderRefunded, Fn: resellerSettleSvc.OnOrderRefunded, Transactional: true})
 	// 事件订阅注册（）：order.paid → 积分产生（等级 points_rule；幂等键 points:<orderID>）
 	dp.Register(data.HandlerReg{Consumer: "memberlevel.points_earn", Type: events.OrderPaid, Fn: pointsSvc.OnOrderPaid, Transactional: true})
+	dp.Register(data.HandlerReg{Consumer: "memberlevel.points_refund", Type: events.OrderRefunded, Fn: pointsSvc.OnOrderRefunded, Transactional: true})
 	// 事件订阅注册（）：交易事件 → 通知分发（email/inbox 按模板逐通道投递）
 	for _, typ := range notify.SubscribedEvents() {
 		t := typ

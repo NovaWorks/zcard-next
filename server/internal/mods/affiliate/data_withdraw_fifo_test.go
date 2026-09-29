@@ -116,3 +116,15 @@ func TestFrozenWithdrawAmount(t *testing.T) {
 		t.Fatalf("冻结额 = %d, want 200", frozen)
 	}
 }
+
+func TestReviewRepeatedPartialWithdrawal(t *testing.T) {
+	repo, _ := newAffiliateData(t)
+	ctx := context.Background()
+	seedAvailable(t, repo, 7, []int64{1000})
+	if e := repo.ConsumeAvailableFIFO(ctx, 7, 100); e != nil {
+		t.Fatal(e)
+	}
+	if e := repo.ConsumeAvailableFIFO(ctx, 7, 100); e != nil {
+		t.Fatalf("second partial withdrawal failed: %v", e)
+	}
+}

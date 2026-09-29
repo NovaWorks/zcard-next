@@ -138,6 +138,9 @@ type Payment func(*sql.Selector)
 // PaymentChannel is the predicate function for paymentchannel builders.
 type PaymentChannel func(*sql.Selector)
 
+// PhysicalStockMovement is the predicate function for physicalstockmovement builders.
+type PhysicalStockMovement func(*sql.Selector)
+
 // PointAccount is the predicate function for pointaccount builders.
 type PointAccount func(*sql.Selector)
 
@@ -224,6 +227,9 @@ type Session func(*sql.Selector)
 
 // Setting is the predicate function for setting builders.
 type Setting func(*sql.Selector)
+
+// Shipment is the predicate function for shipment builders.
+type Shipment func(*sql.Selector)
 
 // StockAlert is the predicate function for stockalert builders.
 type StockAlert func(*sql.Selector)

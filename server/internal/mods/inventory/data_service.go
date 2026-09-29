@@ -61,7 +61,7 @@ func (s *AdminInventoryService) ImportConfirm(ctx context.Context, req *adminv1.
 		Dedup:     req.GetDedup(),
 	})
 	if err != nil {
-		if data.IsProductLocked(err) {
+		if data.IsProductLocked(err) || errors.Reason(err) == "inventory.PHYSICAL_PRODUCT" {
 			return nil, err
 		}
 		return nil, errors.InternalServer("inventory.IMPORT_FAILED", "导入失败")
@@ -85,7 +85,7 @@ func (s *AdminInventoryService) ListImports(ctx context.Context, req *adminv1.Li
 // CancelImport 撤销批次。
 func (s *AdminInventoryService) CancelImport(ctx context.Context, req *adminv1.CancelImportRequest) (*emptypb.Empty, error) {
 	if err := s.repo.CancelImport(ctx, req.GetId()); err != nil {
-		if data.IsProductLocked(err) {
+		if data.IsProductLocked(err) || errors.Reason(err) == "inventory.PHYSICAL_PRODUCT" {
 			return nil, err
 		}
 		return nil, errors.InternalServer("inventory.CANCEL_FAILED", "撤销失败")

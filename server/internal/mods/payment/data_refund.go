@@ -55,6 +55,9 @@ func (r *PaymentRepoImpl) RefundToWallet(ctx context.Context, orderID uint64, am
 		if err != nil {
 			return err
 		}
+		if o.CommerceVersion == 1 {
+			return refundInvalid("该订单必须按商品项退款")
+		}
 		if o.UserID == 0 {
 			return refundInvalid("游客订单没有会员余额，不能退款到钱包，请联系买家核实退款方式")
 		}

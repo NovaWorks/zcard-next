@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/predicate"
 	"sort"
 	"strconv"
 	"strings"
@@ -959,12 +960,21 @@ func (r *PaymentRepoImpl) CreateRefund(ctx context.Context, orderID uint64, amou
 }
 
 // ListRefunds 退款单列表。
-func (r *PaymentRepoImpl) ListRefunds(ctx context.Context, status string) ([]*ent.RefundOrder, error) {
-	q := data.Client(ctx, r.data).RefundOrder.Query().
-		Order(ent.Desc(refundorder.FieldCreatedAt)).
-		Limit(50)
+func (r *PaymentRepoImpl) ListRefunds(ctx context.Context, status string, filters ...*adminv1.ListRefundsRequest) ([]*ent.RefundOrder, error) {
+	orderFilter := []predicate.Order{order.SubsiteID(tenancy.FromContext(ctx).SubsiteID)}
+	var before uint64
+	if len(filters) > 0 && filters[0] != nil {
+		if filters[0].OrderNo != "" {
+			orderFilter = append(orderFilter, order.OrderNo(filters[0].OrderNo))
+		}
+		before = filters[0].BeforeId
+	}
+	q := data.Client(ctx, r.data).RefundOrder.Query().Where(refundorder.HasOrderWith(orderFilter...)).Order(ent.Desc(refundorder.FieldID)).Limit(50)
 	if status != "" {
-		q = q.Where(refundorder.StatusEQ(refundorder.Status(status)))
+		q.Where(refundorder.StatusEQ(refundorder.Status(status)))
+	}
+	if before > 0 {
+		q.Where(refundorder.IDLT(before))
 	}
 	return q.All(ctx)
 }
@@ -1013,11 +1023,12 @@ func ToPaymentPB(p *ent.Payment, orderNo string) *adminv1.Payment {
 
 // ToRefundPB 转退款单协议。
 func ToRefundPB(rf *ent.RefundOrder, orderNo string) *adminv1.RefundOrder {
+	allocations, _ := json.Marshal(rf.ItemAllocations)
 	return &adminv1.RefundOrder{
 		Id: rf.ID, OrderId: rf.OrderID, OrderNo: orderNo,
 		AmountCents: rf.Amount, FeeCents: rf.FeeAmount, Channel: string(rf.Channel),
 		Status: string(rf.Status), Reason: rf.Reason,
-		UpstreamRefundId: rf.UpstreamRefundID,
+		UpstreamRefundId: rf.UpstreamRefundID, CreatedAt: rf.CreatedAt.Unix(), ShippingCents: rf.ShippingAmount, ItemAllocationsJson: string(allocations), OperatorId: rf.OperatorID,
 	}
 }
 

@@ -30,6 +30,16 @@ type Product struct {
 	CategoryProtected bool `json:"category_protected,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// GoodsType holds the value of the "goods_type" field.
+	GoodsType string `json:"goods_type,omitempty"`
+	// ShippingMode holds the value of the "shipping_mode" field.
+	ShippingMode string `json:"shipping_mode,omitempty"`
+	// ShippingFee holds the value of the "shipping_fee" field.
+	ShippingFee int64 `json:"shipping_fee,omitempty"`
+	// ShippingCountries holds the value of the "shipping_countries" field.
+	ShippingCountries []string `json:"shipping_countries,omitempty"`
+	// PhysicalStock holds the value of the "physical_stock" field.
+	PhysicalStock int64 `json:"physical_stock,omitempty"`
 	// 唯一标识
 	Slug string `json:"slug,omitempty"`
 	// 详情（服务端 sanitize 后存储）
@@ -146,13 +156,13 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig:
+		case product.FieldShippingCountries, product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig:
 			values[i] = new([]byte)
 		case product.FieldCategoryProtected, product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend, product.FieldAutoListing, product.FieldListingRestocked, product.FieldIsLocked:
 			values[i] = new(sql.NullBool)
-		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldManualStock, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID, product.FieldListingRestoreStatus, product.FieldListingChangedAt, product.FieldListingObservedAt, product.FieldListingZeroSince, product.FieldListingLastStock, product.FieldLockVersion, product.FieldLockedBy:
+		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldShippingFee, product.FieldPhysicalStock, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldManualStock, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID, product.FieldListingRestoreStatus, product.FieldListingChangedAt, product.FieldListingObservedAt, product.FieldListingZeroSince, product.FieldListingLastStock, product.FieldLockVersion, product.FieldLockedBy:
 			values[i] = new(sql.NullInt64)
-		case product.FieldName, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldFulfillmentMode, product.FieldDeliveryMode, product.FieldUpstreamProductCode, product.FieldListingReason, product.FieldListingMessage:
+		case product.FieldName, product.FieldGoodsType, product.FieldShippingMode, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldFulfillmentMode, product.FieldDeliveryMode, product.FieldUpstreamProductCode, product.FieldListingReason, product.FieldListingMessage:
 			values[i] = new(sql.NullString)
 		case product.FieldCreatedAt, product.FieldUpdatedAt, product.FieldUpstreamSyncedAt, product.FieldLockedAt:
 			values[i] = new(sql.NullTime)
@@ -212,6 +222,38 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				_m.Name = value.String
+			}
+		case product.FieldGoodsType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field goods_type", values[i])
+			} else if value.Valid {
+				_m.GoodsType = value.String
+			}
+		case product.FieldShippingMode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field shipping_mode", values[i])
+			} else if value.Valid {
+				_m.ShippingMode = value.String
+			}
+		case product.FieldShippingFee:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field shipping_fee", values[i])
+			} else if value.Valid {
+				_m.ShippingFee = value.Int64
+			}
+		case product.FieldShippingCountries:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field shipping_countries", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.ShippingCountries); err != nil {
+					return fmt.Errorf("unmarshal field shipping_countries: %w", err)
+				}
+			}
+		case product.FieldPhysicalStock:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field physical_stock", values[i])
+			} else if value.Valid {
+				_m.PhysicalStock = value.Int64
 			}
 		case product.FieldSlug:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -511,6 +553,21 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
+	builder.WriteString(", ")
+	builder.WriteString("goods_type=")
+	builder.WriteString(_m.GoodsType)
+	builder.WriteString(", ")
+	builder.WriteString("shipping_mode=")
+	builder.WriteString(_m.ShippingMode)
+	builder.WriteString(", ")
+	builder.WriteString("shipping_fee=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ShippingFee))
+	builder.WriteString(", ")
+	builder.WriteString("shipping_countries=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ShippingCountries))
+	builder.WriteString(", ")
+	builder.WriteString("physical_stock=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PhysicalStock))
 	builder.WriteString(", ")
 	builder.WriteString("slug=")
 	builder.WriteString(_m.Slug)

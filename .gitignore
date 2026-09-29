@@ -7,6 +7,7 @@ plan/
 *.md
 !README.md
 !doc/部署指南.md
+!doc/physical-commerce-plan.md
 
 # Go
 *.exe

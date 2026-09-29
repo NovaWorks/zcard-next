@@ -64,6 +64,11 @@ func inspectProductDeletion(ctx context.Context, c *ent.Client, p *ent.Product) 
 	ids := make([]uint64, 0, len(rows))
 	itemIDs := []uint64{}
 	reply.OrderCount = int64(len(rows))
+	if p.GoodsType == "physical" && len(rows) > 0 {
+		reply.DeleteBlockReason = "实体商品已有订单，请下架保留，以便退款及退货入库"
+		reply.DeleteOrdersBlockReason = reply.DeleteBlockReason
+		return reply, nil, nil
+	}
 	for _, o := range rows {
 		ids = append(ids, o.ID)
 		if o.SubsiteID != p.SubsiteID {

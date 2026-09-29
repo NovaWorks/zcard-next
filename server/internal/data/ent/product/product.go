@@ -27,6 +27,16 @@ const (
 	FieldCategoryProtected = "category_protected"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldGoodsType holds the string denoting the goods_type field in the database.
+	FieldGoodsType = "goods_type"
+	// FieldShippingMode holds the string denoting the shipping_mode field in the database.
+	FieldShippingMode = "shipping_mode"
+	// FieldShippingFee holds the string denoting the shipping_fee field in the database.
+	FieldShippingFee = "shipping_fee"
+	// FieldShippingCountries holds the string denoting the shipping_countries field in the database.
+	FieldShippingCountries = "shipping_countries"
+	// FieldPhysicalStock holds the string denoting the physical_stock field in the database.
+	FieldPhysicalStock = "physical_stock"
 	// FieldSlug holds the string denoting the slug field in the database.
 	FieldSlug = "slug"
 	// FieldDescription holds the string denoting the description field in the database.
@@ -134,6 +144,11 @@ var Columns = []string{
 	FieldCategoryID,
 	FieldCategoryProtected,
 	FieldName,
+	FieldGoodsType,
+	FieldShippingMode,
+	FieldShippingFee,
+	FieldShippingCountries,
+	FieldPhysicalStock,
 	FieldSlug,
 	FieldDescription,
 	FieldCover,
@@ -197,6 +212,14 @@ var (
 	DefaultCategoryProtected bool
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// DefaultGoodsType holds the default value on creation for the "goods_type" field.
+	DefaultGoodsType string
+	// DefaultShippingMode holds the default value on creation for the "shipping_mode" field.
+	DefaultShippingMode string
+	// DefaultShippingFee holds the default value on creation for the "shipping_fee" field.
+	DefaultShippingFee int64
+	// DefaultPhysicalStock holds the default value on creation for the "physical_stock" field.
+	DefaultPhysicalStock int64
 	// SlugValidator is a validator for the "slug" field. It is called by the builders before save.
 	SlugValidator func(string) error
 	// CoverValidator is a validator for the "cover" field. It is called by the builders before save.
@@ -348,6 +371,26 @@ func ByCategoryProtected(opts ...sql.OrderTermOption) OrderOption {
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByGoodsType orders the results by the goods_type field.
+func ByGoodsType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGoodsType, opts...).ToFunc()
+}
+
+// ByShippingMode orders the results by the shipping_mode field.
+func ByShippingMode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldShippingMode, opts...).ToFunc()
+}
+
+// ByShippingFee orders the results by the shipping_fee field.
+func ByShippingFee(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldShippingFee, opts...).ToFunc()
+}
+
+// ByPhysicalStock orders the results by the physical_stock field.
+func ByPhysicalStock(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPhysicalStock, opts...).ToFunc()
 }
 
 // BySlug orders the results by the slug field.

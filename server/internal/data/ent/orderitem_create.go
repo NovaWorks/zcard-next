@@ -171,6 +171,132 @@ func (_c *OrderItemCreate) SetNillableCost(v *int64) *OrderItemCreate {
 	return _c
 }
 
+// SetGoodsType sets the "goods_type" field.
+func (_c *OrderItemCreate) SetGoodsType(v string) *OrderItemCreate {
+	_c.mutation.SetGoodsType(v)
+	return _c
+}
+
+// SetNillableGoodsType sets the "goods_type" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableGoodsType(v *string) *OrderItemCreate {
+	if v != nil {
+		_c.SetGoodsType(*v)
+	}
+	return _c
+}
+
+// SetPaidAmount sets the "paid_amount" field.
+func (_c *OrderItemCreate) SetPaidAmount(v int64) *OrderItemCreate {
+	_c.mutation.SetPaidAmount(v)
+	return _c
+}
+
+// SetNillablePaidAmount sets the "paid_amount" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillablePaidAmount(v *int64) *OrderItemCreate {
+	if v != nil {
+		_c.SetPaidAmount(*v)
+	}
+	return _c
+}
+
+// SetShippingAmount sets the "shipping_amount" field.
+func (_c *OrderItemCreate) SetShippingAmount(v int64) *OrderItemCreate {
+	_c.mutation.SetShippingAmount(v)
+	return _c
+}
+
+// SetNillableShippingAmount sets the "shipping_amount" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableShippingAmount(v *int64) *OrderItemCreate {
+	if v != nil {
+		_c.SetShippingAmount(*v)
+	}
+	return _c
+}
+
+// SetRefundedAmount sets the "refunded_amount" field.
+func (_c *OrderItemCreate) SetRefundedAmount(v int64) *OrderItemCreate {
+	_c.mutation.SetRefundedAmount(v)
+	return _c
+}
+
+// SetNillableRefundedAmount sets the "refunded_amount" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableRefundedAmount(v *int64) *OrderItemCreate {
+	if v != nil {
+		_c.SetRefundedAmount(*v)
+	}
+	return _c
+}
+
+// SetRefundedShipping sets the "refunded_shipping" field.
+func (_c *OrderItemCreate) SetRefundedShipping(v int64) *OrderItemCreate {
+	_c.mutation.SetRefundedShipping(v)
+	return _c
+}
+
+// SetNillableRefundedShipping sets the "refunded_shipping" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableRefundedShipping(v *int64) *OrderItemCreate {
+	if v != nil {
+		_c.SetRefundedShipping(*v)
+	}
+	return _c
+}
+
+// SetCanceledQuantity sets the "canceled_quantity" field.
+func (_c *OrderItemCreate) SetCanceledQuantity(v int32) *OrderItemCreate {
+	_c.mutation.SetCanceledQuantity(v)
+	return _c
+}
+
+// SetNillableCanceledQuantity sets the "canceled_quantity" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableCanceledQuantity(v *int32) *OrderItemCreate {
+	if v != nil {
+		_c.SetCanceledQuantity(*v)
+	}
+	return _c
+}
+
+// SetShippedQuantity sets the "shipped_quantity" field.
+func (_c *OrderItemCreate) SetShippedQuantity(v int32) *OrderItemCreate {
+	_c.mutation.SetShippedQuantity(v)
+	return _c
+}
+
+// SetNillableShippedQuantity sets the "shipped_quantity" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableShippedQuantity(v *int32) *OrderItemCreate {
+	if v != nil {
+		_c.SetShippedQuantity(*v)
+	}
+	return _c
+}
+
+// SetReceivedQuantity sets the "received_quantity" field.
+func (_c *OrderItemCreate) SetReceivedQuantity(v int32) *OrderItemCreate {
+	_c.mutation.SetReceivedQuantity(v)
+	return _c
+}
+
+// SetNillableReceivedQuantity sets the "received_quantity" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableReceivedQuantity(v *int32) *OrderItemCreate {
+	if v != nil {
+		_c.SetReceivedQuantity(*v)
+	}
+	return _c
+}
+
+// SetReturnedQuantity sets the "returned_quantity" field.
+func (_c *OrderItemCreate) SetReturnedQuantity(v int32) *OrderItemCreate {
+	_c.mutation.SetReturnedQuantity(v)
+	return _c
+}
+
+// SetNillableReturnedQuantity sets the "returned_quantity" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableReturnedQuantity(v *int32) *OrderItemCreate {
+	if v != nil {
+		_c.SetReturnedQuantity(*v)
+	}
+	return _c
+}
+
 // SetFulfillmentType sets the "fulfillment_type" field.
 func (_c *OrderItemCreate) SetFulfillmentType(v orderitem.FulfillmentType) *OrderItemCreate {
 	_c.mutation.SetFulfillmentType(v)
@@ -287,6 +413,42 @@ func (_c *OrderItemCreate) defaults() {
 		v := orderitem.DefaultCost
 		_c.mutation.SetCost(v)
 	}
+	if _, ok := _c.mutation.GoodsType(); !ok {
+		v := orderitem.DefaultGoodsType
+		_c.mutation.SetGoodsType(v)
+	}
+	if _, ok := _c.mutation.PaidAmount(); !ok {
+		v := orderitem.DefaultPaidAmount
+		_c.mutation.SetPaidAmount(v)
+	}
+	if _, ok := _c.mutation.ShippingAmount(); !ok {
+		v := orderitem.DefaultShippingAmount
+		_c.mutation.SetShippingAmount(v)
+	}
+	if _, ok := _c.mutation.RefundedAmount(); !ok {
+		v := orderitem.DefaultRefundedAmount
+		_c.mutation.SetRefundedAmount(v)
+	}
+	if _, ok := _c.mutation.RefundedShipping(); !ok {
+		v := orderitem.DefaultRefundedShipping
+		_c.mutation.SetRefundedShipping(v)
+	}
+	if _, ok := _c.mutation.CanceledQuantity(); !ok {
+		v := orderitem.DefaultCanceledQuantity
+		_c.mutation.SetCanceledQuantity(v)
+	}
+	if _, ok := _c.mutation.ShippedQuantity(); !ok {
+		v := orderitem.DefaultShippedQuantity
+		_c.mutation.SetShippedQuantity(v)
+	}
+	if _, ok := _c.mutation.ReceivedQuantity(); !ok {
+		v := orderitem.DefaultReceivedQuantity
+		_c.mutation.SetReceivedQuantity(v)
+	}
+	if _, ok := _c.mutation.ReturnedQuantity(); !ok {
+		v := orderitem.DefaultReturnedQuantity
+		_c.mutation.SetReturnedQuantity(v)
+	}
 	if _, ok := _c.mutation.FulfillmentStatus(); !ok {
 		v := orderitem.DefaultFulfillmentStatus
 		_c.mutation.SetFulfillmentStatus(v)
@@ -332,6 +494,33 @@ func (_c *OrderItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.Cost(); !ok {
 		return &ValidationError{Name: "cost", err: errors.New(`ent: missing required field "OrderItem.cost"`)}
+	}
+	if _, ok := _c.mutation.GoodsType(); !ok {
+		return &ValidationError{Name: "goods_type", err: errors.New(`ent: missing required field "OrderItem.goods_type"`)}
+	}
+	if _, ok := _c.mutation.PaidAmount(); !ok {
+		return &ValidationError{Name: "paid_amount", err: errors.New(`ent: missing required field "OrderItem.paid_amount"`)}
+	}
+	if _, ok := _c.mutation.ShippingAmount(); !ok {
+		return &ValidationError{Name: "shipping_amount", err: errors.New(`ent: missing required field "OrderItem.shipping_amount"`)}
+	}
+	if _, ok := _c.mutation.RefundedAmount(); !ok {
+		return &ValidationError{Name: "refunded_amount", err: errors.New(`ent: missing required field "OrderItem.refunded_amount"`)}
+	}
+	if _, ok := _c.mutation.RefundedShipping(); !ok {
+		return &ValidationError{Name: "refunded_shipping", err: errors.New(`ent: missing required field "OrderItem.refunded_shipping"`)}
+	}
+	if _, ok := _c.mutation.CanceledQuantity(); !ok {
+		return &ValidationError{Name: "canceled_quantity", err: errors.New(`ent: missing required field "OrderItem.canceled_quantity"`)}
+	}
+	if _, ok := _c.mutation.ShippedQuantity(); !ok {
+		return &ValidationError{Name: "shipped_quantity", err: errors.New(`ent: missing required field "OrderItem.shipped_quantity"`)}
+	}
+	if _, ok := _c.mutation.ReceivedQuantity(); !ok {
+		return &ValidationError{Name: "received_quantity", err: errors.New(`ent: missing required field "OrderItem.received_quantity"`)}
+	}
+	if _, ok := _c.mutation.ReturnedQuantity(); !ok {
+		return &ValidationError{Name: "returned_quantity", err: errors.New(`ent: missing required field "OrderItem.returned_quantity"`)}
 	}
 	if _, ok := _c.mutation.FulfillmentType(); !ok {
 		return &ValidationError{Name: "fulfillment_type", err: errors.New(`ent: missing required field "OrderItem.fulfillment_type"`)}
@@ -436,6 +625,42 @@ func (_c *OrderItemCreate) createSpec() (*OrderItem, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Cost(); ok {
 		_spec.SetField(orderitem.FieldCost, field.TypeInt64, value)
 		_node.Cost = value
+	}
+	if value, ok := _c.mutation.GoodsType(); ok {
+		_spec.SetField(orderitem.FieldGoodsType, field.TypeString, value)
+		_node.GoodsType = value
+	}
+	if value, ok := _c.mutation.PaidAmount(); ok {
+		_spec.SetField(orderitem.FieldPaidAmount, field.TypeInt64, value)
+		_node.PaidAmount = value
+	}
+	if value, ok := _c.mutation.ShippingAmount(); ok {
+		_spec.SetField(orderitem.FieldShippingAmount, field.TypeInt64, value)
+		_node.ShippingAmount = value
+	}
+	if value, ok := _c.mutation.RefundedAmount(); ok {
+		_spec.SetField(orderitem.FieldRefundedAmount, field.TypeInt64, value)
+		_node.RefundedAmount = value
+	}
+	if value, ok := _c.mutation.RefundedShipping(); ok {
+		_spec.SetField(orderitem.FieldRefundedShipping, field.TypeInt64, value)
+		_node.RefundedShipping = value
+	}
+	if value, ok := _c.mutation.CanceledQuantity(); ok {
+		_spec.SetField(orderitem.FieldCanceledQuantity, field.TypeInt32, value)
+		_node.CanceledQuantity = value
+	}
+	if value, ok := _c.mutation.ShippedQuantity(); ok {
+		_spec.SetField(orderitem.FieldShippedQuantity, field.TypeInt32, value)
+		_node.ShippedQuantity = value
+	}
+	if value, ok := _c.mutation.ReceivedQuantity(); ok {
+		_spec.SetField(orderitem.FieldReceivedQuantity, field.TypeInt32, value)
+		_node.ReceivedQuantity = value
+	}
+	if value, ok := _c.mutation.ReturnedQuantity(); ok {
+		_spec.SetField(orderitem.FieldReturnedQuantity, field.TypeInt32, value)
+		_node.ReturnedQuantity = value
 	}
 	if value, ok := _c.mutation.FulfillmentType(); ok {
 		_spec.SetField(orderitem.FieldFulfillmentType, field.TypeEnum, value)
@@ -745,6 +970,162 @@ func (u *OrderItemUpsert) UpdateCost() *OrderItemUpsert {
 // AddCost adds v to the "cost" field.
 func (u *OrderItemUpsert) AddCost(v int64) *OrderItemUpsert {
 	u.Add(orderitem.FieldCost, v)
+	return u
+}
+
+// SetGoodsType sets the "goods_type" field.
+func (u *OrderItemUpsert) SetGoodsType(v string) *OrderItemUpsert {
+	u.Set(orderitem.FieldGoodsType, v)
+	return u
+}
+
+// UpdateGoodsType sets the "goods_type" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateGoodsType() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldGoodsType)
+	return u
+}
+
+// SetPaidAmount sets the "paid_amount" field.
+func (u *OrderItemUpsert) SetPaidAmount(v int64) *OrderItemUpsert {
+	u.Set(orderitem.FieldPaidAmount, v)
+	return u
+}
+
+// UpdatePaidAmount sets the "paid_amount" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdatePaidAmount() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldPaidAmount)
+	return u
+}
+
+// AddPaidAmount adds v to the "paid_amount" field.
+func (u *OrderItemUpsert) AddPaidAmount(v int64) *OrderItemUpsert {
+	u.Add(orderitem.FieldPaidAmount, v)
+	return u
+}
+
+// SetShippingAmount sets the "shipping_amount" field.
+func (u *OrderItemUpsert) SetShippingAmount(v int64) *OrderItemUpsert {
+	u.Set(orderitem.FieldShippingAmount, v)
+	return u
+}
+
+// UpdateShippingAmount sets the "shipping_amount" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateShippingAmount() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldShippingAmount)
+	return u
+}
+
+// AddShippingAmount adds v to the "shipping_amount" field.
+func (u *OrderItemUpsert) AddShippingAmount(v int64) *OrderItemUpsert {
+	u.Add(orderitem.FieldShippingAmount, v)
+	return u
+}
+
+// SetRefundedAmount sets the "refunded_amount" field.
+func (u *OrderItemUpsert) SetRefundedAmount(v int64) *OrderItemUpsert {
+	u.Set(orderitem.FieldRefundedAmount, v)
+	return u
+}
+
+// UpdateRefundedAmount sets the "refunded_amount" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateRefundedAmount() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldRefundedAmount)
+	return u
+}
+
+// AddRefundedAmount adds v to the "refunded_amount" field.
+func (u *OrderItemUpsert) AddRefundedAmount(v int64) *OrderItemUpsert {
+	u.Add(orderitem.FieldRefundedAmount, v)
+	return u
+}
+
+// SetRefundedShipping sets the "refunded_shipping" field.
+func (u *OrderItemUpsert) SetRefundedShipping(v int64) *OrderItemUpsert {
+	u.Set(orderitem.FieldRefundedShipping, v)
+	return u
+}
+
+// UpdateRefundedShipping sets the "refunded_shipping" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateRefundedShipping() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldRefundedShipping)
+	return u
+}
+
+// AddRefundedShipping adds v to the "refunded_shipping" field.
+func (u *OrderItemUpsert) AddRefundedShipping(v int64) *OrderItemUpsert {
+	u.Add(orderitem.FieldRefundedShipping, v)
+	return u
+}
+
+// SetCanceledQuantity sets the "canceled_quantity" field.
+func (u *OrderItemUpsert) SetCanceledQuantity(v int32) *OrderItemUpsert {
+	u.Set(orderitem.FieldCanceledQuantity, v)
+	return u
+}
+
+// UpdateCanceledQuantity sets the "canceled_quantity" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateCanceledQuantity() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldCanceledQuantity)
+	return u
+}
+
+// AddCanceledQuantity adds v to the "canceled_quantity" field.
+func (u *OrderItemUpsert) AddCanceledQuantity(v int32) *OrderItemUpsert {
+	u.Add(orderitem.FieldCanceledQuantity, v)
+	return u
+}
+
+// SetShippedQuantity sets the "shipped_quantity" field.
+func (u *OrderItemUpsert) SetShippedQuantity(v int32) *OrderItemUpsert {
+	u.Set(orderitem.FieldShippedQuantity, v)
+	return u
+}
+
+// UpdateShippedQuantity sets the "shipped_quantity" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateShippedQuantity() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldShippedQuantity)
+	return u
+}
+
+// AddShippedQuantity adds v to the "shipped_quantity" field.
+func (u *OrderItemUpsert) AddShippedQuantity(v int32) *OrderItemUpsert {
+	u.Add(orderitem.FieldShippedQuantity, v)
+	return u
+}
+
+// SetReceivedQuantity sets the "received_quantity" field.
+func (u *OrderItemUpsert) SetReceivedQuantity(v int32) *OrderItemUpsert {
+	u.Set(orderitem.FieldReceivedQuantity, v)
+	return u
+}
+
+// UpdateReceivedQuantity sets the "received_quantity" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateReceivedQuantity() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldReceivedQuantity)
+	return u
+}
+
+// AddReceivedQuantity adds v to the "received_quantity" field.
+func (u *OrderItemUpsert) AddReceivedQuantity(v int32) *OrderItemUpsert {
+	u.Add(orderitem.FieldReceivedQuantity, v)
+	return u
+}
+
+// SetReturnedQuantity sets the "returned_quantity" field.
+func (u *OrderItemUpsert) SetReturnedQuantity(v int32) *OrderItemUpsert {
+	u.Set(orderitem.FieldReturnedQuantity, v)
+	return u
+}
+
+// UpdateReturnedQuantity sets the "returned_quantity" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateReturnedQuantity() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldReturnedQuantity)
+	return u
+}
+
+// AddReturnedQuantity adds v to the "returned_quantity" field.
+func (u *OrderItemUpsert) AddReturnedQuantity(v int32) *OrderItemUpsert {
+	u.Add(orderitem.FieldReturnedQuantity, v)
 	return u
 }
 
@@ -1139,6 +1520,188 @@ func (u *OrderItemUpsertOne) AddCost(v int64) *OrderItemUpsertOne {
 func (u *OrderItemUpsertOne) UpdateCost() *OrderItemUpsertOne {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.UpdateCost()
+	})
+}
+
+// SetGoodsType sets the "goods_type" field.
+func (u *OrderItemUpsertOne) SetGoodsType(v string) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetGoodsType(v)
+	})
+}
+
+// UpdateGoodsType sets the "goods_type" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateGoodsType() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateGoodsType()
+	})
+}
+
+// SetPaidAmount sets the "paid_amount" field.
+func (u *OrderItemUpsertOne) SetPaidAmount(v int64) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetPaidAmount(v)
+	})
+}
+
+// AddPaidAmount adds v to the "paid_amount" field.
+func (u *OrderItemUpsertOne) AddPaidAmount(v int64) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddPaidAmount(v)
+	})
+}
+
+// UpdatePaidAmount sets the "paid_amount" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdatePaidAmount() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdatePaidAmount()
+	})
+}
+
+// SetShippingAmount sets the "shipping_amount" field.
+func (u *OrderItemUpsertOne) SetShippingAmount(v int64) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetShippingAmount(v)
+	})
+}
+
+// AddShippingAmount adds v to the "shipping_amount" field.
+func (u *OrderItemUpsertOne) AddShippingAmount(v int64) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddShippingAmount(v)
+	})
+}
+
+// UpdateShippingAmount sets the "shipping_amount" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateShippingAmount() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateShippingAmount()
+	})
+}
+
+// SetRefundedAmount sets the "refunded_amount" field.
+func (u *OrderItemUpsertOne) SetRefundedAmount(v int64) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetRefundedAmount(v)
+	})
+}
+
+// AddRefundedAmount adds v to the "refunded_amount" field.
+func (u *OrderItemUpsertOne) AddRefundedAmount(v int64) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddRefundedAmount(v)
+	})
+}
+
+// UpdateRefundedAmount sets the "refunded_amount" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateRefundedAmount() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateRefundedAmount()
+	})
+}
+
+// SetRefundedShipping sets the "refunded_shipping" field.
+func (u *OrderItemUpsertOne) SetRefundedShipping(v int64) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetRefundedShipping(v)
+	})
+}
+
+// AddRefundedShipping adds v to the "refunded_shipping" field.
+func (u *OrderItemUpsertOne) AddRefundedShipping(v int64) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddRefundedShipping(v)
+	})
+}
+
+// UpdateRefundedShipping sets the "refunded_shipping" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateRefundedShipping() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateRefundedShipping()
+	})
+}
+
+// SetCanceledQuantity sets the "canceled_quantity" field.
+func (u *OrderItemUpsertOne) SetCanceledQuantity(v int32) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetCanceledQuantity(v)
+	})
+}
+
+// AddCanceledQuantity adds v to the "canceled_quantity" field.
+func (u *OrderItemUpsertOne) AddCanceledQuantity(v int32) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddCanceledQuantity(v)
+	})
+}
+
+// UpdateCanceledQuantity sets the "canceled_quantity" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateCanceledQuantity() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateCanceledQuantity()
+	})
+}
+
+// SetShippedQuantity sets the "shipped_quantity" field.
+func (u *OrderItemUpsertOne) SetShippedQuantity(v int32) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetShippedQuantity(v)
+	})
+}
+
+// AddShippedQuantity adds v to the "shipped_quantity" field.
+func (u *OrderItemUpsertOne) AddShippedQuantity(v int32) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddShippedQuantity(v)
+	})
+}
+
+// UpdateShippedQuantity sets the "shipped_quantity" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateShippedQuantity() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateShippedQuantity()
+	})
+}
+
+// SetReceivedQuantity sets the "received_quantity" field.
+func (u *OrderItemUpsertOne) SetReceivedQuantity(v int32) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetReceivedQuantity(v)
+	})
+}
+
+// AddReceivedQuantity adds v to the "received_quantity" field.
+func (u *OrderItemUpsertOne) AddReceivedQuantity(v int32) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddReceivedQuantity(v)
+	})
+}
+
+// UpdateReceivedQuantity sets the "received_quantity" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateReceivedQuantity() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateReceivedQuantity()
+	})
+}
+
+// SetReturnedQuantity sets the "returned_quantity" field.
+func (u *OrderItemUpsertOne) SetReturnedQuantity(v int32) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetReturnedQuantity(v)
+	})
+}
+
+// AddReturnedQuantity adds v to the "returned_quantity" field.
+func (u *OrderItemUpsertOne) AddReturnedQuantity(v int32) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddReturnedQuantity(v)
+	})
+}
+
+// UpdateReturnedQuantity sets the "returned_quantity" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateReturnedQuantity() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateReturnedQuantity()
 	})
 }
 
@@ -1713,6 +2276,188 @@ func (u *OrderItemUpsertBulk) AddCost(v int64) *OrderItemUpsertBulk {
 func (u *OrderItemUpsertBulk) UpdateCost() *OrderItemUpsertBulk {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.UpdateCost()
+	})
+}
+
+// SetGoodsType sets the "goods_type" field.
+func (u *OrderItemUpsertBulk) SetGoodsType(v string) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetGoodsType(v)
+	})
+}
+
+// UpdateGoodsType sets the "goods_type" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateGoodsType() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateGoodsType()
+	})
+}
+
+// SetPaidAmount sets the "paid_amount" field.
+func (u *OrderItemUpsertBulk) SetPaidAmount(v int64) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetPaidAmount(v)
+	})
+}
+
+// AddPaidAmount adds v to the "paid_amount" field.
+func (u *OrderItemUpsertBulk) AddPaidAmount(v int64) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddPaidAmount(v)
+	})
+}
+
+// UpdatePaidAmount sets the "paid_amount" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdatePaidAmount() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdatePaidAmount()
+	})
+}
+
+// SetShippingAmount sets the "shipping_amount" field.
+func (u *OrderItemUpsertBulk) SetShippingAmount(v int64) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetShippingAmount(v)
+	})
+}
+
+// AddShippingAmount adds v to the "shipping_amount" field.
+func (u *OrderItemUpsertBulk) AddShippingAmount(v int64) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddShippingAmount(v)
+	})
+}
+
+// UpdateShippingAmount sets the "shipping_amount" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateShippingAmount() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateShippingAmount()
+	})
+}
+
+// SetRefundedAmount sets the "refunded_amount" field.
+func (u *OrderItemUpsertBulk) SetRefundedAmount(v int64) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetRefundedAmount(v)
+	})
+}
+
+// AddRefundedAmount adds v to the "refunded_amount" field.
+func (u *OrderItemUpsertBulk) AddRefundedAmount(v int64) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddRefundedAmount(v)
+	})
+}
+
+// UpdateRefundedAmount sets the "refunded_amount" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateRefundedAmount() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateRefundedAmount()
+	})
+}
+
+// SetRefundedShipping sets the "refunded_shipping" field.
+func (u *OrderItemUpsertBulk) SetRefundedShipping(v int64) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetRefundedShipping(v)
+	})
+}
+
+// AddRefundedShipping adds v to the "refunded_shipping" field.
+func (u *OrderItemUpsertBulk) AddRefundedShipping(v int64) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddRefundedShipping(v)
+	})
+}
+
+// UpdateRefundedShipping sets the "refunded_shipping" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateRefundedShipping() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateRefundedShipping()
+	})
+}
+
+// SetCanceledQuantity sets the "canceled_quantity" field.
+func (u *OrderItemUpsertBulk) SetCanceledQuantity(v int32) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetCanceledQuantity(v)
+	})
+}
+
+// AddCanceledQuantity adds v to the "canceled_quantity" field.
+func (u *OrderItemUpsertBulk) AddCanceledQuantity(v int32) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddCanceledQuantity(v)
+	})
+}
+
+// UpdateCanceledQuantity sets the "canceled_quantity" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateCanceledQuantity() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateCanceledQuantity()
+	})
+}
+
+// SetShippedQuantity sets the "shipped_quantity" field.
+func (u *OrderItemUpsertBulk) SetShippedQuantity(v int32) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetShippedQuantity(v)
+	})
+}
+
+// AddShippedQuantity adds v to the "shipped_quantity" field.
+func (u *OrderItemUpsertBulk) AddShippedQuantity(v int32) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddShippedQuantity(v)
+	})
+}
+
+// UpdateShippedQuantity sets the "shipped_quantity" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateShippedQuantity() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateShippedQuantity()
+	})
+}
+
+// SetReceivedQuantity sets the "received_quantity" field.
+func (u *OrderItemUpsertBulk) SetReceivedQuantity(v int32) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetReceivedQuantity(v)
+	})
+}
+
+// AddReceivedQuantity adds v to the "received_quantity" field.
+func (u *OrderItemUpsertBulk) AddReceivedQuantity(v int32) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddReceivedQuantity(v)
+	})
+}
+
+// UpdateReceivedQuantity sets the "received_quantity" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateReceivedQuantity() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateReceivedQuantity()
+	})
+}
+
+// SetReturnedQuantity sets the "returned_quantity" field.
+func (u *OrderItemUpsertBulk) SetReturnedQuantity(v int32) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetReturnedQuantity(v)
+	})
+}
+
+// AddReturnedQuantity adds v to the "returned_quantity" field.
+func (u *OrderItemUpsertBulk) AddReturnedQuantity(v int32) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddReturnedQuantity(v)
+	})
+}
+
+// UpdateReturnedQuantity sets the "returned_quantity" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateReturnedQuantity() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateReturnedQuantity()
 	})
 }
 

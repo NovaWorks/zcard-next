@@ -7,7 +7,7 @@
       <div class="stat-grid">
         <div class="card"><div class="muted">可用余额</div><div class="stat-num">{{ formatMoney(balance?.available_cents ?? 0) }}</div></div>
         <div class="card"><div class="muted">冻结中</div><div class="stat-num">{{ formatMoney(balance?.locked_cents ?? 0) }}</div></div>
-        <div class="card"><div class="muted">积分</div><div class="stat-num">{{ level?.points ?? balance?.points ?? 0 }}</div></div>
+        <div class="card"><div class="muted">积分</div><div class="stat-num">{{ level?.points ?? balance?.points ?? 0 }}</div><p v-if="Number(level?.points ?? balance?.points ?? 0)<0" class="muted">退款撤回已使用积分，后续获得的积分将先抵扣欠额。</p></div>
         <div class="card"><div class="muted">累计消费</div><div class="stat-num">{{ formatMoney(level?.consumed_cents ?? 0) }}</div></div>
       </div>
       <div class="card lv-card" v-if="level">
@@ -62,7 +62,7 @@
         <tbody>
           <tr v-for="o in orders" :key="o.order_no">
             <td>{{ o.order_no }}</td>
-            <td><span :class="statusBadge(o.status)">{{ statusText(o.status) }}</span></td>
+            <td><span :class="statusBadge(o.status)">{{ statusText(o.status) }}</span><span v-if="o.shipping_status && o.shipping_status!=='none'" class="badge">{{shippingStatus(o.shipping_status)}}</span></td>
             <td class="price">{{ formatMoney(o.total_cents) }}</td>
             <td><div>{{ o.item_count }} 件</div><small>{{ o.product_summary }}</small><div v-if="o.manual_pending_count && ['paid', 'fulfilling', 'partially_delivered'].includes(o.status)" class="muted">{{ o.manual_pending_count }} 项待人工完成</div></td>
             <td class="muted">{{ fmtTime(o.created_at) }}</td>
@@ -86,7 +86,7 @@
         <div v-for="o in orders" :key="o.order_no" class="mcard">
           <div class="mcard-row">
             <span class="mcard-title">{{ o.order_no }}</span>
-            <span :class="statusBadge(o.status)">{{ statusText(o.status) }}</span>
+            <span :class="statusBadge(o.status)">{{ statusText(o.status) }}</span><span v-if="o.shipping_status && o.shipping_status!=='none'" class="badge">{{shippingStatus(o.shipping_status)}}</span>
           </div>
           <div class="mcard-row">
             <span class="muted">{{ fmtTime(o.created_at) }} · {{ o.item_count }} 件</span>
@@ -331,6 +331,7 @@
 </template>
 
 <script setup lang="ts">
+import {shippingStatus} from "../../../packages/shipping";
 import { submitPaymentForm as submitForm } from "@/utils/payment-form";
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';

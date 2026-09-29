@@ -26,7 +26,7 @@ const (
 type FetchDeliveryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	QueryPassword string                 `protobuf:"bytes,2,opt,name=query_password,json=queryPassword,proto3" json:"query_password,omitempty"`
+	QueryPassword string                 `protobuf:"bytes,2,opt,name=query_password,json=queryPassword,proto3" json:"query_password,omitempty"` // Required for guests; authenticated order owners may omit it.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -412,10 +412,10 @@ var File_storefront_v1_delivery_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_delivery_proto_rawDesc = "" +
 	"\n" +
-	"\x1cstorefront/v1/delivery.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"b\n" +
+	"\x1cstorefront/v1/delivery.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"]\n" +
 	"\x14FetchDeliveryRequest\x12\x1e\n" +
-	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12*\n" +
-	"\x0equery_password\x18\x02 \x01(\tB\x03\xe0A\x02R\rqueryPassword\"\xa5\x01\n" +
+	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12%\n" +
+	"\x0equery_password\x18\x02 \x01(\tR\rqueryPassword\"\xa5\x01\n" +
 	"\x12FetchDeliveryReply\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12;\n" +

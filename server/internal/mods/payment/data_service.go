@@ -28,6 +28,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	khttp "github.com/go-kratos/kratos/v3/transport/http"
@@ -367,12 +368,23 @@ func (s *AdminPaymentService) CapturePayment(ctx context.Context, req *adminv1.C
 
 // CreateRefund 创建退款单。
 func (s *AdminPaymentService) CreateRefund(ctx context.Context, req *adminv1.CreateRefundRequest) (*adminv1.RefundOrder, error) {
-	o, err := data.Client(ctx, s.data).Order.Query().Where(order.OrderNo(req.GetOrderNo())).Only(ctx)
+	o, err := data.Client(ctx, s.data).Order.Query().Where(order.OrderNo(req.GetOrderNo()), order.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, errors.NotFound("order.NOT_FOUND", "订单不存在")
 	}
 	if err != nil {
 		return nil, err
+	}
+	if o.CommerceVersion == 1 {
+		var actor uint64
+		if cl := identity.ClaimsFromContext(ctx); cl != nil {
+			actor = cl.Subject
+		}
+		rf, e := s.repo.RefundPhysical(ctx, o.ID, actor, req)
+		if e != nil {
+			return nil, e
+		}
+		return ToRefundPB(rf, o.OrderNo), nil
 	}
 	if req.GetChannel() != "wallet" {
 		return nil, errors.BadRequest("payment.REFUND_CHANNEL_UNSUPPORTED", "当前仅支持自动退至会员余额；原路或上游退款请先向渠道核实")
@@ -390,7 +402,7 @@ func (s *AdminPaymentService) CreateRefund(ctx context.Context, req *adminv1.Cre
 
 // ListRefunds 退款列表。
 func (s *AdminPaymentService) ListRefunds(ctx context.Context, req *adminv1.ListRefundsRequest) (*adminv1.ListRefundsReply, error) {
-	rows, err := s.repo.ListRefunds(ctx, req.GetStatus())
+	rows, err := s.repo.ListRefunds(ctx, req.GetStatus(), req)
 	if err != nil {
 		return nil, errors.InternalServer("payment.LIST_FAILED", "读取退款失败")
 	}
@@ -516,7 +528,7 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 	client := data.Client(ctx, s.data)
 
 	// 查订单
-	o, err := client.Order.Query().Where(order.OrderNo(req.GetOrderNo())).Only(ctx)
+	o, err := client.Order.Query().Where(order.OrderNo(req.GetOrderNo()), order.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, errors.NotFound("order.NOT_FOUND", "订单不存在")
 	}

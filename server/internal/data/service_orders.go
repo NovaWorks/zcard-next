@@ -12,6 +12,9 @@ import (
 
 // FulfillmentMode resolves a snapshot; a SKU never changes the supplier identity.
 func FulfillmentMode(p *ent.Product, sku *ent.ProductSku) string {
+	if p.GoodsType == "physical" {
+		return "shipping"
+	}
 	switch StockSource(p, sku) {
 	case "upstream":
 		return "upstream"
@@ -69,6 +72,9 @@ func ManualAvailable(ctx context.Context, c *ent.Client, p *ent.Product, current
 
 // RejectServiceProduct protects synchronous card-only purchasing entrypoints.
 func RejectServiceProduct(ctx context.Context, c *ent.Client, p *ent.Product) error {
+	if p.GoodsType == "physical" {
+		return fmt.Errorf("该入口不支持实体商品，请在商城下单")
+	}
 	if p.FulfillmentMode == "manual" {
 		return fmt.Errorf("该入口不支持人工服务商品")
 	}

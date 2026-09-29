@@ -62,6 +62,7 @@ func (r *ResellerRepo) WithdrawLock(ctx context.Context, subsiteID uint64, amoun
 			if row.Amount <= remaining {
 				// 整行锁定（remark 标记提现单号，打款/驳回按 ref 关联）
 				if _, err := client.ResellerLedgerEntry.UpdateOneID(row.ID).
+					Where(resellerledgerentry.StatusEQ(row.Status), resellerledgerentry.Amount(row.Amount)).
 					SetStatus(resellerledgerentry.StatusLocked).
 					SetRemark("withdraw_ref:" + ref).
 					Save(txCtx); err != nil {
@@ -72,6 +73,7 @@ func (r *ResellerRepo) WithdrawLock(ctx context.Context, subsiteID uint64, amoun
 			}
 			// 部分拆行：原行剩 (行额-剩余)，新建锁定行（amount=剩余）
 			if _, err := client.ResellerLedgerEntry.UpdateOneID(row.ID).
+				Where(resellerledgerentry.StatusEQ(row.Status), resellerledgerentry.Amount(row.Amount)).
 				SetAmount(row.Amount - remaining).
 				Save(txCtx); err != nil {
 				return err
@@ -133,6 +135,7 @@ func (r *ResellerRepo) WithdrawPaid(ctx context.Context, subsiteID uint64, ref s
 			continue // 锚点行
 		}
 		if _, err := client.ResellerLedgerEntry.UpdateOneID(row.ID).
+			Where(resellerledgerentry.StatusEQ(row.Status), resellerledgerentry.Amount(row.Amount)).
 			SetStatus(resellerledgerentry.StatusWithdrawn).
 			Save(ctx); err != nil {
 			return err
@@ -166,6 +169,7 @@ func (r *ResellerRepo) WithdrawReject(ctx context.Context, subsiteID uint64, ref
 			rejectTotal += row.Amount
 		}
 		if _, err := client.ResellerLedgerEntry.UpdateOneID(row.ID).
+			Where(resellerledgerentry.StatusEQ(row.Status), resellerledgerentry.Amount(row.Amount)).
 			SetStatus(status).
 			Save(ctx); err != nil {
 			return err
@@ -176,18 +180,22 @@ func (r *ResellerRepo) WithdrawReject(ctx context.Context, subsiteID uint64, ref
 
 // RefundDeduct 退款扣回（幂等键 refund_deduct:<orderID>）。
 // ratio 万分比（0=全额）。余额不足 → 负行转 pending 负债。
-func (r *ResellerRepo) RefundDeduct(ctx context.Context, subsiteID, orderID uint64, profit int64, ratio int64) error {
+func (r *ResellerRepo) RefundDeduct(ctx context.Context, subsiteID, orderID uint64, profit int64, ratio int64, references ...string) error {
 	if ratio <= 0 {
 		ratio = 10000
 	}
-	clawback := profit * ratio / 10000
+	key := fmt.Sprintf("refund_deduct:%d", orderID)
+	if len(references) > 0 {
+		key = references[0]
+	}
+	clawback := data.Prorate(profit, ratio, 10000)
 	if clawback <= 0 {
 		return nil
 	}
 	return data.Tx(ctx, r.data, func(txCtx context.Context) error {
 		client := data.Client(txCtx, r.data)
 		exists, err := client.ResellerLedgerEntry.Query().
-			Where(resellerledgerentry.IdempotencyKeyEQ(fmt.Sprintf("refund_deduct:%d", orderID))).Exist(txCtx)
+			Where(resellerledgerentry.IdempotencyKeyEQ(key)).Exist(txCtx)
 		if err != nil {
 			return err
 		}
@@ -220,6 +228,7 @@ func (r *ResellerRepo) RefundDeduct(ctx context.Context, subsiteID, orderID uint
 				}
 				if row.Amount <= remaining {
 					if _, err := client.ResellerLedgerEntry.UpdateOneID(row.ID).
+						Where(resellerledgerentry.StatusEQ(row.Status), resellerledgerentry.Amount(row.Amount)).
 						SetStatus(resellerledgerentry.StatusWithdrawn).
 						Save(txCtx); err != nil {
 						return err
@@ -228,6 +237,7 @@ func (r *ResellerRepo) RefundDeduct(ctx context.Context, subsiteID, orderID uint
 					continue
 				}
 				if _, err := client.ResellerLedgerEntry.UpdateOneID(row.ID).
+					Where(resellerledgerentry.StatusEQ(row.Status), resellerledgerentry.Amount(row.Amount)).
 					SetAmount(row.Amount - remaining).
 					Save(txCtx); err != nil {
 					return err
@@ -241,7 +251,7 @@ func (r *ResellerRepo) RefundDeduct(ctx context.Context, subsiteID, orderID uint
 				SetType("refund_deduct").
 				SetAmount(-clawback).
 				SetStatus(resellerledgerentry.StatusWithdrawn).
-				SetIdempotencyKey(fmt.Sprintf("refund_deduct:%d", orderID)).
+				SetIdempotencyKey(key).
 				SetCreatedAt(now).
 				SetRemark("退款利润扣回").
 				Save(txCtx); err != nil {
@@ -256,7 +266,7 @@ func (r *ResellerRepo) RefundDeduct(ctx context.Context, subsiteID, orderID uint
 			SetType("refund_deduct").
 			SetAmount(-(clawback - availTotal)).
 			SetStatus(resellerledgerentry.StatusPending).
-			SetIdempotencyKey(fmt.Sprintf("refund_deduct:%d", orderID)).
+			SetIdempotencyKey(key).
 			SetCreatedAt(now).
 			SetRemark("退款利润扣回（负债，待利润抵扣）").
 			Save(txCtx); err != nil {
@@ -271,6 +281,7 @@ func (r *ResellerRepo) RefundDeduct(ctx context.Context, subsiteID, orderID uint
 				}
 				if row.Amount <= remaining {
 					if _, err := client.ResellerLedgerEntry.UpdateOneID(row.ID).
+						Where(resellerledgerentry.StatusEQ(row.Status), resellerledgerentry.Amount(row.Amount)).
 						SetStatus(resellerledgerentry.StatusWithdrawn).
 						Save(txCtx); err != nil {
 						return err
@@ -279,6 +290,7 @@ func (r *ResellerRepo) RefundDeduct(ctx context.Context, subsiteID, orderID uint
 					continue
 				}
 				if _, err := client.ResellerLedgerEntry.UpdateOneID(row.ID).
+					Where(resellerledgerentry.StatusEQ(row.Status), resellerledgerentry.Amount(row.Amount)).
 					SetAmount(row.Amount - remaining).
 					Save(txCtx); err != nil {
 					return err
@@ -315,6 +327,7 @@ func (r *ResellerRepo) settleDebt(ctx context.Context, subsiteID uint64, amount 
 		if debt <= remaining {
 			// 负债清空
 			if _, err := client.ResellerLedgerEntry.UpdateOneID(row.ID).
+				Where(resellerledgerentry.StatusEQ(row.Status), resellerledgerentry.Amount(row.Amount)).
 				SetStatus(resellerledgerentry.StatusWithdrawn).
 				Save(ctx); err != nil {
 				return amount, err
@@ -324,6 +337,7 @@ func (r *ResellerRepo) settleDebt(ctx context.Context, subsiteID uint64, amount 
 		}
 		// 部分抵扣：负债减少
 		if _, err := client.ResellerLedgerEntry.UpdateOneID(row.ID).
+			Where(resellerledgerentry.StatusEQ(row.Status), resellerledgerentry.Amount(row.Amount)).
 			SetAmount(-(debt - remaining)).
 			Save(ctx); err != nil {
 			return amount, err

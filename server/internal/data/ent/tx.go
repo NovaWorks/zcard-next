@@ -100,6 +100,8 @@ type Tx struct {
 	Payment *PaymentClient
 	// PaymentChannel is the client for interacting with the PaymentChannel builders.
 	PaymentChannel *PaymentChannelClient
+	// PhysicalStockMovement is the client for interacting with the PhysicalStockMovement builders.
+	PhysicalStockMovement *PhysicalStockMovementClient
 	// PointAccount is the client for interacting with the PointAccount builders.
 	PointAccount *PointAccountClient
 	// PointTransaction is the client for interacting with the PointTransaction builders.
@@ -158,6 +160,8 @@ type Tx struct {
 	Session *SessionClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
+	// Shipment is the client for interacting with the Shipment builders.
+	Shipment *ShipmentClient
 	// StockAlert is the client for interacting with the StockAlert builders.
 	StockAlert *StockAlertClient
 	// SupplierAccount is the client for interacting with the SupplierAccount builders.
@@ -379,6 +383,7 @@ func (tx *Tx) init() {
 	tx.PageView = NewPageViewClient(tx.config)
 	tx.Payment = NewPaymentClient(tx.config)
 	tx.PaymentChannel = NewPaymentChannelClient(tx.config)
+	tx.PhysicalStockMovement = NewPhysicalStockMovementClient(tx.config)
 	tx.PointAccount = NewPointAccountClient(tx.config)
 	tx.PointTransaction = NewPointTransactionClient(tx.config)
 	tx.Post = NewPostClient(tx.config)
@@ -408,6 +413,7 @@ func (tx *Tx) init() {
 	tx.SecurityAuditLog = NewSecurityAuditLogClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
+	tx.Shipment = NewShipmentClient(tx.config)
 	tx.StockAlert = NewStockAlertClient(tx.config)
 	tx.SupplierAccount = NewSupplierAccountClient(tx.config)
 	tx.SupplierLedgerEntry = NewSupplierLedgerEntryClient(tx.config)

@@ -113,6 +113,94 @@ func (_u *ProductUpdate) SetNillableName(v *string) *ProductUpdate {
 	return _u
 }
 
+// SetGoodsType sets the "goods_type" field.
+func (_u *ProductUpdate) SetGoodsType(v string) *ProductUpdate {
+	_u.mutation.SetGoodsType(v)
+	return _u
+}
+
+// SetNillableGoodsType sets the "goods_type" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableGoodsType(v *string) *ProductUpdate {
+	if v != nil {
+		_u.SetGoodsType(*v)
+	}
+	return _u
+}
+
+// SetShippingMode sets the "shipping_mode" field.
+func (_u *ProductUpdate) SetShippingMode(v string) *ProductUpdate {
+	_u.mutation.SetShippingMode(v)
+	return _u
+}
+
+// SetNillableShippingMode sets the "shipping_mode" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableShippingMode(v *string) *ProductUpdate {
+	if v != nil {
+		_u.SetShippingMode(*v)
+	}
+	return _u
+}
+
+// SetShippingFee sets the "shipping_fee" field.
+func (_u *ProductUpdate) SetShippingFee(v int64) *ProductUpdate {
+	_u.mutation.ResetShippingFee()
+	_u.mutation.SetShippingFee(v)
+	return _u
+}
+
+// SetNillableShippingFee sets the "shipping_fee" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableShippingFee(v *int64) *ProductUpdate {
+	if v != nil {
+		_u.SetShippingFee(*v)
+	}
+	return _u
+}
+
+// AddShippingFee adds value to the "shipping_fee" field.
+func (_u *ProductUpdate) AddShippingFee(v int64) *ProductUpdate {
+	_u.mutation.AddShippingFee(v)
+	return _u
+}
+
+// SetShippingCountries sets the "shipping_countries" field.
+func (_u *ProductUpdate) SetShippingCountries(v []string) *ProductUpdate {
+	_u.mutation.SetShippingCountries(v)
+	return _u
+}
+
+// AppendShippingCountries appends value to the "shipping_countries" field.
+func (_u *ProductUpdate) AppendShippingCountries(v []string) *ProductUpdate {
+	_u.mutation.AppendShippingCountries(v)
+	return _u
+}
+
+// ClearShippingCountries clears the value of the "shipping_countries" field.
+func (_u *ProductUpdate) ClearShippingCountries() *ProductUpdate {
+	_u.mutation.ClearShippingCountries()
+	return _u
+}
+
+// SetPhysicalStock sets the "physical_stock" field.
+func (_u *ProductUpdate) SetPhysicalStock(v int64) *ProductUpdate {
+	_u.mutation.ResetPhysicalStock()
+	_u.mutation.SetPhysicalStock(v)
+	return _u
+}
+
+// SetNillablePhysicalStock sets the "physical_stock" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillablePhysicalStock(v *int64) *ProductUpdate {
+	if v != nil {
+		_u.SetPhysicalStock(*v)
+	}
+	return _u
+}
+
+// AddPhysicalStock adds value to the "physical_stock" field.
+func (_u *ProductUpdate) AddPhysicalStock(v int64) *ProductUpdate {
+	_u.mutation.AddPhysicalStock(v)
+	return _u
+}
+
 // SetSlug sets the "slug" field.
 func (_u *ProductUpdate) SetSlug(v string) *ProductUpdate {
 	_u.mutation.SetSlug(v)
@@ -978,6 +1066,35 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(product.FieldName, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.GoodsType(); ok {
+		_spec.SetField(product.FieldGoodsType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ShippingMode(); ok {
+		_spec.SetField(product.FieldShippingMode, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ShippingFee(); ok {
+		_spec.SetField(product.FieldShippingFee, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedShippingFee(); ok {
+		_spec.AddField(product.FieldShippingFee, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.ShippingCountries(); ok {
+		_spec.SetField(product.FieldShippingCountries, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedShippingCountries(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, product.FieldShippingCountries, value)
+		})
+	}
+	if _u.mutation.ShippingCountriesCleared() {
+		_spec.ClearField(product.FieldShippingCountries, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.PhysicalStock(); ok {
+		_spec.SetField(product.FieldPhysicalStock, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPhysicalStock(); ok {
+		_spec.AddField(product.FieldPhysicalStock, field.TypeInt64, value)
+	}
 	if value, ok := _u.mutation.Slug(); ok {
 		_spec.SetField(product.FieldSlug, field.TypeString, value)
 	}
@@ -1361,6 +1478,94 @@ func (_u *ProductUpdateOne) SetNillableName(v *string) *ProductUpdateOne {
 	if v != nil {
 		_u.SetName(*v)
 	}
+	return _u
+}
+
+// SetGoodsType sets the "goods_type" field.
+func (_u *ProductUpdateOne) SetGoodsType(v string) *ProductUpdateOne {
+	_u.mutation.SetGoodsType(v)
+	return _u
+}
+
+// SetNillableGoodsType sets the "goods_type" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableGoodsType(v *string) *ProductUpdateOne {
+	if v != nil {
+		_u.SetGoodsType(*v)
+	}
+	return _u
+}
+
+// SetShippingMode sets the "shipping_mode" field.
+func (_u *ProductUpdateOne) SetShippingMode(v string) *ProductUpdateOne {
+	_u.mutation.SetShippingMode(v)
+	return _u
+}
+
+// SetNillableShippingMode sets the "shipping_mode" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableShippingMode(v *string) *ProductUpdateOne {
+	if v != nil {
+		_u.SetShippingMode(*v)
+	}
+	return _u
+}
+
+// SetShippingFee sets the "shipping_fee" field.
+func (_u *ProductUpdateOne) SetShippingFee(v int64) *ProductUpdateOne {
+	_u.mutation.ResetShippingFee()
+	_u.mutation.SetShippingFee(v)
+	return _u
+}
+
+// SetNillableShippingFee sets the "shipping_fee" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableShippingFee(v *int64) *ProductUpdateOne {
+	if v != nil {
+		_u.SetShippingFee(*v)
+	}
+	return _u
+}
+
+// AddShippingFee adds value to the "shipping_fee" field.
+func (_u *ProductUpdateOne) AddShippingFee(v int64) *ProductUpdateOne {
+	_u.mutation.AddShippingFee(v)
+	return _u
+}
+
+// SetShippingCountries sets the "shipping_countries" field.
+func (_u *ProductUpdateOne) SetShippingCountries(v []string) *ProductUpdateOne {
+	_u.mutation.SetShippingCountries(v)
+	return _u
+}
+
+// AppendShippingCountries appends value to the "shipping_countries" field.
+func (_u *ProductUpdateOne) AppendShippingCountries(v []string) *ProductUpdateOne {
+	_u.mutation.AppendShippingCountries(v)
+	return _u
+}
+
+// ClearShippingCountries clears the value of the "shipping_countries" field.
+func (_u *ProductUpdateOne) ClearShippingCountries() *ProductUpdateOne {
+	_u.mutation.ClearShippingCountries()
+	return _u
+}
+
+// SetPhysicalStock sets the "physical_stock" field.
+func (_u *ProductUpdateOne) SetPhysicalStock(v int64) *ProductUpdateOne {
+	_u.mutation.ResetPhysicalStock()
+	_u.mutation.SetPhysicalStock(v)
+	return _u
+}
+
+// SetNillablePhysicalStock sets the "physical_stock" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillablePhysicalStock(v *int64) *ProductUpdateOne {
+	if v != nil {
+		_u.SetPhysicalStock(*v)
+	}
+	return _u
+}
+
+// AddPhysicalStock adds value to the "physical_stock" field.
+func (_u *ProductUpdateOne) AddPhysicalStock(v int64) *ProductUpdateOne {
+	_u.mutation.AddPhysicalStock(v)
 	return _u
 }
 
@@ -2258,6 +2463,35 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(product.FieldName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.GoodsType(); ok {
+		_spec.SetField(product.FieldGoodsType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ShippingMode(); ok {
+		_spec.SetField(product.FieldShippingMode, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ShippingFee(); ok {
+		_spec.SetField(product.FieldShippingFee, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedShippingFee(); ok {
+		_spec.AddField(product.FieldShippingFee, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.ShippingCountries(); ok {
+		_spec.SetField(product.FieldShippingCountries, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedShippingCountries(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, product.FieldShippingCountries, value)
+		})
+	}
+	if _u.mutation.ShippingCountriesCleared() {
+		_spec.ClearField(product.FieldShippingCountries, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.PhysicalStock(); ok {
+		_spec.SetField(product.FieldPhysicalStock, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPhysicalStock(); ok {
+		_spec.AddField(product.FieldPhysicalStock, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Slug(); ok {
 		_spec.SetField(product.FieldSlug, field.TypeString, value)

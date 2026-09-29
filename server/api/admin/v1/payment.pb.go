@@ -1422,6 +1422,9 @@ func (x *Payment) GetDriverSnapshot() string {
 
 type CreateRefundRequest struct {
 	state                    protoimpl.MessageState `protogen:"open.v1"`
+	ItemAllocationsJson      string                 `protobuf:"bytes,8,opt,name=item_allocations_json,json=itemAllocationsJson,proto3" json:"item_allocations_json,omitempty"`
+	ExternalConfirmed        bool                   `protobuf:"varint,9,opt,name=external_confirmed,json=externalConfirmed,proto3" json:"external_confirmed,omitempty"`
+	ExternalReference        string                 `protobuf:"bytes,10,opt,name=external_reference,json=externalReference,proto3" json:"external_reference,omitempty"`
 	ExpectedRefundedCents    *int64                 `protobuf:"varint,5,opt,name=expected_refunded_cents,json=expectedRefundedCents,proto3,oneof" json:"expected_refunded_cents,omitempty"` // confirmed cumulative succeeded refunds
 	OrderNo                  string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
 	AmountCents              int64                  `protobuf:"varint,2,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
@@ -1461,6 +1464,27 @@ func (x *CreateRefundRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateRefundRequest.ProtoReflect.Descriptor instead.
 func (*CreateRefundRequest) Descriptor() ([]byte, []int) {
 	return file_admin_v1_payment_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *CreateRefundRequest) GetItemAllocationsJson() string {
+	if x != nil {
+		return x.ItemAllocationsJson
+	}
+	return ""
+}
+
+func (x *CreateRefundRequest) GetExternalConfirmed() bool {
+	if x != nil {
+		return x.ExternalConfirmed
+	}
+	return false
+}
+
+func (x *CreateRefundRequest) GetExternalReference() string {
+	if x != nil {
+		return x.ExternalReference
+	}
+	return ""
 }
 
 func (x *CreateRefundRequest) GetExpectedRefundedCents() int64 {
@@ -1515,6 +1539,8 @@ func (x *CreateRefundRequest) GetExpectedRefundedFeeCents() int64 {
 type ListRefundsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	OrderNo       string                 `protobuf:"bytes,2,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	BeforeId      uint64                 `protobuf:"varint,3,opt,name=before_id,json=beforeId,proto3" json:"before_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1554,6 +1580,20 @@ func (x *ListRefundsRequest) GetStatus() string {
 		return x.Status
 	}
 	return ""
+}
+
+func (x *ListRefundsRequest) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *ListRefundsRequest) GetBeforeId() uint64 {
+	if x != nil {
+		return x.BeforeId
+	}
+	return 0
 }
 
 type ListRefundsReply struct {
@@ -1602,19 +1642,22 @@ func (x *ListRefundsReply) GetRefunds() []*RefundOrder {
 
 // RefundOrder 退款单。
 type RefundOrder struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Id               uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	OrderId          uint64                 `protobuf:"varint,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	OrderNo          string                 `protobuf:"bytes,3,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	AmountCents      int64                  `protobuf:"varint,4,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
-	Channel          string                 `protobuf:"bytes,5,opt,name=channel,proto3" json:"channel,omitempty"`
-	Status           string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
-	Reason           string                 `protobuf:"bytes,7,opt,name=reason,proto3" json:"reason,omitempty"`
-	UpstreamRefundId string                 `protobuf:"bytes,8,opt,name=upstream_refund_id,json=upstreamRefundId,proto3" json:"upstream_refund_id,omitempty"`
-	CreatedAt        int64                  `protobuf:"varint,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	FeeCents         int64                  `protobuf:"varint,10,opt,name=fee_cents,json=feeCents,proto3" json:"fee_cents,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Id                  uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	OrderId             uint64                 `protobuf:"varint,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	OrderNo             string                 `protobuf:"bytes,3,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	AmountCents         int64                  `protobuf:"varint,4,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
+	Channel             string                 `protobuf:"bytes,5,opt,name=channel,proto3" json:"channel,omitempty"`
+	Status              string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
+	Reason              string                 `protobuf:"bytes,7,opt,name=reason,proto3" json:"reason,omitempty"`
+	UpstreamRefundId    string                 `protobuf:"bytes,8,opt,name=upstream_refund_id,json=upstreamRefundId,proto3" json:"upstream_refund_id,omitempty"`
+	CreatedAt           int64                  `protobuf:"varint,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	FeeCents            int64                  `protobuf:"varint,10,opt,name=fee_cents,json=feeCents,proto3" json:"fee_cents,omitempty"`
+	ShippingCents       int64                  `protobuf:"varint,11,opt,name=shipping_cents,json=shippingCents,proto3" json:"shipping_cents,omitempty"`
+	ItemAllocationsJson string                 `protobuf:"bytes,12,opt,name=item_allocations_json,json=itemAllocationsJson,proto3" json:"item_allocations_json,omitempty"`
+	OperatorId          uint64                 `protobuf:"varint,13,opt,name=operator_id,json=operatorId,proto3" json:"operator_id,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *RefundOrder) Reset() {
@@ -1713,6 +1756,27 @@ func (x *RefundOrder) GetCreatedAt() int64 {
 func (x *RefundOrder) GetFeeCents() int64 {
 	if x != nil {
 		return x.FeeCents
+	}
+	return 0
+}
+
+func (x *RefundOrder) GetShippingCents() int64 {
+	if x != nil {
+		return x.ShippingCents
+	}
+	return 0
+}
+
+func (x *RefundOrder) GetItemAllocationsJson() string {
+	if x != nil {
+		return x.ItemAllocationsJson
+	}
+	return ""
+}
+
+func (x *RefundOrder) GetOperatorId() uint64 {
+	if x != nil {
+		return x.OperatorId
 	}
 	return 0
 }
@@ -1876,8 +1940,12 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\rreview_reason\x18\f \x01(\tR\freviewReason\x12\x1d\n" +
 	"\n" +
 	"expires_at\x18\r \x01(\x03R\texpiresAt\x12'\n" +
-	"\x0fdriver_snapshot\x18\x0e \x01(\tR\x0edriverSnapshot\"\xe9\x02\n" +
-	"\x13CreateRefundRequest\x12;\n" +
+	"\x0fdriver_snapshot\x18\x0e \x01(\tR\x0edriverSnapshot\"\xfb\x03\n" +
+	"\x13CreateRefundRequest\x122\n" +
+	"\x15item_allocations_json\x18\b \x01(\tR\x13itemAllocationsJson\x12-\n" +
+	"\x12external_confirmed\x18\t \x01(\bR\x11externalConfirmed\x12-\n" +
+	"\x12external_reference\x18\n" +
+	" \x01(\tR\x11externalReference\x12;\n" +
 	"\x17expected_refunded_cents\x18\x05 \x01(\x03H\x00R\x15expectedRefundedCents\x88\x01\x01\x12\x1e\n" +
 	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12!\n" +
 	"\famount_cents\x18\x02 \x01(\x03R\vamountCents\x12\x1d\n" +
@@ -1886,11 +1954,13 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\tfee_cents\x18\x06 \x01(\x03R\bfeeCents\x12B\n" +
 	"\x1bexpected_refunded_fee_cents\x18\a \x01(\x03H\x01R\x18expectedRefundedFeeCents\x88\x01\x01B\x1a\n" +
 	"\x18_expected_refunded_centsB\x1e\n" +
-	"\x1c_expected_refunded_fee_cents\",\n" +
+	"\x1c_expected_refunded_fee_cents\"d\n" +
 	"\x12ListRefundsRequest\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\tR\x06status\"M\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\x12\x19\n" +
+	"\border_no\x18\x02 \x01(\tR\aorderNo\x12\x1b\n" +
+	"\tbefore_id\x18\x03 \x01(\x04R\bbeforeId\"M\n" +
 	"\x10ListRefundsReply\x129\n" +
-	"\arefunds\x18\x01 \x03(\v2\x1f.zcard.api.admin.v1.RefundOrderR\arefunds\"\xaa\x02\n" +
+	"\arefunds\x18\x01 \x03(\v2\x1f.zcard.api.admin.v1.RefundOrderR\arefunds\"\xa6\x03\n" +
 	"\vRefundOrder\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x19\n" +
 	"\border_id\x18\x02 \x01(\x04R\aorderId\x12\x19\n" +
@@ -1903,7 +1973,11 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\t \x01(\x03R\tcreatedAt\x12\x1b\n" +
 	"\tfee_cents\x18\n" +
-	" \x01(\x03R\bfeeCents2\x98\v\n" +
+	" \x01(\x03R\bfeeCents\x12%\n" +
+	"\x0eshipping_cents\x18\v \x01(\x03R\rshippingCents\x122\n" +
+	"\x15item_allocations_json\x18\f \x01(\tR\x13itemAllocationsJson\x12\x1f\n" +
+	"\voperator_id\x18\r \x01(\x04R\n" +
+	"operatorId2\x98\v\n" +
 	"\x13AdminPaymentService\x12o\n" +
 	"\fListChannels\x12\x16.google.protobuf.Empty\x1a\x1f.zcard.api.admin.v1.ChannelList\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/payment/channels\x12l\n" +
 	"\vListDrivers\x12\x16.google.protobuf.Empty\x1a\x1e.zcard.api.admin.v1.DriverList\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/admin/payment/drivers\x12\x9a\x01\n" +

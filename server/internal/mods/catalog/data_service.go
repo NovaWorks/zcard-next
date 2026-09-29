@@ -219,6 +219,7 @@ func (s *AdminCatalogService) CreateProduct(ctx context.Context, req *adminv1.Cr
 		return nil, errors.BadRequest("catalog.INVALID_INPUT", "名称必填、价格与成本须为非负且不超上限")
 	}
 	in := port.ProductInput{
+		GoodsType: req.GoodsType, ShippingMode: req.ShippingMode, ShippingFee: req.ShippingFeeCents, PhysicalStock: req.PhysicalStock, ShippingCountries: req.ShippingCountries,
 		Name: req.GetName(), CategoryID: req.GetCategoryId(),
 		Description:    sanitize.RichHTML(req.GetDescription()),
 		DescriptionSet: true,
@@ -258,6 +259,7 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 		return nil, errors.BadRequest("catalog.INVALID_INPUT", "价格与成本不得超出上限")
 	}
 	in := port.ProductInput{
+		GoodsType: req.GoodsType, ShippingMode: req.ShippingMode, ShippingFee: req.ShippingFeeCents, PhysicalStock: req.PhysicalStock, ExpectedPhysicalStock: req.ExpectedPhysicalStock, ShippingCountries: req.ShippingCountries,
 		Name: req.GetName(), CategoryID: req.GetCategoryId(),
 		Description:    sanitize.RichHTML(req.GetDescription()),
 		DescriptionSet: true,
@@ -559,7 +561,7 @@ func (s *AdminCatalogService) CreateSku(ctx context.Context, req *adminv1.Create
 		return nil, errors.BadRequest("catalog.SKU_INVALID", "商品 ID 与规格名必填")
 	}
 	sku, err := s.repo.CreateSku(ctx, SkuInput{
-		ProductID: req.GetProductId(), Name: req.GetName(), SpecValues: req.GetSpecValues(),
+		PhysicalStock: req.PhysicalStock, ProductID: req.GetProductId(), Name: req.GetName(), SpecValues: req.GetSpecValues(),
 		PriceCents: req.GetPriceCents(), CostCents: req.GetCostCents(),
 		StockOffset: req.GetStockOffset(), UpstreamSkuID: req.GetUpstreamSkuId(), FulfillmentMode: req.GetFulfillmentMode(),
 	})
@@ -574,7 +576,7 @@ func (s *AdminCatalogService) CreateSku(ctx context.Context, req *adminv1.Create
 
 // UpdateSku 更新 SKU。
 func (s *AdminCatalogService) UpdateSku(ctx context.Context, req *adminv1.UpdateSkuRequest) (*adminv1.Sku, error) {
-	sku, err := s.repo.UpdateSku(ctx, req.GetId(), SkuInput{
+	sku, err := s.repo.UpdateSku(ctx, req.GetId(), SkuInput{PhysicalStock: req.PhysicalStock, ExpectedPhysicalStock: req.ExpectedPhysicalStock,
 		SetPrice: req.PriceCents != nil, SetCost: req.CostCents != nil, SetStockOffset: req.StockOffset != nil,
 		Name: req.GetName(), SpecValues: req.GetSpecValues(),
 		PriceCents: req.GetPriceCents(), CostCents: req.GetCostCents(),
@@ -668,7 +670,7 @@ func toMemberGroupPB(g *ent.MemberProductGroup) *adminv1.MemberGroup {
 }
 
 func toSkuPB(sku *ent.ProductSku) *adminv1.Sku {
-	return &adminv1.Sku{
+	return &adminv1.Sku{PhysicalStock: &sku.PhysicalStock,
 		Id: sku.ID, ProductId: sku.ProductID, Name: sku.Name,
 		SpecValues: sku.SpecValues, PriceCents: sku.Price, CostCents: sku.Cost,
 		StockOffset: sku.StockOffset, UpstreamSkuId: sku.UpstreamSkuID, FulfillmentMode: sku.FulfillmentMode,

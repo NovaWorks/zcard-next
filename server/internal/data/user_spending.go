@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 )
 
 // UserSpending is the shared member/admin spending total, in cents. Fully refunded,
@@ -25,6 +26,30 @@ func UserSpending(ctx context.Context, client *ent.Client, userIDs []uint64) (ma
 	}
 	for _, r := range rows {
 		result[r.UserID] = r.Sum
+	}
+	physical, e := client.Order.Query().Where(order.UserIDIn(userIDs...), order.CommerceVersion(1), order.StatusIn(order.StatusPaid, order.StatusFulfilling, order.StatusPartiallyDelivered, order.StatusDelivered, order.StatusCompleted, order.StatusRefundPending)).All(ctx)
+	if e != nil {
+		return nil, e
+	}
+	// Batch item refunds: member lists must not issue one query per historical order.
+	for start := 0; start < len(physical); start += 500 {
+		ids := []uint64{}
+		owners := map[uint64]uint64{}
+		for _, o := range physical[start:min(start+500, len(physical))] {
+			result[o.UserID] -= o.ShippingAmount
+			ids = append(ids, o.ID)
+			owners[o.ID] = o.UserID
+		}
+		var refunds []struct {
+			OrderID uint64 `json:"order_id"`
+			Sum     int64  `json:"sum"`
+		}
+		if e := client.OrderItem.Query().Where(orderitem.OrderIDIn(ids...)).GroupBy(orderitem.FieldOrderID).Aggregate(ent.Sum(orderitem.FieldRefundedAmount)).Scan(ctx, &refunds); e != nil {
+			return nil, e
+		}
+		for _, r := range refunds {
+			result[owners[r.OrderID]] -= r.Sum
+		}
 	}
 	return result, nil
 }

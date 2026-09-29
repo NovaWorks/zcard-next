@@ -6,6 +6,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/migrations"
 	"io/fs"
@@ -74,7 +75,7 @@ func TestManualServicesUpgradePreservesHistoricalOrders(t *testing.T) {
 			if p.Name != "legacy product" || p.Price != 999 || p.FulfillmentMode != "auto" || p.ManualStock != -1 {
 				t.Fatalf("product defaults or old data changed: %+v", p)
 			}
-			sku := d.Client.ProductSku.GetX(ctx, 43)
+			sku := d.Client.ProductSku.Query().Where(productsku.ID(43)).Select(productsku.FieldID, productsku.FieldFulfillmentMode).OnlyX(ctx)
 			if sku.FulfillmentMode != "follow" {
 				t.Fatal("SKU default")
 			}

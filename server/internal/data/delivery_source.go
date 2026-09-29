@@ -29,6 +29,9 @@ func ConnectionRevision(c *ent.SupplyConnection) string {
 
 // StockSource separates provenance from the source actually used to fulfill a SKU.
 func StockSource(p *ent.Product, sku *ent.ProductSku) string {
+	if p.GoodsType == "physical" {
+		return "shipping"
+	}
 	mode := p.FulfillmentMode
 	if sku != nil && sku.FulfillmentMode != "" && sku.FulfillmentMode != "follow" {
 		mode = sku.FulfillmentMode
@@ -129,6 +132,12 @@ func AdmitDeliverySource(ctx context.Context, d *Data, p *ent.Product, skuID uin
 	return s.ID, nil
 }
 func LocalSKUStock(ctx context.Context, d *Data, p *ent.Product, sku *ent.ProductSku) (int64, error) {
+	if p.GoodsType == "physical" {
+		if sku != nil {
+			return sku.PhysicalStock, nil
+		}
+		return p.PhysicalStock, nil
+	}
 	c := Client(ctx, d)
 	id := uint64(0)
 	if sku != nil {
@@ -179,6 +188,9 @@ var ErrLocalDeliveryProtected = errors.New("商品已配置本地发货，已跳
 
 // The local policy is operator-owned; upstream maintenance must not rebuild it.
 func GuardUpstreamDelivery(ctx context.Context, c *ent.Client, p *ent.Product) error {
+	if p.GoodsType == "physical" {
+		return ErrLocalDeliveryProtected
+	}
 	yes, err := HasLocalDelivery(ctx, c, p)
 	if err != nil {
 		return err

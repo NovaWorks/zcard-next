@@ -276,6 +276,188 @@ func (_u *OrderItemUpdate) AddCost(v int64) *OrderItemUpdate {
 	return _u
 }
 
+// SetGoodsType sets the "goods_type" field.
+func (_u *OrderItemUpdate) SetGoodsType(v string) *OrderItemUpdate {
+	_u.mutation.SetGoodsType(v)
+	return _u
+}
+
+// SetNillableGoodsType sets the "goods_type" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableGoodsType(v *string) *OrderItemUpdate {
+	if v != nil {
+		_u.SetGoodsType(*v)
+	}
+	return _u
+}
+
+// SetPaidAmount sets the "paid_amount" field.
+func (_u *OrderItemUpdate) SetPaidAmount(v int64) *OrderItemUpdate {
+	_u.mutation.ResetPaidAmount()
+	_u.mutation.SetPaidAmount(v)
+	return _u
+}
+
+// SetNillablePaidAmount sets the "paid_amount" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillablePaidAmount(v *int64) *OrderItemUpdate {
+	if v != nil {
+		_u.SetPaidAmount(*v)
+	}
+	return _u
+}
+
+// AddPaidAmount adds value to the "paid_amount" field.
+func (_u *OrderItemUpdate) AddPaidAmount(v int64) *OrderItemUpdate {
+	_u.mutation.AddPaidAmount(v)
+	return _u
+}
+
+// SetShippingAmount sets the "shipping_amount" field.
+func (_u *OrderItemUpdate) SetShippingAmount(v int64) *OrderItemUpdate {
+	_u.mutation.ResetShippingAmount()
+	_u.mutation.SetShippingAmount(v)
+	return _u
+}
+
+// SetNillableShippingAmount sets the "shipping_amount" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableShippingAmount(v *int64) *OrderItemUpdate {
+	if v != nil {
+		_u.SetShippingAmount(*v)
+	}
+	return _u
+}
+
+// AddShippingAmount adds value to the "shipping_amount" field.
+func (_u *OrderItemUpdate) AddShippingAmount(v int64) *OrderItemUpdate {
+	_u.mutation.AddShippingAmount(v)
+	return _u
+}
+
+// SetRefundedAmount sets the "refunded_amount" field.
+func (_u *OrderItemUpdate) SetRefundedAmount(v int64) *OrderItemUpdate {
+	_u.mutation.ResetRefundedAmount()
+	_u.mutation.SetRefundedAmount(v)
+	return _u
+}
+
+// SetNillableRefundedAmount sets the "refunded_amount" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableRefundedAmount(v *int64) *OrderItemUpdate {
+	if v != nil {
+		_u.SetRefundedAmount(*v)
+	}
+	return _u
+}
+
+// AddRefundedAmount adds value to the "refunded_amount" field.
+func (_u *OrderItemUpdate) AddRefundedAmount(v int64) *OrderItemUpdate {
+	_u.mutation.AddRefundedAmount(v)
+	return _u
+}
+
+// SetRefundedShipping sets the "refunded_shipping" field.
+func (_u *OrderItemUpdate) SetRefundedShipping(v int64) *OrderItemUpdate {
+	_u.mutation.ResetRefundedShipping()
+	_u.mutation.SetRefundedShipping(v)
+	return _u
+}
+
+// SetNillableRefundedShipping sets the "refunded_shipping" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableRefundedShipping(v *int64) *OrderItemUpdate {
+	if v != nil {
+		_u.SetRefundedShipping(*v)
+	}
+	return _u
+}
+
+// AddRefundedShipping adds value to the "refunded_shipping" field.
+func (_u *OrderItemUpdate) AddRefundedShipping(v int64) *OrderItemUpdate {
+	_u.mutation.AddRefundedShipping(v)
+	return _u
+}
+
+// SetCanceledQuantity sets the "canceled_quantity" field.
+func (_u *OrderItemUpdate) SetCanceledQuantity(v int32) *OrderItemUpdate {
+	_u.mutation.ResetCanceledQuantity()
+	_u.mutation.SetCanceledQuantity(v)
+	return _u
+}
+
+// SetNillableCanceledQuantity sets the "canceled_quantity" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableCanceledQuantity(v *int32) *OrderItemUpdate {
+	if v != nil {
+		_u.SetCanceledQuantity(*v)
+	}
+	return _u
+}
+
+// AddCanceledQuantity adds value to the "canceled_quantity" field.
+func (_u *OrderItemUpdate) AddCanceledQuantity(v int32) *OrderItemUpdate {
+	_u.mutation.AddCanceledQuantity(v)
+	return _u
+}
+
+// SetShippedQuantity sets the "shipped_quantity" field.
+func (_u *OrderItemUpdate) SetShippedQuantity(v int32) *OrderItemUpdate {
+	_u.mutation.ResetShippedQuantity()
+	_u.mutation.SetShippedQuantity(v)
+	return _u
+}
+
+// SetNillableShippedQuantity sets the "shipped_quantity" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableShippedQuantity(v *int32) *OrderItemUpdate {
+	if v != nil {
+		_u.SetShippedQuantity(*v)
+	}
+	return _u
+}
+
+// AddShippedQuantity adds value to the "shipped_quantity" field.
+func (_u *OrderItemUpdate) AddShippedQuantity(v int32) *OrderItemUpdate {
+	_u.mutation.AddShippedQuantity(v)
+	return _u
+}
+
+// SetReceivedQuantity sets the "received_quantity" field.
+func (_u *OrderItemUpdate) SetReceivedQuantity(v int32) *OrderItemUpdate {
+	_u.mutation.ResetReceivedQuantity()
+	_u.mutation.SetReceivedQuantity(v)
+	return _u
+}
+
+// SetNillableReceivedQuantity sets the "received_quantity" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableReceivedQuantity(v *int32) *OrderItemUpdate {
+	if v != nil {
+		_u.SetReceivedQuantity(*v)
+	}
+	return _u
+}
+
+// AddReceivedQuantity adds value to the "received_quantity" field.
+func (_u *OrderItemUpdate) AddReceivedQuantity(v int32) *OrderItemUpdate {
+	_u.mutation.AddReceivedQuantity(v)
+	return _u
+}
+
+// SetReturnedQuantity sets the "returned_quantity" field.
+func (_u *OrderItemUpdate) SetReturnedQuantity(v int32) *OrderItemUpdate {
+	_u.mutation.ResetReturnedQuantity()
+	_u.mutation.SetReturnedQuantity(v)
+	return _u
+}
+
+// SetNillableReturnedQuantity sets the "returned_quantity" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableReturnedQuantity(v *int32) *OrderItemUpdate {
+	if v != nil {
+		_u.SetReturnedQuantity(*v)
+	}
+	return _u
+}
+
+// AddReturnedQuantity adds value to the "returned_quantity" field.
+func (_u *OrderItemUpdate) AddReturnedQuantity(v int32) *OrderItemUpdate {
+	_u.mutation.AddReturnedQuantity(v)
+	return _u
+}
+
 // SetFulfillmentType sets the "fulfillment_type" field.
 func (_u *OrderItemUpdate) SetFulfillmentType(v orderitem.FulfillmentType) *OrderItemUpdate {
 	_u.mutation.SetFulfillmentType(v)
@@ -515,6 +697,57 @@ func (_u *OrderItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedCost(); ok {
 		_spec.AddField(orderitem.FieldCost, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.GoodsType(); ok {
+		_spec.SetField(orderitem.FieldGoodsType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.PaidAmount(); ok {
+		_spec.SetField(orderitem.FieldPaidAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPaidAmount(); ok {
+		_spec.AddField(orderitem.FieldPaidAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.ShippingAmount(); ok {
+		_spec.SetField(orderitem.FieldShippingAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedShippingAmount(); ok {
+		_spec.AddField(orderitem.FieldShippingAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.RefundedAmount(); ok {
+		_spec.SetField(orderitem.FieldRefundedAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRefundedAmount(); ok {
+		_spec.AddField(orderitem.FieldRefundedAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.RefundedShipping(); ok {
+		_spec.SetField(orderitem.FieldRefundedShipping, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRefundedShipping(); ok {
+		_spec.AddField(orderitem.FieldRefundedShipping, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.CanceledQuantity(); ok {
+		_spec.SetField(orderitem.FieldCanceledQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedCanceledQuantity(); ok {
+		_spec.AddField(orderitem.FieldCanceledQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.ShippedQuantity(); ok {
+		_spec.SetField(orderitem.FieldShippedQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedShippedQuantity(); ok {
+		_spec.AddField(orderitem.FieldShippedQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.ReceivedQuantity(); ok {
+		_spec.SetField(orderitem.FieldReceivedQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedReceivedQuantity(); ok {
+		_spec.AddField(orderitem.FieldReceivedQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.ReturnedQuantity(); ok {
+		_spec.SetField(orderitem.FieldReturnedQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedReturnedQuantity(); ok {
+		_spec.AddField(orderitem.FieldReturnedQuantity, field.TypeInt32, value)
 	}
 	if value, ok := _u.mutation.FulfillmentType(); ok {
 		_spec.SetField(orderitem.FieldFulfillmentType, field.TypeEnum, value)
@@ -838,6 +1071,188 @@ func (_u *OrderItemUpdateOne) AddCost(v int64) *OrderItemUpdateOne {
 	return _u
 }
 
+// SetGoodsType sets the "goods_type" field.
+func (_u *OrderItemUpdateOne) SetGoodsType(v string) *OrderItemUpdateOne {
+	_u.mutation.SetGoodsType(v)
+	return _u
+}
+
+// SetNillableGoodsType sets the "goods_type" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableGoodsType(v *string) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetGoodsType(*v)
+	}
+	return _u
+}
+
+// SetPaidAmount sets the "paid_amount" field.
+func (_u *OrderItemUpdateOne) SetPaidAmount(v int64) *OrderItemUpdateOne {
+	_u.mutation.ResetPaidAmount()
+	_u.mutation.SetPaidAmount(v)
+	return _u
+}
+
+// SetNillablePaidAmount sets the "paid_amount" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillablePaidAmount(v *int64) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetPaidAmount(*v)
+	}
+	return _u
+}
+
+// AddPaidAmount adds value to the "paid_amount" field.
+func (_u *OrderItemUpdateOne) AddPaidAmount(v int64) *OrderItemUpdateOne {
+	_u.mutation.AddPaidAmount(v)
+	return _u
+}
+
+// SetShippingAmount sets the "shipping_amount" field.
+func (_u *OrderItemUpdateOne) SetShippingAmount(v int64) *OrderItemUpdateOne {
+	_u.mutation.ResetShippingAmount()
+	_u.mutation.SetShippingAmount(v)
+	return _u
+}
+
+// SetNillableShippingAmount sets the "shipping_amount" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableShippingAmount(v *int64) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetShippingAmount(*v)
+	}
+	return _u
+}
+
+// AddShippingAmount adds value to the "shipping_amount" field.
+func (_u *OrderItemUpdateOne) AddShippingAmount(v int64) *OrderItemUpdateOne {
+	_u.mutation.AddShippingAmount(v)
+	return _u
+}
+
+// SetRefundedAmount sets the "refunded_amount" field.
+func (_u *OrderItemUpdateOne) SetRefundedAmount(v int64) *OrderItemUpdateOne {
+	_u.mutation.ResetRefundedAmount()
+	_u.mutation.SetRefundedAmount(v)
+	return _u
+}
+
+// SetNillableRefundedAmount sets the "refunded_amount" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableRefundedAmount(v *int64) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetRefundedAmount(*v)
+	}
+	return _u
+}
+
+// AddRefundedAmount adds value to the "refunded_amount" field.
+func (_u *OrderItemUpdateOne) AddRefundedAmount(v int64) *OrderItemUpdateOne {
+	_u.mutation.AddRefundedAmount(v)
+	return _u
+}
+
+// SetRefundedShipping sets the "refunded_shipping" field.
+func (_u *OrderItemUpdateOne) SetRefundedShipping(v int64) *OrderItemUpdateOne {
+	_u.mutation.ResetRefundedShipping()
+	_u.mutation.SetRefundedShipping(v)
+	return _u
+}
+
+// SetNillableRefundedShipping sets the "refunded_shipping" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableRefundedShipping(v *int64) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetRefundedShipping(*v)
+	}
+	return _u
+}
+
+// AddRefundedShipping adds value to the "refunded_shipping" field.
+func (_u *OrderItemUpdateOne) AddRefundedShipping(v int64) *OrderItemUpdateOne {
+	_u.mutation.AddRefundedShipping(v)
+	return _u
+}
+
+// SetCanceledQuantity sets the "canceled_quantity" field.
+func (_u *OrderItemUpdateOne) SetCanceledQuantity(v int32) *OrderItemUpdateOne {
+	_u.mutation.ResetCanceledQuantity()
+	_u.mutation.SetCanceledQuantity(v)
+	return _u
+}
+
+// SetNillableCanceledQuantity sets the "canceled_quantity" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableCanceledQuantity(v *int32) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetCanceledQuantity(*v)
+	}
+	return _u
+}
+
+// AddCanceledQuantity adds value to the "canceled_quantity" field.
+func (_u *OrderItemUpdateOne) AddCanceledQuantity(v int32) *OrderItemUpdateOne {
+	_u.mutation.AddCanceledQuantity(v)
+	return _u
+}
+
+// SetShippedQuantity sets the "shipped_quantity" field.
+func (_u *OrderItemUpdateOne) SetShippedQuantity(v int32) *OrderItemUpdateOne {
+	_u.mutation.ResetShippedQuantity()
+	_u.mutation.SetShippedQuantity(v)
+	return _u
+}
+
+// SetNillableShippedQuantity sets the "shipped_quantity" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableShippedQuantity(v *int32) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetShippedQuantity(*v)
+	}
+	return _u
+}
+
+// AddShippedQuantity adds value to the "shipped_quantity" field.
+func (_u *OrderItemUpdateOne) AddShippedQuantity(v int32) *OrderItemUpdateOne {
+	_u.mutation.AddShippedQuantity(v)
+	return _u
+}
+
+// SetReceivedQuantity sets the "received_quantity" field.
+func (_u *OrderItemUpdateOne) SetReceivedQuantity(v int32) *OrderItemUpdateOne {
+	_u.mutation.ResetReceivedQuantity()
+	_u.mutation.SetReceivedQuantity(v)
+	return _u
+}
+
+// SetNillableReceivedQuantity sets the "received_quantity" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableReceivedQuantity(v *int32) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetReceivedQuantity(*v)
+	}
+	return _u
+}
+
+// AddReceivedQuantity adds value to the "received_quantity" field.
+func (_u *OrderItemUpdateOne) AddReceivedQuantity(v int32) *OrderItemUpdateOne {
+	_u.mutation.AddReceivedQuantity(v)
+	return _u
+}
+
+// SetReturnedQuantity sets the "returned_quantity" field.
+func (_u *OrderItemUpdateOne) SetReturnedQuantity(v int32) *OrderItemUpdateOne {
+	_u.mutation.ResetReturnedQuantity()
+	_u.mutation.SetReturnedQuantity(v)
+	return _u
+}
+
+// SetNillableReturnedQuantity sets the "returned_quantity" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableReturnedQuantity(v *int32) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetReturnedQuantity(*v)
+	}
+	return _u
+}
+
+// AddReturnedQuantity adds value to the "returned_quantity" field.
+func (_u *OrderItemUpdateOne) AddReturnedQuantity(v int32) *OrderItemUpdateOne {
+	_u.mutation.AddReturnedQuantity(v)
+	return _u
+}
+
 // SetFulfillmentType sets the "fulfillment_type" field.
 func (_u *OrderItemUpdateOne) SetFulfillmentType(v orderitem.FulfillmentType) *OrderItemUpdateOne {
 	_u.mutation.SetFulfillmentType(v)
@@ -1107,6 +1522,57 @@ func (_u *OrderItemUpdateOne) sqlSave(ctx context.Context) (_node *OrderItem, er
 	}
 	if value, ok := _u.mutation.AddedCost(); ok {
 		_spec.AddField(orderitem.FieldCost, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.GoodsType(); ok {
+		_spec.SetField(orderitem.FieldGoodsType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.PaidAmount(); ok {
+		_spec.SetField(orderitem.FieldPaidAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPaidAmount(); ok {
+		_spec.AddField(orderitem.FieldPaidAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.ShippingAmount(); ok {
+		_spec.SetField(orderitem.FieldShippingAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedShippingAmount(); ok {
+		_spec.AddField(orderitem.FieldShippingAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.RefundedAmount(); ok {
+		_spec.SetField(orderitem.FieldRefundedAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRefundedAmount(); ok {
+		_spec.AddField(orderitem.FieldRefundedAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.RefundedShipping(); ok {
+		_spec.SetField(orderitem.FieldRefundedShipping, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRefundedShipping(); ok {
+		_spec.AddField(orderitem.FieldRefundedShipping, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.CanceledQuantity(); ok {
+		_spec.SetField(orderitem.FieldCanceledQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedCanceledQuantity(); ok {
+		_spec.AddField(orderitem.FieldCanceledQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.ShippedQuantity(); ok {
+		_spec.SetField(orderitem.FieldShippedQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedShippedQuantity(); ok {
+		_spec.AddField(orderitem.FieldShippedQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.ReceivedQuantity(); ok {
+		_spec.SetField(orderitem.FieldReceivedQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedReceivedQuantity(); ok {
+		_spec.AddField(orderitem.FieldReceivedQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.ReturnedQuantity(); ok {
+		_spec.SetField(orderitem.FieldReturnedQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedReturnedQuantity(); ok {
+		_spec.AddField(orderitem.FieldReturnedQuantity, field.TypeInt32, value)
 	}
 	if value, ok := _u.mutation.FulfillmentType(); ok {
 		_spec.SetField(orderitem.FieldFulfillmentType, field.TypeEnum, value)

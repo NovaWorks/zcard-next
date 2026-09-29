@@ -188,6 +188,68 @@ func (_c *OrderCreate) SetNillableStatus(v *order.Status) *OrderCreate {
 	return _c
 }
 
+// SetCommerceVersion sets the "commerce_version" field.
+func (_c *OrderCreate) SetCommerceVersion(v int32) *OrderCreate {
+	_c.mutation.SetCommerceVersion(v)
+	return _c
+}
+
+// SetNillableCommerceVersion sets the "commerce_version" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableCommerceVersion(v *int32) *OrderCreate {
+	if v != nil {
+		_c.SetCommerceVersion(*v)
+	}
+	return _c
+}
+
+// SetShippingAmount sets the "shipping_amount" field.
+func (_c *OrderCreate) SetShippingAmount(v int64) *OrderCreate {
+	_c.mutation.SetShippingAmount(v)
+	return _c
+}
+
+// SetNillableShippingAmount sets the "shipping_amount" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableShippingAmount(v *int64) *OrderCreate {
+	if v != nil {
+		_c.SetShippingAmount(*v)
+	}
+	return _c
+}
+
+// SetShippingStatus sets the "shipping_status" field.
+func (_c *OrderCreate) SetShippingStatus(v string) *OrderCreate {
+	_c.mutation.SetShippingStatus(v)
+	return _c
+}
+
+// SetNillableShippingStatus sets the "shipping_status" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableShippingStatus(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetShippingStatus(*v)
+	}
+	return _c
+}
+
+// SetShippingAddress sets the "shipping_address" field.
+func (_c *OrderCreate) SetShippingAddress(v map[string]string) *OrderCreate {
+	_c.mutation.SetShippingAddress(v)
+	return _c
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (_c *OrderCreate) SetRequestHash(v string) *OrderCreate {
+	_c.mutation.SetRequestHash(v)
+	return _c
+}
+
+// SetNillableRequestHash sets the "request_hash" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableRequestHash(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetRequestHash(*v)
+	}
+	return _c
+}
+
 // SetTotalAmount sets the "total_amount" field.
 func (_c *OrderCreate) SetTotalAmount(v int64) *OrderCreate {
 	_c.mutation.SetTotalAmount(v)
@@ -695,6 +757,22 @@ func (_c *OrderCreate) defaults() {
 		v := order.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.CommerceVersion(); !ok {
+		v := order.DefaultCommerceVersion
+		_c.mutation.SetCommerceVersion(v)
+	}
+	if _, ok := _c.mutation.ShippingAmount(); !ok {
+		v := order.DefaultShippingAmount
+		_c.mutation.SetShippingAmount(v)
+	}
+	if _, ok := _c.mutation.ShippingStatus(); !ok {
+		v := order.DefaultShippingStatus
+		_c.mutation.SetShippingStatus(v)
+	}
+	if _, ok := _c.mutation.RequestHash(); !ok {
+		v := order.DefaultRequestHash
+		_c.mutation.SetRequestHash(v)
+	}
 	if _, ok := _c.mutation.TotalAmount(); !ok {
 		v := order.DefaultTotalAmount
 		_c.mutation.SetTotalAmount(v)
@@ -767,6 +845,18 @@ func (_c *OrderCreate) check() error {
 		if err := order.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Order.status": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.CommerceVersion(); !ok {
+		return &ValidationError{Name: "commerce_version", err: errors.New(`ent: missing required field "Order.commerce_version"`)}
+	}
+	if _, ok := _c.mutation.ShippingAmount(); !ok {
+		return &ValidationError{Name: "shipping_amount", err: errors.New(`ent: missing required field "Order.shipping_amount"`)}
+	}
+	if _, ok := _c.mutation.ShippingStatus(); !ok {
+		return &ValidationError{Name: "shipping_status", err: errors.New(`ent: missing required field "Order.shipping_status"`)}
+	}
+	if _, ok := _c.mutation.RequestHash(); !ok {
+		return &ValidationError{Name: "request_hash", err: errors.New(`ent: missing required field "Order.request_hash"`)}
 	}
 	if _, ok := _c.mutation.TotalAmount(); !ok {
 		return &ValidationError{Name: "total_amount", err: errors.New(`ent: missing required field "Order.total_amount"`)}
@@ -903,6 +993,26 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(order.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
+	}
+	if value, ok := _c.mutation.CommerceVersion(); ok {
+		_spec.SetField(order.FieldCommerceVersion, field.TypeInt32, value)
+		_node.CommerceVersion = value
+	}
+	if value, ok := _c.mutation.ShippingAmount(); ok {
+		_spec.SetField(order.FieldShippingAmount, field.TypeInt64, value)
+		_node.ShippingAmount = value
+	}
+	if value, ok := _c.mutation.ShippingStatus(); ok {
+		_spec.SetField(order.FieldShippingStatus, field.TypeString, value)
+		_node.ShippingStatus = value
+	}
+	if value, ok := _c.mutation.ShippingAddress(); ok {
+		_spec.SetField(order.FieldShippingAddress, field.TypeJSON, value)
+		_node.ShippingAddress = value
+	}
+	if value, ok := _c.mutation.RequestHash(); ok {
+		_spec.SetField(order.FieldRequestHash, field.TypeString, value)
+		_node.RequestHash = value
 	}
 	if value, ok := _c.mutation.TotalAmount(); ok {
 		_spec.SetField(order.FieldTotalAmount, field.TypeInt64, value)
@@ -1333,6 +1443,84 @@ func (u *OrderUpsert) SetStatus(v order.Status) *OrderUpsert {
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *OrderUpsert) UpdateStatus() *OrderUpsert {
 	u.SetExcluded(order.FieldStatus)
+	return u
+}
+
+// SetCommerceVersion sets the "commerce_version" field.
+func (u *OrderUpsert) SetCommerceVersion(v int32) *OrderUpsert {
+	u.Set(order.FieldCommerceVersion, v)
+	return u
+}
+
+// UpdateCommerceVersion sets the "commerce_version" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateCommerceVersion() *OrderUpsert {
+	u.SetExcluded(order.FieldCommerceVersion)
+	return u
+}
+
+// AddCommerceVersion adds v to the "commerce_version" field.
+func (u *OrderUpsert) AddCommerceVersion(v int32) *OrderUpsert {
+	u.Add(order.FieldCommerceVersion, v)
+	return u
+}
+
+// SetShippingAmount sets the "shipping_amount" field.
+func (u *OrderUpsert) SetShippingAmount(v int64) *OrderUpsert {
+	u.Set(order.FieldShippingAmount, v)
+	return u
+}
+
+// UpdateShippingAmount sets the "shipping_amount" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateShippingAmount() *OrderUpsert {
+	u.SetExcluded(order.FieldShippingAmount)
+	return u
+}
+
+// AddShippingAmount adds v to the "shipping_amount" field.
+func (u *OrderUpsert) AddShippingAmount(v int64) *OrderUpsert {
+	u.Add(order.FieldShippingAmount, v)
+	return u
+}
+
+// SetShippingStatus sets the "shipping_status" field.
+func (u *OrderUpsert) SetShippingStatus(v string) *OrderUpsert {
+	u.Set(order.FieldShippingStatus, v)
+	return u
+}
+
+// UpdateShippingStatus sets the "shipping_status" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateShippingStatus() *OrderUpsert {
+	u.SetExcluded(order.FieldShippingStatus)
+	return u
+}
+
+// SetShippingAddress sets the "shipping_address" field.
+func (u *OrderUpsert) SetShippingAddress(v map[string]string) *OrderUpsert {
+	u.Set(order.FieldShippingAddress, v)
+	return u
+}
+
+// UpdateShippingAddress sets the "shipping_address" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateShippingAddress() *OrderUpsert {
+	u.SetExcluded(order.FieldShippingAddress)
+	return u
+}
+
+// ClearShippingAddress clears the value of the "shipping_address" field.
+func (u *OrderUpsert) ClearShippingAddress() *OrderUpsert {
+	u.SetNull(order.FieldShippingAddress)
+	return u
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (u *OrderUpsert) SetRequestHash(v string) *OrderUpsert {
+	u.Set(order.FieldRequestHash, v)
+	return u
+}
+
+// UpdateRequestHash sets the "request_hash" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateRequestHash() *OrderUpsert {
+	u.SetExcluded(order.FieldRequestHash)
 	return u
 }
 
@@ -2092,6 +2280,97 @@ func (u *OrderUpsertOne) SetStatus(v order.Status) *OrderUpsertOne {
 func (u *OrderUpsertOne) UpdateStatus() *OrderUpsertOne {
 	return u.Update(func(s *OrderUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetCommerceVersion sets the "commerce_version" field.
+func (u *OrderUpsertOne) SetCommerceVersion(v int32) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetCommerceVersion(v)
+	})
+}
+
+// AddCommerceVersion adds v to the "commerce_version" field.
+func (u *OrderUpsertOne) AddCommerceVersion(v int32) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.AddCommerceVersion(v)
+	})
+}
+
+// UpdateCommerceVersion sets the "commerce_version" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateCommerceVersion() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateCommerceVersion()
+	})
+}
+
+// SetShippingAmount sets the "shipping_amount" field.
+func (u *OrderUpsertOne) SetShippingAmount(v int64) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetShippingAmount(v)
+	})
+}
+
+// AddShippingAmount adds v to the "shipping_amount" field.
+func (u *OrderUpsertOne) AddShippingAmount(v int64) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.AddShippingAmount(v)
+	})
+}
+
+// UpdateShippingAmount sets the "shipping_amount" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateShippingAmount() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateShippingAmount()
+	})
+}
+
+// SetShippingStatus sets the "shipping_status" field.
+func (u *OrderUpsertOne) SetShippingStatus(v string) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetShippingStatus(v)
+	})
+}
+
+// UpdateShippingStatus sets the "shipping_status" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateShippingStatus() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateShippingStatus()
+	})
+}
+
+// SetShippingAddress sets the "shipping_address" field.
+func (u *OrderUpsertOne) SetShippingAddress(v map[string]string) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetShippingAddress(v)
+	})
+}
+
+// UpdateShippingAddress sets the "shipping_address" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateShippingAddress() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateShippingAddress()
+	})
+}
+
+// ClearShippingAddress clears the value of the "shipping_address" field.
+func (u *OrderUpsertOne) ClearShippingAddress() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearShippingAddress()
+	})
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (u *OrderUpsertOne) SetRequestHash(v string) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetRequestHash(v)
+	})
+}
+
+// UpdateRequestHash sets the "request_hash" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateRequestHash() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateRequestHash()
 	})
 }
 
@@ -3100,6 +3379,97 @@ func (u *OrderUpsertBulk) SetStatus(v order.Status) *OrderUpsertBulk {
 func (u *OrderUpsertBulk) UpdateStatus() *OrderUpsertBulk {
 	return u.Update(func(s *OrderUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetCommerceVersion sets the "commerce_version" field.
+func (u *OrderUpsertBulk) SetCommerceVersion(v int32) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetCommerceVersion(v)
+	})
+}
+
+// AddCommerceVersion adds v to the "commerce_version" field.
+func (u *OrderUpsertBulk) AddCommerceVersion(v int32) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.AddCommerceVersion(v)
+	})
+}
+
+// UpdateCommerceVersion sets the "commerce_version" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateCommerceVersion() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateCommerceVersion()
+	})
+}
+
+// SetShippingAmount sets the "shipping_amount" field.
+func (u *OrderUpsertBulk) SetShippingAmount(v int64) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetShippingAmount(v)
+	})
+}
+
+// AddShippingAmount adds v to the "shipping_amount" field.
+func (u *OrderUpsertBulk) AddShippingAmount(v int64) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.AddShippingAmount(v)
+	})
+}
+
+// UpdateShippingAmount sets the "shipping_amount" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateShippingAmount() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateShippingAmount()
+	})
+}
+
+// SetShippingStatus sets the "shipping_status" field.
+func (u *OrderUpsertBulk) SetShippingStatus(v string) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetShippingStatus(v)
+	})
+}
+
+// UpdateShippingStatus sets the "shipping_status" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateShippingStatus() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateShippingStatus()
+	})
+}
+
+// SetShippingAddress sets the "shipping_address" field.
+func (u *OrderUpsertBulk) SetShippingAddress(v map[string]string) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetShippingAddress(v)
+	})
+}
+
+// UpdateShippingAddress sets the "shipping_address" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateShippingAddress() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateShippingAddress()
+	})
+}
+
+// ClearShippingAddress clears the value of the "shipping_address" field.
+func (u *OrderUpsertBulk) ClearShippingAddress() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearShippingAddress()
+	})
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (u *OrderUpsertBulk) SetRequestHash(v string) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetRequestHash(v)
+	})
+}
+
+// UpdateRequestHash sets the "request_hash" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateRequestHash() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateRequestHash()
 	})
 }
 

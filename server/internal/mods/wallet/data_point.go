@@ -77,6 +77,14 @@ func (r *WalletRepoImpl) PointCreditInTx(ctx context.Context, e PointEntry) erro
 
 // PointDebitInTx 积分扣减（非负校验；不足拒绝不产生流水）。
 func (r *WalletRepoImpl) PointDebitInTx(ctx context.Context, e PointEntry) error {
+	return r.pointDebit(ctx, e, false)
+}
+
+// PointRevokeInTx records refund debt even if earned points have already been spent.
+func (r *WalletRepoImpl) PointRevokeInTx(ctx context.Context, e PointEntry) error {
+	return r.pointDebit(ctx, e, true)
+}
+func (r *WalletRepoImpl) pointDebit(ctx context.Context, e PointEntry, allowDebt bool) error {
 	if e.Amount <= 0 {
 		return fmt.Errorf("wallet: 积分必须为正")
 	}
@@ -92,11 +100,14 @@ func (r *WalletRepoImpl) PointDebitInTx(ctx context.Context, e PointEntry) error
 		}
 		acc, err := client.PointAccount.Query().
 			Where(pointaccount.UserID(e.UserID)).Only(txCtx)
-		if ent.IsNotFound(err) || acc.Balance < e.Amount {
+		if ent.IsNotFound(err) {
 			return fmt.Errorf("wallet.POINTS_INSUFFICIENT")
 		}
 		if err != nil {
 			return err
+		}
+		if !allowDebt && acc.Balance < e.Amount {
+			return fmt.Errorf("wallet.POINTS_INSUFFICIENT")
 		}
 		before := acc.Balance
 		after := before - e.Amount

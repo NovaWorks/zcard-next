@@ -70,6 +70,27 @@ func (_u *ProductSkuUpdate) SetNillableProductID(v *uint64) *ProductSkuUpdate {
 	return _u
 }
 
+// SetPhysicalStock sets the "physical_stock" field.
+func (_u *ProductSkuUpdate) SetPhysicalStock(v int64) *ProductSkuUpdate {
+	_u.mutation.ResetPhysicalStock()
+	_u.mutation.SetPhysicalStock(v)
+	return _u
+}
+
+// SetNillablePhysicalStock sets the "physical_stock" field if the given value is not nil.
+func (_u *ProductSkuUpdate) SetNillablePhysicalStock(v *int64) *ProductSkuUpdate {
+	if v != nil {
+		_u.SetPhysicalStock(*v)
+	}
+	return _u
+}
+
+// AddPhysicalStock adds value to the "physical_stock" field.
+func (_u *ProductSkuUpdate) AddPhysicalStock(v int64) *ProductSkuUpdate {
+	_u.mutation.AddPhysicalStock(v)
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *ProductSkuUpdate) SetName(v string) *ProductSkuUpdate {
 	_u.mutation.SetName(v)
@@ -290,6 +311,12 @@ func (_u *ProductSkuUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	if value, ok := _u.mutation.AddedSubsiteID(); ok {
 		_spec.AddField(productsku.FieldSubsiteID, field.TypeUint64, value)
 	}
+	if value, ok := _u.mutation.PhysicalStock(); ok {
+		_spec.SetField(productsku.FieldPhysicalStock, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPhysicalStock(); ok {
+		_spec.AddField(productsku.FieldPhysicalStock, field.TypeInt64, value)
+	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(productsku.FieldName, field.TypeString, value)
 	}
@@ -416,6 +443,27 @@ func (_u *ProductSkuUpdateOne) SetNillableProductID(v *uint64) *ProductSkuUpdate
 	if v != nil {
 		_u.SetProductID(*v)
 	}
+	return _u
+}
+
+// SetPhysicalStock sets the "physical_stock" field.
+func (_u *ProductSkuUpdateOne) SetPhysicalStock(v int64) *ProductSkuUpdateOne {
+	_u.mutation.ResetPhysicalStock()
+	_u.mutation.SetPhysicalStock(v)
+	return _u
+}
+
+// SetNillablePhysicalStock sets the "physical_stock" field if the given value is not nil.
+func (_u *ProductSkuUpdateOne) SetNillablePhysicalStock(v *int64) *ProductSkuUpdateOne {
+	if v != nil {
+		_u.SetPhysicalStock(*v)
+	}
+	return _u
+}
+
+// AddPhysicalStock adds value to the "physical_stock" field.
+func (_u *ProductSkuUpdateOne) AddPhysicalStock(v int64) *ProductSkuUpdateOne {
+	_u.mutation.AddPhysicalStock(v)
 	return _u
 }
 
@@ -668,6 +716,12 @@ func (_u *ProductSkuUpdateOne) sqlSave(ctx context.Context) (_node *ProductSku, 
 	}
 	if value, ok := _u.mutation.AddedSubsiteID(); ok {
 		_spec.AddField(productsku.FieldSubsiteID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.PhysicalStock(); ok {
+		_spec.SetField(productsku.FieldPhysicalStock, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPhysicalStock(); ok {
+		_spec.AddField(productsku.FieldPhysicalStock, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(productsku.FieldName, field.TypeString, value)

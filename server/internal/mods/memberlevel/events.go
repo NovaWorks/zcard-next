@@ -34,7 +34,7 @@ func NewPointsService(repo *MemberLevelRepoImpl, points walletport.Points, log *
 }
 
 // OnOrderPaid 订阅 order.paid：等级 points_rule → 积分入账（幂等）。
-func (s *PointsService) OnOrderPaid(ctx context.Context, env events.Envelope) error {
+func (s *PointsService) onOrderPaid(ctx context.Context, env events.Envelope) error {
 	var payload orderPaidPointsPayload
 	if err := json.Unmarshal(env.Payload, &payload); err != nil {
 		// 载荷损坏不重投（人工排查）；口径与 procurement 一致

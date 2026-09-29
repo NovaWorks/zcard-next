@@ -100,9 +100,12 @@
       </template>
     </template>
   </div>
+ <ShippingCheckout ref="shippingCheckout" />
 </template>
 
 <script setup lang="ts">
+import ShippingCheckout from "@/components/ShippingCheckout.vue";
+const shippingCheckout=ref<InstanceType<typeof ShippingCheckout>>();
 import OrderFields from '@/components/OrderFields.vue';
 import { useFlashOffers } from '@/composables/flash-offers';
 const flash=useFlashOffers();
@@ -211,9 +214,11 @@ async function checkout() {
   controlsNeeded.value = [];
   controlAnswers.value = {};
   const needed: typeof controlsNeeded.value = [];
+  checkoutCountries.value=null;
   for (const it of selectedItems.value) {
     const { data: p } = await getProduct(it.product_id);
     if (!p) { alert('读取商品填写信息失败，请重试'); return; }
+ if(p.goods_type==='physical'){const current:string[]|null=checkoutCountries.value;checkoutCountries.value=current===null?[...(p.shipping_countries || [])]:(current as string[]).filter((c:string)=>(p.shipping_countries || []).includes(c))}
  const req = p.controls || [];
  const key = `${it.product_id}:${it.sku_id || 0}`; controlAnswers.value[key] = {};
     if (req.length) needed.push({ productId: it.product_id, key, name: `${p.name} ${p.skus?.find(s => Number(s.id) === Number(it.sku_id))?.name || ""}`, controls: req });
@@ -226,11 +231,13 @@ async function checkout() {
   await doCheckout();
 }
 
+const checkoutCountries=ref<string[]|null>(null);
 async function doCheckout() {
   if (checkingOut.value) return;
   checkingOut.value = true;
   if (!(await refreshCartSetting(true))) { checkingOut.value = false; return; }
-  const { data, error } = await createOrder({
+  if(checkoutCountries.value!==null && isGuestCart.value && queryPwd.value.trim().length<4){checkingOut.value=false;alert('游客购买实体商品须设置至少4位查询密码');return}
+  const input = {
     items: selectedItems.value.map((i) => ({ product_id: i.product_id, sku_id: i.sku_id || undefined, quantity: i.quantity, control_answers:controlAnswers.value[`${i.product_id}:${i.sku_id || 0}`] })),
     coupon_code: couponCode.value || undefined,
     query_password: queryPwd.value,
@@ -238,8 +245,12 @@ async function doCheckout() {
     captcha_id: (isGuestCart.value && captchaCfg.value.order) ? captchaId.value : undefined,
     captcha_code: (isGuestCart.value && captchaCfg.value.order) ? captchaCode.value : undefined,
     contact: contact.value.trim() || undefined,
-  });
+  };
+  const {data,error}=checkoutCountries.value!==null
+   ? {data:await shippingCheckout.value!.open(input,checkoutCountries.value),error:null}
+   : await createOrder(input);
   checkingOut.value = false;
+  if(!data&&!error)return;
   if (error || !data) {
     alert(error || '下单失败');
     await load();

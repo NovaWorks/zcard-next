@@ -8,6 +8,7 @@ package inventory
 
 import (
 	"context"
+	kerrors "github.com/go-kratos/kratos/v3/errors"
 	"strings"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -303,10 +304,14 @@ func (r *CardRepoImpl) ExportCards(ctx context.Context, productID uint64) ([]str
 
 func (r *CardRepoImpl) ImportConfirm(ctx context.Context, in ImportInput) (out *ent.CardImport, err error) {
 	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
-		if _, e := data.GuardProductWrite(ctx, r.data, in.ProductID); e != nil {
+		p, e := data.GuardProductWrite(ctx, r.data, in.ProductID)
+		if e != nil {
 			return e
 		}
-		var e error
+		if p.GoodsType == "physical" {
+			return kerrors.BadRequest("inventory.PHYSICAL_PRODUCT", "实体商品不能导入卡密，请调整实物库存")
+		}
+
 		out, e = r.importConfirm(ctx, in)
 		return e
 	})

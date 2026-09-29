@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	"github.com/NovaWorks/zcard-next/server/migrations"
 	"io/fs"
 	"os"
@@ -59,7 +60,7 @@ func TestPaymentCheckoutUpgradePreservesAmounts(t *testing.T) {
 			ctx := context.Background()
 			ch := d.Client.PaymentChannel.GetX(ctx, 41)
 			p := d.Client.Payment.GetX(ctx, 42)
-			rf := d.Client.RefundOrder.GetX(ctx, 44)
+			rf := d.Client.RefundOrder.Query().Where(refundorder.ID(44)).Select(refundorder.FieldID, refundorder.FieldAmount, refundorder.FieldFeeAmount).OnlyX(ctx)
 			if ch.Fee != 50 || ch.FeeType != "percent" || ch.FeeBearer != "merchant" || ch.Sort != 23 || ch.Recommended || ch.RecommendLabel != "" || string(ch.Config) != "ciphertext" {
 				t.Fatal("legacy channel changed")
 			}

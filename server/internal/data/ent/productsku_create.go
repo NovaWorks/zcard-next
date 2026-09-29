@@ -71,6 +71,20 @@ func (_c *ProductSkuCreate) SetProductID(v uint64) *ProductSkuCreate {
 	return _c
 }
 
+// SetPhysicalStock sets the "physical_stock" field.
+func (_c *ProductSkuCreate) SetPhysicalStock(v int64) *ProductSkuCreate {
+	_c.mutation.SetPhysicalStock(v)
+	return _c
+}
+
+// SetNillablePhysicalStock sets the "physical_stock" field if the given value is not nil.
+func (_c *ProductSkuCreate) SetNillablePhysicalStock(v *int64) *ProductSkuCreate {
+	if v != nil {
+		_c.SetPhysicalStock(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *ProductSkuCreate) SetName(v string) *ProductSkuCreate {
 	_c.mutation.SetName(v)
@@ -211,6 +225,10 @@ func (_c *ProductSkuCreate) defaults() {
 		v := productsku.DefaultSubsiteID
 		_c.mutation.SetSubsiteID(v)
 	}
+	if _, ok := _c.mutation.PhysicalStock(); !ok {
+		v := productsku.DefaultPhysicalStock
+		_c.mutation.SetPhysicalStock(v)
+	}
 	if _, ok := _c.mutation.FulfillmentMode(); !ok {
 		v := productsku.DefaultFulfillmentMode
 		_c.mutation.SetFulfillmentMode(v)
@@ -234,6 +252,9 @@ func (_c *ProductSkuCreate) check() error {
 	}
 	if _, ok := _c.mutation.ProductID(); !ok {
 		return &ValidationError{Name: "product_id", err: errors.New(`ent: missing required field "ProductSku.product_id"`)}
+	}
+	if _, ok := _c.mutation.PhysicalStock(); !ok {
+		return &ValidationError{Name: "physical_stock", err: errors.New(`ent: missing required field "ProductSku.physical_stock"`)}
 	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "ProductSku.name"`)}
@@ -304,6 +325,10 @@ func (_c *ProductSkuCreate) createSpec() (*ProductSku, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SubsiteID(); ok {
 		_spec.SetField(productsku.FieldSubsiteID, field.TypeUint64, value)
 		_node.SubsiteID = value
+	}
+	if value, ok := _c.mutation.PhysicalStock(); ok {
+		_spec.SetField(productsku.FieldPhysicalStock, field.TypeInt64, value)
+		_node.PhysicalStock = value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(productsku.FieldName, field.TypeString, value)
@@ -441,6 +466,24 @@ func (u *ProductSkuUpsert) SetProductID(v uint64) *ProductSkuUpsert {
 // UpdateProductID sets the "product_id" field to the value that was provided on create.
 func (u *ProductSkuUpsert) UpdateProductID() *ProductSkuUpsert {
 	u.SetExcluded(productsku.FieldProductID)
+	return u
+}
+
+// SetPhysicalStock sets the "physical_stock" field.
+func (u *ProductSkuUpsert) SetPhysicalStock(v int64) *ProductSkuUpsert {
+	u.Set(productsku.FieldPhysicalStock, v)
+	return u
+}
+
+// UpdatePhysicalStock sets the "physical_stock" field to the value that was provided on create.
+func (u *ProductSkuUpsert) UpdatePhysicalStock() *ProductSkuUpsert {
+	u.SetExcluded(productsku.FieldPhysicalStock)
+	return u
+}
+
+// AddPhysicalStock adds v to the "physical_stock" field.
+func (u *ProductSkuUpsert) AddPhysicalStock(v int64) *ProductSkuUpsert {
+	u.Add(productsku.FieldPhysicalStock, v)
 	return u
 }
 
@@ -661,6 +704,27 @@ func (u *ProductSkuUpsertOne) SetProductID(v uint64) *ProductSkuUpsertOne {
 func (u *ProductSkuUpsertOne) UpdateProductID() *ProductSkuUpsertOne {
 	return u.Update(func(s *ProductSkuUpsert) {
 		s.UpdateProductID()
+	})
+}
+
+// SetPhysicalStock sets the "physical_stock" field.
+func (u *ProductSkuUpsertOne) SetPhysicalStock(v int64) *ProductSkuUpsertOne {
+	return u.Update(func(s *ProductSkuUpsert) {
+		s.SetPhysicalStock(v)
+	})
+}
+
+// AddPhysicalStock adds v to the "physical_stock" field.
+func (u *ProductSkuUpsertOne) AddPhysicalStock(v int64) *ProductSkuUpsertOne {
+	return u.Update(func(s *ProductSkuUpsert) {
+		s.AddPhysicalStock(v)
+	})
+}
+
+// UpdatePhysicalStock sets the "physical_stock" field to the value that was provided on create.
+func (u *ProductSkuUpsertOne) UpdatePhysicalStock() *ProductSkuUpsertOne {
+	return u.Update(func(s *ProductSkuUpsert) {
+		s.UpdatePhysicalStock()
 	})
 }
 
@@ -1067,6 +1131,27 @@ func (u *ProductSkuUpsertBulk) SetProductID(v uint64) *ProductSkuUpsertBulk {
 func (u *ProductSkuUpsertBulk) UpdateProductID() *ProductSkuUpsertBulk {
 	return u.Update(func(s *ProductSkuUpsert) {
 		s.UpdateProductID()
+	})
+}
+
+// SetPhysicalStock sets the "physical_stock" field.
+func (u *ProductSkuUpsertBulk) SetPhysicalStock(v int64) *ProductSkuUpsertBulk {
+	return u.Update(func(s *ProductSkuUpsert) {
+		s.SetPhysicalStock(v)
+	})
+}
+
+// AddPhysicalStock adds v to the "physical_stock" field.
+func (u *ProductSkuUpsertBulk) AddPhysicalStock(v int64) *ProductSkuUpsertBulk {
+	return u.Update(func(s *ProductSkuUpsert) {
+		s.AddPhysicalStock(v)
+	})
+}
+
+// UpdatePhysicalStock sets the "physical_stock" field to the value that was provided on create.
+func (u *ProductSkuUpsertBulk) UpdatePhysicalStock() *ProductSkuUpsertBulk {
+	return u.Update(func(s *ProductSkuUpsert) {
+		s.UpdatePhysicalStock()
 	})
 }
 

@@ -285,9 +285,8 @@ func (r *ResellerRepo) ConfirmDue(ctx context.Context, now time.Time, limit int)
 	}
 	n := 0
 	for _, e := range rows {
-		if _, err := client.ResellerLedgerEntry.UpdateOneID(e.ID).
-			SetStatus(resellerledgerentry.StatusAvailable).Save(ctx); err == nil {
-			n++
+		if count, err := client.ResellerLedgerEntry.Update().Where(resellerledgerentry.ID(e.ID), resellerledgerentry.StatusEQ(resellerledgerentry.StatusPending), resellerledgerentry.Amount(e.Amount)).SetStatus(resellerledgerentry.StatusAvailable).Save(ctx); err == nil {
+			n += count
 		}
 	}
 	return n, nil
@@ -315,9 +314,9 @@ func (r *ResellerRepo) updateBalance(ctx context.Context, subsiteID uint64, avai
 		return err
 	}
 	_, err = client.ResellerBalanceAccount.UpdateOneID(acc.ID).
-		SetAvailable(acc.Available + availDelta).
-		SetLocked(acc.Locked + lockedDelta).
-		SetNegative(acc.Negative + negDelta).
+		AddAvailable(availDelta).
+		AddLocked(lockedDelta).
+		AddNegative(negDelta).
 		Save(ctx)
 	return err
 }

@@ -85,6 +85,26 @@ func Name(v string) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldName, v))
 }
 
+// GoodsType applies equality check predicate on the "goods_type" field. It's identical to GoodsTypeEQ.
+func GoodsType(v string) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldGoodsType, v))
+}
+
+// ShippingMode applies equality check predicate on the "shipping_mode" field. It's identical to ShippingModeEQ.
+func ShippingMode(v string) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldShippingMode, v))
+}
+
+// ShippingFee applies equality check predicate on the "shipping_fee" field. It's identical to ShippingFeeEQ.
+func ShippingFee(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldShippingFee, v))
+}
+
+// PhysicalStock applies equality check predicate on the "physical_stock" field. It's identical to PhysicalStockEQ.
+func PhysicalStock(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldPhysicalStock, v))
+}
+
 // Slug applies equality check predicate on the "slug" field. It's identical to SlugEQ.
 func Slug(v string) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldSlug, v))
@@ -493,6 +513,226 @@ func NameEqualFold(v string) predicate.Product {
 // NameContainsFold applies the ContainsFold predicate on the "name" field.
 func NameContainsFold(v string) predicate.Product {
 	return predicate.Product(sql.FieldContainsFold(FieldName, v))
+}
+
+// GoodsTypeEQ applies the EQ predicate on the "goods_type" field.
+func GoodsTypeEQ(v string) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldGoodsType, v))
+}
+
+// GoodsTypeNEQ applies the NEQ predicate on the "goods_type" field.
+func GoodsTypeNEQ(v string) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldGoodsType, v))
+}
+
+// GoodsTypeIn applies the In predicate on the "goods_type" field.
+func GoodsTypeIn(vs ...string) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldGoodsType, vs...))
+}
+
+// GoodsTypeNotIn applies the NotIn predicate on the "goods_type" field.
+func GoodsTypeNotIn(vs ...string) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldGoodsType, vs...))
+}
+
+// GoodsTypeGT applies the GT predicate on the "goods_type" field.
+func GoodsTypeGT(v string) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldGoodsType, v))
+}
+
+// GoodsTypeGTE applies the GTE predicate on the "goods_type" field.
+func GoodsTypeGTE(v string) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldGoodsType, v))
+}
+
+// GoodsTypeLT applies the LT predicate on the "goods_type" field.
+func GoodsTypeLT(v string) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldGoodsType, v))
+}
+
+// GoodsTypeLTE applies the LTE predicate on the "goods_type" field.
+func GoodsTypeLTE(v string) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldGoodsType, v))
+}
+
+// GoodsTypeContains applies the Contains predicate on the "goods_type" field.
+func GoodsTypeContains(v string) predicate.Product {
+	return predicate.Product(sql.FieldContains(FieldGoodsType, v))
+}
+
+// GoodsTypeHasPrefix applies the HasPrefix predicate on the "goods_type" field.
+func GoodsTypeHasPrefix(v string) predicate.Product {
+	return predicate.Product(sql.FieldHasPrefix(FieldGoodsType, v))
+}
+
+// GoodsTypeHasSuffix applies the HasSuffix predicate on the "goods_type" field.
+func GoodsTypeHasSuffix(v string) predicate.Product {
+	return predicate.Product(sql.FieldHasSuffix(FieldGoodsType, v))
+}
+
+// GoodsTypeEqualFold applies the EqualFold predicate on the "goods_type" field.
+func GoodsTypeEqualFold(v string) predicate.Product {
+	return predicate.Product(sql.FieldEqualFold(FieldGoodsType, v))
+}
+
+// GoodsTypeContainsFold applies the ContainsFold predicate on the "goods_type" field.
+func GoodsTypeContainsFold(v string) predicate.Product {
+	return predicate.Product(sql.FieldContainsFold(FieldGoodsType, v))
+}
+
+// ShippingModeEQ applies the EQ predicate on the "shipping_mode" field.
+func ShippingModeEQ(v string) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldShippingMode, v))
+}
+
+// ShippingModeNEQ applies the NEQ predicate on the "shipping_mode" field.
+func ShippingModeNEQ(v string) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldShippingMode, v))
+}
+
+// ShippingModeIn applies the In predicate on the "shipping_mode" field.
+func ShippingModeIn(vs ...string) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldShippingMode, vs...))
+}
+
+// ShippingModeNotIn applies the NotIn predicate on the "shipping_mode" field.
+func ShippingModeNotIn(vs ...string) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldShippingMode, vs...))
+}
+
+// ShippingModeGT applies the GT predicate on the "shipping_mode" field.
+func ShippingModeGT(v string) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldShippingMode, v))
+}
+
+// ShippingModeGTE applies the GTE predicate on the "shipping_mode" field.
+func ShippingModeGTE(v string) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldShippingMode, v))
+}
+
+// ShippingModeLT applies the LT predicate on the "shipping_mode" field.
+func ShippingModeLT(v string) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldShippingMode, v))
+}
+
+// ShippingModeLTE applies the LTE predicate on the "shipping_mode" field.
+func ShippingModeLTE(v string) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldShippingMode, v))
+}
+
+// ShippingModeContains applies the Contains predicate on the "shipping_mode" field.
+func ShippingModeContains(v string) predicate.Product {
+	return predicate.Product(sql.FieldContains(FieldShippingMode, v))
+}
+
+// ShippingModeHasPrefix applies the HasPrefix predicate on the "shipping_mode" field.
+func ShippingModeHasPrefix(v string) predicate.Product {
+	return predicate.Product(sql.FieldHasPrefix(FieldShippingMode, v))
+}
+
+// ShippingModeHasSuffix applies the HasSuffix predicate on the "shipping_mode" field.
+func ShippingModeHasSuffix(v string) predicate.Product {
+	return predicate.Product(sql.FieldHasSuffix(FieldShippingMode, v))
+}
+
+// ShippingModeEqualFold applies the EqualFold predicate on the "shipping_mode" field.
+func ShippingModeEqualFold(v string) predicate.Product {
+	return predicate.Product(sql.FieldEqualFold(FieldShippingMode, v))
+}
+
+// ShippingModeContainsFold applies the ContainsFold predicate on the "shipping_mode" field.
+func ShippingModeContainsFold(v string) predicate.Product {
+	return predicate.Product(sql.FieldContainsFold(FieldShippingMode, v))
+}
+
+// ShippingFeeEQ applies the EQ predicate on the "shipping_fee" field.
+func ShippingFeeEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldShippingFee, v))
+}
+
+// ShippingFeeNEQ applies the NEQ predicate on the "shipping_fee" field.
+func ShippingFeeNEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldShippingFee, v))
+}
+
+// ShippingFeeIn applies the In predicate on the "shipping_fee" field.
+func ShippingFeeIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldShippingFee, vs...))
+}
+
+// ShippingFeeNotIn applies the NotIn predicate on the "shipping_fee" field.
+func ShippingFeeNotIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldShippingFee, vs...))
+}
+
+// ShippingFeeGT applies the GT predicate on the "shipping_fee" field.
+func ShippingFeeGT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldShippingFee, v))
+}
+
+// ShippingFeeGTE applies the GTE predicate on the "shipping_fee" field.
+func ShippingFeeGTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldShippingFee, v))
+}
+
+// ShippingFeeLT applies the LT predicate on the "shipping_fee" field.
+func ShippingFeeLT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldShippingFee, v))
+}
+
+// ShippingFeeLTE applies the LTE predicate on the "shipping_fee" field.
+func ShippingFeeLTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldShippingFee, v))
+}
+
+// ShippingCountriesIsNil applies the IsNil predicate on the "shipping_countries" field.
+func ShippingCountriesIsNil() predicate.Product {
+	return predicate.Product(sql.FieldIsNull(FieldShippingCountries))
+}
+
+// ShippingCountriesNotNil applies the NotNil predicate on the "shipping_countries" field.
+func ShippingCountriesNotNil() predicate.Product {
+	return predicate.Product(sql.FieldNotNull(FieldShippingCountries))
+}
+
+// PhysicalStockEQ applies the EQ predicate on the "physical_stock" field.
+func PhysicalStockEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldPhysicalStock, v))
+}
+
+// PhysicalStockNEQ applies the NEQ predicate on the "physical_stock" field.
+func PhysicalStockNEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldPhysicalStock, v))
+}
+
+// PhysicalStockIn applies the In predicate on the "physical_stock" field.
+func PhysicalStockIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldPhysicalStock, vs...))
+}
+
+// PhysicalStockNotIn applies the NotIn predicate on the "physical_stock" field.
+func PhysicalStockNotIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldPhysicalStock, vs...))
+}
+
+// PhysicalStockGT applies the GT predicate on the "physical_stock" field.
+func PhysicalStockGT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldPhysicalStock, v))
+}
+
+// PhysicalStockGTE applies the GTE predicate on the "physical_stock" field.
+func PhysicalStockGTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldPhysicalStock, v))
+}
+
+// PhysicalStockLT applies the LT predicate on the "physical_stock" field.
+func PhysicalStockLT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldPhysicalStock, v))
+}
+
+// PhysicalStockLTE applies the LTE predicate on the "physical_stock" field.
+func PhysicalStockLTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldPhysicalStock, v))
 }
 
 // SlugEQ applies the EQ predicate on the "slug" field.

@@ -187,3 +187,18 @@ func TestLegacyPurchaseKeyPreserved(t *testing.T) {
 		t.Fatalf("old uncertain purchase changed or repurchased: %+v %v", found, err)
 	}
 }
+
+func TestReviewRefundedOrderCannotStartPurchase(t *testing.T) {
+	s, d, payload, iid := submitFixture(t)
+	ctx := context.Background()
+	d.Client.Order.UpdateOneID(payload.OrderID).SetCommerceVersion(1).SetStatus("refunded").ExecX(ctx)
+	g := &submitGateway{}
+	g.submit = func(context.Context, supplyport.PurchaseRequest) (*supplyport.PurchaseResult, error) {
+		return &supplyport.PurchaseResult{Status: "pending", UpstreamOrderID: "REVIEW-UP"}, nil
+	}
+	s.gw = g
+	_ = s.processItem(ctx, payload, iid, 10, 0, 2)
+	if g.submitCalls != 0 {
+		t.Fatalf("refunded order still triggered %d upstream purchase", g.submitCalls)
+	}
+}
