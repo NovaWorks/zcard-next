@@ -1,4 +1,4 @@
-h1:i4wXERs/2hhYx0OJKMmiB0o2d3qP1ivHn8wh+17nC4Q=
+h1:lBuQSx5JszzHFQaYjHKbwMrqs92DTix42QtQikRThTs=
 20260815190720_init.sql h1:YQ1dapmjcvZ7lL1ftfCgd8Z/h8hqxnS6tCJpOhboLe4=
 20260815193738_add_failed_tasks.sql h1:ahRwWY2iyo38+hQ88AV8P3KYJrCt6AfoDNpKmDmjEXk=
 20260815201530_v1_full_schema.sql h1:oHn5bzaeNTXmlcaeCVn/rme4XxKu3P43XYAvOsQBwOs=
@@ -50,3 +50,4 @@ h1:i4wXERs/2hhYx0OJKMmiB0o2d3qP1ivHn8wh+17nC4Q=
 20260927095500_procurement_request_key.sql h1:xyoqZFoFowj0/FobsZO39NbsZYTVQDDgfera4NiDbEw=
 20260929171409_physical_commerce.sql h1:VEr5mM3N53BkuWC1WSXduGnS7p+qssFN+ZX97VoreMQ=
 20260929204239_refund_request_idempotency.sql h1:FevAiT58KiETS17zpAns6XKOZEeL0s4OAkn0TMHa09Q=
+20260930065556_fetch_failure_count.sql h1:MzRhy5cYC56RiL682kXQGU8qRqYXIxMIL6p5P3sWESs=

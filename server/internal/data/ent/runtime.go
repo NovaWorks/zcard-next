@@ -2790,8 +2790,12 @@ func init() {
 	risklockkeyDescKeyHash := risklockkeyFields[1].Descriptor()
 	// risklockkey.KeyHashValidator is a validator for the "key_hash" field. It is called by the builders before save.
 	risklockkey.KeyHashValidator = risklockkeyDescKeyHash.Validators[0].(func(string) error)
+	// risklockkeyDescFailureCount is the schema descriptor for failure_count field.
+	risklockkeyDescFailureCount := risklockkeyFields[2].Descriptor()
+	// risklockkey.DefaultFailureCount holds the default value on creation for the failure_count field.
+	risklockkey.DefaultFailureCount = risklockkeyDescFailureCount.Default.(int)
 	// risklockkeyDescCreatedAt is the schema descriptor for created_at field.
-	risklockkeyDescCreatedAt := risklockkeyFields[3].Descriptor()
+	risklockkeyDescCreatedAt := risklockkeyFields[4].Descriptor()
 	// risklockkey.DefaultCreatedAt holds the default value on creation for the created_at field.
 	risklockkey.DefaultCreatedAt = risklockkeyDescCreatedAt.Default.(func() time.Time)
 	rolepermissionMixin := schema.RolePermission{}.Mixin()

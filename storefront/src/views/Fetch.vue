@@ -30,7 +30,8 @@
         </div>
       </form>
 
-      <div v-if="error" class="query-error">{{ error }}</div>
+      <p class="query-sub">同一网络下，同一订单连续查询失败 5 次将锁定 30 分钟；验证成功后重新计数。</p>
+      <div v-if="error" class="query-error" role="alert">{{ error }}</div>
     </section>
 
     <!-- 未搜索：三步引导 -->

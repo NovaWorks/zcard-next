@@ -28,6 +28,20 @@ func (_c *RiskLockKeyCreate) SetKeyHash(v string) *RiskLockKeyCreate {
 	return _c
 }
 
+// SetFailureCount sets the "failure_count" field.
+func (_c *RiskLockKeyCreate) SetFailureCount(v int) *RiskLockKeyCreate {
+	_c.mutation.SetFailureCount(v)
+	return _c
+}
+
+// SetNillableFailureCount sets the "failure_count" field if the given value is not nil.
+func (_c *RiskLockKeyCreate) SetNillableFailureCount(v *int) *RiskLockKeyCreate {
+	if v != nil {
+		_c.SetFailureCount(*v)
+	}
+	return _c
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (_c *RiskLockKeyCreate) SetExpiresAt(v time.Time) *RiskLockKeyCreate {
 	_c.mutation.SetExpiresAt(v)
@@ -89,6 +103,10 @@ func (_c *RiskLockKeyCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *RiskLockKeyCreate) defaults() {
+	if _, ok := _c.mutation.FailureCount(); !ok {
+		v := risklockkey.DefaultFailureCount
+		_c.mutation.SetFailureCount(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := risklockkey.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -104,6 +122,9 @@ func (_c *RiskLockKeyCreate) check() error {
 		if err := risklockkey.KeyHashValidator(v); err != nil {
 			return &ValidationError{Name: "key_hash", err: fmt.Errorf(`ent: validator failed for field "RiskLockKey.key_hash": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.FailureCount(); !ok {
+		return &ValidationError{Name: "failure_count", err: errors.New(`ent: missing required field "RiskLockKey.failure_count"`)}
 	}
 	if _, ok := _c.mutation.ExpiresAt(); !ok {
 		return &ValidationError{Name: "expires_at", err: errors.New(`ent: missing required field "RiskLockKey.expires_at"`)}
@@ -147,6 +168,10 @@ func (_c *RiskLockKeyCreate) createSpec() (*RiskLockKey, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.KeyHash(); ok {
 		_spec.SetField(risklockkey.FieldKeyHash, field.TypeString, value)
 		_node.KeyHash = value
+	}
+	if value, ok := _c.mutation.FailureCount(); ok {
+		_spec.SetField(risklockkey.FieldFailureCount, field.TypeInt, value)
+		_node.FailureCount = value
 	}
 	if value, ok := _c.mutation.ExpiresAt(); ok {
 		_spec.SetField(risklockkey.FieldExpiresAt, field.TypeTime, value)
@@ -217,6 +242,24 @@ func (u *RiskLockKeyUpsert) SetKeyHash(v string) *RiskLockKeyUpsert {
 // UpdateKeyHash sets the "key_hash" field to the value that was provided on create.
 func (u *RiskLockKeyUpsert) UpdateKeyHash() *RiskLockKeyUpsert {
 	u.SetExcluded(risklockkey.FieldKeyHash)
+	return u
+}
+
+// SetFailureCount sets the "failure_count" field.
+func (u *RiskLockKeyUpsert) SetFailureCount(v int) *RiskLockKeyUpsert {
+	u.Set(risklockkey.FieldFailureCount, v)
+	return u
+}
+
+// UpdateFailureCount sets the "failure_count" field to the value that was provided on create.
+func (u *RiskLockKeyUpsert) UpdateFailureCount() *RiskLockKeyUpsert {
+	u.SetExcluded(risklockkey.FieldFailureCount)
+	return u
+}
+
+// AddFailureCount adds v to the "failure_count" field.
+func (u *RiskLockKeyUpsert) AddFailureCount(v int) *RiskLockKeyUpsert {
+	u.Add(risklockkey.FieldFailureCount, v)
 	return u
 }
 
@@ -294,6 +337,27 @@ func (u *RiskLockKeyUpsertOne) SetKeyHash(v string) *RiskLockKeyUpsertOne {
 func (u *RiskLockKeyUpsertOne) UpdateKeyHash() *RiskLockKeyUpsertOne {
 	return u.Update(func(s *RiskLockKeyUpsert) {
 		s.UpdateKeyHash()
+	})
+}
+
+// SetFailureCount sets the "failure_count" field.
+func (u *RiskLockKeyUpsertOne) SetFailureCount(v int) *RiskLockKeyUpsertOne {
+	return u.Update(func(s *RiskLockKeyUpsert) {
+		s.SetFailureCount(v)
+	})
+}
+
+// AddFailureCount adds v to the "failure_count" field.
+func (u *RiskLockKeyUpsertOne) AddFailureCount(v int) *RiskLockKeyUpsertOne {
+	return u.Update(func(s *RiskLockKeyUpsert) {
+		s.AddFailureCount(v)
+	})
+}
+
+// UpdateFailureCount sets the "failure_count" field to the value that was provided on create.
+func (u *RiskLockKeyUpsertOne) UpdateFailureCount() *RiskLockKeyUpsertOne {
+	return u.Update(func(s *RiskLockKeyUpsert) {
+		s.UpdateFailureCount()
 	})
 }
 
@@ -539,6 +603,27 @@ func (u *RiskLockKeyUpsertBulk) SetKeyHash(v string) *RiskLockKeyUpsertBulk {
 func (u *RiskLockKeyUpsertBulk) UpdateKeyHash() *RiskLockKeyUpsertBulk {
 	return u.Update(func(s *RiskLockKeyUpsert) {
 		s.UpdateKeyHash()
+	})
+}
+
+// SetFailureCount sets the "failure_count" field.
+func (u *RiskLockKeyUpsertBulk) SetFailureCount(v int) *RiskLockKeyUpsertBulk {
+	return u.Update(func(s *RiskLockKeyUpsert) {
+		s.SetFailureCount(v)
+	})
+}
+
+// AddFailureCount adds v to the "failure_count" field.
+func (u *RiskLockKeyUpsertBulk) AddFailureCount(v int) *RiskLockKeyUpsertBulk {
+	return u.Update(func(s *RiskLockKeyUpsert) {
+		s.AddFailureCount(v)
+	})
+}
+
+// UpdateFailureCount sets the "failure_count" field to the value that was provided on create.
+func (u *RiskLockKeyUpsertBulk) UpdateFailureCount() *RiskLockKeyUpsertBulk {
+	return u.Update(func(s *RiskLockKeyUpsert) {
+		s.UpdateFailureCount()
 	})
 }
 

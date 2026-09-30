@@ -8,6 +8,7 @@ import (
 	"fmt"
 	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/orderaccess"
 	"testing"
 	"time"
 
@@ -241,9 +242,9 @@ type reviewLockedGate struct {
 	calls int
 }
 
-func (g *reviewLockedGate) IsLocked(context.Context, string) (bool, error) {
+func (g *reviewLockedGate) FetchPasswordState(context.Context, string) (orderaccess.State, error) {
 	g.calls++
-	return true, nil
+	return orderaccess.State{Failures: 5, ExpiresAt: time.Now().Add(time.Hour)}, nil
 }
 func TestReviewAddressQueryRespectsPasswordLock(t *testing.T) {
 	d, uc, _ := newIdemEnv(t)

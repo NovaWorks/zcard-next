@@ -5,6 +5,7 @@ package fulfillment
 import (
 	"context"
 	"encoding/json"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/orderaccess"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
@@ -39,7 +40,7 @@ func (s *StoreDeliveryService) FetchDelivery(ctx context.Context, req *storefron
 	}
 	res, err := s.repo.FetchDelivery(ctx, req.GetOrderNo(), req.GetQueryPassword(), clientIP(ctx))
 	if err != nil {
-		return nil, errors.NotFound("order.NOT_FOUND", "订单不存在或密码错误")
+		return nil, orderaccess.PublicError(err)
 	}
 	reply := &storefrontv1.FetchDeliveryReply{
 		OrderNo: res.OrderNo, Status: res.Status, FetchCount: res.FetchCnt,

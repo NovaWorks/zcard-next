@@ -195,6 +195,7 @@ func (RiskLockKey) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("id"),
 		field.String("key_hash").MaxLen(128).Comment("锁定键哈希（IP/订单维度，命名空间前缀）"),
+		field.Int("failure_count").Default(5).Comment("连续失败次数；默认5保留升级前已有锁定"),
 		field.Time("expires_at").SchemaType(mysqlTime).Comment("TTL 过期自动失效"),
 		field.Time("created_at").SchemaType(mysqlTime).Immutable().Default(nowUTC),
 	}

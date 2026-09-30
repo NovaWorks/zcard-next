@@ -23,13 +23,14 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/businessday"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/orderaccess"
 )
 
 // 闸门阈值（settings.security 可覆盖——读取侧 接线；默认值与文档一致）。
 const (
 	DefaultMaxPendingPerIP  = 3
-	DefaultFetchFailLockN   = 5
-	DefaultFetchLockTTL     = 30 * time.Minute
+	DefaultFetchFailLockN   = orderaccess.MaxFailures
+	DefaultFetchLockTTL     = orderaccess.LockTTL
 	DefaultOrderPerMinPerIP = 10
 )
 
@@ -242,32 +243,73 @@ func (r *AuditRepo) freqExceed(ip string) bool {
 	return false
 }
 
-// LockFetchFailure 取货失败锁定（连续 N 次锁 IP+订单组合；risk_lock_keys TTL）。
-func (r *AuditRepo) LockFetchFailure(ctx context.Context, key string) error {
-	hash := hashKey(key)
-	_, err := data.Client(ctx, r.data).RiskLockKey.Create().
-		SetKeyHash(hash).
-		SetExpiresAt(time.Now().UTC().Add(DefaultFetchLockTTL)).
-		Save(ctx)
-	if err != nil {
-		return nil // 锁定写失败不阻断（fail-open；计数侧仍防暴力）
+// FetchPasswordState reads durable counters shared by all application instances.
+func (r *AuditRepo) FetchPasswordState(ctx context.Context, key string) (orderaccess.State, error) {
+	row, err := data.Client(ctx, r.data).RiskLockKey.Query().Where(risklockkey.KeyHash(hashKey(key))).Only(ctx)
+	if ent.IsNotFound(err) {
+		return orderaccess.State{}, nil
 	}
-	r.Security(ctx, port.SecurityEntry{
-		ActorType: "guest", Action: "fetch.locked",
-		Metadata: map[string]any{"key_prefix": prefixOf(key)},
-	})
-	return nil
+	if err != nil {
+		return orderaccess.State{}, err
+	}
+	if !row.ExpiresAt.After(time.Now()) {
+		return orderaccess.State{}, nil
+	}
+	return orderaccess.State{Failures: row.FailureCount, ExpiresAt: row.ExpiresAt}, nil
 }
 
-// IsLocked 锁定检查（TTL 过期视为未锁）。
-func (r *AuditRepo) IsLocked(ctx context.Context, key string) (bool, error) {
-	n, err := data.Client(ctx, r.data).RiskLockKey.Query().
-		Where(risklockkey.KeyHash(hashKey(key)), risklockkey.ExpiresAtGT(time.Now().UTC())).
-		Count(ctx)
-	if err != nil {
-		return false, nil
+// RecordFetchFailure uses compare-and-swap so concurrent requests cannot lose increments.
+// Each failed attempt refreshes the counting window; the fifth starts the lock TTL.
+// Requests during a lock leave its expiry unchanged.
+func (r *AuditRepo) RecordFetchFailure(ctx context.Context, key string) (orderaccess.State, error) {
+	client := data.Client(ctx, r.data)
+	hash := hashKey(key)
+	for attempt := 0; attempt < 16; attempt++ {
+		now := time.Now().UTC().Truncate(time.Millisecond)
+		row, err := client.RiskLockKey.Query().Where(risklockkey.KeyHash(hash)).Only(ctx)
+		if ent.IsNotFound(err) {
+			row, err = client.RiskLockKey.Create().SetKeyHash(hash).SetFailureCount(1).SetExpiresAt(now.Add(DefaultFetchLockTTL)).Save(ctx)
+			if ent.IsConstraintError(err) {
+				continue
+			}
+			if err != nil {
+				return orderaccess.State{}, err
+			}
+			return orderaccess.State{Failures: row.FailureCount, ExpiresAt: row.ExpiresAt}, nil
+		}
+		if err != nil {
+			return orderaccess.State{}, err
+		}
+		state := orderaccess.State{Failures: row.FailureCount, ExpiresAt: row.ExpiresAt}
+		if state.Locked() {
+			return state, nil
+		}
+		failures := row.FailureCount + 1
+		expiryCondition := risklockkey.ExpiresAtGT(now)
+		if !row.ExpiresAt.After(now) {
+			failures = 1
+			expiryCondition = risklockkey.ExpiresAtLTE(now)
+		}
+		expiry := now.Add(DefaultFetchLockTTL)
+		n, err := client.RiskLockKey.Update().Where(risklockkey.ID(row.ID), risklockkey.FailureCount(row.FailureCount), expiryCondition).SetFailureCount(failures).SetExpiresAt(expiry).Save(ctx)
+		if err != nil {
+			return orderaccess.State{}, err
+		}
+		if n == 0 {
+			continue
+		}
+		if failures == DefaultFetchFailLockN {
+			r.Security(ctx, port.SecurityEntry{ActorType: "guest", Action: "fetch.locked", Metadata: map[string]any{"key_prefix": prefixOf(key)}})
+		}
+		return orderaccess.State{Failures: failures, ExpiresAt: expiry}, nil
 	}
-	return n > 0, nil
+	return orderaccess.State{}, fmt.Errorf("audit: concurrent fetch counter update; retry")
+}
+
+// ResetFetchFailures clears successful attempts without unlocking a concurrent lock.
+func (r *AuditRepo) ResetFetchFailures(ctx context.Context, key string) error {
+	_, err := data.Client(ctx, r.data).RiskLockKey.Delete().Where(risklockkey.KeyHash(hashKey(key)), risklockkey.Or(risklockkey.FailureCountLT(DefaultFetchFailLockN), risklockkey.ExpiresAtLTE(time.Now().UTC()))).Exec(ctx)
+	return err
 }
 
 // CleanupExpiredLocks 过期锁清理（cron）。

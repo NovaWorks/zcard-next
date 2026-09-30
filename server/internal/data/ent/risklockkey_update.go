@@ -42,6 +42,27 @@ func (_u *RiskLockKeyUpdate) SetNillableKeyHash(v *string) *RiskLockKeyUpdate {
 	return _u
 }
 
+// SetFailureCount sets the "failure_count" field.
+func (_u *RiskLockKeyUpdate) SetFailureCount(v int) *RiskLockKeyUpdate {
+	_u.mutation.ResetFailureCount()
+	_u.mutation.SetFailureCount(v)
+	return _u
+}
+
+// SetNillableFailureCount sets the "failure_count" field if the given value is not nil.
+func (_u *RiskLockKeyUpdate) SetNillableFailureCount(v *int) *RiskLockKeyUpdate {
+	if v != nil {
+		_u.SetFailureCount(*v)
+	}
+	return _u
+}
+
+// AddFailureCount adds value to the "failure_count" field.
+func (_u *RiskLockKeyUpdate) AddFailureCount(v int) *RiskLockKeyUpdate {
+	_u.mutation.AddFailureCount(v)
+	return _u
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (_u *RiskLockKeyUpdate) SetExpiresAt(v time.Time) *RiskLockKeyUpdate {
 	_u.mutation.SetExpiresAt(v)
@@ -113,6 +134,12 @@ func (_u *RiskLockKeyUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if value, ok := _u.mutation.KeyHash(); ok {
 		_spec.SetField(risklockkey.FieldKeyHash, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.FailureCount(); ok {
+		_spec.SetField(risklockkey.FieldFailureCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedFailureCount(); ok {
+		_spec.AddField(risklockkey.FieldFailureCount, field.TypeInt, value)
+	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(risklockkey.FieldExpiresAt, field.TypeTime, value)
 	}
@@ -147,6 +174,27 @@ func (_u *RiskLockKeyUpdateOne) SetNillableKeyHash(v *string) *RiskLockKeyUpdate
 	if v != nil {
 		_u.SetKeyHash(*v)
 	}
+	return _u
+}
+
+// SetFailureCount sets the "failure_count" field.
+func (_u *RiskLockKeyUpdateOne) SetFailureCount(v int) *RiskLockKeyUpdateOne {
+	_u.mutation.ResetFailureCount()
+	_u.mutation.SetFailureCount(v)
+	return _u
+}
+
+// SetNillableFailureCount sets the "failure_count" field if the given value is not nil.
+func (_u *RiskLockKeyUpdateOne) SetNillableFailureCount(v *int) *RiskLockKeyUpdateOne {
+	if v != nil {
+		_u.SetFailureCount(*v)
+	}
+	return _u
+}
+
+// AddFailureCount adds value to the "failure_count" field.
+func (_u *RiskLockKeyUpdateOne) AddFailureCount(v int) *RiskLockKeyUpdateOne {
+	_u.mutation.AddFailureCount(v)
 	return _u
 }
 
@@ -250,6 +298,12 @@ func (_u *RiskLockKeyUpdateOne) sqlSave(ctx context.Context) (_node *RiskLockKey
 	}
 	if value, ok := _u.mutation.KeyHash(); ok {
 		_spec.SetField(risklockkey.FieldKeyHash, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.FailureCount(); ok {
+		_spec.SetField(risklockkey.FieldFailureCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedFailureCount(); ok {
+		_spec.AddField(risklockkey.FieldFailureCount, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(risklockkey.FieldExpiresAt, field.TypeTime, value)

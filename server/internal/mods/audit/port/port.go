@@ -3,6 +3,7 @@ package port
 
 import (
 	"context"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/orderaccess"
 	"net"
 	"strings"
 	"time"
@@ -35,10 +36,7 @@ type GateInput struct {
 type RiskGate interface {
 	// Check 下单前闸门：IP 黑名单 → pending 闸门 → 频率限流（事务内复查防穿透）。
 	Check(ctx context.Context, in GateInput) error
-	// LockFetchFailure 取货连续失败锁定（N 次锁 IP+订单组合，TTL 解锁）。
-	LockFetchFailure(ctx context.Context, key string) error
-	// IsLocked 锁定检查。
-	IsLocked(ctx context.Context, key string) (bool, error)
+	orderaccess.Gate
 }
 
 // NormalizeIP IP 规范化：IPv4 原样；IPv6 按 /64 聚合（orders.risk_ip 写入口统一）。

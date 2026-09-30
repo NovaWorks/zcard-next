@@ -342,7 +342,7 @@ function startPolling() {
   pollCount = 0;
   pollTimer = setInterval(async () => {
     pollCount += 1;
-    if (!await refreshOrder()) { if (pollCount >= POLL_MAX) stopPolling(); return; }
+    if (!await refreshOrder()) { stopPolling(); return; }
     const st = order.value?.status;
     if (st && PAID_STATES.includes(st)) {
       phase.value = 'success';

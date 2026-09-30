@@ -19,6 +19,8 @@ type RiskLockKey struct {
 	ID uint64 `json:"id,omitempty"`
 	// 锁定键哈希（IP/订单维度，命名空间前缀）
 	KeyHash string `json:"key_hash,omitempty"`
+	// 连续失败次数；默认5保留升级前已有锁定
+	FailureCount int `json:"failure_count,omitempty"`
 	// TTL 过期自动失效
 	ExpiresAt time.Time `json:"expires_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -31,7 +33,7 @@ func (*RiskLockKey) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case risklockkey.FieldID:
+		case risklockkey.FieldID, risklockkey.FieldFailureCount:
 			values[i] = new(sql.NullInt64)
 		case risklockkey.FieldKeyHash:
 			values[i] = new(sql.NullString)
@@ -63,6 +65,12 @@ func (_m *RiskLockKey) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field key_hash", values[i])
 			} else if value.Valid {
 				_m.KeyHash = value.String
+			}
+		case risklockkey.FieldFailureCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field failure_count", values[i])
+			} else if value.Valid {
+				_m.FailureCount = int(value.Int64)
 			}
 		case risklockkey.FieldExpiresAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -114,6 +122,9 @@ func (_m *RiskLockKey) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("key_hash=")
 	builder.WriteString(_m.KeyHash)
+	builder.WriteString(", ")
+	builder.WriteString("failure_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.FailureCount))
 	builder.WriteString(", ")
 	builder.WriteString("expires_at=")
 	builder.WriteString(_m.ExpiresAt.Format(time.ANSIC))

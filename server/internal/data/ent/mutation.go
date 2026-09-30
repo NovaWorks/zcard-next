@@ -80571,16 +80571,18 @@ func (m *ReviewMutation) ResetEdge(name string) error {
 // RiskLockKeyMutation represents an operation that mutates the RiskLockKey nodes in the graph.
 type RiskLockKeyMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uint64
-	key_hash      *string
-	expires_at    *time.Time
-	created_at    *time.Time
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*RiskLockKey, error)
-	predicates    []predicate.RiskLockKey
+	op               Op
+	typ              string
+	id               *uint64
+	key_hash         *string
+	failure_count    *int
+	addfailure_count *int
+	expires_at       *time.Time
+	created_at       *time.Time
+	clearedFields    map[string]struct{}
+	done             bool
+	oldValue         func(context.Context) (*RiskLockKey, error)
+	predicates       []predicate.RiskLockKey
 }
 
 var _ ent.Mutation = (*RiskLockKeyMutation)(nil)
@@ -80723,6 +80725,62 @@ func (m *RiskLockKeyMutation) ResetKeyHash() {
 	m.key_hash = nil
 }
 
+// SetFailureCount sets the "failure_count" field.
+func (m *RiskLockKeyMutation) SetFailureCount(i int) {
+	m.failure_count = &i
+	m.addfailure_count = nil
+}
+
+// FailureCount returns the value of the "failure_count" field in the mutation.
+func (m *RiskLockKeyMutation) FailureCount() (r int, exists bool) {
+	v := m.failure_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailureCount returns the old "failure_count" field's value of the RiskLockKey entity.
+// If the RiskLockKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RiskLockKeyMutation) OldFailureCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailureCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailureCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailureCount: %w", err)
+	}
+	return oldValue.FailureCount, nil
+}
+
+// AddFailureCount adds i to the "failure_count" field.
+func (m *RiskLockKeyMutation) AddFailureCount(i int) {
+	if m.addfailure_count != nil {
+		*m.addfailure_count += i
+	} else {
+		m.addfailure_count = &i
+	}
+}
+
+// AddedFailureCount returns the value that was added to the "failure_count" field in this mutation.
+func (m *RiskLockKeyMutation) AddedFailureCount() (r int, exists bool) {
+	v := m.addfailure_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFailureCount resets all changes to the "failure_count" field.
+func (m *RiskLockKeyMutation) ResetFailureCount() {
+	m.failure_count = nil
+	m.addfailure_count = nil
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (m *RiskLockKeyMutation) SetExpiresAt(t time.Time) {
 	m.expires_at = &t
@@ -80829,9 +80887,12 @@ func (m *RiskLockKeyMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RiskLockKeyMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 4)
 	if m.key_hash != nil {
 		fields = append(fields, risklockkey.FieldKeyHash)
+	}
+	if m.failure_count != nil {
+		fields = append(fields, risklockkey.FieldFailureCount)
 	}
 	if m.expires_at != nil {
 		fields = append(fields, risklockkey.FieldExpiresAt)
@@ -80849,6 +80910,8 @@ func (m *RiskLockKeyMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case risklockkey.FieldKeyHash:
 		return m.KeyHash()
+	case risklockkey.FieldFailureCount:
+		return m.FailureCount()
 	case risklockkey.FieldExpiresAt:
 		return m.ExpiresAt()
 	case risklockkey.FieldCreatedAt:
@@ -80864,6 +80927,8 @@ func (m *RiskLockKeyMutation) OldField(ctx context.Context, name string) (ent.Va
 	switch name {
 	case risklockkey.FieldKeyHash:
 		return m.OldKeyHash(ctx)
+	case risklockkey.FieldFailureCount:
+		return m.OldFailureCount(ctx)
 	case risklockkey.FieldExpiresAt:
 		return m.OldExpiresAt(ctx)
 	case risklockkey.FieldCreatedAt:
@@ -80883,6 +80948,13 @@ func (m *RiskLockKeyMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetKeyHash(v)
+		return nil
+	case risklockkey.FieldFailureCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailureCount(v)
 		return nil
 	case risklockkey.FieldExpiresAt:
 		v, ok := value.(time.Time)
@@ -80905,13 +80977,21 @@ func (m *RiskLockKeyMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *RiskLockKeyMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addfailure_count != nil {
+		fields = append(fields, risklockkey.FieldFailureCount)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *RiskLockKeyMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case risklockkey.FieldFailureCount:
+		return m.AddedFailureCount()
+	}
 	return nil, false
 }
 
@@ -80920,6 +81000,13 @@ func (m *RiskLockKeyMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *RiskLockKeyMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case risklockkey.FieldFailureCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFailureCount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown RiskLockKey numeric field %s", name)
 }
@@ -80949,6 +81036,9 @@ func (m *RiskLockKeyMutation) ResetField(name string) error {
 	switch name {
 	case risklockkey.FieldKeyHash:
 		m.ResetKeyHash()
+		return nil
+	case risklockkey.FieldFailureCount:
+		m.ResetFailureCount()
 		return nil
 	case risklockkey.FieldExpiresAt:
 		m.ResetExpiresAt()

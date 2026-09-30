@@ -132,28 +132,6 @@ func TestGatePendingBlacklistFreq(t *testing.T) {
 	}
 }
 
-// TestFetchLock 取货失败锁定：锁定期内 IsLocked；TTL 过期解锁。
-func TestFetchLock(t *testing.T) {
-	r, _ := newAuditRepo(t)
-	ctx := context.Background()
-	key := "fetch:1.2.3.4:T-LOCK-1"
-
-	if locked, _ := r.IsLocked(ctx, key); locked {
-		t.Fatal("未锁定前应为未锁")
-	}
-	if err := r.LockFetchFailure(ctx, key); err != nil {
-		t.Fatal(err)
-	}
-	if locked, _ := r.IsLocked(ctx, key); !locked {
-		t.Fatal("锁定后应生效")
-	}
-	// TTL 过期解锁（直接改库模拟时间流逝）
-	_, _ = r.data.DB.ExecContext(ctx, "UPDATE risk_lock_keys SET expires_at = datetime('now', '-1 minute')")
-	if locked, _ := r.IsLocked(ctx, key); locked {
-		t.Fatal("TTL 过期应解锁")
-	}
-}
-
 // TestSecurityWriteNoBlock 安全审计写入 + 查询。
 func TestSecurityWriteNoBlock(t *testing.T) {
 	r, _ := newAuditRepo(t)

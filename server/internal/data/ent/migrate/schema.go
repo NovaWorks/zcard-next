@@ -2255,6 +2255,7 @@ var (
 	RiskLockKeysColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
 		{Name: "key_hash", Type: field.TypeString, Size: 128},
+		{Name: "failure_count", Type: field.TypeInt, Default: 5},
 		{Name: "expires_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 	}
@@ -2272,7 +2273,7 @@ var (
 			{
 				Name:    "risklockkey_expires_at",
 				Unique:  false,
-				Columns: []*schema.Column{RiskLockKeysColumns[2]},
+				Columns: []*schema.Column{RiskLockKeysColumns[3]},
 			},
 		},
 	}

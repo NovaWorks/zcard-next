@@ -109,13 +109,13 @@ func (s *StoreOrderService) createOrder(ctx context.Context, req *storefrontv1.C
 func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetOrderRequest) (*storefrontv1.GetOrderReply, error) {
 	o, err := s.uc.GetByOrderNo(ctx, req.GetOrderNo())
 	if ent.IsNotFound(err) {
-		return nil, errors.NotFound("order.NOT_FOUND", "订单不存在")
+		return nil, orderaccess.PublicError(orderaccess.Verify(ctx, s.uc.Gate, req.GetOrderNo(), "", req.GetQueryPassword(), orderClientIP(ctx)))
 	}
 	if err != nil {
 		return nil, errors.InternalServer("order.GET_FAILED", "查询失败")
 	}
 	if o.SubsiteID != tenancy.FromContext(ctx).SubsiteID {
-		return nil, errors.NotFound("order.NOT_FOUND", "订单不存在")
+		return nil, orderaccess.PublicError(orderaccess.Verify(ctx, s.uc.Gate, req.GetOrderNo(), "", req.GetQueryPassword(), orderClientIP(ctx)))
 	}
 	// 登录态本人：免查询密码（密码错与单号不存在对外表现一致的纪律不破坏——
 	// 非本人登录态不泄露订单存在性，仍走密码校验路径）
@@ -123,8 +123,8 @@ func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetO
 	isOwner := claims != nil && o.UserID != 0 && claims.Subject == o.UserID
 	if !isOwner {
 		// 查询密码校验（三重门之一：设置则必须匹配；错误与单号不存在表现一致）
-		if orderaccess.Verify(ctx, s.uc.Gate, o.OrderNo, o.QueryPasswordHash, req.GetQueryPassword(), orderClientIP(ctx)) != nil {
-			return nil, errors.NotFound("order.NOT_FOUND", "订单不存在")
+		if err := orderaccess.Verify(ctx, s.uc.Gate, o.OrderNo, o.QueryPasswordHash, req.GetQueryPassword(), orderClientIP(ctx)); err != nil {
+			return nil, orderaccess.PublicError(err)
 		}
 	}
 	reply := &storefrontv1.GetOrderReply{

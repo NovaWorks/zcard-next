@@ -250,13 +250,13 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 	// 门 1+2：单号 + 查询密码（错误响应一致——防枚举）
 	o, err := client.Order.Query().Where(order.OrderNo(orderNo)).Only(ctx)
 	if ent.IsNotFound(err) {
-		return nil, fmt.Errorf("order.NOT_FOUND")
+		return nil, orderaccess.Verify(ctx, r.gate, orderNo, "", queryPassword, clientIP)
 	}
 	if err != nil {
 		return nil, err
 	}
 	if o.SubsiteID != tenancy.FromContext(ctx).SubsiteID {
-		return nil, fmt.Errorf("order.NOT_FOUND")
+		return nil, orderaccess.Verify(ctx, r.gate, orderNo, "", queryPassword, clientIP)
 	}
 	claims := identity.ClaimsFromContext(ctx)
 	owner := claims != nil && o.UserID != 0 && claims.Subject == o.UserID

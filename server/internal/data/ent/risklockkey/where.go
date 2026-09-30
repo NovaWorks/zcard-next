@@ -59,6 +59,11 @@ func KeyHash(v string) predicate.RiskLockKey {
 	return predicate.RiskLockKey(sql.FieldEQ(FieldKeyHash, v))
 }
 
+// FailureCount applies equality check predicate on the "failure_count" field. It's identical to FailureCountEQ.
+func FailureCount(v int) predicate.RiskLockKey {
+	return predicate.RiskLockKey(sql.FieldEQ(FieldFailureCount, v))
+}
+
 // ExpiresAt applies equality check predicate on the "expires_at" field. It's identical to ExpiresAtEQ.
 func ExpiresAt(v time.Time) predicate.RiskLockKey {
 	return predicate.RiskLockKey(sql.FieldEQ(FieldExpiresAt, v))
@@ -132,6 +137,46 @@ func KeyHashEqualFold(v string) predicate.RiskLockKey {
 // KeyHashContainsFold applies the ContainsFold predicate on the "key_hash" field.
 func KeyHashContainsFold(v string) predicate.RiskLockKey {
 	return predicate.RiskLockKey(sql.FieldContainsFold(FieldKeyHash, v))
+}
+
+// FailureCountEQ applies the EQ predicate on the "failure_count" field.
+func FailureCountEQ(v int) predicate.RiskLockKey {
+	return predicate.RiskLockKey(sql.FieldEQ(FieldFailureCount, v))
+}
+
+// FailureCountNEQ applies the NEQ predicate on the "failure_count" field.
+func FailureCountNEQ(v int) predicate.RiskLockKey {
+	return predicate.RiskLockKey(sql.FieldNEQ(FieldFailureCount, v))
+}
+
+// FailureCountIn applies the In predicate on the "failure_count" field.
+func FailureCountIn(vs ...int) predicate.RiskLockKey {
+	return predicate.RiskLockKey(sql.FieldIn(FieldFailureCount, vs...))
+}
+
+// FailureCountNotIn applies the NotIn predicate on the "failure_count" field.
+func FailureCountNotIn(vs ...int) predicate.RiskLockKey {
+	return predicate.RiskLockKey(sql.FieldNotIn(FieldFailureCount, vs...))
+}
+
+// FailureCountGT applies the GT predicate on the "failure_count" field.
+func FailureCountGT(v int) predicate.RiskLockKey {
+	return predicate.RiskLockKey(sql.FieldGT(FieldFailureCount, v))
+}
+
+// FailureCountGTE applies the GTE predicate on the "failure_count" field.
+func FailureCountGTE(v int) predicate.RiskLockKey {
+	return predicate.RiskLockKey(sql.FieldGTE(FieldFailureCount, v))
+}
+
+// FailureCountLT applies the LT predicate on the "failure_count" field.
+func FailureCountLT(v int) predicate.RiskLockKey {
+	return predicate.RiskLockKey(sql.FieldLT(FieldFailureCount, v))
+}
+
+// FailureCountLTE applies the LTE predicate on the "failure_count" field.
+func FailureCountLTE(v int) predicate.RiskLockKey {
+	return predicate.RiskLockKey(sql.FieldLTE(FieldFailureCount, v))
 }
 
 // ExpiresAtEQ applies the EQ predicate on the "expires_at" field.

@@ -15,6 +15,8 @@ const (
 	FieldID = "id"
 	// FieldKeyHash holds the string denoting the key_hash field in the database.
 	FieldKeyHash = "key_hash"
+	// FieldFailureCount holds the string denoting the failure_count field in the database.
+	FieldFailureCount = "failure_count"
 	// FieldExpiresAt holds the string denoting the expires_at field in the database.
 	FieldExpiresAt = "expires_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -27,6 +29,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldKeyHash,
+	FieldFailureCount,
 	FieldExpiresAt,
 	FieldCreatedAt,
 }
@@ -44,6 +47,8 @@ func ValidColumn(column string) bool {
 var (
 	// KeyHashValidator is a validator for the "key_hash" field. It is called by the builders before save.
 	KeyHashValidator func(string) error
+	// DefaultFailureCount holds the default value on creation for the "failure_count" field.
+	DefaultFailureCount int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 )
@@ -59,6 +64,11 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByKeyHash orders the results by the key_hash field.
 func ByKeyHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldKeyHash, opts...).ToFunc()
+}
+
+// ByFailureCount orders the results by the failure_count field.
+func ByFailureCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFailureCount, opts...).ToFunc()
 }
 
 // ByExpiresAt orders the results by the expires_at field.
