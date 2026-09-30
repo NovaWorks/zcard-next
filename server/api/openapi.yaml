@@ -4425,6 +4425,58 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/sms-intents:
+        get:
+            tags:
+                - AdminProcurementService
+            operationId: AdminProcurementService_ListSMS
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: orderNo
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.SMSDiagnostics'
+    /api/v1/admin/sms-intents/{id}/retry:
+        post:
+            tags:
+                - AdminProcurementService
+            operationId: AdminProcurementService_RetrySMS
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.RetrySMSRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/supplier/accounts:
         get:
             tags:
@@ -4834,6 +4886,16 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
                 - name: refresh
                   in: query
                   schema:
@@ -6557,6 +6619,53 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.OrderReviewState'
+    /api/v1/storefront/orders/{orderNo}/sms:
+        get:
+            tags:
+                - StoreSMSService
+            operationId: StoreSMSService_GetSMS
+            parameters:
+                - name: orderNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SMSOrderReply'
+    /api/v1/storefront/orders/{orderNo}/sms/{action}:
+        post:
+            tags:
+                - StoreSMSService
+            operationId: StoreSMSService_ActSMS
+            parameters:
+                - name: orderNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: action
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.SMSActionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SMSOrderReply'
     /api/v1/storefront/payment/channels:
         get:
             tags:
@@ -11056,6 +11165,10 @@ components:
         zcard.api.admin.v1.PreviewCategory:
             type: object
             properties:
+                parentCode:
+                    type: string
+                path:
+                    type: string
                 code:
                     type: string
                 name:
@@ -11067,6 +11180,12 @@ components:
         zcard.api.admin.v1.PreviewProduct:
             type: object
             properties:
+                deliveryKind:
+                    type: string
+                smsProduct:
+                    type: object
+                    additionalProperties:
+                        type: string
                 code:
                     type: string
                 name:
@@ -11119,6 +11238,14 @@ components:
                     format: int32
                 expiresAt:
                     type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+                hasMore:
+                    type: boolean
         zcard.api.admin.v1.PreviewTemplateReply:
             type: object
             properties:
@@ -11636,6 +11763,13 @@ components:
             properties:
                 id:
                     type: string
+        zcard.api.admin.v1.RetrySMSRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                reason:
+                    type: string
         zcard.api.admin.v1.ReviewApplyRequest:
             required:
                 - id
@@ -11724,6 +11858,39 @@ components:
             properties:
                 id:
                     type: string
+        zcard.api.admin.v1.SMSDiagnostic:
+            type: object
+            properties:
+                id:
+                    type: string
+                orderNo:
+                    type: string
+                connectionId:
+                    type: string
+                phase:
+                    type: string
+                state:
+                    type: string
+                refundStatus:
+                    type: string
+                lastError:
+                    type: string
+                attempts:
+                    type: integer
+                    format: int32
+                updatedAt:
+                    type: string
+        zcard.api.admin.v1.SMSDiagnostics:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.SMSDiagnostic'
+                total:
+                    type: string
+                salesEnabled:
+                    type: boolean
         zcard.api.admin.v1.SaveThemeSettingsRequest:
             type: object
             properties:
@@ -14347,6 +14514,12 @@ components:
         zcard.api.storefront.v1.OrderItemReply:
             type: object
             properties:
+                deliveryKind:
+                    type: string
+                smsProduct:
+                    type: object
+                    additionalProperties:
+                        type: string
                 goodsType:
                     type: string
                 paidCents:
@@ -14471,6 +14644,14 @@ components:
         zcard.api.storefront.v1.Product:
             type: object
             properties:
+                deliveryKind:
+                    type: string
+                smsProduct:
+                    type: object
+                    additionalProperties:
+                        type: string
+                smsSalesEnabled:
+                    type: boolean
                 goodsType:
                     type: string
                 shippingMode:
@@ -14748,6 +14929,46 @@ components:
                     type: string
                 name:
                     type: string
+        zcard.api.storefront.v1.SMSActionRequest:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                action:
+                    type: string
+                requestId:
+                    type: string
+        zcard.api.storefront.v1.SMSOrderReply:
+            type: object
+            properties:
+                state:
+                    type: string
+                phase:
+                    type: string
+                phoneNumber:
+                    type: string
+                otpCode:
+                    type: string
+                otpMessage:
+                    type: string
+                expiresAt:
+                    type: string
+                cancelAvailableAt:
+                    type: string
+                canCancel:
+                    type: boolean
+                canFinish:
+                    type: boolean
+                operationStatus:
+                    type: string
+                operationAction:
+                    type: string
+                refundStatus:
+                    type: string
+                message:
+                    type: string
+                active:
+                    type: boolean
         zcard.api.storefront.v1.SendRegisterCodeReply:
             type: object
             properties: {}
@@ -15353,6 +15574,7 @@ tags:
     - name: StorePaymentService
       description: StorePaymentService 顾客支付。
     - name: StoreReviewService
+    - name: StoreSMSService
     - name: StoreSupplierService
       description: |-
         StoreSupplierService 前台对接申请（个人中心）：申请成为供货商户 →

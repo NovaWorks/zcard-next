@@ -25,7 +25,7 @@
         <h1 class="pd-name">{{ p.name }}</h1>
         <div class="pd-sub">
           <span class="tag">{{ p.goods_type==='physical' ? '实体商品' : manualDelivery ? '人工服务' : stockTypeLabel(p.stock_type) }}</span>
-          <span v-if="p.points_required && p.points_required > 0" class="tag pd-points-tag">{{ p.points_required }} 积分</span>
+          <span v-if="!smsProduct && p.points_required && p.points_required > 0" class="tag pd-points-tag">{{ p.points_required }} 积分</span>
         </div>
 
         <!-- 促销价格区 -->
@@ -33,7 +33,7 @@
           <div class="pd-price-row">
             <span class="pd-price">{{ formatMoney(displayPrice) }}</span>
             <del v-if="selectedFlash && displayPrice < basePrice" class="muted">{{ formatMoney(basePrice) }}</del>
-            <span v-if="p.points_required && p.points_required > 0" class="pd-price-points">或 {{ p.points_required }} 积分兑换</span>
+            <span v-if="!smsProduct && p.points_required && p.points_required > 0" class="pd-price-points">或 {{ p.points_required }} 积分兑换</span>
           </div>
           <p v-if="selectedFlash" class="pd-flash-info">{{ flashSoldOut ? '本场秒杀已抢完' : '限时秒杀' }} · {{ new Date(selectedFlash.end_at * 1000).toLocaleString() }} 结束<span v-if="!flashSoldOut"> · 剩余 {{ selectedFlash.remaining }} 件<span v-if="selectedFlash.per_user_limit > 0"> · 每人限购 {{ selectedFlash.per_user_limit }} 件</span></span></p>
         </div>
@@ -73,8 +73,8 @@
           <label class="pd-label">购买数量</label>
           <div class="pd-qty">
             <button class="pd-qty-btn" @click="quantity = Math.max(1, quantity - 1)">−</button>
-            <input v-model.number="quantity" type="number" min="1" :max="reusableDelivery?1:99" :disabled="reusableDelivery" class="pd-qty-input" />
-            <button class="pd-qty-btn" :disabled="reusableDelivery" @click="quantity = Math.min(99, quantity + 1)">＋</button>
+            <input v-model.number="quantity" type="number" min="1" :max="reusableDelivery||smsProduct?1:99" :disabled="reusableDelivery||smsProduct" class="pd-qty-input" />
+            <button class="pd-qty-btn" :disabled="reusableDelivery||smsProduct" @click="quantity = Math.min(99, quantity + 1)">＋</button>
           </div>
         </div>
 
@@ -109,7 +109,7 @@
         </div>
         <div class="pd-field">
           <label class="pd-label">优惠券码（选填）</label>
-          <input v-model="couponCode" type="text" class="pd-input" placeholder="输入优惠券码" />
+          <input v-if="!smsProduct" v-model="couponCode" type="text" class="pd-input" placeholder="输入优惠券码" />
         </div>
 
         <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
@@ -125,8 +125,9 @@
         </div>
 
         <!-- 缺货和未知库存禁购；不限库存仍由后端按货源验证。 -->
+        <p v-if="smsProduct" class="muted">单次短信接码，仅限会员余额单件购买。付款后在本站订单页查看号码与短信；取消须经供货确认后退款。{{p.sms_sales_enabled ? '' : '接码新购暂未开放。'}}</p>
         <div class="pd-actions">
-          <button class="pd-btn-buy" :disabled="submitting || soldOut || stockUnknown || flashSoldOut" @click="buy">
+          <button class="pd-btn-buy" :disabled="submitting || soldOut || stockUnknown || flashSoldOut || (smsProduct && !p.sms_sales_enabled)" @click="buy">
             {{ submitting ? '提交中…' : stockUnknown ? '库存待确认' : soldOut ? '暂时缺货' : '立即购买' }}
           </button>
           <button
@@ -141,7 +142,7 @@
             <template v-else-if="inCartNow"><ThemeIcon name="trash" />移除购物车</template>
             <template v-else><ThemeIcon name="cart" />加入购物车</template>
           </button>
-          <button v-if="p.points_required && p.points_required > 0" class="pd-btn-points" :disabled="submitting || soldOut || stockUnknown || flashSoldOut" @click="exchangePoints">
+          <button v-if="!smsProduct && p.points_required && p.points_required > 0" class="pd-btn-points" :disabled="submitting || soldOut || stockUnknown || flashSoldOut" @click="exchangePoints">
             {{ stockUnknown ? '库存待确认' : soldOut ? '已兑完' : `积分兑换（${p.points_required} 分）` }}
           </button>
         </div>
@@ -207,6 +208,8 @@ const route = useRoute();
 const router = useRouter();
 const p = ref<Product | null>(null);
 const quantity = ref(1);
+const smsProduct=computed(()=>p.value?.delivery_kind==='sms_activation');
+watch(smsProduct,v=>{if(v){quantity.value=1;couponCode.value='';selectedSku.value=0;}});
 const selectedSku = ref(0);
 const queryPassword = ref('');
 const contact = ref('');
@@ -251,7 +254,7 @@ watch([description, () => p.value?.description], () => {
 watch(() => route.params, () => { previewImages.value = []; });
 
 // 购物车（淘宝式切换）：当前商品 + 所选 SKU 在购物车 → 按钮变灰「移除购物车」
-const canCart = computed(() => cartEnabled.value && !(p.value?.points_required && p.value.points_required > 0));
+const canCart = computed(() => !smsProduct.value && cartEnabled.value && !(p.value?.points_required && p.value.points_required > 0));
 const inCartNow = computed(() => {
   if (!p.value || !canCart.value) return false;
   return !!cartItemOf(p.value.id, selectedSku.value || 0);

@@ -31,6 +31,7 @@ export function clearToken() {
 }
 
 interface ApiResult<T> {
+  status?: number;
   data: T | null;
   error: string | null;
 }
@@ -82,7 +83,7 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
           location.href = `/login?redirect=${redirect}`;
         }
       }
-      return { data: null, error: json?.message || json?.error || `HTTP ${res.status}` };
+      return { data: null, status: res.status, error: json?.message || json?.error || `HTTP ${res.status}` };
     }
     return { data: json as T, error: null };
   } catch (e: any) {

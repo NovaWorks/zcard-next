@@ -51,6 +51,7 @@ type Credentials struct {
 
 // PingResult 连通性探测结果。
 type PingResult struct {
+	Capabilities    []string
 	SiteName        string // 上游站点名
 	ProtocolVersion string // 上游协议版本
 	Balance         int64  // 上游余额（分，-1=未知）
@@ -77,6 +78,8 @@ type SKU struct {
 
 // Product 上游商品（统一输出分）。
 type Product struct {
+	DeliveryKind   string
+	SMSProduct     map[string]string
 	ID             string
 	Name           string
 	CategoryID     string
@@ -95,9 +98,10 @@ type Product struct {
 
 // ProductList 商品列表（分页）。
 type ProductList struct {
-	Total   int
-	Items   []Product
-	HasMore bool
+	PageSize int
+	Total    int
+	Items    []Product
+	HasMore  bool
 	// Categories 非 nil 表示商品目录已携带分类，无须再次请求全量目录取分类名。
 	Categories []Category
 	// IncludesInactive 上游是否真的在本次响应里包含了下架商品（dujiao 回声字段）。

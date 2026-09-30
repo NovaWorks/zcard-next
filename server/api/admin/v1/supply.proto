@@ -295,10 +295,14 @@ message PreviewProductsRequest {
   string quote_code = 2; // 非空时仅返回该商品，并实时获取账号单件报价（含各规格）
   bool async = 3; // 后台加载目录，短轮询读取状态
   string snapshot_id = 4; // 已加载目录凭证，报价与导入均复用
+  int32 page = 6;
+  int32 page_size = 7;
   bool refresh = 5; // 明确重试或刷新；不覆盖其他窗口持有的快照
 }
 
 message PreviewProduct {
+  string delivery_kind = 16;
+  map<string,string> sms_product = 17;
   string code = 1;
   string name = 2;
   int64 price_cents = 3; // 上游价（分）
@@ -317,6 +321,8 @@ message PreviewProduct {
 }
 
 message PreviewCategory {
+ string parent_code = 4;
+ string path = 5;
   string code = 1;
   string name = 2;
   repeated PreviewProduct products = 3;
@@ -330,6 +336,9 @@ message PreviewProductsReply {
   string message = 5;
   int32 loaded_count = 6;
   int64 expires_at = 7;
+ int32 page = 8;
+ int32 page_size = 9;
+ bool has_more = 10;
 }
 
 message ImportProductsRequest {

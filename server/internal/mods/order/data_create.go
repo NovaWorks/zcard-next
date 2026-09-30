@@ -41,6 +41,7 @@ import (
 	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
 	paymentport "github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	resellerport "github.com/NovaWorks/zcard-next/server/internal/mods/reseller/port"
+	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
@@ -178,6 +179,8 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 
 	// Snapshot routing before network checks; a concurrent configuration change must retry.
 	revisions := map[uint64]int64{}
+	smsQuotes := map[uint64]supplyport.SMSQuote{}
+	hasSMS := false
 	hasPhysical := false
 	shippingByProduct := map[uint64]int64{}
 	var shippingTotal int64
@@ -187,6 +190,38 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			return nil, err
 		}
 		revisions[p.ID] = p.LockVersion
+		if p.DeliveryKind != "" && p.DeliveryKind != "card" {
+			if p.DeliveryKind != supplyport.SMSDelivery {
+				return nil, fmt.Errorf("order.FORM_INVALID: 不支持的商品交付类型")
+			}
+			if !data.SMSSalesEnabled() || in.UserID == 0 || len(in.Items) != 1 || item.Quantity != 1 || item.SkuID != 0 || in.UsePoints || in.CouponCode != "" || p.UpstreamSourceID == 0 || p.GoodsType == "physical" {
+				return nil, fmt.Errorf("order.FORM_INVALID: 接码仅支持登录会员余额单件独立购买，暂不支持优惠券和积分；请确认接码销售已启用")
+			}
+			if uc.Settings != nil {
+				raw, e := uc.Settings.GetJSON(ctx, "i18n", "base_currency")
+				if e != nil {
+					return nil, e
+				}
+				var currency string
+				_ = json.Unmarshal(raw, &currency)
+				if currency != "" && currency != "CNY" {
+					return nil, fmt.Errorf("order.FORM_INVALID: 接码仅支持人民币基础币种")
+				}
+			}
+			if data.FulfillmentMode(p, nil) != "upstream" {
+				return nil, fmt.Errorf("order.FORM_INVALID: 接码须使用上游履约")
+			}
+			gateway, ok := uc.StockGate.(supplyport.SMSGateway)
+			if !ok {
+				return nil, fmt.Errorf("order.FORM_INVALID: 接码服务未就绪")
+			}
+			quote, e := gateway.PrepareSMS(ctx, p.UpstreamSourceID, p.UpstreamProductCode)
+			if e != nil {
+				return nil, fmt.Errorf("order.FORM_INVALID: %w", e)
+			}
+			smsQuotes[p.ID] = quote
+			hasSMS = true
+		}
 		if p.GoodsType == "physical" {
 			if in.UserID == 0 && len(in.QueryPassword) < 4 {
 				return nil, fmt.Errorf("order.FORM_INVALID: 游客购买实体商品须设置至少4位查询密码")
@@ -429,7 +464,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 
 			// 步骤 4：秒杀（窗口判定 + 限购 + 待付款预占；正式扣减在 MarkPaid）
 			var flashPrice money.Cents
-			if uc.Flash != nil {
+			if uc.Flash != nil && !hasSMS {
 				fs, err := uc.Flash.Active(txCtx, item.ProductID, item.SkuID)
 				if err != nil {
 					return fmt.Errorf("order.FLASH_LOOKUP_FAILED: %w", err)
@@ -458,7 +493,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			// 步骤 4.5：促销（会员折扣后、券前；与秒杀互斥——flash 生效时跳过）
 			var promoDiscount money.Cents
 			var promoName string
-			if uc.Promos != nil && flashPrice == 0 {
+			if uc.Promos != nil && flashPrice == 0 && !hasSMS {
 				if pi, err := uc.Promos.BestFor(txCtx, item.ProductID, p.CategoryID, discountedUnit); err == nil && pi != nil {
 					if d := pi.DiscountFor(discountedUnit); d > 0 {
 						promoDiscount, promoName = d, pi.Name
@@ -606,6 +641,12 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			host := tc.Host
 			subsiteDomain = &host
 		}
+		if hasSMS {
+			if totalCents <= 0 {
+				return fmt.Errorf("order.FORM_INVALID: 接码实付必须大于零")
+			}
+			invL1, invL2, invL3 = 0, 0, 0
+		}
 		create := client.Order.Create().
 			SetOrderNo(orderNo).
 			SetSubsiteID(in.SubsiteID).
@@ -720,6 +761,11 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				return fmt.Errorf("order.ITEM_CREATE_FAILED: %w", err)
 			}
 
+			if hasSMS {
+				if err := uc.freezeSMS(txCtx, orderItem, smsQuotes[r.input.ProductID]); err != nil {
+					return err
+				}
+			}
 			if kind == "physical" {
 				if err := data.MovePhysicalStock(txCtx, uc.Data, o.SubsiteID, r.input.ProductID, r.input.SkuID, o.ID, -int64(r.input.Quantity), fmt.Sprintf("reserve:%d", orderItem.ID), "下单预占"); err != nil {
 					return err
@@ -884,6 +930,9 @@ func (uc *OrderUsecase) markPaid(ctx context.Context, orderNo string) error {
 	if err != nil {
 		return err
 	}
+	if err := uc.createSMSIntents(ctx, o); err != nil {
+		return err
+	}
 	return uc.publishPaid(ctx, client, o)
 }
 
@@ -909,11 +958,16 @@ func (uc *OrderUsecase) publishPaid(ctx context.Context, client *ent.Client, o *
 	rows := []paidItem{}
 	for _, it := range items {
 		rows = append(rows, paidItem{
-			OrderItemID:     it.ID,
-			ProductID:       it.ProductID,
-			SkuID:           it.SkuID,
-			Quantity:        it.Quantity,
-			FulfillmentType: string(it.FulfillmentType),
+			OrderItemID: it.ID,
+			ProductID:   it.ProductID,
+			SkuID:       it.SkuID,
+			Quantity:    it.Quantity,
+			FulfillmentType: func() string {
+				if it.DeliveryKind == "sms_activation" {
+					return "sms_activation"
+				}
+				return string(it.FulfillmentType)
+			}(),
 		})
 	}
 	payload := map[string]any{

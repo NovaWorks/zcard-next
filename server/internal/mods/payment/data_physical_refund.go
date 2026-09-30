@@ -54,6 +54,9 @@ func (r *PaymentRepoImpl) RefundPhysical(ctx context.Context, oid, actor uint64,
 		if e != nil {
 			return e
 		}
+		if err := data.GuardSMSRefund(ctx, c, o.ID); err != nil {
+			return refundInvalid(err.Error())
+		}
 		if o.CommerceVersion != 1 {
 			return refundInvalid("订单版本不支持商品退款")
 		}
@@ -239,7 +242,12 @@ func (r *PaymentRepoImpl) RefundPhysical(ctx context.Context, oid, actor uint64,
 		if e = data.RefreshPhysicalProgress(ctx, r.data, &progressOrder); e != nil {
 			return e
 		}
-		if e = data.PhysicalOrderEvent(ctx, r.data, o, "item_refund", "admin", actor, fmt.Sprintf("退款凭证 %d；商品 %d 分；运费 %d 分；支付手续费 %d 分；%s", result.ID, sum-shippingSum, shippingSum, req.FeeCents, req.Reason)); e != nil {
+		if e = data.PhysicalOrderEvent(ctx, r.data, o, "item_refund", func() string {
+			if actor == 0 {
+				return "system"
+			}
+			return "admin"
+		}(), actor, fmt.Sprintf("退款凭证 %d；商品 %d 分；运费 %d 分；支付手续费 %d 分；%s", result.ID, sum-shippingSum, shippingSum, req.FeeCents, req.Reason)); e != nil {
 			return e
 		}
 		if r.outbox == nil {

@@ -10,6 +10,9 @@ import "google/protobuf/empty.proto";
 
 // AdminProcurementService 采购管理：采购单列表/详情/手动重试/手动标记完成。
 service AdminProcurementService {
+ rpc ListSMS(ListProcurementsRequest) returns (SMSDiagnostics) { option (google.api.http) = { get: "/api/v1/admin/sms-intents" }; }
+ rpc RetrySMS(RetrySMSRequest) returns (google.protobuf.Empty) { option (google.api.http) = { post: "/api/v1/admin/sms-intents/{id}/retry" body: "*" }; }
+
   // ListProcurements 采购单列表（按状态过滤）。
   rpc ListProcurements(ListProcurementsRequest) returns (ListProcurementsReply) {
     option (google.api.http) = { get: "/api/v1/admin/procurements" };
@@ -100,3 +103,7 @@ message MarkProcurementManualRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
   string remark = 2;
 }
+
+message SMSDiagnostic { uint64 id=1; string order_no=2; uint64 connection_id=3; string phase=4; string state=5; string refund_status=6; string last_error=7; int32 attempts=8; int64 updated_at=9; }
+message SMSDiagnostics { repeated SMSDiagnostic items=1; int64 total=2; bool sales_enabled=3; }
+message RetrySMSRequest { uint64 id=1; string reason=2; }

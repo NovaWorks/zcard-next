@@ -10,7 +10,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	_ "google.golang.org/protobuf/types/known/emptypb"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -623,6 +623,226 @@ func (x *MarkProcurementManualRequest) GetRemark() string {
 	return ""
 }
 
+type SMSDiagnostic struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	OrderNo       string                 `protobuf:"bytes,2,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	ConnectionId  uint64                 `protobuf:"varint,3,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	Phase         string                 `protobuf:"bytes,4,opt,name=phase,proto3" json:"phase,omitempty"`
+	State         string                 `protobuf:"bytes,5,opt,name=state,proto3" json:"state,omitempty"`
+	RefundStatus  string                 `protobuf:"bytes,6,opt,name=refund_status,json=refundStatus,proto3" json:"refund_status,omitempty"`
+	LastError     string                 `protobuf:"bytes,7,opt,name=last_error,json=lastError,proto3" json:"last_error,omitempty"`
+	Attempts      int32                  `protobuf:"varint,8,opt,name=attempts,proto3" json:"attempts,omitempty"`
+	UpdatedAt     int64                  `protobuf:"varint,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SMSDiagnostic) Reset() {
+	*x = SMSDiagnostic{}
+	mi := &file_admin_v1_procurement_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SMSDiagnostic) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SMSDiagnostic) ProtoMessage() {}
+
+func (x *SMSDiagnostic) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_procurement_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SMSDiagnostic.ProtoReflect.Descriptor instead.
+func (*SMSDiagnostic) Descriptor() ([]byte, []int) {
+	return file_admin_v1_procurement_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *SMSDiagnostic) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *SMSDiagnostic) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *SMSDiagnostic) GetConnectionId() uint64 {
+	if x != nil {
+		return x.ConnectionId
+	}
+	return 0
+}
+
+func (x *SMSDiagnostic) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
+}
+
+func (x *SMSDiagnostic) GetState() string {
+	if x != nil {
+		return x.State
+	}
+	return ""
+}
+
+func (x *SMSDiagnostic) GetRefundStatus() string {
+	if x != nil {
+		return x.RefundStatus
+	}
+	return ""
+}
+
+func (x *SMSDiagnostic) GetLastError() string {
+	if x != nil {
+		return x.LastError
+	}
+	return ""
+}
+
+func (x *SMSDiagnostic) GetAttempts() int32 {
+	if x != nil {
+		return x.Attempts
+	}
+	return 0
+}
+
+func (x *SMSDiagnostic) GetUpdatedAt() int64 {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return 0
+}
+
+type SMSDiagnostics struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*SMSDiagnostic       `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	SalesEnabled  bool                   `protobuf:"varint,3,opt,name=sales_enabled,json=salesEnabled,proto3" json:"sales_enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SMSDiagnostics) Reset() {
+	*x = SMSDiagnostics{}
+	mi := &file_admin_v1_procurement_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SMSDiagnostics) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SMSDiagnostics) ProtoMessage() {}
+
+func (x *SMSDiagnostics) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_procurement_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SMSDiagnostics.ProtoReflect.Descriptor instead.
+func (*SMSDiagnostics) Descriptor() ([]byte, []int) {
+	return file_admin_v1_procurement_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *SMSDiagnostics) GetItems() []*SMSDiagnostic {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *SMSDiagnostics) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *SMSDiagnostics) GetSalesEnabled() bool {
+	if x != nil {
+		return x.SalesEnabled
+	}
+	return false
+}
+
+type RetrySMSRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RetrySMSRequest) Reset() {
+	*x = RetrySMSRequest{}
+	mi := &file_admin_v1_procurement_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetrySMSRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetrySMSRequest) ProtoMessage() {}
+
+func (x *RetrySMSRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_procurement_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RetrySMSRequest.ProtoReflect.Descriptor instead.
+func (*RetrySMSRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_procurement_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *RetrySMSRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *RetrySMSRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
 var File_admin_v1_procurement_proto protoreflect.FileDescriptor
 
 const file_admin_v1_procurement_proto_rawDesc = "" +
@@ -691,8 +911,29 @@ const file_admin_v1_procurement_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"K\n" +
 	"\x1cMarkProcurementManualRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x16\n" +
-	"\x06remark\x18\x02 \x01(\tR\x06remark2\xf6\x04\n" +
-	"\x17AdminProcurementService\x12\x8e\x01\n" +
+	"\x06remark\x18\x02 \x01(\tR\x06remark\"\x8a\x02\n" +
+	"\rSMSDiagnostic\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x19\n" +
+	"\border_no\x18\x02 \x01(\tR\aorderNo\x12#\n" +
+	"\rconnection_id\x18\x03 \x01(\x04R\fconnectionId\x12\x14\n" +
+	"\x05phase\x18\x04 \x01(\tR\x05phase\x12\x14\n" +
+	"\x05state\x18\x05 \x01(\tR\x05state\x12#\n" +
+	"\rrefund_status\x18\x06 \x01(\tR\frefundStatus\x12\x1d\n" +
+	"\n" +
+	"last_error\x18\a \x01(\tR\tlastError\x12\x1a\n" +
+	"\battempts\x18\b \x01(\x05R\battempts\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\t \x01(\x03R\tupdatedAt\"\x84\x01\n" +
+	"\x0eSMSDiagnostics\x127\n" +
+	"\x05items\x18\x01 \x03(\v2!.zcard.api.admin.v1.SMSDiagnosticR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\x12#\n" +
+	"\rsales_enabled\x18\x03 \x01(\bR\fsalesEnabled\"9\n" +
+	"\x0fRetrySMSRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason2\xef\x06\n" +
+	"\x17AdminProcurementService\x12}\n" +
+	"\aListSMS\x12+.zcard.api.admin.v1.ListProcurementsRequest\x1a\".zcard.api.admin.v1.SMSDiagnostics\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/api/v1/admin/sms-intents\x12x\n" +
+	"\bRetrySMS\x12#.zcard.api.admin.v1.RetrySMSRequest\x1a\x16.google.protobuf.Empty\"/\x82\xd3\xe4\x93\x02):\x01*\"$/api/v1/admin/sms-intents/{id}/retry\x12\x8e\x01\n" +
 	"\x10ListProcurements\x12+.zcard.api.admin.v1.ListProcurementsRequest\x1a).zcard.api.admin.v1.ListProcurementsReply\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/admin/procurements\x12\x8a\x01\n" +
 	"\x0eGetProcurement\x12).zcard.api.admin.v1.GetProcurementRequest\x1a$.zcard.api.admin.v1.ProcurementOrder\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/procurements/{id}\x12\x97\x01\n" +
 	"\x10RetryProcurement\x12+.zcard.api.admin.v1.RetryProcurementRequest\x1a$.zcard.api.admin.v1.ProcurementOrder\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/admin/procurements/{id}/retry\x12\xa2\x01\n" +
@@ -710,7 +951,7 @@ func file_admin_v1_procurement_proto_rawDescGZIP() []byte {
 	return file_admin_v1_procurement_proto_rawDescData
 }
 
-var file_admin_v1_procurement_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_admin_v1_procurement_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_admin_v1_procurement_proto_goTypes = []any{
 	(*ProcurementOrder)(nil),             // 0: zcard.api.admin.v1.ProcurementOrder
 	(*ListProcurementsRequest)(nil),      // 1: zcard.api.admin.v1.ListProcurementsRequest
@@ -718,22 +959,31 @@ var file_admin_v1_procurement_proto_goTypes = []any{
 	(*GetProcurementRequest)(nil),        // 3: zcard.api.admin.v1.GetProcurementRequest
 	(*RetryProcurementRequest)(nil),      // 4: zcard.api.admin.v1.RetryProcurementRequest
 	(*MarkProcurementManualRequest)(nil), // 5: zcard.api.admin.v1.MarkProcurementManualRequest
+	(*SMSDiagnostic)(nil),                // 6: zcard.api.admin.v1.SMSDiagnostic
+	(*SMSDiagnostics)(nil),               // 7: zcard.api.admin.v1.SMSDiagnostics
+	(*RetrySMSRequest)(nil),              // 8: zcard.api.admin.v1.RetrySMSRequest
+	(*emptypb.Empty)(nil),                // 9: google.protobuf.Empty
 }
 var file_admin_v1_procurement_proto_depIdxs = []int32{
 	0, // 0: zcard.api.admin.v1.ListProcurementsReply.procurements:type_name -> zcard.api.admin.v1.ProcurementOrder
-	1, // 1: zcard.api.admin.v1.AdminProcurementService.ListProcurements:input_type -> zcard.api.admin.v1.ListProcurementsRequest
-	3, // 2: zcard.api.admin.v1.AdminProcurementService.GetProcurement:input_type -> zcard.api.admin.v1.GetProcurementRequest
-	4, // 3: zcard.api.admin.v1.AdminProcurementService.RetryProcurement:input_type -> zcard.api.admin.v1.RetryProcurementRequest
-	5, // 4: zcard.api.admin.v1.AdminProcurementService.MarkProcurementManual:input_type -> zcard.api.admin.v1.MarkProcurementManualRequest
-	2, // 5: zcard.api.admin.v1.AdminProcurementService.ListProcurements:output_type -> zcard.api.admin.v1.ListProcurementsReply
-	0, // 6: zcard.api.admin.v1.AdminProcurementService.GetProcurement:output_type -> zcard.api.admin.v1.ProcurementOrder
-	0, // 7: zcard.api.admin.v1.AdminProcurementService.RetryProcurement:output_type -> zcard.api.admin.v1.ProcurementOrder
-	0, // 8: zcard.api.admin.v1.AdminProcurementService.MarkProcurementManual:output_type -> zcard.api.admin.v1.ProcurementOrder
-	5, // [5:9] is the sub-list for method output_type
-	1, // [1:5] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	6, // 1: zcard.api.admin.v1.SMSDiagnostics.items:type_name -> zcard.api.admin.v1.SMSDiagnostic
+	1, // 2: zcard.api.admin.v1.AdminProcurementService.ListSMS:input_type -> zcard.api.admin.v1.ListProcurementsRequest
+	8, // 3: zcard.api.admin.v1.AdminProcurementService.RetrySMS:input_type -> zcard.api.admin.v1.RetrySMSRequest
+	1, // 4: zcard.api.admin.v1.AdminProcurementService.ListProcurements:input_type -> zcard.api.admin.v1.ListProcurementsRequest
+	3, // 5: zcard.api.admin.v1.AdminProcurementService.GetProcurement:input_type -> zcard.api.admin.v1.GetProcurementRequest
+	4, // 6: zcard.api.admin.v1.AdminProcurementService.RetryProcurement:input_type -> zcard.api.admin.v1.RetryProcurementRequest
+	5, // 7: zcard.api.admin.v1.AdminProcurementService.MarkProcurementManual:input_type -> zcard.api.admin.v1.MarkProcurementManualRequest
+	7, // 8: zcard.api.admin.v1.AdminProcurementService.ListSMS:output_type -> zcard.api.admin.v1.SMSDiagnostics
+	9, // 9: zcard.api.admin.v1.AdminProcurementService.RetrySMS:output_type -> google.protobuf.Empty
+	2, // 10: zcard.api.admin.v1.AdminProcurementService.ListProcurements:output_type -> zcard.api.admin.v1.ListProcurementsReply
+	0, // 11: zcard.api.admin.v1.AdminProcurementService.GetProcurement:output_type -> zcard.api.admin.v1.ProcurementOrder
+	0, // 12: zcard.api.admin.v1.AdminProcurementService.RetryProcurement:output_type -> zcard.api.admin.v1.ProcurementOrder
+	0, // 13: zcard.api.admin.v1.AdminProcurementService.MarkProcurementManual:output_type -> zcard.api.admin.v1.ProcurementOrder
+	8, // [8:14] is the sub-list for method output_type
+	2, // [2:8] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_procurement_proto_init() }
@@ -747,7 +997,7 @@ func file_admin_v1_procurement_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_procurement_proto_rawDesc), len(file_admin_v1_procurement_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

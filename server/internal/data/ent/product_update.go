@@ -58,6 +58,32 @@ func (_u *ProductUpdate) AddSubsiteID(v int64) *ProductUpdate {
 	return _u
 }
 
+// SetDeliveryKind sets the "delivery_kind" field.
+func (_u *ProductUpdate) SetDeliveryKind(v string) *ProductUpdate {
+	_u.mutation.SetDeliveryKind(v)
+	return _u
+}
+
+// SetNillableDeliveryKind sets the "delivery_kind" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableDeliveryKind(v *string) *ProductUpdate {
+	if v != nil {
+		_u.SetDeliveryKind(*v)
+	}
+	return _u
+}
+
+// SetSmsProduct sets the "sms_product" field.
+func (_u *ProductUpdate) SetSmsProduct(v map[string]string) *ProductUpdate {
+	_u.mutation.SetSmsProduct(v)
+	return _u
+}
+
+// ClearSmsProduct clears the value of the "sms_product" field.
+func (_u *ProductUpdate) ClearSmsProduct() *ProductUpdate {
+	_u.mutation.ClearSmsProduct()
+	return _u
+}
+
 // SetCategoryID sets the "category_id" field.
 func (_u *ProductUpdate) SetCategoryID(v uint64) *ProductUpdate {
 	_u.mutation.ResetCategoryID()
@@ -1051,6 +1077,15 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.AddedSubsiteID(); ok {
 		_spec.AddField(product.FieldSubsiteID, field.TypeUint64, value)
 	}
+	if value, ok := _u.mutation.DeliveryKind(); ok {
+		_spec.SetField(product.FieldDeliveryKind, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SmsProduct(); ok {
+		_spec.SetField(product.FieldSmsProduct, field.TypeJSON, value)
+	}
+	if _u.mutation.SmsProductCleared() {
+		_spec.ClearField(product.FieldSmsProduct, field.TypeJSON)
+	}
 	if value, ok := _u.mutation.CategoryID(); ok {
 		_spec.SetField(product.FieldCategoryID, field.TypeUint64, value)
 	}
@@ -1423,6 +1458,32 @@ func (_u *ProductUpdateOne) SetNillableSubsiteID(v *uint64) *ProductUpdateOne {
 // AddSubsiteID adds value to the "subsite_id" field.
 func (_u *ProductUpdateOne) AddSubsiteID(v int64) *ProductUpdateOne {
 	_u.mutation.AddSubsiteID(v)
+	return _u
+}
+
+// SetDeliveryKind sets the "delivery_kind" field.
+func (_u *ProductUpdateOne) SetDeliveryKind(v string) *ProductUpdateOne {
+	_u.mutation.SetDeliveryKind(v)
+	return _u
+}
+
+// SetNillableDeliveryKind sets the "delivery_kind" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableDeliveryKind(v *string) *ProductUpdateOne {
+	if v != nil {
+		_u.SetDeliveryKind(*v)
+	}
+	return _u
+}
+
+// SetSmsProduct sets the "sms_product" field.
+func (_u *ProductUpdateOne) SetSmsProduct(v map[string]string) *ProductUpdateOne {
+	_u.mutation.SetSmsProduct(v)
+	return _u
+}
+
+// ClearSmsProduct clears the value of the "sms_product" field.
+func (_u *ProductUpdateOne) ClearSmsProduct() *ProductUpdateOne {
+	_u.mutation.ClearSmsProduct()
 	return _u
 }
 
@@ -2448,6 +2509,15 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if value, ok := _u.mutation.AddedSubsiteID(); ok {
 		_spec.AddField(product.FieldSubsiteID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.DeliveryKind(); ok {
+		_spec.SetField(product.FieldDeliveryKind, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SmsProduct(); ok {
+		_spec.SetField(product.FieldSmsProduct, field.TypeJSON, value)
+	}
+	if _u.mutation.SmsProductCleared() {
+		_spec.ClearField(product.FieldSmsProduct, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.CategoryID(); ok {
 		_spec.SetField(product.FieldCategoryID, field.TypeUint64, value)

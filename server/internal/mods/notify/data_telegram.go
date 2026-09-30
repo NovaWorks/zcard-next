@@ -131,11 +131,15 @@ func (d *Dispatcher) EnqueueTelegram(ctx context.Context, env events.Envelope) e
 	}
 	client := data.Client(ctx, d.repo.data)
 	var payload struct {
-		OrderNo string `json:"order_no"`
-		OrderID uint64 `json:"order_id"`
+		DeliveryKind string `json:"delivery_kind"`
+		OrderNo      string `json:"order_no"`
+		OrderID      uint64 `json:"order_id"`
 	}
 	if err = json.Unmarshal(env.Payload, &payload); err != nil {
 		return err
+	}
+	if payload.DeliveryKind == "sms_activation" {
+		return nil
 	}
 	q := client.Order.Query().Where(order.SubsiteID(0))
 	if payload.OrderID > 0 {

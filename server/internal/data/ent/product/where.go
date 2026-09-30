@@ -70,6 +70,11 @@ func SubsiteID(v uint64) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldSubsiteID, v))
 }
 
+// DeliveryKind applies equality check predicate on the "delivery_kind" field. It's identical to DeliveryKindEQ.
+func DeliveryKind(v string) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldDeliveryKind, v))
+}
+
 // CategoryID applies equality check predicate on the "category_id" field. It's identical to CategoryIDEQ.
 func CategoryID(v uint64) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldCategoryID, v))
@@ -388,6 +393,81 @@ func SubsiteIDLT(v uint64) predicate.Product {
 // SubsiteIDLTE applies the LTE predicate on the "subsite_id" field.
 func SubsiteIDLTE(v uint64) predicate.Product {
 	return predicate.Product(sql.FieldLTE(FieldSubsiteID, v))
+}
+
+// DeliveryKindEQ applies the EQ predicate on the "delivery_kind" field.
+func DeliveryKindEQ(v string) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldDeliveryKind, v))
+}
+
+// DeliveryKindNEQ applies the NEQ predicate on the "delivery_kind" field.
+func DeliveryKindNEQ(v string) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldDeliveryKind, v))
+}
+
+// DeliveryKindIn applies the In predicate on the "delivery_kind" field.
+func DeliveryKindIn(vs ...string) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldDeliveryKind, vs...))
+}
+
+// DeliveryKindNotIn applies the NotIn predicate on the "delivery_kind" field.
+func DeliveryKindNotIn(vs ...string) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldDeliveryKind, vs...))
+}
+
+// DeliveryKindGT applies the GT predicate on the "delivery_kind" field.
+func DeliveryKindGT(v string) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldDeliveryKind, v))
+}
+
+// DeliveryKindGTE applies the GTE predicate on the "delivery_kind" field.
+func DeliveryKindGTE(v string) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldDeliveryKind, v))
+}
+
+// DeliveryKindLT applies the LT predicate on the "delivery_kind" field.
+func DeliveryKindLT(v string) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldDeliveryKind, v))
+}
+
+// DeliveryKindLTE applies the LTE predicate on the "delivery_kind" field.
+func DeliveryKindLTE(v string) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldDeliveryKind, v))
+}
+
+// DeliveryKindContains applies the Contains predicate on the "delivery_kind" field.
+func DeliveryKindContains(v string) predicate.Product {
+	return predicate.Product(sql.FieldContains(FieldDeliveryKind, v))
+}
+
+// DeliveryKindHasPrefix applies the HasPrefix predicate on the "delivery_kind" field.
+func DeliveryKindHasPrefix(v string) predicate.Product {
+	return predicate.Product(sql.FieldHasPrefix(FieldDeliveryKind, v))
+}
+
+// DeliveryKindHasSuffix applies the HasSuffix predicate on the "delivery_kind" field.
+func DeliveryKindHasSuffix(v string) predicate.Product {
+	return predicate.Product(sql.FieldHasSuffix(FieldDeliveryKind, v))
+}
+
+// DeliveryKindEqualFold applies the EqualFold predicate on the "delivery_kind" field.
+func DeliveryKindEqualFold(v string) predicate.Product {
+	return predicate.Product(sql.FieldEqualFold(FieldDeliveryKind, v))
+}
+
+// DeliveryKindContainsFold applies the ContainsFold predicate on the "delivery_kind" field.
+func DeliveryKindContainsFold(v string) predicate.Product {
+	return predicate.Product(sql.FieldContainsFold(FieldDeliveryKind, v))
+}
+
+// SmsProductIsNil applies the IsNil predicate on the "sms_product" field.
+func SmsProductIsNil() predicate.Product {
+	return predicate.Product(sql.FieldIsNull(FieldSmsProduct))
+}
+
+// SmsProductNotNil applies the NotNil predicate on the "sms_product" field.
+func SmsProductNotNil() predicate.Product {
+	return predicate.Product(sql.FieldNotNull(FieldSmsProduct))
 }
 
 // CategoryIDEQ applies the EQ predicate on the "category_id" field.

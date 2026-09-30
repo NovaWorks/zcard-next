@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
 	"github.com/NovaWorks/zcard-next/server/migrations"
 	"io/fs"
 	"path/filepath"
@@ -52,7 +53,7 @@ func TestLowStockUpgradePreservesMappings(t *testing.T) {
 	if m.UpStock != 2 || m.StockReference != 2 || m.LocalProductID != 3 || m.StockProbeAfter != 0 || m.StockProbeLease != 0 {
 		t.Fatal(m)
 	}
-	c := d.Client.SupplyConnection.GetX(context.Background(), 1)
+	c := d.Client.SupplyConnection.Query().Where(supplyconnection.ID(1)).Select(supplyconnection.FieldID, supplyconnection.FieldName, supplyconnection.FieldCredentials, supplyconnection.FieldSettings, supplyconnection.FieldLowStockScannedAt).OnlyX(context.Background())
 	if c.Name != "existing" || len(c.Credentials) != 2 || c.Settings["schedule"] == nil || c.LowStockScannedAt != 0 {
 		t.Fatal("connection changed")
 	}

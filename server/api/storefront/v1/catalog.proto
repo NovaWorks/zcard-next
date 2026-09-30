@@ -79,6 +79,9 @@ message FlashOffer {
 }
 
 message Product {
+ string delivery_kind = 60;
+ map<string,string> sms_product = 61;
+ bool sms_sales_enabled = 62;
   string goods_type = 50;
   string shipping_mode = 51;
   int64 shipping_fee_cents = 52;

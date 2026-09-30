@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
 	"strings"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -54,6 +55,9 @@ func (r *PaymentRepoImpl) RefundToWallet(ctx context.Context, orderID uint64, am
 		o, err := c.Order.Get(ctx, orderID)
 		if err != nil {
 			return err
+		}
+		if err := data.GuardSMSRefund(ctx, c, o.ID); err != nil {
+			return refundInvalid(err.Error())
 		}
 		if o.CommerceVersion == 1 {
 			return refundInvalid("该订单必须按商品项退款")
@@ -171,7 +175,12 @@ func (r *PaymentRepoImpl) RefundToWallet(ctx context.Context, orderID uint64, am
 		if strings.TrimSpace(reason) != "" {
 			audit += "；" + reason
 		}
-		if _, err = c.OrderStatusEvent.Create().SetOrderID(orderID).SetFromStatus(string(o.Status)).SetToStatus(string(next)).SetEvent(event).SetOperator("admin").SetOperatorID(operatorID).SetReason(audit).Save(ctx); err != nil {
+		if _, err = c.OrderStatusEvent.Create().SetOrderID(orderID).SetFromStatus(string(o.Status)).SetToStatus(string(next)).SetEvent(event).SetOperator(func() orderstatusevent.Operator {
+			if operatorID == 0 {
+				return "system"
+			}
+			return "admin"
+		}()).SetOperatorID(operatorID).SetReason(audit).Save(ctx); err != nil {
 			return err
 		}
 		if full {

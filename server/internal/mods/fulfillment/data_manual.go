@@ -38,6 +38,11 @@ func (r *DeliveryRepoImpl) ManualDeliver(ctx context.Context, orderNo, content, 
 		if processing {
 			return fmt.Errorf("退款处理中，请先核实退款结果")
 		}
+		if has, e := data.HasSMSOrder(ctx, client, o.ID); e != nil {
+			return e
+		} else if has {
+			return fmt.Errorf("接码订单须等待供货会话确认，不能人工补发卡密")
+		}
 		its, err := client.OrderItem.Query().Where(orderitem.OrderID(o.ID)).Order(ent.Asc(orderitem.FieldID)).All(ctx)
 		if err != nil {
 			return err

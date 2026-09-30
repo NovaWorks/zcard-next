@@ -379,3 +379,107 @@ func (c *StoreOrderServiceHTTPClientImpl) ShippingRegions(ctx context.Context, i
 	}
 	return &out, nil
 }
+
+const OperationStoreSMSServiceActSMS = "/zcard.api.storefront.v1.StoreSMSService/ActSMS"
+const OperationStoreSMSServiceGetSMS = "/zcard.api.storefront.v1.StoreSMSService/GetSMS"
+
+type StoreSMSServiceHTTPServer interface {
+	ActSMS(context.Context, *SMSActionRequest) (*SMSOrderReply, error)
+	GetSMS(context.Context, *SMSOrderRequest) (*SMSOrderReply, error)
+}
+
+func RegisterStoreSMSServiceHTTPServer(s *http.Server, srv StoreSMSServiceHTTPServer) {
+	r := s.Route("/")
+	r.Handle("GET", "/api/v1/storefront/orders/{order_no}/sms", _StoreSMSService_GetSMS0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/storefront/orders/{order_no}/sms/{action}", _StoreSMSService_ActSMS0_HTTP_Handler(srv))
+}
+
+func _StoreSMSService_GetSMS0_HTTP_Handler(srv StoreSMSServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in SMSOrderRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreSMSServiceGetSMS)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetSMS(ctx, req.(*SMSOrderRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*SMSOrderReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _StoreSMSService_ActSMS0_HTTP_Handler(srv StoreSMSServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in SMSActionRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreSMSServiceActSMS)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ActSMS(ctx, req.(*SMSActionRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*SMSOrderReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+type StoreSMSServiceHTTPClient interface {
+	ActSMS(ctx context.Context, req *SMSActionRequest, opts ...http.CallOption) (rsp *SMSOrderReply, err error)
+	GetSMS(ctx context.Context, req *SMSOrderRequest, opts ...http.CallOption) (rsp *SMSOrderReply, err error)
+}
+
+type StoreSMSServiceHTTPClientImpl struct {
+	cc *http.Client
+}
+
+func NewStoreSMSServiceHTTPClient(client *http.Client) StoreSMSServiceHTTPClient {
+	return &StoreSMSServiceHTTPClientImpl{client}
+}
+
+func (c *StoreSMSServiceHTTPClientImpl) ActSMS(ctx context.Context, in *SMSActionRequest, opts ...http.CallOption) (*SMSOrderReply, error) {
+	var out SMSOrderReply
+	pattern := "/api/v1/storefront/orders/{order_no}/sms/{action}"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationStoreSMSServiceActSMS),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *StoreSMSServiceHTTPClientImpl) GetSMS(ctx context.Context, in *SMSOrderRequest, opts ...http.CallOption) (*SMSOrderReply, error) {
+	var out SMSOrderReply
+	pattern := "/api/v1/storefront/orders/{order_no}/sms"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationStoreSMSServiceGetSMS),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}

@@ -18,6 +18,8 @@ type StockSnapshot struct {
 
 // Product 商品 DTO（跨模块快照：order 价格管线消费；管理字段不下发）。
 type Product struct {
+	DeliveryKind               string
+	SMSProduct                 map[string]string
 	GoodsType, ShippingMode    string
 	ShippingFee, PhysicalStock int64
 	ShippingCountries          []string
@@ -196,6 +198,8 @@ type ProductAdminRepo interface {
 // UpstreamProductInput 货源同步 upsert 输入（）。
 // Price=-1 表示「不更新价格」（价格保护：auto_sync_price=false 或运营已改价）。
 type UpstreamProductInput struct {
+	DeliveryKind        string
+	SMSProduct          map[string]string
 	ConnectionID        uint64 // products.upstream_source_id
 	UpstreamProductCode string // products.upstream_product_code（UNIQUE 判据）
 	UpstreamSyncedAt    time.Time

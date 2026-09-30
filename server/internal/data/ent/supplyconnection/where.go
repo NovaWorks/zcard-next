@@ -99,6 +99,16 @@ func LowStockMessage(v string) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldEQ(FieldLowStockMessage, v))
 }
 
+// SmsLeaseToken applies equality check predicate on the "sms_lease_token" field. It's identical to SmsLeaseTokenEQ.
+func SmsLeaseToken(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldSmsLeaseToken, v))
+}
+
+// SmsLeaseUntil applies equality check predicate on the "sms_lease_until" field. It's identical to SmsLeaseUntilEQ.
+func SmsLeaseUntil(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldSmsLeaseUntil, v))
+}
+
 // SyncLeaseToken applies equality check predicate on the "sync_lease_token" field. It's identical to SyncLeaseTokenEQ.
 func SyncLeaseToken(v string) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldEQ(FieldSyncLeaseToken, v))
@@ -667,6 +677,111 @@ func LowStockMessageEqualFold(v string) predicate.SupplyConnection {
 // LowStockMessageContainsFold applies the ContainsFold predicate on the "low_stock_message" field.
 func LowStockMessageContainsFold(v string) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldContainsFold(FieldLowStockMessage, v))
+}
+
+// SmsLeaseTokenEQ applies the EQ predicate on the "sms_lease_token" field.
+func SmsLeaseTokenEQ(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldSmsLeaseToken, v))
+}
+
+// SmsLeaseTokenNEQ applies the NEQ predicate on the "sms_lease_token" field.
+func SmsLeaseTokenNEQ(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNEQ(FieldSmsLeaseToken, v))
+}
+
+// SmsLeaseTokenIn applies the In predicate on the "sms_lease_token" field.
+func SmsLeaseTokenIn(vs ...string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIn(FieldSmsLeaseToken, vs...))
+}
+
+// SmsLeaseTokenNotIn applies the NotIn predicate on the "sms_lease_token" field.
+func SmsLeaseTokenNotIn(vs ...string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotIn(FieldSmsLeaseToken, vs...))
+}
+
+// SmsLeaseTokenGT applies the GT predicate on the "sms_lease_token" field.
+func SmsLeaseTokenGT(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGT(FieldSmsLeaseToken, v))
+}
+
+// SmsLeaseTokenGTE applies the GTE predicate on the "sms_lease_token" field.
+func SmsLeaseTokenGTE(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGTE(FieldSmsLeaseToken, v))
+}
+
+// SmsLeaseTokenLT applies the LT predicate on the "sms_lease_token" field.
+func SmsLeaseTokenLT(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLT(FieldSmsLeaseToken, v))
+}
+
+// SmsLeaseTokenLTE applies the LTE predicate on the "sms_lease_token" field.
+func SmsLeaseTokenLTE(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLTE(FieldSmsLeaseToken, v))
+}
+
+// SmsLeaseTokenContains applies the Contains predicate on the "sms_lease_token" field.
+func SmsLeaseTokenContains(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldContains(FieldSmsLeaseToken, v))
+}
+
+// SmsLeaseTokenHasPrefix applies the HasPrefix predicate on the "sms_lease_token" field.
+func SmsLeaseTokenHasPrefix(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldHasPrefix(FieldSmsLeaseToken, v))
+}
+
+// SmsLeaseTokenHasSuffix applies the HasSuffix predicate on the "sms_lease_token" field.
+func SmsLeaseTokenHasSuffix(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldHasSuffix(FieldSmsLeaseToken, v))
+}
+
+// SmsLeaseTokenEqualFold applies the EqualFold predicate on the "sms_lease_token" field.
+func SmsLeaseTokenEqualFold(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEqualFold(FieldSmsLeaseToken, v))
+}
+
+// SmsLeaseTokenContainsFold applies the ContainsFold predicate on the "sms_lease_token" field.
+func SmsLeaseTokenContainsFold(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldContainsFold(FieldSmsLeaseToken, v))
+}
+
+// SmsLeaseUntilEQ applies the EQ predicate on the "sms_lease_until" field.
+func SmsLeaseUntilEQ(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldSmsLeaseUntil, v))
+}
+
+// SmsLeaseUntilNEQ applies the NEQ predicate on the "sms_lease_until" field.
+func SmsLeaseUntilNEQ(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNEQ(FieldSmsLeaseUntil, v))
+}
+
+// SmsLeaseUntilIn applies the In predicate on the "sms_lease_until" field.
+func SmsLeaseUntilIn(vs ...int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIn(FieldSmsLeaseUntil, vs...))
+}
+
+// SmsLeaseUntilNotIn applies the NotIn predicate on the "sms_lease_until" field.
+func SmsLeaseUntilNotIn(vs ...int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotIn(FieldSmsLeaseUntil, vs...))
+}
+
+// SmsLeaseUntilGT applies the GT predicate on the "sms_lease_until" field.
+func SmsLeaseUntilGT(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGT(FieldSmsLeaseUntil, v))
+}
+
+// SmsLeaseUntilGTE applies the GTE predicate on the "sms_lease_until" field.
+func SmsLeaseUntilGTE(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGTE(FieldSmsLeaseUntil, v))
+}
+
+// SmsLeaseUntilLT applies the LT predicate on the "sms_lease_until" field.
+func SmsLeaseUntilLT(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLT(FieldSmsLeaseUntil, v))
+}
+
+// SmsLeaseUntilLTE applies the LTE predicate on the "sms_lease_until" field.
+func SmsLeaseUntilLTE(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLTE(FieldSmsLeaseUntil, v))
 }
 
 // SyncLeaseTokenEQ applies the EQ predicate on the "sync_lease_token" field.

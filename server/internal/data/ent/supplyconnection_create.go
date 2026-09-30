@@ -130,6 +130,34 @@ func (_c *SupplyConnectionCreate) SetNillableLowStockMessage(v *string) *SupplyC
 	return _c
 }
 
+// SetSmsLeaseToken sets the "sms_lease_token" field.
+func (_c *SupplyConnectionCreate) SetSmsLeaseToken(v string) *SupplyConnectionCreate {
+	_c.mutation.SetSmsLeaseToken(v)
+	return _c
+}
+
+// SetNillableSmsLeaseToken sets the "sms_lease_token" field if the given value is not nil.
+func (_c *SupplyConnectionCreate) SetNillableSmsLeaseToken(v *string) *SupplyConnectionCreate {
+	if v != nil {
+		_c.SetSmsLeaseToken(*v)
+	}
+	return _c
+}
+
+// SetSmsLeaseUntil sets the "sms_lease_until" field.
+func (_c *SupplyConnectionCreate) SetSmsLeaseUntil(v int64) *SupplyConnectionCreate {
+	_c.mutation.SetSmsLeaseUntil(v)
+	return _c
+}
+
+// SetNillableSmsLeaseUntil sets the "sms_lease_until" field if the given value is not nil.
+func (_c *SupplyConnectionCreate) SetNillableSmsLeaseUntil(v *int64) *SupplyConnectionCreate {
+	if v != nil {
+		_c.SetSmsLeaseUntil(*v)
+	}
+	return _c
+}
+
 // SetSyncLeaseToken sets the "sync_lease_token" field.
 func (_c *SupplyConnectionCreate) SetSyncLeaseToken(v string) *SupplyConnectionCreate {
 	_c.mutation.SetSyncLeaseToken(v)
@@ -487,6 +515,14 @@ func (_c *SupplyConnectionCreate) defaults() {
 		v := supplyconnection.DefaultLowStockMessage
 		_c.mutation.SetLowStockMessage(v)
 	}
+	if _, ok := _c.mutation.SmsLeaseToken(); !ok {
+		v := supplyconnection.DefaultSmsLeaseToken
+		_c.mutation.SetSmsLeaseToken(v)
+	}
+	if _, ok := _c.mutation.SmsLeaseUntil(); !ok {
+		v := supplyconnection.DefaultSmsLeaseUntil
+		_c.mutation.SetSmsLeaseUntil(v)
+	}
 	if _, ok := _c.mutation.SyncLeaseToken(); !ok {
 		v := supplyconnection.DefaultSyncLeaseToken
 		_c.mutation.SetSyncLeaseToken(v)
@@ -588,6 +624,12 @@ func (_c *SupplyConnectionCreate) check() error {
 	}
 	if _, ok := _c.mutation.LowStockMessage(); !ok {
 		return &ValidationError{Name: "low_stock_message", err: errors.New(`ent: missing required field "SupplyConnection.low_stock_message"`)}
+	}
+	if _, ok := _c.mutation.SmsLeaseToken(); !ok {
+		return &ValidationError{Name: "sms_lease_token", err: errors.New(`ent: missing required field "SupplyConnection.sms_lease_token"`)}
+	}
+	if _, ok := _c.mutation.SmsLeaseUntil(); !ok {
+		return &ValidationError{Name: "sms_lease_until", err: errors.New(`ent: missing required field "SupplyConnection.sms_lease_until"`)}
 	}
 	if _, ok := _c.mutation.SyncLeaseToken(); !ok {
 		return &ValidationError{Name: "sync_lease_token", err: errors.New(`ent: missing required field "SupplyConnection.sync_lease_token"`)}
@@ -717,6 +759,14 @@ func (_c *SupplyConnectionCreate) createSpec() (*SupplyConnection, *sqlgraph.Cre
 	if value, ok := _c.mutation.LowStockMessage(); ok {
 		_spec.SetField(supplyconnection.FieldLowStockMessage, field.TypeString, value)
 		_node.LowStockMessage = value
+	}
+	if value, ok := _c.mutation.SmsLeaseToken(); ok {
+		_spec.SetField(supplyconnection.FieldSmsLeaseToken, field.TypeString, value)
+		_node.SmsLeaseToken = value
+	}
+	if value, ok := _c.mutation.SmsLeaseUntil(); ok {
+		_spec.SetField(supplyconnection.FieldSmsLeaseUntil, field.TypeInt64, value)
+		_node.SmsLeaseUntil = value
 	}
 	if value, ok := _c.mutation.SyncLeaseToken(); ok {
 		_spec.SetField(supplyconnection.FieldSyncLeaseToken, field.TypeString, value)
@@ -975,6 +1025,36 @@ func (u *SupplyConnectionUpsert) SetLowStockMessage(v string) *SupplyConnectionU
 // UpdateLowStockMessage sets the "low_stock_message" field to the value that was provided on create.
 func (u *SupplyConnectionUpsert) UpdateLowStockMessage() *SupplyConnectionUpsert {
 	u.SetExcluded(supplyconnection.FieldLowStockMessage)
+	return u
+}
+
+// SetSmsLeaseToken sets the "sms_lease_token" field.
+func (u *SupplyConnectionUpsert) SetSmsLeaseToken(v string) *SupplyConnectionUpsert {
+	u.Set(supplyconnection.FieldSmsLeaseToken, v)
+	return u
+}
+
+// UpdateSmsLeaseToken sets the "sms_lease_token" field to the value that was provided on create.
+func (u *SupplyConnectionUpsert) UpdateSmsLeaseToken() *SupplyConnectionUpsert {
+	u.SetExcluded(supplyconnection.FieldSmsLeaseToken)
+	return u
+}
+
+// SetSmsLeaseUntil sets the "sms_lease_until" field.
+func (u *SupplyConnectionUpsert) SetSmsLeaseUntil(v int64) *SupplyConnectionUpsert {
+	u.Set(supplyconnection.FieldSmsLeaseUntil, v)
+	return u
+}
+
+// UpdateSmsLeaseUntil sets the "sms_lease_until" field to the value that was provided on create.
+func (u *SupplyConnectionUpsert) UpdateSmsLeaseUntil() *SupplyConnectionUpsert {
+	u.SetExcluded(supplyconnection.FieldSmsLeaseUntil)
+	return u
+}
+
+// AddSmsLeaseUntil adds v to the "sms_lease_until" field.
+func (u *SupplyConnectionUpsert) AddSmsLeaseUntil(v int64) *SupplyConnectionUpsert {
+	u.Add(supplyconnection.FieldSmsLeaseUntil, v)
 	return u
 }
 
@@ -1526,6 +1606,41 @@ func (u *SupplyConnectionUpsertOne) SetLowStockMessage(v string) *SupplyConnecti
 func (u *SupplyConnectionUpsertOne) UpdateLowStockMessage() *SupplyConnectionUpsertOne {
 	return u.Update(func(s *SupplyConnectionUpsert) {
 		s.UpdateLowStockMessage()
+	})
+}
+
+// SetSmsLeaseToken sets the "sms_lease_token" field.
+func (u *SupplyConnectionUpsertOne) SetSmsLeaseToken(v string) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetSmsLeaseToken(v)
+	})
+}
+
+// UpdateSmsLeaseToken sets the "sms_lease_token" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertOne) UpdateSmsLeaseToken() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateSmsLeaseToken()
+	})
+}
+
+// SetSmsLeaseUntil sets the "sms_lease_until" field.
+func (u *SupplyConnectionUpsertOne) SetSmsLeaseUntil(v int64) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetSmsLeaseUntil(v)
+	})
+}
+
+// AddSmsLeaseUntil adds v to the "sms_lease_until" field.
+func (u *SupplyConnectionUpsertOne) AddSmsLeaseUntil(v int64) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.AddSmsLeaseUntil(v)
+	})
+}
+
+// UpdateSmsLeaseUntil sets the "sms_lease_until" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertOne) UpdateSmsLeaseUntil() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateSmsLeaseUntil()
 	})
 }
 
@@ -2303,6 +2418,41 @@ func (u *SupplyConnectionUpsertBulk) SetLowStockMessage(v string) *SupplyConnect
 func (u *SupplyConnectionUpsertBulk) UpdateLowStockMessage() *SupplyConnectionUpsertBulk {
 	return u.Update(func(s *SupplyConnectionUpsert) {
 		s.UpdateLowStockMessage()
+	})
+}
+
+// SetSmsLeaseToken sets the "sms_lease_token" field.
+func (u *SupplyConnectionUpsertBulk) SetSmsLeaseToken(v string) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetSmsLeaseToken(v)
+	})
+}
+
+// UpdateSmsLeaseToken sets the "sms_lease_token" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertBulk) UpdateSmsLeaseToken() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateSmsLeaseToken()
+	})
+}
+
+// SetSmsLeaseUntil sets the "sms_lease_until" field.
+func (u *SupplyConnectionUpsertBulk) SetSmsLeaseUntil(v int64) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetSmsLeaseUntil(v)
+	})
+}
+
+// AddSmsLeaseUntil adds v to the "sms_lease_until" field.
+func (u *SupplyConnectionUpsertBulk) AddSmsLeaseUntil(v int64) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.AddSmsLeaseUntil(v)
+	})
+}
+
+// UpdateSmsLeaseUntil sets the "sms_lease_until" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertBulk) UpdateSmsLeaseUntil() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateSmsLeaseUntil()
 	})
 }
 

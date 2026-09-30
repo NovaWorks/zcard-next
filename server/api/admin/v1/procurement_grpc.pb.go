@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,6 +20,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	AdminProcurementService_ListSMS_FullMethodName               = "/zcard.api.admin.v1.AdminProcurementService/ListSMS"
+	AdminProcurementService_RetrySMS_FullMethodName              = "/zcard.api.admin.v1.AdminProcurementService/RetrySMS"
 	AdminProcurementService_ListProcurements_FullMethodName      = "/zcard.api.admin.v1.AdminProcurementService/ListProcurements"
 	AdminProcurementService_GetProcurement_FullMethodName        = "/zcard.api.admin.v1.AdminProcurementService/GetProcurement"
 	AdminProcurementService_RetryProcurement_FullMethodName      = "/zcard.api.admin.v1.AdminProcurementService/RetryProcurement"
@@ -31,6 +34,8 @@ const (
 //
 // AdminProcurementService 采购管理：采购单列表/详情/手动重试/手动标记完成。
 type AdminProcurementServiceClient interface {
+	ListSMS(ctx context.Context, in *ListProcurementsRequest, opts ...grpc.CallOption) (*SMSDiagnostics, error)
+	RetrySMS(ctx context.Context, in *RetrySMSRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// ListProcurements 采购单列表（按状态过滤）。
 	ListProcurements(ctx context.Context, in *ListProcurementsRequest, opts ...grpc.CallOption) (*ListProcurementsReply, error)
 	// GetProcurement 采购单详情（含采购项/密文行数）。
@@ -47,6 +52,26 @@ type adminProcurementServiceClient struct {
 
 func NewAdminProcurementServiceClient(cc grpc.ClientConnInterface) AdminProcurementServiceClient {
 	return &adminProcurementServiceClient{cc}
+}
+
+func (c *adminProcurementServiceClient) ListSMS(ctx context.Context, in *ListProcurementsRequest, opts ...grpc.CallOption) (*SMSDiagnostics, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SMSDiagnostics)
+	err := c.cc.Invoke(ctx, AdminProcurementService_ListSMS_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminProcurementServiceClient) RetrySMS(ctx context.Context, in *RetrySMSRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminProcurementService_RetrySMS_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *adminProcurementServiceClient) ListProcurements(ctx context.Context, in *ListProcurementsRequest, opts ...grpc.CallOption) (*ListProcurementsReply, error) {
@@ -95,6 +120,8 @@ func (c *adminProcurementServiceClient) MarkProcurementManual(ctx context.Contex
 //
 // AdminProcurementService 采购管理：采购单列表/详情/手动重试/手动标记完成。
 type AdminProcurementServiceServer interface {
+	ListSMS(context.Context, *ListProcurementsRequest) (*SMSDiagnostics, error)
+	RetrySMS(context.Context, *RetrySMSRequest) (*emptypb.Empty, error)
 	// ListProcurements 采购单列表（按状态过滤）。
 	ListProcurements(context.Context, *ListProcurementsRequest) (*ListProcurementsReply, error)
 	// GetProcurement 采购单详情（含采购项/密文行数）。
@@ -113,6 +140,12 @@ type AdminProcurementServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAdminProcurementServiceServer struct{}
 
+func (UnimplementedAdminProcurementServiceServer) ListSMS(context.Context, *ListProcurementsRequest) (*SMSDiagnostics, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSMS not implemented")
+}
+func (UnimplementedAdminProcurementServiceServer) RetrySMS(context.Context, *RetrySMSRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RetrySMS not implemented")
+}
 func (UnimplementedAdminProcurementServiceServer) ListProcurements(context.Context, *ListProcurementsRequest) (*ListProcurementsReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListProcurements not implemented")
 }
@@ -145,6 +178,42 @@ func RegisterAdminProcurementServiceServer(s grpc.ServiceRegistrar, srv AdminPro
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AdminProcurementService_ServiceDesc, srv)
+}
+
+func _AdminProcurementService_ListSMS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProcurementsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminProcurementServiceServer).ListSMS(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminProcurementService_ListSMS_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminProcurementServiceServer).ListSMS(ctx, req.(*ListProcurementsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminProcurementService_RetrySMS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetrySMSRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminProcurementServiceServer).RetrySMS(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminProcurementService_RetrySMS_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminProcurementServiceServer).RetrySMS(ctx, req.(*RetrySMSRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AdminProcurementService_ListProcurements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -226,6 +295,14 @@ var AdminProcurementService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.admin.v1.AdminProcurementService",
 	HandlerType: (*AdminProcurementServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListSMS",
+			Handler:    _AdminProcurementService_ListSMS_Handler,
+		},
+		{
+			MethodName: "RetrySMS",
+			Handler:    _AdminProcurementService_RetrySMS_Handler,
+		},
 		{
 			MethodName: "ListProcurements",
 			Handler:    _AdminProcurementService_ListProcurements_Handler,

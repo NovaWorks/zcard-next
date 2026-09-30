@@ -152,6 +152,41 @@ func (_u *SupplyConnectionUpdate) SetNillableLowStockMessage(v *string) *SupplyC
 	return _u
 }
 
+// SetSmsLeaseToken sets the "sms_lease_token" field.
+func (_u *SupplyConnectionUpdate) SetSmsLeaseToken(v string) *SupplyConnectionUpdate {
+	_u.mutation.SetSmsLeaseToken(v)
+	return _u
+}
+
+// SetNillableSmsLeaseToken sets the "sms_lease_token" field if the given value is not nil.
+func (_u *SupplyConnectionUpdate) SetNillableSmsLeaseToken(v *string) *SupplyConnectionUpdate {
+	if v != nil {
+		_u.SetSmsLeaseToken(*v)
+	}
+	return _u
+}
+
+// SetSmsLeaseUntil sets the "sms_lease_until" field.
+func (_u *SupplyConnectionUpdate) SetSmsLeaseUntil(v int64) *SupplyConnectionUpdate {
+	_u.mutation.ResetSmsLeaseUntil()
+	_u.mutation.SetSmsLeaseUntil(v)
+	return _u
+}
+
+// SetNillableSmsLeaseUntil sets the "sms_lease_until" field if the given value is not nil.
+func (_u *SupplyConnectionUpdate) SetNillableSmsLeaseUntil(v *int64) *SupplyConnectionUpdate {
+	if v != nil {
+		_u.SetSmsLeaseUntil(*v)
+	}
+	return _u
+}
+
+// AddSmsLeaseUntil adds value to the "sms_lease_until" field.
+func (_u *SupplyConnectionUpdate) AddSmsLeaseUntil(v int64) *SupplyConnectionUpdate {
+	_u.mutation.AddSmsLeaseUntil(v)
+	return _u
+}
+
 // SetSyncLeaseToken sets the "sync_lease_token" field.
 func (_u *SupplyConnectionUpdate) SetSyncLeaseToken(v string) *SupplyConnectionUpdate {
 	_u.mutation.SetSyncLeaseToken(v)
@@ -677,6 +712,15 @@ func (_u *SupplyConnectionUpdate) sqlSave(ctx context.Context) (_node int, err e
 	if value, ok := _u.mutation.LowStockMessage(); ok {
 		_spec.SetField(supplyconnection.FieldLowStockMessage, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.SmsLeaseToken(); ok {
+		_spec.SetField(supplyconnection.FieldSmsLeaseToken, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SmsLeaseUntil(); ok {
+		_spec.SetField(supplyconnection.FieldSmsLeaseUntil, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSmsLeaseUntil(); ok {
+		_spec.AddField(supplyconnection.FieldSmsLeaseUntil, field.TypeInt64, value)
+	}
 	if value, ok := _u.mutation.SyncLeaseToken(); ok {
 		_spec.SetField(supplyconnection.FieldSyncLeaseToken, field.TypeString, value)
 	}
@@ -932,6 +976,41 @@ func (_u *SupplyConnectionUpdateOne) SetNillableLowStockMessage(v *string) *Supp
 	if v != nil {
 		_u.SetLowStockMessage(*v)
 	}
+	return _u
+}
+
+// SetSmsLeaseToken sets the "sms_lease_token" field.
+func (_u *SupplyConnectionUpdateOne) SetSmsLeaseToken(v string) *SupplyConnectionUpdateOne {
+	_u.mutation.SetSmsLeaseToken(v)
+	return _u
+}
+
+// SetNillableSmsLeaseToken sets the "sms_lease_token" field if the given value is not nil.
+func (_u *SupplyConnectionUpdateOne) SetNillableSmsLeaseToken(v *string) *SupplyConnectionUpdateOne {
+	if v != nil {
+		_u.SetSmsLeaseToken(*v)
+	}
+	return _u
+}
+
+// SetSmsLeaseUntil sets the "sms_lease_until" field.
+func (_u *SupplyConnectionUpdateOne) SetSmsLeaseUntil(v int64) *SupplyConnectionUpdateOne {
+	_u.mutation.ResetSmsLeaseUntil()
+	_u.mutation.SetSmsLeaseUntil(v)
+	return _u
+}
+
+// SetNillableSmsLeaseUntil sets the "sms_lease_until" field if the given value is not nil.
+func (_u *SupplyConnectionUpdateOne) SetNillableSmsLeaseUntil(v *int64) *SupplyConnectionUpdateOne {
+	if v != nil {
+		_u.SetSmsLeaseUntil(*v)
+	}
+	return _u
+}
+
+// AddSmsLeaseUntil adds value to the "sms_lease_until" field.
+func (_u *SupplyConnectionUpdateOne) AddSmsLeaseUntil(v int64) *SupplyConnectionUpdateOne {
+	_u.mutation.AddSmsLeaseUntil(v)
 	return _u
 }
 
@@ -1489,6 +1568,15 @@ func (_u *SupplyConnectionUpdateOne) sqlSave(ctx context.Context) (_node *Supply
 	}
 	if value, ok := _u.mutation.LowStockMessage(); ok {
 		_spec.SetField(supplyconnection.FieldLowStockMessage, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SmsLeaseToken(); ok {
+		_spec.SetField(supplyconnection.FieldSmsLeaseToken, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SmsLeaseUntil(); ok {
+		_spec.SetField(supplyconnection.FieldSmsLeaseUntil, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSmsLeaseUntil(); ok {
+		_spec.AddField(supplyconnection.FieldSmsLeaseUntil, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.SyncLeaseToken(); ok {
 		_spec.SetField(supplyconnection.FieldSyncLeaseToken, field.TypeString, value)

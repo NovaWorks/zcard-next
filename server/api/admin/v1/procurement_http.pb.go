@@ -9,6 +9,7 @@ package adminv1
 import (
 	context "context"
 	http "github.com/go-kratos/kratos/v3/transport/http"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,26 +20,73 @@ const _ = http.SupportPackageIsVersion3
 
 const OperationAdminProcurementServiceGetProcurement = "/zcard.api.admin.v1.AdminProcurementService/GetProcurement"
 const OperationAdminProcurementServiceListProcurements = "/zcard.api.admin.v1.AdminProcurementService/ListProcurements"
+const OperationAdminProcurementServiceListSMS = "/zcard.api.admin.v1.AdminProcurementService/ListSMS"
 const OperationAdminProcurementServiceMarkProcurementManual = "/zcard.api.admin.v1.AdminProcurementService/MarkProcurementManual"
 const OperationAdminProcurementServiceRetryProcurement = "/zcard.api.admin.v1.AdminProcurementService/RetryProcurement"
+const OperationAdminProcurementServiceRetrySMS = "/zcard.api.admin.v1.AdminProcurementService/RetrySMS"
 
 type AdminProcurementServiceHTTPServer interface {
 	// GetProcurement GetProcurement 采购单详情（含采购项/密文行数）。
 	GetProcurement(context.Context, *GetProcurementRequest) (*ProcurementOrder, error)
 	// ListProcurements ListProcurements 采购单列表（按状态过滤）。
 	ListProcurements(context.Context, *ListProcurementsRequest) (*ListProcurementsReply, error)
+	ListSMS(context.Context, *ListProcurementsRequest) (*SMSDiagnostics, error)
 	// MarkProcurementManual MarkProcurementManual 手动标记完成/转人工（人工拿货后回填）。
 	MarkProcurementManual(context.Context, *MarkProcurementManualRequest) (*ProcurementOrder, error)
 	// RetryProcurement RetryProcurement 手动重试（pending/submitted/polling 均可重新提交或推进轮询）。
 	RetryProcurement(context.Context, *RetryProcurementRequest) (*ProcurementOrder, error)
+	RetrySMS(context.Context, *RetrySMSRequest) (*emptypb.Empty, error)
 }
 
 func RegisterAdminProcurementServiceHTTPServer(s *http.Server, srv AdminProcurementServiceHTTPServer) {
 	r := s.Route("/")
+	r.Handle("GET", "/api/v1/admin/sms-intents", _AdminProcurementService_ListSMS0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/sms-intents/{id}/retry", _AdminProcurementService_RetrySMS0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/procurements", _AdminProcurementService_ListProcurements0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/procurements/{id}", _AdminProcurementService_GetProcurement0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/procurements/{id}/retry", _AdminProcurementService_RetryProcurement0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/procurements/{id}/manual", _AdminProcurementService_MarkProcurementManual0_HTTP_Handler(srv))
+}
+
+func _AdminProcurementService_ListSMS0_HTTP_Handler(srv AdminProcurementServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListProcurementsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminProcurementServiceListSMS)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListSMS(ctx, req.(*ListProcurementsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*SMSDiagnostics)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminProcurementService_RetrySMS0_HTTP_Handler(srv AdminProcurementServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in RetrySMSRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminProcurementServiceRetrySMS)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RetrySMS(ctx, req.(*RetrySMSRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _AdminProcurementService_ListProcurements0_HTTP_Handler(srv AdminProcurementServiceHTTPServer) func(ctx http.Context) error {
@@ -131,10 +179,12 @@ type AdminProcurementServiceHTTPClient interface {
 	GetProcurement(ctx context.Context, req *GetProcurementRequest, opts ...http.CallOption) (rsp *ProcurementOrder, err error)
 	// ListProcurements ListProcurements 采购单列表（按状态过滤）。
 	ListProcurements(ctx context.Context, req *ListProcurementsRequest, opts ...http.CallOption) (rsp *ListProcurementsReply, err error)
+	ListSMS(ctx context.Context, req *ListProcurementsRequest, opts ...http.CallOption) (rsp *SMSDiagnostics, err error)
 	// MarkProcurementManual MarkProcurementManual 手动标记完成/转人工（人工拿货后回填）。
 	MarkProcurementManual(ctx context.Context, req *MarkProcurementManualRequest, opts ...http.CallOption) (rsp *ProcurementOrder, err error)
 	// RetryProcurement RetryProcurement 手动重试（pending/submitted/polling 均可重新提交或推进轮询）。
 	RetryProcurement(ctx context.Context, req *RetryProcurementRequest, opts ...http.CallOption) (rsp *ProcurementOrder, err error)
+	RetrySMS(ctx context.Context, req *RetrySMSRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 }
 
 type AdminProcurementServiceHTTPClientImpl struct {
@@ -179,6 +229,22 @@ func (c *AdminProcurementServiceHTTPClientImpl) ListProcurements(ctx context.Con
 	return &out, nil
 }
 
+func (c *AdminProcurementServiceHTTPClientImpl) ListSMS(ctx context.Context, in *ListProcurementsRequest, opts ...http.CallOption) (*SMSDiagnostics, error) {
+	var out SMSDiagnostics
+	pattern := "/api/v1/admin/sms-intents"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminProcurementServiceListSMS),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // MarkProcurementManual MarkProcurementManual 手动标记完成/转人工（人工拿货后回填）。
 func (c *AdminProcurementServiceHTTPClientImpl) MarkProcurementManual(ctx context.Context, in *MarkProcurementManualRequest, opts ...http.CallOption) (*ProcurementOrder, error) {
 	var out ProcurementOrder
@@ -206,6 +272,23 @@ func (c *AdminProcurementServiceHTTPClientImpl) RetryProcurement(ctx context.Con
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminProcurementServiceRetryProcurement),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminProcurementServiceHTTPClientImpl) RetrySMS(ctx context.Context, in *RetrySMSRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/sms-intents/{id}/retry"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminProcurementServiceRetrySMS),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

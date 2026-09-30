@@ -861,6 +861,30 @@ func (f RolePermissionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RolePermissionMutation", m)
 }
 
+// The SMSIntentFunc type is an adapter to allow the use of ordinary
+// function as SMSIntent mutator.
+type SMSIntentFunc func(context.Context, *ent.SMSIntentMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SMSIntentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SMSIntentMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SMSIntentMutation", m)
+}
+
+// The SMSOperationFunc type is an adapter to allow the use of ordinary
+// function as SMSOperation mutator.
+type SMSOperationFunc func(context.Context, *ent.SMSOperationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SMSOperationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SMSOperationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SMSOperationMutation", m)
+}
+
 // The SecurityAuditLogFunc type is an adapter to allow the use of ordinary
 // function as SecurityAuditLog mutator.
 type SecurityAuditLogFunc func(context.Context, *ent.SecurityAuditLogMutation) (ent.Value, error)

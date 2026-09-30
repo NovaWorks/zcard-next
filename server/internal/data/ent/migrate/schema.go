@@ -1247,6 +1247,9 @@ var (
 		{Name: "product_id", Type: field.TypeUint64},
 		{Name: "sku_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "product_name", Type: field.TypeString, Default: ""},
+		{Name: "delivery_kind", Type: field.TypeString, Default: "card"},
+		{Name: "sms_product", Type: field.TypeJSON, Nullable: true},
+		{Name: "sms_purchase_snapshot", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "form_answers", Type: field.TypeJSON, Nullable: true},
 		{Name: "assigned_admin_id", Type: field.TypeUint64, Default: 0},
 		{Name: "sku_name", Type: field.TypeString, Nullable: true, Size: 100},
@@ -1278,7 +1281,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "order_items_orders_items",
-				Columns:    []*schema.Column{OrderItemsColumns[28]},
+				Columns:    []*schema.Column{OrderItemsColumns[31]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1287,12 +1290,12 @@ var (
 			{
 				Name:    "orderitem_delivery_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrderItemsColumns[24]},
+				Columns: []*schema.Column{OrderItemsColumns[27]},
 			},
 			{
 				Name:    "orderitem_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrderItemsColumns[28]},
+				Columns: []*schema.Column{OrderItemsColumns[31]},
 			},
 			{
 				Name:    "orderitem_product_id",
@@ -1710,6 +1713,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "delivery_kind", Type: field.TypeString, Default: "card"},
+		{Name: "sms_product", Type: field.TypeJSON, Nullable: true},
 		{Name: "category_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "category_protected", Type: field.TypeBool, Default: false},
 		{Name: "name", Type: field.TypeString, Size: 1024},
@@ -1766,27 +1771,27 @@ var (
 			{
 				Name:    "product_subsite_id_slug",
 				Unique:  true,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[12]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[14]},
 			},
 			{
 				Name:    "product_subsite_id_category_id",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[4]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[6]},
 			},
 			{
 				Name:    "product_subsite_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[33]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[35]},
 			},
 			{
 				Name:    "product_upstream_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[34]},
+				Columns: []*schema.Column{ProductsColumns[36]},
 			},
 			{
 				Name:    "product_subsite_id_upstream_source_id_upstream_product_code",
 				Unique:  true,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[34], ProductsColumns[35]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[36], ProductsColumns[37]},
 			},
 		},
 	}
@@ -2298,6 +2303,107 @@ var (
 			},
 		},
 	}
+	// SmsIntentsColumns holds the columns for the "sms_intents" table.
+	SmsIntentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "order_id", Type: field.TypeUint64},
+		{Name: "order_item_id", Type: field.TypeUint64},
+		{Name: "user_id", Type: field.TypeUint64},
+		{Name: "connection_id", Type: field.TypeUint64},
+		{Name: "connection_identity", Type: field.TypeString},
+		{Name: "request_no", Type: field.TypeString, Size: 64},
+		{Name: "request_json", Type: field.TypeString, Size: 2147483647},
+		{Name: "request_hash", Type: field.TypeString, Size: 64},
+		{Name: "upstream_order_id", Type: field.TypeString, Nullable: true},
+		{Name: "phase", Type: field.TypeString, Default: "purchase"},
+		{Name: "state", Type: field.TypeString, Default: "allocating"},
+		{Name: "session_id", Type: field.TypeString, Default: ""},
+		{Name: "version", Type: field.TypeInt64, Default: 0},
+		{Name: "sms_revision", Type: field.TypeInt64, Default: 0},
+		{Name: "snapshot_cipher", Type: field.TypeBytes, Nullable: true},
+		{Name: "received", Type: field.TypeBool, Default: false},
+		{Name: "can_cancel", Type: field.TypeBool, Default: false},
+		{Name: "can_finish", Type: field.TypeBool, Default: false},
+		{Name: "charged_amount", Type: field.TypeInt64, Default: 0},
+		{Name: "settlement_state", Type: field.TypeString, Default: ""},
+		{Name: "refunded_amount", Type: field.TypeInt64, Default: 0},
+		{Name: "refund_reference", Type: field.TypeString, Default: ""},
+		{Name: "rejected_receipt", Type: field.TypeBool, Default: false},
+		{Name: "retail_refund_state", Type: field.TypeString, Default: "none"},
+		{Name: "refund_id", Type: field.TypeUint64, Default: 0},
+		{Name: "next_run_at", Type: field.TypeInt64, Default: 0},
+		{Name: "lease_until", Type: field.TypeInt64, Default: 0},
+		{Name: "lease_token", Type: field.TypeString, Default: ""},
+		{Name: "attempts", Type: field.TypeInt, Default: 0},
+		{Name: "last_error", Type: field.TypeString, Default: ""},
+	}
+	// SmsIntentsTable holds the schema information for the "sms_intents" table.
+	SmsIntentsTable = &schema.Table{
+		Name:       "sms_intents",
+		Columns:    SmsIntentsColumns,
+		PrimaryKey: []*schema.Column{SmsIntentsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "smsintent_order_item_id",
+				Unique:  true,
+				Columns: []*schema.Column{SmsIntentsColumns[5]},
+			},
+			{
+				Name:    "smsintent_request_no",
+				Unique:  true,
+				Columns: []*schema.Column{SmsIntentsColumns[9]},
+			},
+			{
+				Name:    "smsintent_connection_id_upstream_order_id",
+				Unique:  true,
+				Columns: []*schema.Column{SmsIntentsColumns[7], SmsIntentsColumns[12]},
+			},
+			{
+				Name:    "smsintent_phase_next_run_at_lease_until",
+				Unique:  false,
+				Columns: []*schema.Column{SmsIntentsColumns[13], SmsIntentsColumns[29], SmsIntentsColumns[30]},
+			},
+			{
+				Name:    "smsintent_subsite_id_user_id_order_id",
+				Unique:  false,
+				Columns: []*schema.Column{SmsIntentsColumns[3], SmsIntentsColumns[6], SmsIntentsColumns[4]},
+			},
+		},
+	}
+	// SmsOperationsColumns holds the columns for the "sms_operations" table.
+	SmsOperationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "intent_id", Type: field.TypeUint64},
+		{Name: "operation_id", Type: field.TypeString, Size: 64},
+		{Name: "action", Type: field.TypeString},
+		{Name: "status", Type: field.TypeString, Default: "pending"},
+		{Name: "error_code", Type: field.TypeString, Default: ""},
+		{Name: "attempts", Type: field.TypeInt, Default: 0},
+	}
+	// SmsOperationsTable holds the schema information for the "sms_operations" table.
+	SmsOperationsTable = &schema.Table{
+		Name:       "sms_operations",
+		Columns:    SmsOperationsColumns,
+		PrimaryKey: []*schema.Column{SmsOperationsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "smsoperation_operation_id",
+				Unique:  true,
+				Columns: []*schema.Column{SmsOperationsColumns[5]},
+			},
+			{
+				Name:    "smsoperation_intent_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{SmsOperationsColumns[4], SmsOperationsColumns[7]},
+			},
+		},
+	}
 	// SecurityAuditLogsColumns holds the columns for the "security_audit_logs" table.
 	SecurityAuditLogsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
@@ -2584,6 +2690,8 @@ var (
 		{Name: "sync_task_id", Type: field.TypeUint64, Default: 0},
 		{Name: "low_stock_scanned_at", Type: field.TypeInt64, Default: 0},
 		{Name: "low_stock_message", Type: field.TypeString, Default: ""},
+		{Name: "sms_lease_token", Type: field.TypeString, Default: ""},
+		{Name: "sms_lease_until", Type: field.TypeInt64, Default: 0},
 		{Name: "sync_lease_token", Type: field.TypeString, Default: ""},
 		{Name: "sync_lease_until", Type: field.TypeInt64, Default: 0},
 		{Name: "callback_url", Type: field.TypeString, Nullable: true, Size: 500},
@@ -2621,7 +2729,7 @@ var (
 			{
 				Name:    "supplyconnection_last_synced_at",
 				Unique:  false,
-				Columns: []*schema.Column{SupplyConnectionsColumns[25]},
+				Columns: []*schema.Column{SupplyConnectionsColumns[27]},
 			},
 		},
 	}
@@ -3213,6 +3321,8 @@ var (
 		ReviewsTable,
 		RiskLockKeysTable,
 		RolePermissionsTable,
+		SmsIntentsTable,
+		SmsOperationsTable,
 		SecurityAuditLogsTable,
 		SessionsTable,
 		SettingsTable,

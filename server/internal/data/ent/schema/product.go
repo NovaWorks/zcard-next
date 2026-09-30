@@ -19,6 +19,8 @@ func (Product) Mixin() []ent.Mixin { return []ent.Mixin{TimeMixin{}, TenantMixin
 func (Product) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("id"),
+ field.String("delivery_kind").Default("card"),
+ field.JSON("sms_product", map[string]string{}).Optional(),
 		field.Uint64("category_id").Optional().Comment("分类（软外键，仅索引）"),
 		field.Bool("category_protected").Default(false),
 		field.String("name").MaxLen(1024),

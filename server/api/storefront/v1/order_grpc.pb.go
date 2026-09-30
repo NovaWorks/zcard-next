@@ -402,3 +402,143 @@ var StoreOrderService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "storefront/v1/order.proto",
 }
+
+const (
+	StoreSMSService_GetSMS_FullMethodName = "/zcard.api.storefront.v1.StoreSMSService/GetSMS"
+	StoreSMSService_ActSMS_FullMethodName = "/zcard.api.storefront.v1.StoreSMSService/ActSMS"
+)
+
+// StoreSMSServiceClient is the client API for StoreSMSService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type StoreSMSServiceClient interface {
+	GetSMS(ctx context.Context, in *SMSOrderRequest, opts ...grpc.CallOption) (*SMSOrderReply, error)
+	ActSMS(ctx context.Context, in *SMSActionRequest, opts ...grpc.CallOption) (*SMSOrderReply, error)
+}
+
+type storeSMSServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewStoreSMSServiceClient(cc grpc.ClientConnInterface) StoreSMSServiceClient {
+	return &storeSMSServiceClient{cc}
+}
+
+func (c *storeSMSServiceClient) GetSMS(ctx context.Context, in *SMSOrderRequest, opts ...grpc.CallOption) (*SMSOrderReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SMSOrderReply)
+	err := c.cc.Invoke(ctx, StoreSMSService_GetSMS_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeSMSServiceClient) ActSMS(ctx context.Context, in *SMSActionRequest, opts ...grpc.CallOption) (*SMSOrderReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SMSOrderReply)
+	err := c.cc.Invoke(ctx, StoreSMSService_ActSMS_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// StoreSMSServiceServer is the server API for StoreSMSService service.
+// All implementations must embed UnimplementedStoreSMSServiceServer
+// for forward compatibility.
+type StoreSMSServiceServer interface {
+	GetSMS(context.Context, *SMSOrderRequest) (*SMSOrderReply, error)
+	ActSMS(context.Context, *SMSActionRequest) (*SMSOrderReply, error)
+	mustEmbedUnimplementedStoreSMSServiceServer()
+}
+
+// UnimplementedStoreSMSServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedStoreSMSServiceServer struct{}
+
+func (UnimplementedStoreSMSServiceServer) GetSMS(context.Context, *SMSOrderRequest) (*SMSOrderReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSMS not implemented")
+}
+func (UnimplementedStoreSMSServiceServer) ActSMS(context.Context, *SMSActionRequest) (*SMSOrderReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ActSMS not implemented")
+}
+func (UnimplementedStoreSMSServiceServer) mustEmbedUnimplementedStoreSMSServiceServer() {}
+func (UnimplementedStoreSMSServiceServer) testEmbeddedByValue()                         {}
+
+// UnsafeStoreSMSServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to StoreSMSServiceServer will
+// result in compilation errors.
+type UnsafeStoreSMSServiceServer interface {
+	mustEmbedUnimplementedStoreSMSServiceServer()
+}
+
+func RegisterStoreSMSServiceServer(s grpc.ServiceRegistrar, srv StoreSMSServiceServer) {
+	// If the following call panics, it indicates UnimplementedStoreSMSServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&StoreSMSService_ServiceDesc, srv)
+}
+
+func _StoreSMSService_GetSMS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SMSOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreSMSServiceServer).GetSMS(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreSMSService_GetSMS_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreSMSServiceServer).GetSMS(ctx, req.(*SMSOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreSMSService_ActSMS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SMSActionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreSMSServiceServer).ActSMS(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreSMSService_ActSMS_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreSMSServiceServer).ActSMS(ctx, req.(*SMSActionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// StoreSMSService_ServiceDesc is the grpc.ServiceDesc for StoreSMSService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var StoreSMSService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "zcard.api.storefront.v1.StoreSMSService",
+	HandlerType: (*StoreSMSServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetSMS",
+			Handler:    _StoreSMSService_GetSMS_Handler,
+		},
+		{
+			MethodName: "ActSMS",
+			Handler:    _StoreSMSService_ActSMS_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "storefront/v1/order.proto",
+}

@@ -81,6 +81,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/session"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/shipment"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsintent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsoperation"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/stockalert"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
@@ -1552,56 +1554,60 @@ func init() {
 	orderitemDescProductName := orderitemFields[4].Descriptor()
 	// orderitem.DefaultProductName holds the default value on creation for the product_name field.
 	orderitem.DefaultProductName = orderitemDescProductName.Default.(string)
+	// orderitemDescDeliveryKind is the schema descriptor for delivery_kind field.
+	orderitemDescDeliveryKind := orderitemFields[5].Descriptor()
+	// orderitem.DefaultDeliveryKind holds the default value on creation for the delivery_kind field.
+	orderitem.DefaultDeliveryKind = orderitemDescDeliveryKind.Default.(string)
 	// orderitemDescAssignedAdminID is the schema descriptor for assigned_admin_id field.
-	orderitemDescAssignedAdminID := orderitemFields[6].Descriptor()
+	orderitemDescAssignedAdminID := orderitemFields[9].Descriptor()
 	// orderitem.DefaultAssignedAdminID holds the default value on creation for the assigned_admin_id field.
 	orderitem.DefaultAssignedAdminID = orderitemDescAssignedAdminID.Default.(uint64)
 	// orderitemDescSkuName is the schema descriptor for sku_name field.
-	orderitemDescSkuName := orderitemFields[7].Descriptor()
+	orderitemDescSkuName := orderitemFields[10].Descriptor()
 	// orderitem.SkuNameValidator is a validator for the "sku_name" field. It is called by the builders before save.
 	orderitem.SkuNameValidator = orderitemDescSkuName.Validators[0].(func(string) error)
 	// orderitemDescCost is the schema descriptor for cost field.
-	orderitemDescCost := orderitemFields[11].Descriptor()
+	orderitemDescCost := orderitemFields[14].Descriptor()
 	// orderitem.DefaultCost holds the default value on creation for the cost field.
 	orderitem.DefaultCost = orderitemDescCost.Default.(int64)
 	// orderitemDescGoodsType is the schema descriptor for goods_type field.
-	orderitemDescGoodsType := orderitemFields[12].Descriptor()
+	orderitemDescGoodsType := orderitemFields[15].Descriptor()
 	// orderitem.DefaultGoodsType holds the default value on creation for the goods_type field.
 	orderitem.DefaultGoodsType = orderitemDescGoodsType.Default.(string)
 	// orderitemDescPaidAmount is the schema descriptor for paid_amount field.
-	orderitemDescPaidAmount := orderitemFields[13].Descriptor()
+	orderitemDescPaidAmount := orderitemFields[16].Descriptor()
 	// orderitem.DefaultPaidAmount holds the default value on creation for the paid_amount field.
 	orderitem.DefaultPaidAmount = orderitemDescPaidAmount.Default.(int64)
 	// orderitemDescShippingAmount is the schema descriptor for shipping_amount field.
-	orderitemDescShippingAmount := orderitemFields[14].Descriptor()
+	orderitemDescShippingAmount := orderitemFields[17].Descriptor()
 	// orderitem.DefaultShippingAmount holds the default value on creation for the shipping_amount field.
 	orderitem.DefaultShippingAmount = orderitemDescShippingAmount.Default.(int64)
 	// orderitemDescRefundedAmount is the schema descriptor for refunded_amount field.
-	orderitemDescRefundedAmount := orderitemFields[15].Descriptor()
+	orderitemDescRefundedAmount := orderitemFields[18].Descriptor()
 	// orderitem.DefaultRefundedAmount holds the default value on creation for the refunded_amount field.
 	orderitem.DefaultRefundedAmount = orderitemDescRefundedAmount.Default.(int64)
 	// orderitemDescRefundedShipping is the schema descriptor for refunded_shipping field.
-	orderitemDescRefundedShipping := orderitemFields[16].Descriptor()
+	orderitemDescRefundedShipping := orderitemFields[19].Descriptor()
 	// orderitem.DefaultRefundedShipping holds the default value on creation for the refunded_shipping field.
 	orderitem.DefaultRefundedShipping = orderitemDescRefundedShipping.Default.(int64)
 	// orderitemDescCanceledQuantity is the schema descriptor for canceled_quantity field.
-	orderitemDescCanceledQuantity := orderitemFields[17].Descriptor()
+	orderitemDescCanceledQuantity := orderitemFields[20].Descriptor()
 	// orderitem.DefaultCanceledQuantity holds the default value on creation for the canceled_quantity field.
 	orderitem.DefaultCanceledQuantity = orderitemDescCanceledQuantity.Default.(int32)
 	// orderitemDescShippedQuantity is the schema descriptor for shipped_quantity field.
-	orderitemDescShippedQuantity := orderitemFields[18].Descriptor()
+	orderitemDescShippedQuantity := orderitemFields[21].Descriptor()
 	// orderitem.DefaultShippedQuantity holds the default value on creation for the shipped_quantity field.
 	orderitem.DefaultShippedQuantity = orderitemDescShippedQuantity.Default.(int32)
 	// orderitemDescReceivedQuantity is the schema descriptor for received_quantity field.
-	orderitemDescReceivedQuantity := orderitemFields[19].Descriptor()
+	orderitemDescReceivedQuantity := orderitemFields[22].Descriptor()
 	// orderitem.DefaultReceivedQuantity holds the default value on creation for the received_quantity field.
 	orderitem.DefaultReceivedQuantity = orderitemDescReceivedQuantity.Default.(int32)
 	// orderitemDescReturnedQuantity is the schema descriptor for returned_quantity field.
-	orderitemDescReturnedQuantity := orderitemFields[20].Descriptor()
+	orderitemDescReturnedQuantity := orderitemFields[23].Descriptor()
 	// orderitem.DefaultReturnedQuantity holds the default value on creation for the returned_quantity field.
 	orderitem.DefaultReturnedQuantity = orderitemDescReturnedQuantity.Default.(int32)
 	// orderitemDescFulfillmentStatus is the schema descriptor for fulfillment_status field.
-	orderitemDescFulfillmentStatus := orderitemFields[23].Descriptor()
+	orderitemDescFulfillmentStatus := orderitemFields[26].Descriptor()
 	// orderitem.DefaultFulfillmentStatus holds the default value on creation for the fulfillment_status field.
 	orderitem.DefaultFulfillmentStatus = orderitemDescFulfillmentStatus.Default.(string)
 	// orderitem.FulfillmentStatusValidator is a validator for the "fulfillment_status" field. It is called by the builders before save.
@@ -2075,144 +2081,148 @@ func init() {
 	productDescSubsiteID := productMixinFields1[0].Descriptor()
 	// product.DefaultSubsiteID holds the default value on creation for the subsite_id field.
 	product.DefaultSubsiteID = productDescSubsiteID.Default.(uint64)
+	// productDescDeliveryKind is the schema descriptor for delivery_kind field.
+	productDescDeliveryKind := productFields[1].Descriptor()
+	// product.DefaultDeliveryKind holds the default value on creation for the delivery_kind field.
+	product.DefaultDeliveryKind = productDescDeliveryKind.Default.(string)
 	// productDescCategoryProtected is the schema descriptor for category_protected field.
-	productDescCategoryProtected := productFields[2].Descriptor()
+	productDescCategoryProtected := productFields[4].Descriptor()
 	// product.DefaultCategoryProtected holds the default value on creation for the category_protected field.
 	product.DefaultCategoryProtected = productDescCategoryProtected.Default.(bool)
 	// productDescName is the schema descriptor for name field.
-	productDescName := productFields[3].Descriptor()
+	productDescName := productFields[5].Descriptor()
 	// product.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	product.NameValidator = productDescName.Validators[0].(func(string) error)
 	// productDescGoodsType is the schema descriptor for goods_type field.
-	productDescGoodsType := productFields[4].Descriptor()
+	productDescGoodsType := productFields[6].Descriptor()
 	// product.DefaultGoodsType holds the default value on creation for the goods_type field.
 	product.DefaultGoodsType = productDescGoodsType.Default.(string)
 	// productDescShippingMode is the schema descriptor for shipping_mode field.
-	productDescShippingMode := productFields[5].Descriptor()
+	productDescShippingMode := productFields[7].Descriptor()
 	// product.DefaultShippingMode holds the default value on creation for the shipping_mode field.
 	product.DefaultShippingMode = productDescShippingMode.Default.(string)
 	// productDescShippingFee is the schema descriptor for shipping_fee field.
-	productDescShippingFee := productFields[6].Descriptor()
+	productDescShippingFee := productFields[8].Descriptor()
 	// product.DefaultShippingFee holds the default value on creation for the shipping_fee field.
 	product.DefaultShippingFee = productDescShippingFee.Default.(int64)
 	// productDescPhysicalStock is the schema descriptor for physical_stock field.
-	productDescPhysicalStock := productFields[8].Descriptor()
+	productDescPhysicalStock := productFields[10].Descriptor()
 	// product.DefaultPhysicalStock holds the default value on creation for the physical_stock field.
 	product.DefaultPhysicalStock = productDescPhysicalStock.Default.(int64)
 	// productDescSlug is the schema descriptor for slug field.
-	productDescSlug := productFields[9].Descriptor()
+	productDescSlug := productFields[11].Descriptor()
 	// product.SlugValidator is a validator for the "slug" field. It is called by the builders before save.
 	product.SlugValidator = productDescSlug.Validators[0].(func(string) error)
 	// productDescCover is the schema descriptor for cover field.
-	productDescCover := productFields[11].Descriptor()
+	productDescCover := productFields[13].Descriptor()
 	// product.CoverValidator is a validator for the "cover" field. It is called by the builders before save.
 	product.CoverValidator = productDescCover.Validators[0].(func(string) error)
 	// productDescCoverProtected is the schema descriptor for cover_protected field.
-	productDescCoverProtected := productFields[13].Descriptor()
+	productDescCoverProtected := productFields[15].Descriptor()
 	// product.DefaultCoverProtected holds the default value on creation for the cover_protected field.
 	product.DefaultCoverProtected = productDescCoverProtected.Default.(bool)
 	// productDescDescriptionProtected is the schema descriptor for description_protected field.
-	productDescDescriptionProtected := productFields[14].Descriptor()
+	productDescDescriptionProtected := productFields[16].Descriptor()
 	// product.DefaultDescriptionProtected holds the default value on creation for the description_protected field.
 	product.DefaultDescriptionProtected = productDescDescriptionProtected.Default.(bool)
 	// productDescPrice is the schema descriptor for price field.
-	productDescPrice := productFields[15].Descriptor()
+	productDescPrice := productFields[17].Descriptor()
 	// product.DefaultPrice holds the default value on creation for the price field.
 	product.DefaultPrice = productDescPrice.Default.(int64)
 	// productDescFactoryPrice is the schema descriptor for factory_price field.
-	productDescFactoryPrice := productFields[16].Descriptor()
+	productDescFactoryPrice := productFields[18].Descriptor()
 	// product.DefaultFactoryPrice holds the default value on creation for the factory_price field.
 	product.DefaultFactoryPrice = productDescFactoryPrice.Default.(int64)
 	// productDescDraftPremium is the schema descriptor for draft_premium field.
-	productDescDraftPremium := productFields[17].Descriptor()
+	productDescDraftPremium := productFields[19].Descriptor()
 	// product.DefaultDraftPremium holds the default value on creation for the draft_premium field.
 	product.DefaultDraftPremium = productDescDraftPremium.Default.(int64)
 	// productDescPointsRequired is the schema descriptor for points_required field.
-	productDescPointsRequired := productFields[19].Descriptor()
+	productDescPointsRequired := productFields[21].Descriptor()
 	// product.DefaultPointsRequired holds the default value on creation for the points_required field.
 	product.DefaultPointsRequired = productDescPointsRequired.Default.(int64)
 	// productDescStockVisible is the schema descriptor for stock_visible field.
-	productDescStockVisible := productFields[22].Descriptor()
+	productDescStockVisible := productFields[24].Descriptor()
 	// product.DefaultStockVisible holds the default value on creation for the stock_visible field.
 	product.DefaultStockVisible = productDescStockVisible.Default.(bool)
 	// productDescFulfillmentMode is the schema descriptor for fulfillment_mode field.
-	productDescFulfillmentMode := productFields[23].Descriptor()
+	productDescFulfillmentMode := productFields[25].Descriptor()
 	// product.DefaultFulfillmentMode holds the default value on creation for the fulfillment_mode field.
 	product.DefaultFulfillmentMode = productDescFulfillmentMode.Default.(string)
 	// productDescManualStock is the schema descriptor for manual_stock field.
-	productDescManualStock := productFields[24].Descriptor()
+	productDescManualStock := productFields[26].Descriptor()
 	// product.DefaultManualStock holds the default value on creation for the manual_stock field.
 	product.DefaultManualStock = productDescManualStock.Default.(int64)
 	// productDescDedup is the schema descriptor for dedup field.
-	productDescDedup := productFields[27].Descriptor()
+	productDescDedup := productFields[29].Descriptor()
 	// product.DefaultDedup holds the default value on creation for the dedup field.
 	product.DefaultDedup = productDescDedup.Default.(bool)
 	// productDescSort is the schema descriptor for sort field.
-	productDescSort := productFields[28].Descriptor()
+	productDescSort := productFields[30].Descriptor()
 	// product.DefaultSort holds the default value on creation for the sort field.
 	product.DefaultSort = productDescSort.Default.(int32)
 	// productDescIsRecommend is the schema descriptor for is_recommend field.
-	productDescIsRecommend := productFields[29].Descriptor()
+	productDescIsRecommend := productFields[31].Descriptor()
 	// product.DefaultIsRecommend holds the default value on creation for the is_recommend field.
 	product.DefaultIsRecommend = productDescIsRecommend.Default.(bool)
 	// productDescStatus is the schema descriptor for status field.
-	productDescStatus := productFields[30].Descriptor()
+	productDescStatus := productFields[32].Descriptor()
 	// product.DefaultStatus holds the default value on creation for the status field.
 	product.DefaultStatus = productDescStatus.Default.(int8)
 	// productDescUpstreamProductCode is the schema descriptor for upstream_product_code field.
-	productDescUpstreamProductCode := productFields[32].Descriptor()
+	productDescUpstreamProductCode := productFields[34].Descriptor()
 	// product.UpstreamProductCodeValidator is a validator for the "upstream_product_code" field. It is called by the builders before save.
 	product.UpstreamProductCodeValidator = productDescUpstreamProductCode.Validators[0].(func(string) error)
 	// productDescAutoListing is the schema descriptor for auto_listing field.
-	productDescAutoListing := productFields[34].Descriptor()
+	productDescAutoListing := productFields[36].Descriptor()
 	// product.DefaultAutoListing holds the default value on creation for the auto_listing field.
 	product.DefaultAutoListing = productDescAutoListing.Default.(bool)
 	// productDescListingReason is the schema descriptor for listing_reason field.
-	productDescListingReason := productFields[35].Descriptor()
+	productDescListingReason := productFields[37].Descriptor()
 	// product.DefaultListingReason holds the default value on creation for the listing_reason field.
 	product.DefaultListingReason = productDescListingReason.Default.(string)
 	// product.ListingReasonValidator is a validator for the "listing_reason" field. It is called by the builders before save.
 	product.ListingReasonValidator = productDescListingReason.Validators[0].(func(string) error)
 	// productDescListingRestoreStatus is the schema descriptor for listing_restore_status field.
-	productDescListingRestoreStatus := productFields[36].Descriptor()
+	productDescListingRestoreStatus := productFields[38].Descriptor()
 	// product.DefaultListingRestoreStatus holds the default value on creation for the listing_restore_status field.
 	product.DefaultListingRestoreStatus = productDescListingRestoreStatus.Default.(int8)
 	// productDescListingChangedAt is the schema descriptor for listing_changed_at field.
-	productDescListingChangedAt := productFields[37].Descriptor()
+	productDescListingChangedAt := productFields[39].Descriptor()
 	// product.DefaultListingChangedAt holds the default value on creation for the listing_changed_at field.
 	product.DefaultListingChangedAt = productDescListingChangedAt.Default.(int64)
 	// productDescListingObservedAt is the schema descriptor for listing_observed_at field.
-	productDescListingObservedAt := productFields[38].Descriptor()
+	productDescListingObservedAt := productFields[40].Descriptor()
 	// product.DefaultListingObservedAt holds the default value on creation for the listing_observed_at field.
 	product.DefaultListingObservedAt = productDescListingObservedAt.Default.(int64)
 	// productDescListingZeroSince is the schema descriptor for listing_zero_since field.
-	productDescListingZeroSince := productFields[39].Descriptor()
+	productDescListingZeroSince := productFields[41].Descriptor()
 	// product.DefaultListingZeroSince holds the default value on creation for the listing_zero_since field.
 	product.DefaultListingZeroSince = productDescListingZeroSince.Default.(int64)
 	// productDescListingLastStock is the schema descriptor for listing_last_stock field.
-	productDescListingLastStock := productFields[40].Descriptor()
+	productDescListingLastStock := productFields[42].Descriptor()
 	// product.DefaultListingLastStock holds the default value on creation for the listing_last_stock field.
 	product.DefaultListingLastStock = productDescListingLastStock.Default.(int32)
 	// productDescListingRestocked is the schema descriptor for listing_restocked field.
-	productDescListingRestocked := productFields[41].Descriptor()
+	productDescListingRestocked := productFields[43].Descriptor()
 	// product.DefaultListingRestocked holds the default value on creation for the listing_restocked field.
 	product.DefaultListingRestocked = productDescListingRestocked.Default.(bool)
 	// productDescListingMessage is the schema descriptor for listing_message field.
-	productDescListingMessage := productFields[42].Descriptor()
+	productDescListingMessage := productFields[44].Descriptor()
 	// product.DefaultListingMessage holds the default value on creation for the listing_message field.
 	product.DefaultListingMessage = productDescListingMessage.Default.(string)
 	// product.ListingMessageValidator is a validator for the "listing_message" field. It is called by the builders before save.
 	product.ListingMessageValidator = productDescListingMessage.Validators[0].(func(string) error)
 	// productDescIsLocked is the schema descriptor for is_locked field.
-	productDescIsLocked := productFields[43].Descriptor()
+	productDescIsLocked := productFields[45].Descriptor()
 	// product.DefaultIsLocked holds the default value on creation for the is_locked field.
 	product.DefaultIsLocked = productDescIsLocked.Default.(bool)
 	// productDescLockVersion is the schema descriptor for lock_version field.
-	productDescLockVersion := productFields[44].Descriptor()
+	productDescLockVersion := productFields[46].Descriptor()
 	// product.DefaultLockVersion holds the default value on creation for the lock_version field.
 	product.DefaultLockVersion = productDescLockVersion.Default.(int64)
 	// productDescLockedBy is the schema descriptor for locked_by field.
-	productDescLockedBy := productFields[45].Descriptor()
+	productDescLockedBy := productFields[47].Descriptor()
 	// product.DefaultLockedBy holds the default value on creation for the locked_by field.
 	product.DefaultLockedBy = productDescLockedBy.Default.(uint64)
 	productcontentbatchMixin := schema.ProductContentBatch{}.Mixin()
@@ -2817,6 +2827,152 @@ func init() {
 	rolepermissionDescPermissionCode := rolepermissionFields[2].Descriptor()
 	// rolepermission.PermissionCodeValidator is a validator for the "permission_code" field. It is called by the builders before save.
 	rolepermission.PermissionCodeValidator = rolepermissionDescPermissionCode.Validators[0].(func(string) error)
+	smsintentMixin := schema.SMSIntent{}.Mixin()
+	smsintentMixinFields0 := smsintentMixin[0].Fields()
+	_ = smsintentMixinFields0
+	smsintentMixinFields1 := smsintentMixin[1].Fields()
+	_ = smsintentMixinFields1
+	smsintentFields := schema.SMSIntent{}.Fields()
+	_ = smsintentFields
+	// smsintentDescCreatedAt is the schema descriptor for created_at field.
+	smsintentDescCreatedAt := smsintentMixinFields0[0].Descriptor()
+	// smsintent.DefaultCreatedAt holds the default value on creation for the created_at field.
+	smsintent.DefaultCreatedAt = smsintentDescCreatedAt.Default.(func() time.Time)
+	// smsintentDescUpdatedAt is the schema descriptor for updated_at field.
+	smsintentDescUpdatedAt := smsintentMixinFields0[1].Descriptor()
+	// smsintent.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	smsintent.DefaultUpdatedAt = smsintentDescUpdatedAt.Default.(func() time.Time)
+	// smsintent.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	smsintent.UpdateDefaultUpdatedAt = smsintentDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// smsintentDescSubsiteID is the schema descriptor for subsite_id field.
+	smsintentDescSubsiteID := smsintentMixinFields1[0].Descriptor()
+	// smsintent.DefaultSubsiteID holds the default value on creation for the subsite_id field.
+	smsintent.DefaultSubsiteID = smsintentDescSubsiteID.Default.(uint64)
+	// smsintentDescRequestNo is the schema descriptor for request_no field.
+	smsintentDescRequestNo := smsintentFields[6].Descriptor()
+	// smsintent.RequestNoValidator is a validator for the "request_no" field. It is called by the builders before save.
+	smsintent.RequestNoValidator = smsintentDescRequestNo.Validators[0].(func(string) error)
+	// smsintentDescRequestHash is the schema descriptor for request_hash field.
+	smsintentDescRequestHash := smsintentFields[8].Descriptor()
+	// smsintent.RequestHashValidator is a validator for the "request_hash" field. It is called by the builders before save.
+	smsintent.RequestHashValidator = smsintentDescRequestHash.Validators[0].(func(string) error)
+	// smsintentDescPhase is the schema descriptor for phase field.
+	smsintentDescPhase := smsintentFields[10].Descriptor()
+	// smsintent.DefaultPhase holds the default value on creation for the phase field.
+	smsintent.DefaultPhase = smsintentDescPhase.Default.(string)
+	// smsintentDescState is the schema descriptor for state field.
+	smsintentDescState := smsintentFields[11].Descriptor()
+	// smsintent.DefaultState holds the default value on creation for the state field.
+	smsintent.DefaultState = smsintentDescState.Default.(string)
+	// smsintentDescSessionID is the schema descriptor for session_id field.
+	smsintentDescSessionID := smsintentFields[12].Descriptor()
+	// smsintent.DefaultSessionID holds the default value on creation for the session_id field.
+	smsintent.DefaultSessionID = smsintentDescSessionID.Default.(string)
+	// smsintentDescVersion is the schema descriptor for version field.
+	smsintentDescVersion := smsintentFields[13].Descriptor()
+	// smsintent.DefaultVersion holds the default value on creation for the version field.
+	smsintent.DefaultVersion = smsintentDescVersion.Default.(int64)
+	// smsintentDescSmsRevision is the schema descriptor for sms_revision field.
+	smsintentDescSmsRevision := smsintentFields[14].Descriptor()
+	// smsintent.DefaultSmsRevision holds the default value on creation for the sms_revision field.
+	smsintent.DefaultSmsRevision = smsintentDescSmsRevision.Default.(int64)
+	// smsintentDescReceived is the schema descriptor for received field.
+	smsintentDescReceived := smsintentFields[16].Descriptor()
+	// smsintent.DefaultReceived holds the default value on creation for the received field.
+	smsintent.DefaultReceived = smsintentDescReceived.Default.(bool)
+	// smsintentDescCanCancel is the schema descriptor for can_cancel field.
+	smsintentDescCanCancel := smsintentFields[17].Descriptor()
+	// smsintent.DefaultCanCancel holds the default value on creation for the can_cancel field.
+	smsintent.DefaultCanCancel = smsintentDescCanCancel.Default.(bool)
+	// smsintentDescCanFinish is the schema descriptor for can_finish field.
+	smsintentDescCanFinish := smsintentFields[18].Descriptor()
+	// smsintent.DefaultCanFinish holds the default value on creation for the can_finish field.
+	smsintent.DefaultCanFinish = smsintentDescCanFinish.Default.(bool)
+	// smsintentDescChargedAmount is the schema descriptor for charged_amount field.
+	smsintentDescChargedAmount := smsintentFields[19].Descriptor()
+	// smsintent.DefaultChargedAmount holds the default value on creation for the charged_amount field.
+	smsintent.DefaultChargedAmount = smsintentDescChargedAmount.Default.(int64)
+	// smsintentDescSettlementState is the schema descriptor for settlement_state field.
+	smsintentDescSettlementState := smsintentFields[20].Descriptor()
+	// smsintent.DefaultSettlementState holds the default value on creation for the settlement_state field.
+	smsintent.DefaultSettlementState = smsintentDescSettlementState.Default.(string)
+	// smsintentDescRefundedAmount is the schema descriptor for refunded_amount field.
+	smsintentDescRefundedAmount := smsintentFields[21].Descriptor()
+	// smsintent.DefaultRefundedAmount holds the default value on creation for the refunded_amount field.
+	smsintent.DefaultRefundedAmount = smsintentDescRefundedAmount.Default.(int64)
+	// smsintentDescRefundReference is the schema descriptor for refund_reference field.
+	smsintentDescRefundReference := smsintentFields[22].Descriptor()
+	// smsintent.DefaultRefundReference holds the default value on creation for the refund_reference field.
+	smsintent.DefaultRefundReference = smsintentDescRefundReference.Default.(string)
+	// smsintentDescRejectedReceipt is the schema descriptor for rejected_receipt field.
+	smsintentDescRejectedReceipt := smsintentFields[23].Descriptor()
+	// smsintent.DefaultRejectedReceipt holds the default value on creation for the rejected_receipt field.
+	smsintent.DefaultRejectedReceipt = smsintentDescRejectedReceipt.Default.(bool)
+	// smsintentDescRetailRefundState is the schema descriptor for retail_refund_state field.
+	smsintentDescRetailRefundState := smsintentFields[24].Descriptor()
+	// smsintent.DefaultRetailRefundState holds the default value on creation for the retail_refund_state field.
+	smsintent.DefaultRetailRefundState = smsintentDescRetailRefundState.Default.(string)
+	// smsintentDescRefundID is the schema descriptor for refund_id field.
+	smsintentDescRefundID := smsintentFields[25].Descriptor()
+	// smsintent.DefaultRefundID holds the default value on creation for the refund_id field.
+	smsintent.DefaultRefundID = smsintentDescRefundID.Default.(uint64)
+	// smsintentDescNextRunAt is the schema descriptor for next_run_at field.
+	smsintentDescNextRunAt := smsintentFields[26].Descriptor()
+	// smsintent.DefaultNextRunAt holds the default value on creation for the next_run_at field.
+	smsintent.DefaultNextRunAt = smsintentDescNextRunAt.Default.(int64)
+	// smsintentDescLeaseUntil is the schema descriptor for lease_until field.
+	smsintentDescLeaseUntil := smsintentFields[27].Descriptor()
+	// smsintent.DefaultLeaseUntil holds the default value on creation for the lease_until field.
+	smsintent.DefaultLeaseUntil = smsintentDescLeaseUntil.Default.(int64)
+	// smsintentDescLeaseToken is the schema descriptor for lease_token field.
+	smsintentDescLeaseToken := smsintentFields[28].Descriptor()
+	// smsintent.DefaultLeaseToken holds the default value on creation for the lease_token field.
+	smsintent.DefaultLeaseToken = smsintentDescLeaseToken.Default.(string)
+	// smsintentDescAttempts is the schema descriptor for attempts field.
+	smsintentDescAttempts := smsintentFields[29].Descriptor()
+	// smsintent.DefaultAttempts holds the default value on creation for the attempts field.
+	smsintent.DefaultAttempts = smsintentDescAttempts.Default.(int)
+	// smsintentDescLastError is the schema descriptor for last_error field.
+	smsintentDescLastError := smsintentFields[30].Descriptor()
+	// smsintent.DefaultLastError holds the default value on creation for the last_error field.
+	smsintent.DefaultLastError = smsintentDescLastError.Default.(string)
+	smsoperationMixin := schema.SMSOperation{}.Mixin()
+	smsoperationMixinFields0 := smsoperationMixin[0].Fields()
+	_ = smsoperationMixinFields0
+	smsoperationMixinFields1 := smsoperationMixin[1].Fields()
+	_ = smsoperationMixinFields1
+	smsoperationFields := schema.SMSOperation{}.Fields()
+	_ = smsoperationFields
+	// smsoperationDescCreatedAt is the schema descriptor for created_at field.
+	smsoperationDescCreatedAt := smsoperationMixinFields0[0].Descriptor()
+	// smsoperation.DefaultCreatedAt holds the default value on creation for the created_at field.
+	smsoperation.DefaultCreatedAt = smsoperationDescCreatedAt.Default.(func() time.Time)
+	// smsoperationDescUpdatedAt is the schema descriptor for updated_at field.
+	smsoperationDescUpdatedAt := smsoperationMixinFields0[1].Descriptor()
+	// smsoperation.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	smsoperation.DefaultUpdatedAt = smsoperationDescUpdatedAt.Default.(func() time.Time)
+	// smsoperation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	smsoperation.UpdateDefaultUpdatedAt = smsoperationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// smsoperationDescSubsiteID is the schema descriptor for subsite_id field.
+	smsoperationDescSubsiteID := smsoperationMixinFields1[0].Descriptor()
+	// smsoperation.DefaultSubsiteID holds the default value on creation for the subsite_id field.
+	smsoperation.DefaultSubsiteID = smsoperationDescSubsiteID.Default.(uint64)
+	// smsoperationDescOperationID is the schema descriptor for operation_id field.
+	smsoperationDescOperationID := smsoperationFields[2].Descriptor()
+	// smsoperation.OperationIDValidator is a validator for the "operation_id" field. It is called by the builders before save.
+	smsoperation.OperationIDValidator = smsoperationDescOperationID.Validators[0].(func(string) error)
+	// smsoperationDescStatus is the schema descriptor for status field.
+	smsoperationDescStatus := smsoperationFields[4].Descriptor()
+	// smsoperation.DefaultStatus holds the default value on creation for the status field.
+	smsoperation.DefaultStatus = smsoperationDescStatus.Default.(string)
+	// smsoperationDescErrorCode is the schema descriptor for error_code field.
+	smsoperationDescErrorCode := smsoperationFields[5].Descriptor()
+	// smsoperation.DefaultErrorCode holds the default value on creation for the error_code field.
+	smsoperation.DefaultErrorCode = smsoperationDescErrorCode.Default.(string)
+	// smsoperationDescAttempts is the schema descriptor for attempts field.
+	smsoperationDescAttempts := smsoperationFields[6].Descriptor()
+	// smsoperation.DefaultAttempts holds the default value on creation for the attempts field.
+	smsoperation.DefaultAttempts = smsoperationDescAttempts.Default.(int)
 	securityauditlogFields := schema.SecurityAuditLog{}.Fields()
 	_ = securityauditlogFields
 	// securityauditlogDescAction is the schema descriptor for action field.
@@ -3168,50 +3324,58 @@ func init() {
 	supplyconnectionDescLowStockMessage := supplyconnectionFields[8].Descriptor()
 	// supplyconnection.DefaultLowStockMessage holds the default value on creation for the low_stock_message field.
 	supplyconnection.DefaultLowStockMessage = supplyconnectionDescLowStockMessage.Default.(string)
+	// supplyconnectionDescSmsLeaseToken is the schema descriptor for sms_lease_token field.
+	supplyconnectionDescSmsLeaseToken := supplyconnectionFields[9].Descriptor()
+	// supplyconnection.DefaultSmsLeaseToken holds the default value on creation for the sms_lease_token field.
+	supplyconnection.DefaultSmsLeaseToken = supplyconnectionDescSmsLeaseToken.Default.(string)
+	// supplyconnectionDescSmsLeaseUntil is the schema descriptor for sms_lease_until field.
+	supplyconnectionDescSmsLeaseUntil := supplyconnectionFields[10].Descriptor()
+	// supplyconnection.DefaultSmsLeaseUntil holds the default value on creation for the sms_lease_until field.
+	supplyconnection.DefaultSmsLeaseUntil = supplyconnectionDescSmsLeaseUntil.Default.(int64)
 	// supplyconnectionDescSyncLeaseToken is the schema descriptor for sync_lease_token field.
-	supplyconnectionDescSyncLeaseToken := supplyconnectionFields[9].Descriptor()
+	supplyconnectionDescSyncLeaseToken := supplyconnectionFields[11].Descriptor()
 	// supplyconnection.DefaultSyncLeaseToken holds the default value on creation for the sync_lease_token field.
 	supplyconnection.DefaultSyncLeaseToken = supplyconnectionDescSyncLeaseToken.Default.(string)
 	// supplyconnectionDescSyncLeaseUntil is the schema descriptor for sync_lease_until field.
-	supplyconnectionDescSyncLeaseUntil := supplyconnectionFields[10].Descriptor()
+	supplyconnectionDescSyncLeaseUntil := supplyconnectionFields[12].Descriptor()
 	// supplyconnection.DefaultSyncLeaseUntil holds the default value on creation for the sync_lease_until field.
 	supplyconnection.DefaultSyncLeaseUntil = supplyconnectionDescSyncLeaseUntil.Default.(int64)
 	// supplyconnectionDescCallbackURL is the schema descriptor for callback_url field.
-	supplyconnectionDescCallbackURL := supplyconnectionFields[11].Descriptor()
+	supplyconnectionDescCallbackURL := supplyconnectionFields[13].Descriptor()
 	// supplyconnection.CallbackURLValidator is a validator for the "callback_url" field. It is called by the builders before save.
 	supplyconnection.CallbackURLValidator = supplyconnectionDescCallbackURL.Validators[0].(func(string) error)
 	// supplyconnectionDescRetryMax is the schema descriptor for retry_max field.
-	supplyconnectionDescRetryMax := supplyconnectionFields[12].Descriptor()
+	supplyconnectionDescRetryMax := supplyconnectionFields[14].Descriptor()
 	// supplyconnection.DefaultRetryMax holds the default value on creation for the retry_max field.
 	supplyconnection.DefaultRetryMax = supplyconnectionDescRetryMax.Default.(int32)
 	// supplyconnectionDescRetryIntervals is the schema descriptor for retry_intervals field.
-	supplyconnectionDescRetryIntervals := supplyconnectionFields[13].Descriptor()
+	supplyconnectionDescRetryIntervals := supplyconnectionFields[15].Descriptor()
 	// supplyconnection.DefaultRetryIntervals holds the default value on creation for the retry_intervals field.
 	supplyconnection.DefaultRetryIntervals = supplyconnectionDescRetryIntervals.Default.(string)
 	// supplyconnection.RetryIntervalsValidator is a validator for the "retry_intervals" field. It is called by the builders before save.
 	supplyconnection.RetryIntervalsValidator = supplyconnectionDescRetryIntervals.Validators[0].(func(string) error)
 	// supplyconnectionDescExchangeRate is the schema descriptor for exchange_rate field.
-	supplyconnectionDescExchangeRate := supplyconnectionFields[14].Descriptor()
+	supplyconnectionDescExchangeRate := supplyconnectionFields[16].Descriptor()
 	// supplyconnection.DefaultExchangeRate holds the default value on creation for the exchange_rate field.
 	supplyconnection.DefaultExchangeRate = supplyconnectionDescExchangeRate.Default.(float64)
 	// supplyconnectionDescPriceMarkupPercent is the schema descriptor for price_markup_percent field.
-	supplyconnectionDescPriceMarkupPercent := supplyconnectionFields[15].Descriptor()
+	supplyconnectionDescPriceMarkupPercent := supplyconnectionFields[17].Descriptor()
 	// supplyconnection.DefaultPriceMarkupPercent holds the default value on creation for the price_markup_percent field.
 	supplyconnection.DefaultPriceMarkupPercent = supplyconnectionDescPriceMarkupPercent.Default.(float64)
 	// supplyconnectionDescPriceMarkupAmount is the schema descriptor for price_markup_amount field.
-	supplyconnectionDescPriceMarkupAmount := supplyconnectionFields[16].Descriptor()
+	supplyconnectionDescPriceMarkupAmount := supplyconnectionFields[18].Descriptor()
 	// supplyconnection.DefaultPriceMarkupAmount holds the default value on creation for the price_markup_amount field.
 	supplyconnection.DefaultPriceMarkupAmount = supplyconnectionDescPriceMarkupAmount.Default.(int64)
 	// supplyconnectionDescAutoSyncPrice is the schema descriptor for auto_sync_price field.
-	supplyconnectionDescAutoSyncPrice := supplyconnectionFields[18].Descriptor()
+	supplyconnectionDescAutoSyncPrice := supplyconnectionFields[20].Descriptor()
 	// supplyconnection.DefaultAutoSyncPrice holds the default value on creation for the auto_sync_price field.
 	supplyconnection.DefaultAutoSyncPrice = supplyconnectionDescAutoSyncPrice.Default.(bool)
 	// supplyconnectionDescLastPingOk is the schema descriptor for last_ping_ok field.
-	supplyconnectionDescLastPingOk := supplyconnectionFields[22].Descriptor()
+	supplyconnectionDescLastPingOk := supplyconnectionFields[24].Descriptor()
 	// supplyconnection.DefaultLastPingOk holds the default value on creation for the last_ping_ok field.
 	supplyconnection.DefaultLastPingOk = supplyconnectionDescLastPingOk.Default.(bool)
 	// supplyconnectionDescBalanceCache is the schema descriptor for balance_cache field.
-	supplyconnectionDescBalanceCache := supplyconnectionFields[25].Descriptor()
+	supplyconnectionDescBalanceCache := supplyconnectionFields[27].Descriptor()
 	// supplyconnection.DefaultBalanceCache holds the default value on creation for the balance_cache field.
 	supplyconnection.DefaultBalanceCache = supplyconnectionDescBalanceCache.Default.(int64)
 	supplyimportitemMixin := schema.SupplyImportItem{}.Mixin()

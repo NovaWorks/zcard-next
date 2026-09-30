@@ -39,6 +39,9 @@ func (r *ProcureRepo) claimPurchase(ctx context.Context, itemID, connectionID ui
 		if e != nil {
 			return e
 		}
+		if it.DeliveryKind != "card" {
+			return ErrOrderNotPurchasable
+		}
 		if it.CanceledQuantity > 0 || it.FulfillmentStatus == "refunded" || it.FulfillmentStatus == "delivered" {
 			return ErrOrderNotPurchasable
 		}

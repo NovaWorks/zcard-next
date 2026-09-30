@@ -376,6 +376,8 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminSupplyService/ImportProducts", Method: "POST", Path: "/api/v1/admin/supply/connections/{connection_id}/import"},
 
 		// ── 采购（procurement，）────────────────
+		Perm{Code: "procurement:read", Desc: "接码任务诊断", Domain: "procurement", Op: "zcard.api.admin.v1.AdminProcurementService/ListSMS", Method: "GET", Path: "/api/v1/admin/sms-intents"},
+		Perm{Code: "procurement:write", Desc: "重试原接码任务", Domain: "procurement", AdminOnly: true, Op: "zcard.api.admin.v1.AdminProcurementService/RetrySMS", Method: "POST", Path: "/api/v1/admin/sms-intents/{id}/retry"},
 		Perm{Code: "procurement:read", Desc: "采购单列表", Domain: "procurement",
 			Op: "zcard.api.admin.v1.AdminProcurementService/ListProcurements", Method: "GET", Path: "/api/v1/admin/procurements"},
 		Perm{Code: "procurement:read", Desc: "采购单详情", Domain: "procurement",

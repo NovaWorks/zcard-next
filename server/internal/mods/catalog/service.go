@@ -5,6 +5,7 @@ package catalog
 import (
 	"context"
 	stderrors "errors"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
 	"sort"
 
@@ -262,6 +263,7 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 	}
 
 	return &storefrontv1.Product{
+		DeliveryKind: p.DeliveryKind, SmsProduct: p.SMSProduct, SmsSalesEnabled: data.SMSSalesEnabled(),
 		GoodsType: p.GoodsType, ShippingMode: p.ShippingMode, ShippingFeeCents: p.ShippingFee, ShippingCountries: p.ShippingCountries,
 		Id:              p.ID,
 		Name:            p.Name,

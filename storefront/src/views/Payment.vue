@@ -40,13 +40,14 @@
 
       <div v-if="Number(order?.paid_fee_cents) > 0" class="muted">含支付手续费 {{ formatMoney(order?.paid_fee_cents || 0) }}</div>
       <!-- 自动取货：卡密直接展示（会话内记忆查询密码；失败降级提示去取货页） -->
-      <DeliveryResults v-if="delivery?.items.length" :items="delivery.items" />
+      <DeliveryResults v-if="!order?.items.some(i=>i.delivery_kind==='sms_activation') && delivery?.items.length" :items="delivery.items" />
       <p v-if="Number(order?.commerce_version)===1" class="muted">实体商品已进入配送流程，请在订单详情查看包裹并确认收货。</p>
-      <div v-if="order?.items.some(i=>i.goods_type!=='physical')" class="pay-fetch-hint">
+      <div v-if="order?.items.some(i=>i.goods_type!=='physical' && i.delivery_kind!=='sms_activation')" class="pay-fetch-hint">
         <span>{{ ['delivered', 'completed'].includes(order?.status || '') ? '交付已完成，凭订单号与查询密码查看结果' : '已付款，正在安排交付。人工服务请在订单详情查看进度，请勿重复付款。' }}</span>
         <router-link class="btn btn-primary" :to="`/fetch?order_no=${orderNo}`">前往取货</router-link>
       </div>
 
+      <p v-if="order?.items.some(i=>i.delivery_kind==='sms_activation')" class="muted">正在获取号码，请前往订单详情查看短信和取消/完成状态。</p>
       <p class="muted">请保存订单号和下单时的查询密码，游客也可随时查询、取货，无需注册。</p>
       <div class="pay-btn-row">
         <button class="btn btn-primary" @click="checkOnce(true)">刷新发货结果</button>
@@ -294,7 +295,7 @@ async function initializePayment() {
   if (phase.value === 'closed') return;
   const { data } = await fetchPaymentChannels();
   if (disposed) return;
-  channels.value = data?.channels || [];
+  channels.value = (data?.channels || []).filter(c=>!order.value?.items.some(i=>i.delivery_kind==='sms_activation') || c.driver==='wallet');
   await refreshBalance();
   if (disposed) return;
   const first = payOptions.value.find(o => !o.disabled);

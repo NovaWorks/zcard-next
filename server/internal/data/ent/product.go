@@ -24,6 +24,10 @@ type Product struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// 租户（0=主站；由 interceptor 自动注入，业务不手写）
 	SubsiteID uint64 `json:"subsite_id,omitempty"`
+	// DeliveryKind holds the value of the "delivery_kind" field.
+	DeliveryKind string `json:"delivery_kind,omitempty"`
+	// SmsProduct holds the value of the "sms_product" field.
+	SmsProduct map[string]string `json:"sms_product,omitempty"`
 	// 分类（软外键，仅索引）
 	CategoryID uint64 `json:"category_id,omitempty"`
 	// CategoryProtected holds the value of the "category_protected" field.
@@ -156,13 +160,13 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case product.FieldShippingCountries, product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig:
+		case product.FieldSmsProduct, product.FieldShippingCountries, product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig:
 			values[i] = new([]byte)
 		case product.FieldCategoryProtected, product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend, product.FieldAutoListing, product.FieldListingRestocked, product.FieldIsLocked:
 			values[i] = new(sql.NullBool)
 		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldShippingFee, product.FieldPhysicalStock, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldManualStock, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID, product.FieldListingRestoreStatus, product.FieldListingChangedAt, product.FieldListingObservedAt, product.FieldListingZeroSince, product.FieldListingLastStock, product.FieldLockVersion, product.FieldLockedBy:
 			values[i] = new(sql.NullInt64)
-		case product.FieldName, product.FieldGoodsType, product.FieldShippingMode, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldFulfillmentMode, product.FieldDeliveryMode, product.FieldUpstreamProductCode, product.FieldListingReason, product.FieldListingMessage:
+		case product.FieldDeliveryKind, product.FieldName, product.FieldGoodsType, product.FieldShippingMode, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldFulfillmentMode, product.FieldDeliveryMode, product.FieldUpstreamProductCode, product.FieldListingReason, product.FieldListingMessage:
 			values[i] = new(sql.NullString)
 		case product.FieldCreatedAt, product.FieldUpdatedAt, product.FieldUpstreamSyncedAt, product.FieldLockedAt:
 			values[i] = new(sql.NullTime)
@@ -204,6 +208,20 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field subsite_id", values[i])
 			} else if value.Valid {
 				_m.SubsiteID = uint64(value.Int64)
+			}
+		case product.FieldDeliveryKind:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field delivery_kind", values[i])
+			} else if value.Valid {
+				_m.DeliveryKind = value.String
+			}
+		case product.FieldSmsProduct:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field sms_product", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.SmsProduct); err != nil {
+					return fmt.Errorf("unmarshal field sms_product: %w", err)
+				}
 			}
 		case product.FieldCategoryID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -544,6 +562,12 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("subsite_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SubsiteID))
+	builder.WriteString(", ")
+	builder.WriteString("delivery_kind=")
+	builder.WriteString(_m.DeliveryKind)
+	builder.WriteString(", ")
+	builder.WriteString("sms_product=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SmsProduct))
 	builder.WriteString(", ")
 	builder.WriteString("category_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CategoryID))

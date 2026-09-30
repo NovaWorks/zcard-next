@@ -8,6 +8,7 @@ import { NCard, NTabs, NTabPane } from "naive-ui";
 import { checkAuth } from "@/directives";
 import ConnectionsTab from "./components/connections-tab.vue";
 const SupplierAccountsTab = defineAsyncComponent(() => import("./components/supplier-accounts-tab.vue"));
+const SMSTab = defineAsyncComponent(() => import("./components/sms-tab.vue"));
 const ProcurementTab = defineAsyncComponent(() => import("./components/procurement-tab.vue"));
 
 defineOptions({ name: "ChannelManagement" });
@@ -17,6 +18,7 @@ const visibleTabs = [
   { key: "connections", auth: "supply:read" },
   { key: "suppliers", auth: "supplier:read" },
   { key: "procurement", auth: "procurement:read" },
+ {key:"sms",auth:"procurement:read"},
 ].filter((t) => checkAuth(t.auth));
 
 const activeTab = ref<string>(
@@ -38,6 +40,7 @@ watch(() => route.query.tab, tab => { if (visibleTabs.some(t => t.key === tab)) 
         <NTabPane v-if="checkAuth('procurement:read')" display-directive="show:lazy" name="procurement" tab="采购单">
           <ProcurementTab />
         </NTabPane>
+      <NTabPane v-if="checkAuth('procurement:read')" display-directive="show:lazy" name="sms" tab="接码任务"><SMSTab /></NTabPane>
       </NTabs>
     </NCard>
   </div>

@@ -154,6 +154,10 @@ type Tx struct {
 	RiskLockKey *RiskLockKeyClient
 	// RolePermission is the client for interacting with the RolePermission builders.
 	RolePermission *RolePermissionClient
+	// SMSIntent is the client for interacting with the SMSIntent builders.
+	SMSIntent *SMSIntentClient
+	// SMSOperation is the client for interacting with the SMSOperation builders.
+	SMSOperation *SMSOperationClient
 	// SecurityAuditLog is the client for interacting with the SecurityAuditLog builders.
 	SecurityAuditLog *SecurityAuditLogClient
 	// Session is the client for interacting with the Session builders.
@@ -410,6 +414,8 @@ func (tx *Tx) init() {
 	tx.Review = NewReviewClient(tx.config)
 	tx.RiskLockKey = NewRiskLockKeyClient(tx.config)
 	tx.RolePermission = NewRolePermissionClient(tx.config)
+	tx.SMSIntent = NewSMSIntentClient(tx.config)
+	tx.SMSOperation = NewSMSOperationClient(tx.config)
 	tx.SecurityAuditLog = NewSecurityAuditLogClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)

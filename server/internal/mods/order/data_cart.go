@@ -66,6 +66,9 @@ func (s *StoreCartService) AddCartItem(ctx context.Context, req *storefrontv1.Ad
 	if err != nil {
 		return nil, errors.New("cart.PRODUCT_NOT_FOUND")
 	}
+	if p.DeliveryKind != "card" {
+		return nil, errors.New("接码商品须独立单件购买，不能加入购物车")
+	}
 	hidden, err := data.HiddenCategoryIDs(ctx, client, p.SubsiteID)
 	if err != nil {
 		return nil, err
@@ -232,6 +235,9 @@ func (s *StoreCartService) toItemPB(ctx context.Context, row *ent.CartItem) (*st
 	item.ProductCover = p.Cover
 	item.PointsRequired = p.PointsRequired
 	item.PointsOnly = p.PointsRequired > 0
+	if p.DeliveryKind != "card" {
+		return nil, errors.New("接码商品须独立单件购买，不能加入购物车")
+	}
 	hidden, err := data.HiddenCategoryIDs(ctx, client, p.SubsiteID)
 	if err != nil {
 		return nil, err

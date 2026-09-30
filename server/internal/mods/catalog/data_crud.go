@@ -695,6 +695,15 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 }
 
 func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.UpstreamProductInput) (uint64, bool, error) {
+	if in.DeliveryKind == "" {
+		in.DeliveryKind = "card"
+	}
+	if in.DeliveryKind != "card" && in.DeliveryKind != "sms_activation" {
+		return 0, false, fmt.Errorf("不支持的上游交付类型")
+	}
+	if in.DeliveryKind == "sms_activation" && len(in.SKUs) > 0 {
+		return 0, false, fmt.Errorf("接码商品不支持规格")
+	}
 	tc := tenancy.FromContext(ctx)
 	existing, err := data.Client(ctx, r.data).Product.Query().
 		Where(
@@ -786,6 +795,7 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 			SetSlug(slug).
 			SetPrice(price).
 			SetFactoryPrice(max(in.FactoryPrice, 0)).
+			SetDeliveryKind(in.DeliveryKind).SetSmsProduct(in.SMSProduct).
 			SetStockType(product.StockTypeCard).
 			SetStatus(status).
 			SetUpstreamSourceID(in.ConnectionID).
@@ -842,6 +852,10 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 	upd := data.Client(ctx, r.data).Product.UpdateOneID(existing.ID).Where(product.StatusGTE(0)).
 		SetName(in.Name).
 		SetUpstreamSyncedAt(in.UpstreamSyncedAt)
+	if existing.DeliveryKind != in.DeliveryKind {
+		return 0, false, fmt.Errorf("上游交付类型变化，请新建商品映射")
+	}
+	upd.SetSmsProduct(in.SMSProduct)
 	if in.FactoryPrice >= 0 {
 		upd.SetFactoryPrice(in.FactoryPrice)
 	}
@@ -1068,7 +1082,7 @@ func (r *ProductRepoImpl) ShelveOffMissing(ctx context.Context, connectionID uin
 		Where(
 			product.SubsiteID(tc.SubsiteID),
 			product.UpstreamSourceID(connectionID),
-			product.StatusGT(0), product.IsLocked(false),
+			product.StatusGT(0), product.IsLocked(false), product.DeliveryKind("card"),
 		)
 	if len(seen) > 0 {
 		q = q.Where(product.UpstreamProductCodeNotIn(seen...))
@@ -1122,7 +1136,7 @@ func (r *ProductRepoImpl) ListForSupply(ctx context.Context, f port.AdminFilter)
 	for _, v := range skus {
 		blocked = append(blocked, v.ProductID)
 	}
-	q := data.Client(ctx, r.data).Product.Query().Where(product.GoodsTypeNEQ("physical"), product.StatusGTE(0), data.VisibleProductCategory(hidden)).Where(product.FulfillmentModeNotIn("manual", "local", "reuse"), product.IDNotIn(blocked...))
+	q := data.Client(ctx, r.data).Product.Query().Where(product.DeliveryKind("card"), product.GoodsTypeNEQ("physical"), product.StatusGTE(0), data.VisibleProductCategory(hidden)).Where(product.FulfillmentModeNotIn("manual", "local", "reuse"), product.IDNotIn(blocked...))
 	if f.Status >= 0 {
 		q = q.Where(product.Status(int8(f.Status)))
 	}
@@ -1147,6 +1161,9 @@ func (r *ProductRepoImpl) GetForSupply(ctx context.Context, productID uint64) (*
 	row, err := data.Client(ctx, r.data).Product.Get(ctx, productID)
 	if err != nil {
 		return nil, err
+	}
+	if row.DeliveryKind != "card" {
+		return nil, fmt.Errorf("接码商品不支持二级供货")
 	}
 	if yes, e := data.HasLocalDelivery(ctx, data.Client(ctx, r.data), row); e != nil {
 		return nil, e

@@ -101,6 +101,8 @@ message GetOrderReply {
 }
 
 message OrderItemReply {
+ string delivery_kind = 30;
+ map<string,string> sms_product = 31;
   string goods_type = 11;
   int64 paid_cents = 12;
   int64 shipping_cents = 13;
@@ -171,3 +173,17 @@ message CancelMyOrderRequest {
 message ShippingRegionsRequest { string country = 1; }
 message ShippingRegionsReply { string data_json = 1; }
 message ReceiveShipmentRequest { string order_no = 1; uint64 shipment_id = 2; string query_password = 3; }
+
+service StoreSMSService {
+ rpc GetSMS(SMSOrderRequest) returns (SMSOrderReply) { option (google.api.http) = { get: "/api/v1/storefront/orders/{order_no}/sms" }; }
+ rpc ActSMS(SMSActionRequest) returns (SMSOrderReply) { option (google.api.http) = { post: "/api/v1/storefront/orders/{order_no}/sms/{action}" body: "*" }; }
+}
+message SMSOrderRequest { string order_no = 1; }
+message SMSActionRequest { string order_no = 1; string action = 2; string request_id = 3; }
+message SMSOrderReply {
+ string state = 1; string phase = 2; string phone_number = 3;
+ string otp_code = 4; string otp_message = 5; string expires_at = 6;
+ string cancel_available_at = 7; bool can_cancel = 8; bool can_finish = 9;
+ string operation_status = 10; string operation_action = 11;
+ string refund_status = 12; string message = 13; bool active = 14;
+}

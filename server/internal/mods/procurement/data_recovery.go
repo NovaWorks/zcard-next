@@ -199,7 +199,7 @@ func (r *ProcureRepo) recordMissing(ctx context.Context, itemID uint64) error {
 		if err != nil {
 			return err
 		}
-		if it.FulfillmentType != orderitem.FulfillmentTypeUpstream {
+		if it.FulfillmentType != orderitem.FulfillmentTypeUpstream || it.DeliveryKind != "card" {
 			return nil
 		}
 		o, err := c.Order.Get(ctx, it.OrderID)
@@ -237,7 +237,7 @@ func (r *ProcureRepo) recordMissing(ctx context.Context, itemID uint64) error {
 func (r *ProcureRepo) reconcileMissing(ctx context.Context) error {
 	c := data.Client(ctx, r.data)
 	// Allow five minutes for the normal payment consumer to create procurement.
-	ids, err := c.OrderItem.Query().Where(orderitem.FulfillmentTypeEQ(orderitem.FulfillmentTypeUpstream), orderitem.FulfillmentStatusNEQ("delivered"), func(s *sql.Selector) {
+	ids, err := c.OrderItem.Query().Where(orderitem.FulfillmentTypeEQ(orderitem.FulfillmentTypeUpstream), orderitem.DeliveryKind("card"), orderitem.FulfillmentStatusNEQ("delivered"), func(s *sql.Selector) {
 		po := sql.Table(procurementorder.Table)
 		o := sql.Table(order.Table)
 		s.Where(sql.NotIn(s.C(orderitem.FieldID), sql.Select(po.C(procurementorder.FieldOrderItemID)).From(po)))

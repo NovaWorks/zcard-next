@@ -17,9 +17,13 @@ import { formatMoney, yuanToFen } from "@/utils/money";
 interface PreviewCategory {
   code: string;
   name: string;
+  path?: string;
+  parent_code?: string;
   products: {
     code: string;
     name: string;
+    delivery_kind?: string;
+    sms_product?: Record<string,string>;
     price_cents: number;
     cost_price_cents?: number;
     cost_is_minimum?: boolean;
@@ -41,6 +45,11 @@ const previewError = ref("");
 const submitError = ref("");
 const previewMessage = ref("");
 const snapshotId = ref("");
+const catalogPage=ref(1);
+const catalogTotal=ref(0);
+const hasMore=ref(false);
+const pagedCatalog=computed(()=>props.connection?.driver === "zcard");
+async function turnPage(page:number){if(checked.value.length){window.$message?.warning("请先导入或清空本页选择，再翻页");return;}catalogPage.value=page;await loadPreview(false,true);}
 let previewController: AbortController | undefined;
 const nameLength = (name: string) => Array.from(name.trim()).length;
 const invalidDrafts = computed(() => selectedCategories.value.filter(cat => drafts[cat.code] && (nameLength(drafts[cat.code].name) === 0 || nameLength(drafts[cat.code].name) > 100)));
@@ -120,6 +129,8 @@ function generateDrafts() {
   let ambiguous = 0;
   for (const cat of selectedCategories.value) {
     if (categoryMapDraft[cat.code] != null || drafts[cat.code]) continue;
+    const leaf=cat.name.split(" / ").at(-1)||cat.name;
+    if(pagedCatalog.value){drafts[cat.code]={name:leaf,parent_id:null};continue;}
     const matches = localCategories.value.filter(c => c.name === cat.name);
     if (matches.length === 1) categoryMapDraft[cat.code] = matches[0].id;
     else if (matches.length > 1) ambiguous++;
@@ -150,6 +161,7 @@ watch(
   () => [props.show, props.connection?.id] as const,
   ([show]) => {
     if (show && props.connection) {
+      catalogPage.value=1;
       loadPreview();
       loadLocalCategories();
     } else {
@@ -168,12 +180,13 @@ async function loadPreview(refresh = false, preserve = false) {
   previewController = controller;
   stopQuotes();
   const connection = props.connection;
-  const preserveExisting = preserve && categories.value.length > 0;
+  const preserveExisting = preserve && !pagedCatalog.value && categories.value.length > 0;
+  if(pagedCatalog.value){categories.value=[];snapshotId.value="";expandedCats.value=new Set();checked.value=[];}
   if (refresh) void loadLocalCategories();
   loading.value = true;
   previewError.value = "";
   previewMessage.value = "正在加载上游目录，可以关闭窗口后再回来查看";
-  if (!preserveExisting) {
+  if (!preserveExisting && !preserve) {
     submitError.value = "";
     snapshotId.value = "";
     showNameErrors.value = false;
@@ -197,7 +210,7 @@ async function loadPreview(refresh = false, preserve = false) {
     let data: any;
     let error: any;
     while (!controller.signal.aborted) {
-      const response = await previewSupplyProducts(connection.id, undefined, controller.signal, { async: true, snapshot_id: pollToken || undefined, refresh: !pollToken && refresh });
+      const response = await previewSupplyProducts(connection.id, undefined, controller.signal, { async: true, snapshot_id: pollToken || undefined, refresh: !pollToken && refresh, ...(pagedCatalog.value ? {page:catalogPage.value,page_size:50}: {}) });
       if (requestId !== previewRequest || controller.signal.aborted) return;
       data = response.data; error = response.error;
       if (error || !data) break;
@@ -217,6 +230,7 @@ async function loadPreview(refresh = false, preserve = false) {
     }
     if (!error && data) {
       snapshotId.value = data.snapshot_id || "";
+      catalogTotal.value=Number(data.total||0);hasMore.value=!!data.has_more;
       categories.value = ((data as any).categories || []).map((cat: PreviewCategory) => ({
         ...cat, products: cat.products.map(p => ({ ...p, quote_status: p.quote_status || "pending" })),
       }));
@@ -439,7 +453,7 @@ async function submit() {
           <NSpace justify="space-between"><span>分类预览：共 {{ruleResults.length}} 件</span><NSpace><NButton size="small" :disabled="rulePage<=1" @click="rulePage--">上一页</NButton><span>{{rulePage}} / {{Math.max(1,Math.ceil(ruleResults.length/50))}}</span><NButton size="small" :disabled="rulePage*50>=ruleResults.length" @click="rulePage++">下一页</NButton></NSpace></NSpace>
           <div class="rule-preview">
             <div v-for="p in visibleRuleResults" :key="p.code" class="rule-preview-row">
-              <span>{{ p.name }}<small>{{ productCategories[p.code] !== undefined ? ' · 手工指定' : p.category_protected ? ' · 保留手动分类' : p.rule >= 0 ? ` · 规则 ${p.rule + 1}` : ' · 未命中，沿用分类映射或原分类' }}</small></span>
+              <span>{{ p.name }}<NTag v-if="p.delivery_kind==='sms_activation'" size="tiny" type="info">短信接码 · 单件</NTag><small v-if="p.delivery_kind==='sms_activation'">{{Object.entries(p.sms_product||{}).map(([k,v])=>`${k}: ${v}`).join(" · ")}}</small><small>{{ productCategories[p.code] !== undefined ? ' · 手工指定' : p.category_protected ? ' · 保留手动分类' : p.rule >= 0 ? ` · 规则 ${p.rule + 1}` : ' · 未命中，沿用分类映射或原分类' }}</small></span>
               <NTreeSelect :value="p.category" :options="[{key:0,label:'未分类'}, ...localCategoryOptions]" clearable filterable show-path placeholder="沿用分类" @update:value="v => v === null ? delete productCategories[p.code] : productCategories[p.code] = Number(v)" />
             </div>
           </div>
@@ -450,6 +464,7 @@ async function submit() {
           <NButton size="small" :disabled="!expandedProducts.length || loading" @click="refreshCosts">刷新成本</NButton>
         </div>
         <div class="text-12px text-gray-400">展开分类后查询账号成本，已按渠道汇率换算，不含加价；多规格显示最低成本。正式导入会在后台逐件核价；锁定或被人工修改的商品会跳过。分类名命中显示整类，商品名命中只显示匹配商品；搜索不会取消已选商品。锁定商品不可勾选。</div>
+        <div v-if="pagedCatalog" class="flex flex-wrap items-center gap-2"><NButton size="small" :disabled="loading || catalogPage<=1 || checked.length>0" @click="turnPage(catalogPage-1)">上一页</NButton><span>第 {{catalogPage}} 页 · 共 {{catalogTotal}} 件 · 每页 50 件</span><NButton size="small" :disabled="loading || !hasMore || checked.length>0" @click="turnPage(catalogPage+1)">下一页</NButton><label>跳页 <input type="number" min="1" :max="Math.max(1,Math.ceil(catalogTotal/50))" :value="catalogPage" :disabled="loading||checked.length>0" @change="turnPage(Math.max(1,Number(($event.target as HTMLInputElement).value)))" class="w-20" /></label><span>搜索本页；导入或清空选择后可翻页。</span></div>
         <div class="category-list">
           <div v-for="cat in visibleCategories" :key="cat.code" class="category-item">
             <div class="category-row">
@@ -458,7 +473,7 @@ async function submit() {
                 <NCheckbox :checked="cat.products.some(p => !p.is_locked) && cat.products.filter(p => !p.is_locked).every(p => selectedCodes.has(p.code))"
                   :indeterminate="cat.products.some(p=>!p.is_locked&&selectedCodes.has(p.code)) && !cat.products.filter(p=>!p.is_locked).every(p=>selectedCodes.has(p.code))"
                   :aria-label="`选择${cat.name}全部商品`" @update:checked="(v: boolean) => toggleCat(cat, v)" />
-                <button type="button" class="category-name" :title="cat.name" @click="toggleExpand(cat.code)">{{ cat.name }}</button>
+                <button type="button" class="category-name" :aria-expanded="expandedCats.has(cat.code)" :title="cat.name" @click="toggleExpand(cat.code)">{{ cat.name }}</button>
                 <NTag size="tiny" :bordered="false">{{ cat.products.length }} 件</NTag>
                 <NTag v-if="counts.get(cat.code)" size="tiny" type="primary" :bordered="false">已选 {{ counts.get(cat.code) }}</NTag>
               </div>
@@ -478,7 +493,7 @@ async function submit() {
               <div class="product-list">
                 <div v-for="p in cat.products" :key="p.code" class="product-item">
                 <NCheckbox :value="p.code" :disabled="p.is_locked" :aria-disabled="p.is_locked">
-                  <span class="break-all" :class="{ 'text-gray-400': !p.is_active }">{{ p.name }}</span>
+                  <span class="break-all" :class="{ 'text-gray-400': !p.is_active }">{{ p.name }}<NTag v-if="p.delivery_kind==='sms_activation'" size="tiny" type="info">短信接码 · 单件</NTag><small v-if="p.delivery_kind==='sms_activation'">{{Object.entries(p.sms_product||{}).map(([k,v])=>`${k}: ${v}`).join(" · ")}}</small></span>
                   <span class="ml-4px text-12px" aria-live="polite">
                     <template v-if="p.quote_status === 'ready'">成本 {{ formatMoney(p.cost_price_cents ?? 0) }}{{ p.cost_is_minimum ? ' 起' : '' }}</template>
                     <template v-else-if="p.quote_status === 'failed'">成本查询失败</template>

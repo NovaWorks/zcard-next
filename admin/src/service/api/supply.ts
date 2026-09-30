@@ -81,9 +81,9 @@ export function fetchSupplyHealth() {
 
 // ── 交互式导入（ D）──
 
-export function previewSupplyProducts(connectionId: number, quoteCode?: string, signal?: AbortSignal, catalog?: { async?: boolean; snapshot_id?: string; refresh?: boolean }) {
+export function previewSupplyProducts(connectionId: number, quoteCode?: string, signal?: AbortSignal, catalog?: { async?: boolean; snapshot_id?: string; refresh?: boolean; page?: number; page_size?: number }) {
   return request({ url: `/api/v1/admin/supply/connections/${connectionId}/preview`,
-    params: { ...catalog, ...(quoteCode ? { quote_code: quoteCode } : {}) }, signal, silentError: true, timeout: quoteCode ? 25000 : 15000 });
+    params: { ...catalog, ...(quoteCode ? { quote_code: quoteCode } : {}) }, signal, silentError: true, timeout: quoteCode ? 25000 : catalog?.page ? 130000 : 15000 });
 }
 
 export function importSupplyProducts(

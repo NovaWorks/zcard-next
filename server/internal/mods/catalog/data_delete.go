@@ -49,6 +49,9 @@ func (s *AdminCatalogService) PreviewDeleteProduct(ctx context.Context, req *adm
 
 func inspectProductDeletion(ctx context.Context, c *ent.Client, p *ent.Product) (*adminv1.DeleteProductPreview, []uint64, error) {
 	reply := &adminv1.DeleteProductPreview{Name: p.Name}
+	if p.DeliveryKind == "sms_activation" {
+		reply.DeleteOrdersBlockReason = "接码商品只能归档，必须保留接码订单与退款记录"
+	}
 	if p.IsLocked {
 		reply.DeleteBlockReason = "商品已锁定，请先解锁后再删除"
 		reply.DeleteOrdersBlockReason = reply.DeleteBlockReason

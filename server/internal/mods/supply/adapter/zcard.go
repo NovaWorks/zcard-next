@@ -4,10 +4,12 @@ package adapter
 // 端点与字段对齐 1.x ZCardDriver + 规划 ；签名 4 头 HMAC（新口径含 query md5 段）。
 
 import (
+	"bytes"
 	"context"
 	crand "crypto/rand"
 	"encoding/json"
 	"fmt"
+	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
 	"log/slog"
 	"net/url"
 	"strconv"
@@ -63,7 +65,8 @@ func (a *zCardAdapter) request(ctx context.Context, method, path string, query u
 	if len(query) > 0 {
 		rawQuery = query.Encode()
 	}
-	return a.t.do(ctx, method, path, query, a.signHeaders(method, path, rawQuery, raw), raw)
+	ctx = context.WithValue(ctx, requestSignerKey{}, requestSigner(func() map[string]string { return a.signHeaders(method, path, rawQuery, raw) }))
+	return a.t.do(ctx, method, path, query, nil, raw)
 }
 
 func (a *zCardAdapter) Ping(ctx context.Context) (*PingResult, error) {
@@ -72,12 +75,14 @@ func (a *zCardAdapter) Ping(ctx context.Context) (*PingResult, error) {
 		return nil, err
 	}
 	var resp struct {
-		OK       bool   `json:"ok"`
-		Name     string `json:"name"`
-		Balance  *int64 `json:"balance"`
-		Currency string `json:"currency"`
+		OK           bool                `json:"ok"`
+		Name         string              `json:"name"`
+		Balance      *supplyport.Integer `json:"balance"`
+		Currency     string              `json:"currency"`
+		Protocol     string              `json:"protocol"`
+		Capabilities []string            `json:"capabilities"`
 	}
-	if err := json.Unmarshal(data, &resp); err != nil {
+	if err := decodeZCard(data, &resp); err != nil {
 		return nil, fmt.Errorf("adapter.zcard: 解析 ping 响应失败: %w", err)
 	}
 	if !resp.OK {
@@ -85,12 +90,12 @@ func (a *zCardAdapter) Ping(ctx context.Context) (*PingResult, error) {
 	}
 	balance := int64(-1)
 	if resp.Balance != nil {
-		balance = *resp.Balance
+		balance = int64(*resp.Balance)
 	} else if resp.Currency != "" {
 		// The server's JSON encoder omits a known zero balance.
 		balance = 0
 	}
-	return &PingResult{SiteName: resp.Name, Balance: balance, Currency: resp.Currency}, nil
+	return &PingResult{SiteName: resp.Name, Balance: balance, Currency: resp.Currency, ProtocolVersion: resp.Protocol, Capabilities: resp.Capabilities}, nil
 }
 
 func (a *zCardAdapter) ListCategories(ctx context.Context) ([]Category, error) {
@@ -105,7 +110,7 @@ func (a *zCardAdapter) ListCategories(ctx context.Context) ([]Category, error) {
 			ParentID any    `json:"parent_id"`
 		} `json:"categories"`
 	}
-	if err := json.Unmarshal(data, &resp); err != nil {
+	if err := decodeZCard(data, &resp); err != nil {
 		return nil, fmt.Errorf("adapter.zcard: 解析分类响应失败: %w", err)
 	}
 	out := make([]Category, 0, len(resp.Categories))
@@ -120,7 +125,7 @@ func (a *zCardAdapter) ListCategories(ctx context.Context) ([]Category, error) {
 }
 
 func (a *zCardAdapter) ListProducts(ctx context.Context, page, pageSize int, includeInactive bool) (*ProductList, error) {
-	q := url.Values{}
+	q := smsCatalogQuery()
 	q.Set("page", strconv.Itoa(page))
 	if pageSize > 0 {
 		q.Set("page_size", strconv.Itoa(pageSize))
@@ -133,11 +138,12 @@ func (a *zCardAdapter) ListProducts(ctx context.Context, page, pageSize int, inc
 		return nil, err
 	}
 	var resp struct {
-		Items    []zCardProduct `json:"items"`
-		Total    int            `json:"total"`
-		PageSize int            `json:"page_size"`
+		Items    []zCardProduct     `json:"items"`
+		Total    supplyport.Integer `json:"total"`
+		HasMore  *bool              `json:"has_more"`
+		PageSize int                `json:"page_size"`
 	}
-	if err := json.Unmarshal(data, &resp); err != nil {
+	if err := decodeZCard(data, &resp); err != nil {
 		return nil, fmt.Errorf("adapter.zcard: 解析商品列表失败: %w", err)
 	}
 	pageSize = resp.PageSize
@@ -145,7 +151,16 @@ func (a *zCardAdapter) ListProducts(ctx context.Context, page, pageSize int, inc
 		pageSize = 50
 	}
 	// 自家协议 include_inactive 恒生效（服务端 status=-1 全量；协议无回声字段）
-	out := &ProductList{Total: resp.Total, HasMore: page*pageSize < resp.Total, IncludesInactive: includeInactive}
+	if page < 1 || pageSize > 1000 || len(resp.Items) > pageSize || resp.Total < 0 {
+		return nil, fmt.Errorf("adapter.zcard: invalid catalog page")
+	}
+	out := &ProductList{Total: int(resp.Total), PageSize: pageSize, HasMore: int64(page)*int64(pageSize) < int64(resp.Total), IncludesInactive: includeInactive}
+	if resp.HasMore != nil {
+		out.HasMore = *resp.HasMore
+	}
+	if out.HasMore && len(resp.Items) == 0 {
+		return nil, fmt.Errorf("adapter.zcard: empty non-final page")
+	}
 	for _, p := range resp.Items {
 		out.Items = append(out.Items, p.toProduct())
 	}
@@ -155,14 +170,14 @@ func (a *zCardAdapter) ListProducts(ctx context.Context, page, pageSize int, inc
 func (a *zCardAdapter) GetStock(ctx context.Context, productCode, _ string) (int32, error) {
 	ctx = stockReadContext(ctx)
 	path := "/api/supply/products/" + url.PathEscape(productCode) + "/stock"
-	data, err := a.request(ctx, "GET", path, nil, nil)
+	data, err := a.request(ctx, "GET", path, smsCatalogQuery(), nil)
 	if err != nil {
 		return 0, err
 	}
 	var resp struct {
 		Stock int32 `json:"stock"`
 	}
-	if err := json.Unmarshal(data, &resp); err != nil {
+	if err := decodeZCard(data, &resp); err != nil {
 		return 0, fmt.Errorf("adapter.zcard: 解析库存失败: %w", err)
 	}
 	return resp.Stock, nil
@@ -180,15 +195,15 @@ func (a *zCardAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*Cr
 		return nil, err
 	}
 	var resp struct {
-		SupplyOrderID any    `json:"supply_order_id"`
-		Amount        int64  `json:"amount"`
-		Status        string `json:"status"`
+		SupplyOrderID any                `json:"supply_order_id"`
+		Amount        supplyport.Integer `json:"amount"`
+		Status        string             `json:"status"`
 		Fulfillment   struct {
 			Status string   `json:"status"`
 			Cards  []string `json:"cards"`
 		} `json:"fulfillment"`
 	}
-	if err := json.Unmarshal(data, &resp); err != nil {
+	if err := decodeZCard(data, &resp); err != nil {
 		return nil, fmt.Errorf("adapter.zcard: 解析下单响应失败: %w", err)
 	}
 	status := resp.Status
@@ -198,7 +213,7 @@ func (a *zCardAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*Cr
 	return &CreateOrderResult{
 		UpstreamOrderID: idString(resp.SupplyOrderID),
 		Status:          status,
-		Amount:          resp.Amount,
+		Amount:          int64(resp.Amount),
 		Cards:           resp.Fulfillment.Cards,
 	}, nil
 }
@@ -214,13 +229,13 @@ func (a *zCardAdapter) ListOrders(ctx context.Context, start, end time.Time) ([]
 	}
 	var resp struct {
 		Orders []struct {
-			ID        any    `json:"id"`
-			Amount    int64  `json:"amount"`
-			Status    string `json:"status"`
-			CreatedAt int64  `json:"created_at"`
+			ID        any                `json:"id"`
+			Amount    supplyport.Integer `json:"amount"`
+			Status    string             `json:"status"`
+			CreatedAt int64              `json:"created_at"`
 		} `json:"orders"`
 	}
-	if err := json.Unmarshal(data, &resp); err != nil {
+	if err := decodeZCard(data, &resp); err != nil {
 		return nil, fmt.Errorf("adapter.zcard: 解析订单列表失败: %w", err)
 	}
 	out := make([]OrderDetail, 0, len(resp.Orders))
@@ -228,7 +243,7 @@ func (a *zCardAdapter) ListOrders(ctx context.Context, start, end time.Time) ([]
 		out = append(out, OrderDetail{
 			UpstreamOrderID: idString(o.ID),
 			Status:          o.Status,
-			Amount:          o.Amount,
+			Amount:          int64(o.Amount),
 		})
 	}
 	return out, nil
@@ -241,15 +256,15 @@ func (a *zCardAdapter) GetOrder(ctx context.Context, upstreamOrderID string) (*O
 		return nil, err
 	}
 	var resp struct {
-		SupplyOrderID any    `json:"supply_order_id"`
-		Status        string `json:"status"`
-		Amount        int64  `json:"amount"`
+		SupplyOrderID any                `json:"supply_order_id"`
+		Status        string             `json:"status"`
+		Amount        supplyport.Integer `json:"amount"`
 		Fulfillment   struct {
 			Status string   `json:"status"`
 			Cards  []string `json:"cards"`
 		} `json:"fulfillment"`
 	}
-	if err := json.Unmarshal(data, &resp); err != nil {
+	if err := decodeZCard(data, &resp); err != nil {
 		return nil, fmt.Errorf("adapter.zcard: 解析订单详情失败: %w", err)
 	}
 	status := resp.Status
@@ -259,7 +274,7 @@ func (a *zCardAdapter) GetOrder(ctx context.Context, upstreamOrderID string) (*O
 	return &OrderDetail{
 		UpstreamOrderID: upstreamOrderID,
 		Status:          status,
-		Amount:          resp.Amount,
+		Amount:          int64(resp.Amount),
 		Cards:           resp.Fulfillment.Cards,
 	}, nil
 }
@@ -273,7 +288,7 @@ func (a *zCardAdapter) RefundOrder(ctx context.Context, upstreamOrderID string) 
 	var resp struct {
 		OK bool `json:"ok"`
 	}
-	_ = json.Unmarshal(data, &resp)
+	_ = decodeZCard(data, &resp)
 	if !resp.OK {
 		return fmt.Errorf("adapter.zcard: 上游退款返回 ok=false")
 	}
@@ -282,25 +297,28 @@ func (a *zCardAdapter) RefundOrder(ctx context.Context, upstreamOrderID string) 
 
 // zCardProduct 上游商品行（字段对齐 1.x mapProduct）。
 type zCardProduct struct {
-	ID             any    `json:"id"`
-	Name           string `json:"name"`
-	Price          int64  `json:"price"`
-	FactoryPrice   int64  `json:"factory_price"`
-	CategoryID     any    `json:"category_id"`
-	Description    string `json:"description"`
-	DescriptionSet bool   `json:"-"`
-	Cover          string `json:"cover"`
-	IsActive       bool   `json:"is_active"`
-	Stock          int32  `json:"stock"`
+	DeliveryKind   string             `json:"delivery_kind"`
+	SMSProduct     map[string]string  `json:"sms_product"`
+	ID             any                `json:"id"`
+	Name           string             `json:"name"`
+	Price          supplyport.Integer `json:"price"`
+	FactoryPrice   supplyport.Integer `json:"factory_price"`
+	CategoryID     any                `json:"category_id"`
+	Description    string             `json:"description"`
+	DescriptionSet bool               `json:"-"`
+	Cover          string             `json:"cover"`
+	IsActive       bool               `json:"is_active"`
+	Stock          int32              `json:"stock"`
 }
 
 func (p zCardProduct) toProduct() Product {
 	return Product{
+		DeliveryKind: normalizedDeliveryKind(p.DeliveryKind), SMSProduct: publicSMSProduct(p.SMSProduct),
 		ID:             idString(p.ID),
 		Name:           p.Name,
 		CategoryID:     idString(p.CategoryID),
-		Price:          p.Price,
-		FactoryPrice:   p.Price,
+		Price:          int64(p.Price),
+		FactoryPrice:   int64(p.Price),
 		Description:    p.Description,
 		DescriptionSet: p.DescriptionSet,
 		Cover:          p.Cover,
@@ -347,7 +365,7 @@ func randSuffix(n int) string {
 func (p *zCardProduct) UnmarshalJSON(b []byte) error {
 	type plain zCardProduct
 	var v plain
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := decodeZCard(b, &v); err != nil {
 		return err
 	}
 	var fields map[string]json.RawMessage
@@ -358,4 +376,26 @@ func (p *zCardProduct) UnmarshalJSON(b []byte) error {
 	raw, ok := fields["description"]
 	p.DescriptionSet = ok && string(raw) != "null"
 	return nil
+}
+
+func decodeZCard(raw []byte, v any) error {
+	d := json.NewDecoder(bytes.NewReader(raw))
+	d.UseNumber()
+	return d.Decode(v)
+}
+func smsCatalogQuery() url.Values { return url.Values{"capabilities": {supplyport.SMSCapability}} }
+func normalizedDeliveryKind(v string) string {
+	if v == "" {
+		return "card"
+	}
+	return v
+}
+func publicSMSProduct(in map[string]string) map[string]string {
+	out := map[string]string{}
+	for _, k := range []string{"country_id", "platform_id", "operator_id", "country_name", "platform_name", "operator_name", "provider_name"} {
+		if v, ok := in[k]; ok {
+			out[k] = v
+		}
+	}
+	return out
 }

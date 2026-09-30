@@ -66,6 +66,26 @@ func (_c *ProductCreate) SetNillableSubsiteID(v *uint64) *ProductCreate {
 	return _c
 }
 
+// SetDeliveryKind sets the "delivery_kind" field.
+func (_c *ProductCreate) SetDeliveryKind(v string) *ProductCreate {
+	_c.mutation.SetDeliveryKind(v)
+	return _c
+}
+
+// SetNillableDeliveryKind sets the "delivery_kind" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableDeliveryKind(v *string) *ProductCreate {
+	if v != nil {
+		_c.SetDeliveryKind(*v)
+	}
+	return _c
+}
+
+// SetSmsProduct sets the "sms_product" field.
+func (_c *ProductCreate) SetSmsProduct(v map[string]string) *ProductCreate {
+	_c.mutation.SetSmsProduct(v)
+	return _c
+}
+
 // SetCategoryID sets the "category_id" field.
 func (_c *ProductCreate) SetCategoryID(v uint64) *ProductCreate {
 	_c.mutation.SetCategoryID(v)
@@ -737,6 +757,10 @@ func (_c *ProductCreate) defaults() {
 		v := product.DefaultSubsiteID
 		_c.mutation.SetSubsiteID(v)
 	}
+	if _, ok := _c.mutation.DeliveryKind(); !ok {
+		v := product.DefaultDeliveryKind
+		_c.mutation.SetDeliveryKind(v)
+	}
 	if _, ok := _c.mutation.CategoryProtected(); !ok {
 		v := product.DefaultCategoryProtected
 		_c.mutation.SetCategoryProtected(v)
@@ -877,6 +901,9 @@ func (_c *ProductCreate) check() error {
 	}
 	if _, ok := _c.mutation.SubsiteID(); !ok {
 		return &ValidationError{Name: "subsite_id", err: errors.New(`ent: missing required field "Product.subsite_id"`)}
+	}
+	if _, ok := _c.mutation.DeliveryKind(); !ok {
+		return &ValidationError{Name: "delivery_kind", err: errors.New(`ent: missing required field "Product.delivery_kind"`)}
 	}
 	if _, ok := _c.mutation.CategoryProtected(); !ok {
 		return &ValidationError{Name: "category_protected", err: errors.New(`ent: missing required field "Product.category_protected"`)}
@@ -1064,6 +1091,14 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SubsiteID(); ok {
 		_spec.SetField(product.FieldSubsiteID, field.TypeUint64, value)
 		_node.SubsiteID = value
+	}
+	if value, ok := _c.mutation.DeliveryKind(); ok {
+		_spec.SetField(product.FieldDeliveryKind, field.TypeString, value)
+		_node.DeliveryKind = value
+	}
+	if value, ok := _c.mutation.SmsProduct(); ok {
+		_spec.SetField(product.FieldSmsProduct, field.TypeJSON, value)
+		_node.SmsProduct = value
 	}
 	if value, ok := _c.mutation.CategoryID(); ok {
 		_spec.SetField(product.FieldCategoryID, field.TypeUint64, value)
@@ -1360,6 +1395,36 @@ func (u *ProductUpsert) UpdateSubsiteID() *ProductUpsert {
 // AddSubsiteID adds v to the "subsite_id" field.
 func (u *ProductUpsert) AddSubsiteID(v uint64) *ProductUpsert {
 	u.Add(product.FieldSubsiteID, v)
+	return u
+}
+
+// SetDeliveryKind sets the "delivery_kind" field.
+func (u *ProductUpsert) SetDeliveryKind(v string) *ProductUpsert {
+	u.Set(product.FieldDeliveryKind, v)
+	return u
+}
+
+// UpdateDeliveryKind sets the "delivery_kind" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateDeliveryKind() *ProductUpsert {
+	u.SetExcluded(product.FieldDeliveryKind)
+	return u
+}
+
+// SetSmsProduct sets the "sms_product" field.
+func (u *ProductUpsert) SetSmsProduct(v map[string]string) *ProductUpsert {
+	u.Set(product.FieldSmsProduct, v)
+	return u
+}
+
+// UpdateSmsProduct sets the "sms_product" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateSmsProduct() *ProductUpsert {
+	u.SetExcluded(product.FieldSmsProduct)
+	return u
+}
+
+// ClearSmsProduct clears the value of the "sms_product" field.
+func (u *ProductUpsert) ClearSmsProduct() *ProductUpsert {
+	u.SetNull(product.FieldSmsProduct)
 	return u
 }
 
@@ -2178,6 +2243,41 @@ func (u *ProductUpsertOne) AddSubsiteID(v uint64) *ProductUpsertOne {
 func (u *ProductUpsertOne) UpdateSubsiteID() *ProductUpsertOne {
 	return u.Update(func(s *ProductUpsert) {
 		s.UpdateSubsiteID()
+	})
+}
+
+// SetDeliveryKind sets the "delivery_kind" field.
+func (u *ProductUpsertOne) SetDeliveryKind(v string) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetDeliveryKind(v)
+	})
+}
+
+// UpdateDeliveryKind sets the "delivery_kind" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateDeliveryKind() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateDeliveryKind()
+	})
+}
+
+// SetSmsProduct sets the "sms_product" field.
+func (u *ProductUpsertOne) SetSmsProduct(v map[string]string) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetSmsProduct(v)
+	})
+}
+
+// UpdateSmsProduct sets the "sms_product" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateSmsProduct() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateSmsProduct()
+	})
+}
+
+// ClearSmsProduct clears the value of the "sms_product" field.
+func (u *ProductUpsertOne) ClearSmsProduct() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.ClearSmsProduct()
 	})
 }
 
@@ -3284,6 +3384,41 @@ func (u *ProductUpsertBulk) AddSubsiteID(v uint64) *ProductUpsertBulk {
 func (u *ProductUpsertBulk) UpdateSubsiteID() *ProductUpsertBulk {
 	return u.Update(func(s *ProductUpsert) {
 		s.UpdateSubsiteID()
+	})
+}
+
+// SetDeliveryKind sets the "delivery_kind" field.
+func (u *ProductUpsertBulk) SetDeliveryKind(v string) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetDeliveryKind(v)
+	})
+}
+
+// UpdateDeliveryKind sets the "delivery_kind" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateDeliveryKind() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateDeliveryKind()
+	})
+}
+
+// SetSmsProduct sets the "sms_product" field.
+func (u *ProductUpsertBulk) SetSmsProduct(v map[string]string) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetSmsProduct(v)
+	})
+}
+
+// UpdateSmsProduct sets the "sms_product" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateSmsProduct() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateSmsProduct()
+	})
+}
+
+// ClearSmsProduct clears the value of the "sms_product" field.
+func (u *ProductUpsertBulk) ClearSmsProduct() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.ClearSmsProduct()
 	})
 }
 

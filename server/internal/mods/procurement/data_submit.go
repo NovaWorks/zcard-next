@@ -108,6 +108,13 @@ func (s *ProcureService) OnOrderPaid(ctx context.Context, env events.Envelope) e
 
 // processItem 单上游项采购编排（幂等：已存在采购单直接跳过）。
 func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPayload, orderItemID, productID, skuID uint64, quantity int32) error {
+	it, e := data.Client(ctx, s.repo.data).OrderItem.Get(ctx, orderItemID)
+	if e != nil {
+		return e
+	}
+	if it.DeliveryKind != "card" {
+		return fmt.Errorf("接码订单不能使用卡密采购")
+	}
 	// 幂等：该订单项已建采购单（重复投递 / 手动重试）
 	if _, err := s.repo.GetByOrderItem(ctx, orderItemID); err == nil {
 		return nil

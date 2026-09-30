@@ -73,6 +73,11 @@ func (r *DeliveryRepoImpl) fulfillOrder(ctx context.Context, orderNo string) err
 		return err
 	}
 
+	if has, e := data.HasSMSOrder(ctx, client, o.ID); e != nil {
+		return e
+	} else if has {
+		return nil
+	}
 	if o.Status != order.StatusPaid && o.Status != order.StatusFulfilling && o.Status != order.StatusPartiallyDelivered {
 		return nil
 	}

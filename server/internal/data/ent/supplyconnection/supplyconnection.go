@@ -34,6 +34,10 @@ const (
 	FieldLowStockScannedAt = "low_stock_scanned_at"
 	// FieldLowStockMessage holds the string denoting the low_stock_message field in the database.
 	FieldLowStockMessage = "low_stock_message"
+	// FieldSmsLeaseToken holds the string denoting the sms_lease_token field in the database.
+	FieldSmsLeaseToken = "sms_lease_token"
+	// FieldSmsLeaseUntil holds the string denoting the sms_lease_until field in the database.
+	FieldSmsLeaseUntil = "sms_lease_until"
 	// FieldSyncLeaseToken holds the string denoting the sync_lease_token field in the database.
 	FieldSyncLeaseToken = "sync_lease_token"
 	// FieldSyncLeaseUntil holds the string denoting the sync_lease_until field in the database.
@@ -95,6 +99,8 @@ var Columns = []string{
 	FieldSyncTaskID,
 	FieldLowStockScannedAt,
 	FieldLowStockMessage,
+	FieldSmsLeaseToken,
+	FieldSmsLeaseUntil,
 	FieldSyncLeaseToken,
 	FieldSyncLeaseUntil,
 	FieldCallbackURL,
@@ -148,6 +154,10 @@ var (
 	DefaultLowStockScannedAt int64
 	// DefaultLowStockMessage holds the default value on creation for the "low_stock_message" field.
 	DefaultLowStockMessage string
+	// DefaultSmsLeaseToken holds the default value on creation for the "sms_lease_token" field.
+	DefaultSmsLeaseToken string
+	// DefaultSmsLeaseUntil holds the default value on creation for the "sms_lease_until" field.
+	DefaultSmsLeaseUntil int64
 	// DefaultSyncLeaseToken holds the default value on creation for the "sync_lease_token" field.
 	DefaultSyncLeaseToken string
 	// DefaultSyncLeaseUntil holds the default value on creation for the "sync_lease_until" field.
@@ -304,6 +314,16 @@ func ByLowStockScannedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByLowStockMessage orders the results by the low_stock_message field.
 func ByLowStockMessage(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLowStockMessage, opts...).ToFunc()
+}
+
+// BySmsLeaseToken orders the results by the sms_lease_token field.
+func BySmsLeaseToken(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmsLeaseToken, opts...).ToFunc()
+}
+
+// BySmsLeaseUntil orders the results by the sms_lease_until field.
+func BySmsLeaseUntil(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmsLeaseUntil, opts...).ToFunc()
 }
 
 // BySyncLeaseToken orders the results by the sync_lease_token field.

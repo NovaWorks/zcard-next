@@ -47,6 +47,9 @@ const (
 
 // PreviewProducts 上游商品预览（缓存 60s）。
 func (s *AdminSupplyService) PreviewProducts(ctx context.Context, req *adminv1.PreviewProductsRequest) (*adminv1.PreviewProductsReply, error) {
+	if req.Page > 0 && req.SnapshotId == "" {
+		return s.previewCatalogPage(ctx, req)
+	}
 	if req.GetAsync() || req.GetSnapshotId() != "" {
 		return s.previewSnapshot(ctx, req)
 	}
@@ -87,7 +90,7 @@ func (s *AdminSupplyService) pricePreview(ctx context.Context, conn *ent.SupplyC
 		localCats[p.UpstreamProductCode] = p.CategoryID
 	}
 	for _, cat := range entry.categories {
-		out := &adminv1.PreviewCategory{Code: cat.Code, Name: cat.Name}
+		out := &adminv1.PreviewCategory{Code: cat.Code, Name: cat.Name, ParentCode: cat.ParentCode, Path: cat.Path}
 		for _, cached := range cat.Products {
 			if code != "" && cached.Code != code {
 				continue

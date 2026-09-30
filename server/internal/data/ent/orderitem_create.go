@@ -105,6 +105,40 @@ func (_c *OrderItemCreate) SetNillableProductName(v *string) *OrderItemCreate {
 	return _c
 }
 
+// SetDeliveryKind sets the "delivery_kind" field.
+func (_c *OrderItemCreate) SetDeliveryKind(v string) *OrderItemCreate {
+	_c.mutation.SetDeliveryKind(v)
+	return _c
+}
+
+// SetNillableDeliveryKind sets the "delivery_kind" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableDeliveryKind(v *string) *OrderItemCreate {
+	if v != nil {
+		_c.SetDeliveryKind(*v)
+	}
+	return _c
+}
+
+// SetSmsProduct sets the "sms_product" field.
+func (_c *OrderItemCreate) SetSmsProduct(v map[string]string) *OrderItemCreate {
+	_c.mutation.SetSmsProduct(v)
+	return _c
+}
+
+// SetSmsPurchaseSnapshot sets the "sms_purchase_snapshot" field.
+func (_c *OrderItemCreate) SetSmsPurchaseSnapshot(v string) *OrderItemCreate {
+	_c.mutation.SetSmsPurchaseSnapshot(v)
+	return _c
+}
+
+// SetNillableSmsPurchaseSnapshot sets the "sms_purchase_snapshot" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableSmsPurchaseSnapshot(v *string) *OrderItemCreate {
+	if v != nil {
+		_c.SetSmsPurchaseSnapshot(*v)
+	}
+	return _c
+}
+
 // SetFormAnswers sets the "form_answers" field.
 func (_c *OrderItemCreate) SetFormAnswers(v []map[string]string) *OrderItemCreate {
 	_c.mutation.SetFormAnswers(v)
@@ -405,6 +439,10 @@ func (_c *OrderItemCreate) defaults() {
 		v := orderitem.DefaultProductName
 		_c.mutation.SetProductName(v)
 	}
+	if _, ok := _c.mutation.DeliveryKind(); !ok {
+		v := orderitem.DefaultDeliveryKind
+		_c.mutation.SetDeliveryKind(v)
+	}
 	if _, ok := _c.mutation.AssignedAdminID(); !ok {
 		v := orderitem.DefaultAssignedAdminID
 		_c.mutation.SetAssignedAdminID(v)
@@ -474,6 +512,9 @@ func (_c *OrderItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.ProductName(); !ok {
 		return &ValidationError{Name: "product_name", err: errors.New(`ent: missing required field "OrderItem.product_name"`)}
+	}
+	if _, ok := _c.mutation.DeliveryKind(); !ok {
+		return &ValidationError{Name: "delivery_kind", err: errors.New(`ent: missing required field "OrderItem.delivery_kind"`)}
 	}
 	if _, ok := _c.mutation.AssignedAdminID(); !ok {
 		return &ValidationError{Name: "assigned_admin_id", err: errors.New(`ent: missing required field "OrderItem.assigned_admin_id"`)}
@@ -597,6 +638,18 @@ func (_c *OrderItemCreate) createSpec() (*OrderItem, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ProductName(); ok {
 		_spec.SetField(orderitem.FieldProductName, field.TypeString, value)
 		_node.ProductName = value
+	}
+	if value, ok := _c.mutation.DeliveryKind(); ok {
+		_spec.SetField(orderitem.FieldDeliveryKind, field.TypeString, value)
+		_node.DeliveryKind = value
+	}
+	if value, ok := _c.mutation.SmsProduct(); ok {
+		_spec.SetField(orderitem.FieldSmsProduct, field.TypeJSON, value)
+		_node.SmsProduct = value
+	}
+	if value, ok := _c.mutation.SmsPurchaseSnapshot(); ok {
+		_spec.SetField(orderitem.FieldSmsPurchaseSnapshot, field.TypeString, value)
+		_node.SmsPurchaseSnapshot = value
 	}
 	if value, ok := _c.mutation.FormAnswers(); ok {
 		_spec.SetField(orderitem.FieldFormAnswers, field.TypeJSON, value)
@@ -844,6 +897,54 @@ func (u *OrderItemUpsert) SetProductName(v string) *OrderItemUpsert {
 // UpdateProductName sets the "product_name" field to the value that was provided on create.
 func (u *OrderItemUpsert) UpdateProductName() *OrderItemUpsert {
 	u.SetExcluded(orderitem.FieldProductName)
+	return u
+}
+
+// SetDeliveryKind sets the "delivery_kind" field.
+func (u *OrderItemUpsert) SetDeliveryKind(v string) *OrderItemUpsert {
+	u.Set(orderitem.FieldDeliveryKind, v)
+	return u
+}
+
+// UpdateDeliveryKind sets the "delivery_kind" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateDeliveryKind() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldDeliveryKind)
+	return u
+}
+
+// SetSmsProduct sets the "sms_product" field.
+func (u *OrderItemUpsert) SetSmsProduct(v map[string]string) *OrderItemUpsert {
+	u.Set(orderitem.FieldSmsProduct, v)
+	return u
+}
+
+// UpdateSmsProduct sets the "sms_product" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateSmsProduct() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldSmsProduct)
+	return u
+}
+
+// ClearSmsProduct clears the value of the "sms_product" field.
+func (u *OrderItemUpsert) ClearSmsProduct() *OrderItemUpsert {
+	u.SetNull(orderitem.FieldSmsProduct)
+	return u
+}
+
+// SetSmsPurchaseSnapshot sets the "sms_purchase_snapshot" field.
+func (u *OrderItemUpsert) SetSmsPurchaseSnapshot(v string) *OrderItemUpsert {
+	u.Set(orderitem.FieldSmsPurchaseSnapshot, v)
+	return u
+}
+
+// UpdateSmsPurchaseSnapshot sets the "sms_purchase_snapshot" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateSmsPurchaseSnapshot() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldSmsPurchaseSnapshot)
+	return u
+}
+
+// ClearSmsPurchaseSnapshot clears the value of the "sms_purchase_snapshot" field.
+func (u *OrderItemUpsert) ClearSmsPurchaseSnapshot() *OrderItemUpsert {
+	u.SetNull(orderitem.FieldSmsPurchaseSnapshot)
 	return u
 }
 
@@ -1373,6 +1474,62 @@ func (u *OrderItemUpsertOne) SetProductName(v string) *OrderItemUpsertOne {
 func (u *OrderItemUpsertOne) UpdateProductName() *OrderItemUpsertOne {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.UpdateProductName()
+	})
+}
+
+// SetDeliveryKind sets the "delivery_kind" field.
+func (u *OrderItemUpsertOne) SetDeliveryKind(v string) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetDeliveryKind(v)
+	})
+}
+
+// UpdateDeliveryKind sets the "delivery_kind" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateDeliveryKind() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateDeliveryKind()
+	})
+}
+
+// SetSmsProduct sets the "sms_product" field.
+func (u *OrderItemUpsertOne) SetSmsProduct(v map[string]string) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetSmsProduct(v)
+	})
+}
+
+// UpdateSmsProduct sets the "sms_product" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateSmsProduct() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateSmsProduct()
+	})
+}
+
+// ClearSmsProduct clears the value of the "sms_product" field.
+func (u *OrderItemUpsertOne) ClearSmsProduct() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.ClearSmsProduct()
+	})
+}
+
+// SetSmsPurchaseSnapshot sets the "sms_purchase_snapshot" field.
+func (u *OrderItemUpsertOne) SetSmsPurchaseSnapshot(v string) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetSmsPurchaseSnapshot(v)
+	})
+}
+
+// UpdateSmsPurchaseSnapshot sets the "sms_purchase_snapshot" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateSmsPurchaseSnapshot() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateSmsPurchaseSnapshot()
+	})
+}
+
+// ClearSmsPurchaseSnapshot clears the value of the "sms_purchase_snapshot" field.
+func (u *OrderItemUpsertOne) ClearSmsPurchaseSnapshot() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.ClearSmsPurchaseSnapshot()
 	})
 }
 
@@ -2129,6 +2286,62 @@ func (u *OrderItemUpsertBulk) SetProductName(v string) *OrderItemUpsertBulk {
 func (u *OrderItemUpsertBulk) UpdateProductName() *OrderItemUpsertBulk {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.UpdateProductName()
+	})
+}
+
+// SetDeliveryKind sets the "delivery_kind" field.
+func (u *OrderItemUpsertBulk) SetDeliveryKind(v string) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetDeliveryKind(v)
+	})
+}
+
+// UpdateDeliveryKind sets the "delivery_kind" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateDeliveryKind() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateDeliveryKind()
+	})
+}
+
+// SetSmsProduct sets the "sms_product" field.
+func (u *OrderItemUpsertBulk) SetSmsProduct(v map[string]string) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetSmsProduct(v)
+	})
+}
+
+// UpdateSmsProduct sets the "sms_product" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateSmsProduct() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateSmsProduct()
+	})
+}
+
+// ClearSmsProduct clears the value of the "sms_product" field.
+func (u *OrderItemUpsertBulk) ClearSmsProduct() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.ClearSmsProduct()
+	})
+}
+
+// SetSmsPurchaseSnapshot sets the "sms_purchase_snapshot" field.
+func (u *OrderItemUpsertBulk) SetSmsPurchaseSnapshot(v string) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetSmsPurchaseSnapshot(v)
+	})
+}
+
+// UpdateSmsPurchaseSnapshot sets the "sms_purchase_snapshot" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateSmsPurchaseSnapshot() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateSmsPurchaseSnapshot()
+	})
+}
+
+// ClearSmsPurchaseSnapshot clears the value of the "sms_purchase_snapshot" field.
+func (u *OrderItemUpsertBulk) ClearSmsPurchaseSnapshot() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.ClearSmsPurchaseSnapshot()
 	})
 }
 

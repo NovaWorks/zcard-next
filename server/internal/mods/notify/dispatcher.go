@@ -82,6 +82,10 @@ func (d *Dispatcher) HandleEvent(ctx context.Context, env events.Envelope) error
 	if err := json.Unmarshal(env.Payload, &payload); err != nil {
 		return fmt.Errorf("notify: 解析 %s 载荷失败: %w", env.Type, err)
 	}
+	// SMS results remain in the authenticated order view, never card delivery mail.
+	if env.Type == "order.delivered" && payload["delivery_kind"] == "sms_activation" {
+		return nil
+	}
 	// 白名单变量（事件载荷扁平化；值统一字符串化 + HTML escape 在渲染期）
 	vars := FlattenVars(payload)
 	// 品牌隔离 fail-closed：分站上下文邮件注入分站白标；

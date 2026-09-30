@@ -33,6 +33,12 @@ type OrderItem struct {
 	SkuID uint64 `json:"sku_id,omitempty"`
 	// ProductName holds the value of the "product_name" field.
 	ProductName string `json:"product_name,omitempty"`
+	// DeliveryKind holds the value of the "delivery_kind" field.
+	DeliveryKind string `json:"delivery_kind,omitempty"`
+	// SmsProduct holds the value of the "sms_product" field.
+	SmsProduct map[string]string `json:"sms_product,omitempty"`
+	// SmsPurchaseSnapshot holds the value of the "sms_purchase_snapshot" field.
+	SmsPurchaseSnapshot string `json:"sms_purchase_snapshot,omitempty"`
 	// FormAnswers holds the value of the "form_answers" field.
 	FormAnswers []map[string]string `json:"form_answers,omitempty"`
 	// AssignedAdminID holds the value of the "assigned_admin_id" field.
@@ -106,11 +112,11 @@ func (*OrderItem) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case orderitem.FieldFormAnswers, orderitem.FieldCommissionSnapshot, orderitem.FieldProfitSnapshot:
+		case orderitem.FieldSmsProduct, orderitem.FieldFormAnswers, orderitem.FieldCommissionSnapshot, orderitem.FieldProfitSnapshot:
 			values[i] = new([]byte)
 		case orderitem.FieldID, orderitem.FieldSubsiteID, orderitem.FieldOrderID, orderitem.FieldProductID, orderitem.FieldSkuID, orderitem.FieldAssignedAdminID, orderitem.FieldUnitPrice, orderitem.FieldQuantity, orderitem.FieldAmount, orderitem.FieldCost, orderitem.FieldPaidAmount, orderitem.FieldShippingAmount, orderitem.FieldRefundedAmount, orderitem.FieldRefundedShipping, orderitem.FieldCanceledQuantity, orderitem.FieldShippedQuantity, orderitem.FieldReceivedQuantity, orderitem.FieldReturnedQuantity, orderitem.FieldDeliverySourceID:
 			values[i] = new(sql.NullInt64)
-		case orderitem.FieldProductName, orderitem.FieldSkuName, orderitem.FieldGoodsType, orderitem.FieldFulfillmentType, orderitem.FieldFulfillmentStatus:
+		case orderitem.FieldProductName, orderitem.FieldDeliveryKind, orderitem.FieldSmsPurchaseSnapshot, orderitem.FieldSkuName, orderitem.FieldGoodsType, orderitem.FieldFulfillmentType, orderitem.FieldFulfillmentStatus:
 			values[i] = new(sql.NullString)
 		case orderitem.FieldCreatedAt, orderitem.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -176,6 +182,26 @@ func (_m *OrderItem) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field product_name", values[i])
 			} else if value.Valid {
 				_m.ProductName = value.String
+			}
+		case orderitem.FieldDeliveryKind:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field delivery_kind", values[i])
+			} else if value.Valid {
+				_m.DeliveryKind = value.String
+			}
+		case orderitem.FieldSmsProduct:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field sms_product", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.SmsProduct); err != nil {
+					return fmt.Errorf("unmarshal field sms_product: %w", err)
+				}
+			}
+		case orderitem.FieldSmsPurchaseSnapshot:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field sms_purchase_snapshot", values[i])
+			} else if value.Valid {
+				_m.SmsPurchaseSnapshot = value.String
 			}
 		case orderitem.FieldFormAnswers:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -370,6 +396,15 @@ func (_m *OrderItem) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("product_name=")
 	builder.WriteString(_m.ProductName)
+	builder.WriteString(", ")
+	builder.WriteString("delivery_kind=")
+	builder.WriteString(_m.DeliveryKind)
+	builder.WriteString(", ")
+	builder.WriteString("sms_product=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SmsProduct))
+	builder.WriteString(", ")
+	builder.WriteString("sms_purchase_snapshot=")
+	builder.WriteString(_m.SmsPurchaseSnapshot)
 	builder.WriteString(", ")
 	builder.WriteString("form_answers=")
 	builder.WriteString(fmt.Sprintf("%v", _m.FormAnswers))

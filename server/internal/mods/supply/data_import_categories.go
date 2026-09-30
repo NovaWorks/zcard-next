@@ -2,6 +2,7 @@ package supply
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -15,6 +16,27 @@ import (
 
 // 保存前先校验选择范围；事务只包含分类和配置写入，不包含上游请求或图片下载。
 func (s *AdminSupplyService) saveImportCategories(ctx context.Context, req *adminv1.ImportProductsRequest, products map[string]adapter.Product, mode string, percent float64, amount int64) (map[string]uint64, error) {
+	tree := map[string]adapter.Category{}
+	if req.SnapshotId != "" {
+		conn, e := s.repo.GetConnection(ctx, req.ConnectionId)
+		if e != nil {
+			return nil, e
+		}
+		row, e := s.snapshotRow(ctx, conn, req.SnapshotId)
+		if e != nil {
+			return nil, e
+		}
+		var payload catalogPayload
+		if e = json.Unmarshal(row.Payload, &payload); e != nil {
+			return nil, e
+		}
+		if _, e = categoryPaths(payload.Tree); e != nil {
+			return nil, e
+		}
+		for _, node := range payload.Tree {
+			tree[node.ID] = node
+		}
+	}
 	selected := map[string]bool{}
 	for _, code := range req.Codes {
 		p, ok := products[code]
@@ -104,6 +126,14 @@ func (s *AdminSupplyService) saveImportCategories(ctx context.Context, req *admi
 			result[code] = id // 0 是显式清除，不能回退旧映射。
 		}
 		for _, draft := range req.CategoryDrafts {
+			if len(tree) > 0 && draft.ParentId == 0 {
+				id, e := ensurePageCategory(ctx, client, tenant, draft.UpstreamCode, tree, result, strings.TrimSpace(draft.Name))
+				if e != nil {
+					return e
+				}
+				result[draft.UpstreamCode] = id
+				continue
+			}
 			if err := validate(draft.ParentId); err != nil {
 				return err
 			}

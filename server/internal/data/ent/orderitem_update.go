@@ -133,6 +133,52 @@ func (_u *OrderItemUpdate) SetNillableProductName(v *string) *OrderItemUpdate {
 	return _u
 }
 
+// SetDeliveryKind sets the "delivery_kind" field.
+func (_u *OrderItemUpdate) SetDeliveryKind(v string) *OrderItemUpdate {
+	_u.mutation.SetDeliveryKind(v)
+	return _u
+}
+
+// SetNillableDeliveryKind sets the "delivery_kind" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableDeliveryKind(v *string) *OrderItemUpdate {
+	if v != nil {
+		_u.SetDeliveryKind(*v)
+	}
+	return _u
+}
+
+// SetSmsProduct sets the "sms_product" field.
+func (_u *OrderItemUpdate) SetSmsProduct(v map[string]string) *OrderItemUpdate {
+	_u.mutation.SetSmsProduct(v)
+	return _u
+}
+
+// ClearSmsProduct clears the value of the "sms_product" field.
+func (_u *OrderItemUpdate) ClearSmsProduct() *OrderItemUpdate {
+	_u.mutation.ClearSmsProduct()
+	return _u
+}
+
+// SetSmsPurchaseSnapshot sets the "sms_purchase_snapshot" field.
+func (_u *OrderItemUpdate) SetSmsPurchaseSnapshot(v string) *OrderItemUpdate {
+	_u.mutation.SetSmsPurchaseSnapshot(v)
+	return _u
+}
+
+// SetNillableSmsPurchaseSnapshot sets the "sms_purchase_snapshot" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableSmsPurchaseSnapshot(v *string) *OrderItemUpdate {
+	if v != nil {
+		_u.SetSmsPurchaseSnapshot(*v)
+	}
+	return _u
+}
+
+// ClearSmsPurchaseSnapshot clears the value of the "sms_purchase_snapshot" field.
+func (_u *OrderItemUpdate) ClearSmsPurchaseSnapshot() *OrderItemUpdate {
+	_u.mutation.ClearSmsPurchaseSnapshot()
+	return _u
+}
+
 // SetFormAnswers sets the "form_answers" field.
 func (_u *OrderItemUpdate) SetFormAnswers(v []map[string]string) *OrderItemUpdate {
 	_u.mutation.SetFormAnswers(v)
@@ -651,6 +697,21 @@ func (_u *OrderItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.ProductName(); ok {
 		_spec.SetField(orderitem.FieldProductName, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.DeliveryKind(); ok {
+		_spec.SetField(orderitem.FieldDeliveryKind, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SmsProduct(); ok {
+		_spec.SetField(orderitem.FieldSmsProduct, field.TypeJSON, value)
+	}
+	if _u.mutation.SmsProductCleared() {
+		_spec.ClearField(orderitem.FieldSmsProduct, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.SmsPurchaseSnapshot(); ok {
+		_spec.SetField(orderitem.FieldSmsPurchaseSnapshot, field.TypeString, value)
+	}
+	if _u.mutation.SmsPurchaseSnapshotCleared() {
+		_spec.ClearField(orderitem.FieldSmsPurchaseSnapshot, field.TypeString)
+	}
 	if value, ok := _u.mutation.FormAnswers(); ok {
 		_spec.SetField(orderitem.FieldFormAnswers, field.TypeJSON, value)
 	}
@@ -925,6 +986,52 @@ func (_u *OrderItemUpdateOne) SetNillableProductName(v *string) *OrderItemUpdate
 	if v != nil {
 		_u.SetProductName(*v)
 	}
+	return _u
+}
+
+// SetDeliveryKind sets the "delivery_kind" field.
+func (_u *OrderItemUpdateOne) SetDeliveryKind(v string) *OrderItemUpdateOne {
+	_u.mutation.SetDeliveryKind(v)
+	return _u
+}
+
+// SetNillableDeliveryKind sets the "delivery_kind" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableDeliveryKind(v *string) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetDeliveryKind(*v)
+	}
+	return _u
+}
+
+// SetSmsProduct sets the "sms_product" field.
+func (_u *OrderItemUpdateOne) SetSmsProduct(v map[string]string) *OrderItemUpdateOne {
+	_u.mutation.SetSmsProduct(v)
+	return _u
+}
+
+// ClearSmsProduct clears the value of the "sms_product" field.
+func (_u *OrderItemUpdateOne) ClearSmsProduct() *OrderItemUpdateOne {
+	_u.mutation.ClearSmsProduct()
+	return _u
+}
+
+// SetSmsPurchaseSnapshot sets the "sms_purchase_snapshot" field.
+func (_u *OrderItemUpdateOne) SetSmsPurchaseSnapshot(v string) *OrderItemUpdateOne {
+	_u.mutation.SetSmsPurchaseSnapshot(v)
+	return _u
+}
+
+// SetNillableSmsPurchaseSnapshot sets the "sms_purchase_snapshot" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableSmsPurchaseSnapshot(v *string) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetSmsPurchaseSnapshot(*v)
+	}
+	return _u
+}
+
+// ClearSmsPurchaseSnapshot clears the value of the "sms_purchase_snapshot" field.
+func (_u *OrderItemUpdateOne) ClearSmsPurchaseSnapshot() *OrderItemUpdateOne {
+	_u.mutation.ClearSmsPurchaseSnapshot()
 	return _u
 }
 
@@ -1475,6 +1582,21 @@ func (_u *OrderItemUpdateOne) sqlSave(ctx context.Context) (_node *OrderItem, er
 	}
 	if value, ok := _u.mutation.ProductName(); ok {
 		_spec.SetField(orderitem.FieldProductName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.DeliveryKind(); ok {
+		_spec.SetField(orderitem.FieldDeliveryKind, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SmsProduct(); ok {
+		_spec.SetField(orderitem.FieldSmsProduct, field.TypeJSON, value)
+	}
+	if _u.mutation.SmsProductCleared() {
+		_spec.ClearField(orderitem.FieldSmsProduct, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.SmsPurchaseSnapshot(); ok {
+		_spec.SetField(orderitem.FieldSmsPurchaseSnapshot, field.TypeString, value)
+	}
+	if _u.mutation.SmsPurchaseSnapshotCleared() {
+		_spec.ClearField(orderitem.FieldSmsPurchaseSnapshot, field.TypeString)
 	}
 	if value, ok := _u.mutation.FormAnswers(); ok {
 		_spec.SetField(orderitem.FieldFormAnswers, field.TypeJSON, value)

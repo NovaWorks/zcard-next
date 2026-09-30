@@ -29,3 +29,7 @@ func (a lifecycleAdapter) Cancel(ctx context.Context, orderNo, reason string, op
 func ProvideOrderLifecycle(uc *OrderUsecase) port.OrderLifecycle {
 	return lifecycleAdapter{uc: uc}
 }
+
+func (a lifecycleAdapter) ValidateSMSPayment(ctx context.Context, orderID uint64) error {
+	return a.uc.validateSMSPayment(ctx, orderID)
+}

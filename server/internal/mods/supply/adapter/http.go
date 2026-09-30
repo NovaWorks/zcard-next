@@ -82,6 +82,8 @@ func newTransportWithClient(baseURL string, retryIntervals []int, log *slog.Logg
 }
 
 type singleAttemptKey struct{}
+type requestSignerKey struct{}
+type requestSigner func() map[string]string
 
 // Non-replayable purchase endpoints must not be retried after an uncertain reply.
 func withoutRetries(ctx context.Context) context.Context {
@@ -120,7 +122,7 @@ func (t *transport) do(ctx context.Context, method, path string, query url.Value
 			}
 			if isRateLimitedErr(lastErr) {
 				delay *= 2 // 限流退避加倍（AIMD 前的传输层缓冲）
-				if isCatalogRead(ctx) {
+				{
 					var he *httpError
 					if errors.As(lastErr, &he) && he.RetryAfter > delay {
 						delay = he.RetryAfter
@@ -133,7 +135,11 @@ func (t *transport) do(ctx context.Context, method, path string, query url.Value
 				return nil, fmt.Errorf("%w: %w", ctx.Err(), lastErr)
 			}
 		}
-		resp, err := t.tryOnce(ctx, method, full, headers, body)
+		attemptHeaders := headers
+		if signer, ok := ctx.Value(requestSignerKey{}).(requestSigner); ok {
+			attemptHeaders = signer()
+		}
+		resp, err := t.tryOnce(ctx, method, full, attemptHeaders, body)
 		if err == nil {
 			return resp, nil
 		}
@@ -152,7 +158,7 @@ func (t *transport) do(ctx context.Context, method, path string, query url.Value
 		}
 	}
 	if isRateLimitedErr(lastErr) {
-		return nil, fmt.Errorf("%w: %v", ErrRateLimited, lastErr)
+		return nil, fmt.Errorf("%w: %w", ErrRateLimited, lastErr)
 	}
 	return nil, lastErr
 }
@@ -263,3 +269,5 @@ func parseErrorPayload(body []byte) (code, msg string) {
 	}
 	return "", ""
 }
+
+func (e *httpError) SMSFailure() (int, string, time.Duration) { return e.Status, e.Code, e.RetryAfter }

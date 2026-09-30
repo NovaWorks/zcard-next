@@ -219,6 +219,12 @@ type RiskLockKey func(*sql.Selector)
 // RolePermission is the predicate function for rolepermission builders.
 type RolePermission func(*sql.Selector)
 
+// SMSIntent is the predicate function for smsintent builders.
+type SMSIntent func(*sql.Selector)
+
+// SMSOperation is the predicate function for smsoperation builders.
+type SMSOperation func(*sql.Selector)
+
 // SecurityAuditLog is the predicate function for securityauditlog builders.
 type SecurityAuditLog func(*sql.Selector)
 

@@ -22,10 +22,11 @@
         </div>
       </div>
 
-      <div v-if="['paid', 'fulfilling', 'partially_delivered'].includes(order.status)" class="card">
+      <div v-if="!order.items.some(i=>i.delivery_kind==='sms_activation') && ['paid', 'fulfilling', 'partially_delivered'].includes(order.status)" class="card">
         <p>已付款，{{ order.status === 'partially_delivered' ? '部分商品已发货，其余商品' : '商品' }}正在安排发货。请勿重复付款；长时间未发货请凭订单号联系客服。</p>
         <button class="btn secondary" @click="loadOrder">刷新订单状态</button>
       </div>
+      <SMSOrder v-if="order.items.some(i=>i.delivery_kind==='sms_activation') && !['pending_payment','canceled','expired'].includes(order.status)" :order-no="order.order_no" :metadata="order.items.find(i=>i.delivery_kind==='sms_activation')?.sms_product" />
       <ShippingDetails v-if="Number(order.commerce_version)===1" :order="order" :password="password" @refresh="loadOrder" />
       <div class="od-body">
         <!-- 左列：商品清单（grid 行式：PC 四列对齐表头；移动端每行两行块状——大厂订单详情同构） -->
@@ -59,14 +60,14 @@
             <p v-if="Number(order.refunded_cents) > 0 || Number(order.refunded_fee_cents) > 0" class="muted">已退款 {{ formatMoney(Number(order.refunded_cents || 0) + Number(order.refunded_fee_cents || 0)) }}（含已退手续费 {{formatMoney(order.refunded_fee_cents || 0)}}）</p>
             <p class="muted">商品小计为下单优惠后的金额；手续费与整单优惠以订单金额为准。</p>
           </div>
-          <div class="card">
+          <div v-if="!order.items.some(i=>i.delivery_kind==='sms_activation') || order.status==='pending_payment'" class="card">
             <div class="od-section-title">可用操作</div>
             <div class="od-actions">
               <router-link class="btn od-action-btn" :to="`/payment/${order.order_no}`" v-if="order.status === 'pending_payment'">去支付</router-link>
               <router-link
                 class="btn secondary od-action-btn"
                 :to="`/fetch?order_no=${order.order_no}`"
-                v-if="order.items.some(it=>it.goods_type!=='physical') && ['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(order.status)"
+                v-if="order.items.some(it=>it.goods_type!=='physical' && it.delivery_kind!=='sms_activation') && ['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(order.status)"
               >查看交付结果</router-link>
               <button class="btn secondary od-action-btn" v-if="isLoggedIn && order.status === 'pending_payment'" @click="cancelOrder">取消订单</button>
             </div>
@@ -79,6 +80,7 @@
 </template>
 
 <script setup lang="ts">
+import SMSOrder from '@/components/SMSOrder.vue';
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { getOrder, getOrderPassword, rememberOrderPassword, cancelMyOrder, type OrderDetail } from '@/api';

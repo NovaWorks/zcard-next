@@ -111,6 +111,11 @@ func (s *AdminSupplyService) updateConnection(ctx context.Context, req *adminv1.
 	if err != nil {
 		return nil, err
 	}
+	if req.GetCredentials() != "" || (req.GetBaseUrl() != "" && req.GetBaseUrl() != conn.BaseURL) {
+		if err := data.GuardSMSConnection(ctx, s.repo.entClient(ctx), conn.ID); err != nil {
+			return nil, err
+		}
+	}
 	if req.GetBaseUrl() != "" && req.GetBaseUrl() != conn.BaseURL {
 		if err := httpx.ValidateURL(req.GetBaseUrl()); err != nil {
 			return nil, fmt.Errorf("supply.SSRF_REJECTED: %w", err)

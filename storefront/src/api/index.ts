@@ -34,6 +34,7 @@ export interface Sku {
 }
 
 export interface Product {
+ delivery_kind?:string; sms_product?:Record<string,string>; sms_sales_enabled?:boolean;
  goods_type?:string; shipping_mode?:string; shipping_fee_cents?:number; shipping_countries?:string[];
  fulfillment_mode?: string; manual_stock?: number;
   flash_sale?: FlashOffer;
@@ -401,6 +402,7 @@ export function listGuestOrders(contact: string) {
 // ── 订单详情（GetOrder：登录态本人或查询密码）──
 
 export interface OrderItemReply {
+ delivery_kind?:string; sms_product?:Record<string,string>;
  goods_type?:string;paid_cents?:number;shipping_cents?:number;shipped_quantity?:number;received_quantity?:number;canceled_quantity?:number;
  id?: number; sku_name?: string; fulfillment_type?: string; fulfillment_status?: string; form_answers_json?: string; amount_cents?: number;
   product_id: number;

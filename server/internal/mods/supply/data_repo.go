@@ -98,47 +98,68 @@ type ConnectionUpdate struct {
 }
 
 func (r *SupplyRepoImpl) UpdateConnection(ctx context.Context, id uint64, upd *ConnectionUpdate) (*ent.SupplyConnection, error) {
-	q := data.Client(ctx, r.data).SupplyConnection.UpdateOneID(id)
-	if upd.Name != "" {
-		q.SetName(upd.Name)
-	}
-	if upd.BaseURL != "" {
-		q.SetBaseURL(upd.BaseURL)
-	}
-	if upd.CallbackURL != "" {
-		q.SetCallbackURL(upd.CallbackURL)
-	}
-	if upd.RetryMax != 0 {
-		q.SetRetryMax(upd.RetryMax)
-	}
-	if upd.RetryIntervals != "" {
-		q.SetRetryIntervals(upd.RetryIntervals)
-	}
-	if upd.ExchangeRate != nil {
-		q.SetExchangeRate(*upd.ExchangeRate)
-	}
-	if upd.PriceMarkupPercent != nil {
-		q.SetPriceMarkupPercent(*upd.PriceMarkupPercent)
-	}
-	if upd.PriceMarkupAmount != nil {
-		q.SetPriceMarkupAmount(*upd.PriceMarkupAmount)
-	}
-	if upd.AutoSyncPrice != nil {
-		q.SetAutoSyncPrice(*upd.AutoSyncPrice)
-	}
-	if upd.PriceRoundingMode != "" {
-		q.SetPriceRoundingMode(upd.PriceRoundingMode)
-	}
-	if upd.StockMode != "" {
-		q.SetStockMode(upd.StockMode)
-	}
-	if upd.Status != "" {
-		q.SetStatus(upd.Status)
-	}
-	if upd.Settings != nil {
-		q.SetSettings(upd.Settings)
-	}
-	return q.Save(ctx)
+	var result *ent.SupplyConnection
+	err := data.Tx(ctx, r.data, func(ctx context.Context) error {
+		c := data.Client(ctx, r.data)
+		if upd.BaseURL != "" {
+			if err := c.SupplyConnection.UpdateOneID(id).AddRetryMax(0).Exec(ctx); err != nil {
+				return err
+			}
+			current, err := c.SupplyConnection.Get(ctx, id)
+			if err != nil {
+				return err
+			}
+			if current.BaseURL != upd.BaseURL {
+				if err := data.GuardSMSConnection(ctx, c, id); err != nil {
+					return err
+				}
+			}
+		}
+		q := c.SupplyConnection.UpdateOneID(id)
+		if upd.Name != "" {
+			q.SetName(upd.Name)
+		}
+		if upd.BaseURL != "" {
+			q.SetBaseURL(upd.BaseURL)
+		}
+		if upd.CallbackURL != "" {
+			q.SetCallbackURL(upd.CallbackURL)
+		}
+		if upd.RetryMax != 0 {
+			q.SetRetryMax(upd.RetryMax)
+		}
+		if upd.RetryIntervals != "" {
+			q.SetRetryIntervals(upd.RetryIntervals)
+		}
+		if upd.ExchangeRate != nil {
+			q.SetExchangeRate(*upd.ExchangeRate)
+		}
+		if upd.PriceMarkupPercent != nil {
+			q.SetPriceMarkupPercent(*upd.PriceMarkupPercent)
+		}
+		if upd.PriceMarkupAmount != nil {
+			q.SetPriceMarkupAmount(*upd.PriceMarkupAmount)
+		}
+		if upd.AutoSyncPrice != nil {
+			q.SetAutoSyncPrice(*upd.AutoSyncPrice)
+		}
+		if upd.PriceRoundingMode != "" {
+			q.SetPriceRoundingMode(upd.PriceRoundingMode)
+		}
+		if upd.StockMode != "" {
+			q.SetStockMode(upd.StockMode)
+		}
+		if upd.Status != "" {
+			q.SetStatus(upd.Status)
+		}
+		if upd.Settings != nil {
+			q.SetSettings(upd.Settings)
+		}
+		var err error
+		result, err = q.Save(ctx)
+		return err
+	})
+	return result, err
 }
 
 // UpdateCredentials 更新凭据（单独入口，避免全量更新误写密文）。
@@ -147,8 +168,16 @@ func (r *SupplyRepoImpl) UpdateCredentials(ctx context.Context, id uint64, drive
 	if err != nil {
 		return err
 	}
-	_, err = data.Client(ctx, r.data).SupplyConnection.UpdateOneID(id).SetCredentials(enc).Save(ctx)
-	return err
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		c := data.Client(ctx, r.data)
+		if err := c.SupplyConnection.UpdateOneID(id).AddRetryMax(0).Exec(ctx); err != nil {
+			return err
+		}
+		if err := data.GuardSMSConnection(ctx, c, id); err != nil {
+			return err
+		}
+		return c.SupplyConnection.UpdateOneID(id).SetCredentials(enc).Exec(ctx)
+	})
 }
 
 // DeleteConnection 删除连接（存在映射时拒绝）。
@@ -159,6 +188,9 @@ func (r *SupplyRepoImpl) DeleteConnection(ctx context.Context, id uint64) error 
 			if ent.IsNotFound(err) {
 				return ErrNotFound
 			}
+			return err
+		}
+		if err := data.GuardSMSConnection(ctx, c, id); err != nil {
 			return err
 		}
 		if running, err := r.HasRunningTask(ctx, id); err != nil {

@@ -28,6 +28,12 @@ type catalogLoadError string
 func (e catalogLoadError) Error() string { return string(e) }
 
 type catalogPayload struct {
+	Page       int                        `json:"page,omitempty"`
+	PageSize   int                        `json:"page_size,omitempty"`
+	Total      int                        `json:"total,omitempty"`
+	HasMore    bool                       `json:"has_more,omitempty"`
+	Capability string                     `json:"capability,omitempty"`
+	Tree       []adapter.Category         `json:"tree,omitempty"`
 	Categories []*adminv1.PreviewCategory `json:"categories"`
 	Products   map[string]adapter.Product `json:"products"`
 }
@@ -69,6 +75,13 @@ func (s *AdminSupplyService) previewSnapshot(ctx context.Context, req *adminv1.P
 	}
 	result.SnapshotId, result.Status, result.ExpiresAt = row.Token, "ready", row.ExpiresAt
 	result.LoadedCount = int32(row.LoadedCount)
+	var payload catalogPayload
+	if json.Unmarshal(row.Payload, &payload) == nil && payload.Page > 0 {
+		result.Page = int32(payload.Page)
+		result.PageSize = int32(payload.PageSize)
+		result.Total = int32(payload.Total)
+		result.HasMore = payload.HasMore
+	}
 	return result, nil
 }
 func (s *AdminSupplyService) snapshotRow(ctx context.Context, conn *ent.SupplyConnection, token string) (*ent.SupplyCatalogSnapshot, error) {

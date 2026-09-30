@@ -460,6 +460,13 @@ func (r *PaymentRepoImpl) ConfiguredFields(ch *ent.PaymentChannel) []string {
 
 // CreatePayment 创建支付单。
 func (r *PaymentRepoImpl) CreatePayment(ctx context.Context, orderID uint64, channel string, amount int64, idemKey string, methods ...string) (*ent.Payment, error) {
+	if preflight, ok := r.lifecycle.(interface {
+		ValidateSMSPayment(context.Context, uint64) error
+	}); ok {
+		if err := preflight.ValidateSMSPayment(ctx, orderID); err != nil {
+			return nil, err
+		}
+	}
 	var result *ent.Payment
 	err := data.Tx(ctx, r.data, func(ctx context.Context) error {
 		client := data.Client(ctx, r.data)
@@ -474,6 +481,16 @@ func (r *PaymentRepoImpl) CreatePayment(ctx context.Context, orderID uint64, cha
 		ch, err := resolveChannel(ctx, r.data, o.SubsiteID, channel)
 		if err != nil {
 			return err
+		}
+		if e := data.ValidateSMSPayment(ctx, client, o.ID); e != nil {
+			return e
+		}
+		hasSMS, e := data.HasSMSOrder(ctx, client, o.ID)
+		if e != nil {
+			return e
+		}
+		if hasSMS && (ch.Driver != "wallet" || !data.SMSSalesEnabled() || o.UserID == 0 || o.BaseCurrency != "CNY" || ch.Fee != 0) {
+			return fmt.Errorf("payment.SMS_WALLET_ONLY: 接码仅支持会员余额付款，请确认销售已启用")
 		}
 		if !ch.Enabled {
 			return fmt.Errorf("payment.CHANNEL_DISABLED")

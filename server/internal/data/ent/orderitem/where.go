@@ -90,6 +90,16 @@ func ProductName(v string) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldProductName, v))
 }
 
+// DeliveryKind applies equality check predicate on the "delivery_kind" field. It's identical to DeliveryKindEQ.
+func DeliveryKind(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldDeliveryKind, v))
+}
+
+// SmsPurchaseSnapshot applies equality check predicate on the "sms_purchase_snapshot" field. It's identical to SmsPurchaseSnapshotEQ.
+func SmsPurchaseSnapshot(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldSmsPurchaseSnapshot, v))
+}
+
 // AssignedAdminID applies equality check predicate on the "assigned_admin_id" field. It's identical to AssignedAdminIDEQ.
 func AssignedAdminID(v uint64) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldAssignedAdminID, v))
@@ -468,6 +478,156 @@ func ProductNameEqualFold(v string) predicate.OrderItem {
 // ProductNameContainsFold applies the ContainsFold predicate on the "product_name" field.
 func ProductNameContainsFold(v string) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldContainsFold(FieldProductName, v))
+}
+
+// DeliveryKindEQ applies the EQ predicate on the "delivery_kind" field.
+func DeliveryKindEQ(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldDeliveryKind, v))
+}
+
+// DeliveryKindNEQ applies the NEQ predicate on the "delivery_kind" field.
+func DeliveryKindNEQ(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldDeliveryKind, v))
+}
+
+// DeliveryKindIn applies the In predicate on the "delivery_kind" field.
+func DeliveryKindIn(vs ...string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldDeliveryKind, vs...))
+}
+
+// DeliveryKindNotIn applies the NotIn predicate on the "delivery_kind" field.
+func DeliveryKindNotIn(vs ...string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldDeliveryKind, vs...))
+}
+
+// DeliveryKindGT applies the GT predicate on the "delivery_kind" field.
+func DeliveryKindGT(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldDeliveryKind, v))
+}
+
+// DeliveryKindGTE applies the GTE predicate on the "delivery_kind" field.
+func DeliveryKindGTE(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldDeliveryKind, v))
+}
+
+// DeliveryKindLT applies the LT predicate on the "delivery_kind" field.
+func DeliveryKindLT(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldDeliveryKind, v))
+}
+
+// DeliveryKindLTE applies the LTE predicate on the "delivery_kind" field.
+func DeliveryKindLTE(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldDeliveryKind, v))
+}
+
+// DeliveryKindContains applies the Contains predicate on the "delivery_kind" field.
+func DeliveryKindContains(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldContains(FieldDeliveryKind, v))
+}
+
+// DeliveryKindHasPrefix applies the HasPrefix predicate on the "delivery_kind" field.
+func DeliveryKindHasPrefix(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldHasPrefix(FieldDeliveryKind, v))
+}
+
+// DeliveryKindHasSuffix applies the HasSuffix predicate on the "delivery_kind" field.
+func DeliveryKindHasSuffix(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldHasSuffix(FieldDeliveryKind, v))
+}
+
+// DeliveryKindEqualFold applies the EqualFold predicate on the "delivery_kind" field.
+func DeliveryKindEqualFold(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEqualFold(FieldDeliveryKind, v))
+}
+
+// DeliveryKindContainsFold applies the ContainsFold predicate on the "delivery_kind" field.
+func DeliveryKindContainsFold(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldContainsFold(FieldDeliveryKind, v))
+}
+
+// SmsProductIsNil applies the IsNil predicate on the "sms_product" field.
+func SmsProductIsNil() predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIsNull(FieldSmsProduct))
+}
+
+// SmsProductNotNil applies the NotNil predicate on the "sms_product" field.
+func SmsProductNotNil() predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotNull(FieldSmsProduct))
+}
+
+// SmsPurchaseSnapshotEQ applies the EQ predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotEQ(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldSmsPurchaseSnapshot, v))
+}
+
+// SmsPurchaseSnapshotNEQ applies the NEQ predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotNEQ(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldSmsPurchaseSnapshot, v))
+}
+
+// SmsPurchaseSnapshotIn applies the In predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotIn(vs ...string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldSmsPurchaseSnapshot, vs...))
+}
+
+// SmsPurchaseSnapshotNotIn applies the NotIn predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotNotIn(vs ...string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldSmsPurchaseSnapshot, vs...))
+}
+
+// SmsPurchaseSnapshotGT applies the GT predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotGT(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldSmsPurchaseSnapshot, v))
+}
+
+// SmsPurchaseSnapshotGTE applies the GTE predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotGTE(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldSmsPurchaseSnapshot, v))
+}
+
+// SmsPurchaseSnapshotLT applies the LT predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotLT(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldSmsPurchaseSnapshot, v))
+}
+
+// SmsPurchaseSnapshotLTE applies the LTE predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotLTE(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldSmsPurchaseSnapshot, v))
+}
+
+// SmsPurchaseSnapshotContains applies the Contains predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotContains(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldContains(FieldSmsPurchaseSnapshot, v))
+}
+
+// SmsPurchaseSnapshotHasPrefix applies the HasPrefix predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotHasPrefix(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldHasPrefix(FieldSmsPurchaseSnapshot, v))
+}
+
+// SmsPurchaseSnapshotHasSuffix applies the HasSuffix predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotHasSuffix(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldHasSuffix(FieldSmsPurchaseSnapshot, v))
+}
+
+// SmsPurchaseSnapshotIsNil applies the IsNil predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotIsNil() predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIsNull(FieldSmsPurchaseSnapshot))
+}
+
+// SmsPurchaseSnapshotNotNil applies the NotNil predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotNotNil() predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotNull(FieldSmsPurchaseSnapshot))
+}
+
+// SmsPurchaseSnapshotEqualFold applies the EqualFold predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotEqualFold(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEqualFold(FieldSmsPurchaseSnapshot, v))
+}
+
+// SmsPurchaseSnapshotContainsFold applies the ContainsFold predicate on the "sms_purchase_snapshot" field.
+func SmsPurchaseSnapshotContainsFold(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldContainsFold(FieldSmsPurchaseSnapshot, v))
 }
 
 // FormAnswersIsNil applies the IsNil predicate on the "form_answers" field.

@@ -29,6 +29,12 @@ const (
 	FieldSkuID = "sku_id"
 	// FieldProductName holds the string denoting the product_name field in the database.
 	FieldProductName = "product_name"
+	// FieldDeliveryKind holds the string denoting the delivery_kind field in the database.
+	FieldDeliveryKind = "delivery_kind"
+	// FieldSmsProduct holds the string denoting the sms_product field in the database.
+	FieldSmsProduct = "sms_product"
+	// FieldSmsPurchaseSnapshot holds the string denoting the sms_purchase_snapshot field in the database.
+	FieldSmsPurchaseSnapshot = "sms_purchase_snapshot"
 	// FieldFormAnswers holds the string denoting the form_answers field in the database.
 	FieldFormAnswers = "form_answers"
 	// FieldAssignedAdminID holds the string denoting the assigned_admin_id field in the database.
@@ -94,6 +100,9 @@ var Columns = []string{
 	FieldProductID,
 	FieldSkuID,
 	FieldProductName,
+	FieldDeliveryKind,
+	FieldSmsProduct,
+	FieldSmsPurchaseSnapshot,
 	FieldFormAnswers,
 	FieldAssignedAdminID,
 	FieldSkuName,
@@ -138,6 +147,8 @@ var (
 	DefaultSubsiteID uint64
 	// DefaultProductName holds the default value on creation for the "product_name" field.
 	DefaultProductName string
+	// DefaultDeliveryKind holds the default value on creation for the "delivery_kind" field.
+	DefaultDeliveryKind string
 	// DefaultAssignedAdminID holds the default value on creation for the "assigned_admin_id" field.
 	DefaultAssignedAdminID uint64
 	// SkuNameValidator is a validator for the "sku_name" field. It is called by the builders before save.
@@ -235,6 +246,16 @@ func BySkuID(opts ...sql.OrderTermOption) OrderOption {
 // ByProductName orders the results by the product_name field.
 func ByProductName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProductName, opts...).ToFunc()
+}
+
+// ByDeliveryKind orders the results by the delivery_kind field.
+func ByDeliveryKind(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeliveryKind, opts...).ToFunc()
+}
+
+// BySmsPurchaseSnapshot orders the results by the sms_purchase_snapshot field.
+func BySmsPurchaseSnapshot(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmsPurchaseSnapshot, opts...).ToFunc()
 }
 
 // ByAssignedAdminID orders the results by the assigned_admin_id field.

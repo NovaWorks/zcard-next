@@ -311,6 +311,22 @@ func (s *SyncService) attemptImportItem(ctx context.Context, task *ent.SupplySyn
 	if err := json.Unmarshal(item.Snapshot, &p); err != nil {
 		return err
 	}
+	if p.DeliveryKind == "sms_activation" {
+		reader, ok := a.(interface {
+			RefreshProduct(context.Context, *adapter.Product) (*adapter.Product, error)
+		})
+		if !ok {
+			return fmt.Errorf("接码目录需要支持商品详情的驱动")
+		}
+		fresh, e := reader.RefreshProduct(ctx, &p)
+		if e != nil {
+			return e
+		}
+		if fresh.DeliveryKind != p.DeliveryKind || !fresh.IsActive {
+			return fmt.Errorf("接码商品交付类型变化或已下架")
+		}
+		p = *fresh
+	}
 	if q, ok := a.(adapter.AccountQuoter); ok && p.IsActive {
 		quoteCtx, cancel := context.WithTimeout(ctx, 90*time.Second)
 		quoted, err := q.QuoteProduct(quoteCtx, &p)

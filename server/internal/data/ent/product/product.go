@@ -21,6 +21,10 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldSubsiteID holds the string denoting the subsite_id field in the database.
 	FieldSubsiteID = "subsite_id"
+	// FieldDeliveryKind holds the string denoting the delivery_kind field in the database.
+	FieldDeliveryKind = "delivery_kind"
+	// FieldSmsProduct holds the string denoting the sms_product field in the database.
+	FieldSmsProduct = "sms_product"
 	// FieldCategoryID holds the string denoting the category_id field in the database.
 	FieldCategoryID = "category_id"
 	// FieldCategoryProtected holds the string denoting the category_protected field in the database.
@@ -141,6 +145,8 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldSubsiteID,
+	FieldDeliveryKind,
+	FieldSmsProduct,
 	FieldCategoryID,
 	FieldCategoryProtected,
 	FieldName,
@@ -208,6 +214,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultSubsiteID holds the default value on creation for the "subsite_id" field.
 	DefaultSubsiteID uint64
+	// DefaultDeliveryKind holds the default value on creation for the "delivery_kind" field.
+	DefaultDeliveryKind string
 	// DefaultCategoryProtected holds the default value on creation for the "category_protected" field.
 	DefaultCategoryProtected bool
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
@@ -356,6 +364,11 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 // BySubsiteID orders the results by the subsite_id field.
 func BySubsiteID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubsiteID, opts...).ToFunc()
+}
+
+// ByDeliveryKind orders the results by the delivery_kind field.
+func ByDeliveryKind(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeliveryKind, opts...).ToFunc()
 }
 
 // ByCategoryID orders the results by the category_id field.

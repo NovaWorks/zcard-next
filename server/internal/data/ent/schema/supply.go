@@ -29,6 +29,8 @@ func (SupplyConnection) Fields() []ent.Field {
 		field.Uint64("sync_task_id").Default(0),
 		field.Int64("low_stock_scanned_at").Default(0),
 		field.String("low_stock_message").Default(""),
+		field.String("sms_lease_token").Default(""),
+		field.Int64("sms_lease_until").Default(0),
 		field.String("sync_lease_token").Default(""),
 		field.Int64("sync_lease_until").Default(0),
 		field.String("callback_url").MaxLen(500).Optional().Comment("本站作下游时的回调登记"),
