@@ -57,8 +57,8 @@ web-dist:
 	cd ../admin && pnpm install --frozen-lockfile && pnpm build
 	rm -rf web/storefront web/admin
 	mkdir -p web/storefront web/admin
-	cp -R ../storefront/dist/ web/storefront/
-	cp -R ../admin/dist/ web/admin/
+	cp -R ../storefront/dist/. web/storefront/
+	cp -R ../admin/dist/. web/admin/
 	go test -tags fullstack ./internal/web -run TestEmbeddedBuildManifests -count=1
 
 .PHONY: build-fullstack
