@@ -14,6 +14,7 @@ import (
 var slowDrivers = map[string]bool{
 	"epusdt":  true,
 	"bepusdt": true,
+	"upay":    true,
 	"usdt":    true,
 }
 

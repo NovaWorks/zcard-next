@@ -19,14 +19,18 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 )
 
+// Shared by BEpusdt and UPAY PRO; protocol adapters remain independent.
+func isNativeCryptoDriver(driver string) bool { return driver == "bepusdt" || driver == "upay" }
+
 // Contains no API token. Channel credentials cannot change while an attempt is unresolved.
 type bepusdtAttempt struct {
-	Subject    string    `json:"subject"`
-	NotifyURL  string    `json:"notify_url"`
-	ReturnURL  string    `json:"return_url"`
-	PaymentURL string    `json:"payment_url,omitempty"`
-	Lease      string    `json:"lease,omitempty"`
-	LeaseUntil time.Time `json:"lease_until,omitempty"`
+	RequestSent bool      `json:"request_sent,omitempty"`
+	Subject     string    `json:"subject"`
+	NotifyURL   string    `json:"notify_url"`
+	ReturnURL   string    `json:"return_url"`
+	PaymentURL  string    `json:"payment_url,omitempty"`
+	Lease       string    `json:"lease,omitempty"`
+	LeaseUntil  time.Time `json:"lease_until,omitempty"`
 }
 
 func encodeBepusdtAttempt(a bepusdtAttempt) json.RawMessage { b, _ := json.Marshal(a); return b }
@@ -40,7 +44,8 @@ func bepusdtNonce() (string, error) {
 
 // The channel row serializes attempt creation and credential edits across processes.
 // The network call happens after commit. A durable lease prevents concurrent HTTP
-// requests; after a crash the next request recovers using the same merchant order ID.
+// requests. BEpusdt can retry using the same reference; UPAY must await a verified
+// callback after an unknown outcome because its completed orders are not idempotent.
 func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderID, rechargeID uint64, method string) (*port.RechargePaymentInfo, error) {
 	var p *ent.Payment
 	var cfg json.RawMessage
@@ -49,29 +54,39 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 	if err != nil {
 		return nil, err
 	}
-	cached := false
+	cached, unknown := false, false
 	err = data.Tx(ctx, r.data, func(txCtx context.Context) error {
 		c := data.Client(txCtx, r.data)
 		ch, err := c.PaymentChannel.UpdateOneID(chID).AddSort(0).Save(txCtx)
 		if err != nil {
 			return err
 		}
-		if ch.Driver != "bepusdt" || !ch.Enabled || !ch.DeletedAt.IsZero() {
+		if !isNativeCryptoDriver(ch.Driver) || !ch.Enabled || !ch.DeletedAt.IsZero() {
 			return fmt.Errorf("payment.CHANNEL_DISABLED")
 		}
 		cfg = r.DecryptConfig(ch)
-		conf, err := adapter.ParseBepusdtConfig(cfg)
-		if err != nil {
-			return err
+		timeout, minimum := int64(1200), 179*time.Second
+		if ch.Driver == "upay" {
+			conf, err := adapter.ParseUpayConfig(cfg)
+			if err != nil {
+				return err
+			}
+			timeout, minimum = conf.Timeout, 0
+		} else {
+			conf, err := adapter.ParseBepusdtConfig(cfg)
+			if err != nil {
+				return err
+			}
+			timeout = conf.Timeout
 		}
 		if len(ch.Methods) > 0 {
-			return fmt.Errorf("payment.METHODS_INVALID: BEpusdt 请通过收款模式配置多链收银台，不支持本地支付方式列表")
+			return fmt.Errorf("payment.METHODS_INVALID: 此渠道不支持本地支付方式列表，请在渠道参数中配置币种与网络")
 		}
 		var amount int64
 		var subsite uint64
 		scope := ""
-		deadline := time.Now().UTC().Add(time.Duration(conf.Timeout) * time.Second)
-		q := c.Payment.Query().Where(payment.ChannelID(chID), payment.DriverSnapshot("bepusdt"))
+		deadline := time.Now().UTC().Add(time.Duration(timeout) * time.Second)
+		q := c.Payment.Query().Where(payment.ChannelID(chID), payment.DriverSnapshot(ch.Driver))
 		if orderID > 0 && rechargeID == 0 {
 			o, err := c.Order.UpdateOneID(orderID).AddVersion(1).Save(txCtx)
 			if err != nil {
@@ -110,6 +125,9 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 			scope = scene
 			a.Subject = "余额充值"
 			a.ReturnURL = absolutePayURL(ctx, "/member?tab=recharge")
+			if ch.Driver == "upay" && ro.Target == rechargeorder.TargetSupply {
+				a.ReturnURL = absolutePayURL(ctx, "/member?tab=supplier")
+			}
 			q.Where(payment.RechargeOrderID(rechargeID))
 		} else {
 			return fmt.Errorf("payment.INVALID_INPUT")
@@ -119,7 +137,7 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 		}
 		p, err = q.Order(ent.Desc(payment.FieldID)).First(txCtx)
 		if ent.IsNotFound(err) {
-			if time.Until(deadline) <= 179*time.Second {
+			if time.Until(deadline) <= minimum {
 				return fmt.Errorf("payment.ORDER_EXPIRED: 剩余支付时间不足 180 秒，请重新下单")
 			}
 			ref, err := bepusdtNonce()
@@ -134,7 +152,11 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 			if e = checkQuote(ctx, pricingQuote(price, ch.Code, ch.ID, scope, 0)); e != nil {
 				return e
 			}
-			b := c.Payment.Create().SetPricingSnapshot(pricingJSON(price)).SetFee(price.Fee).SetSubsiteID(subsite).SetChannelID(ch.ID).SetDriverSnapshot(ch.Driver).SetChannel(ch.Code).SetAmount(price.Total).SetExpiresAt(deadline).SetGatewayOrderRef("BE" + ref).SetStatus(payment.StatusPending)
+			prefix := "BE"
+			if ch.Driver == "upay" {
+				prefix = "UP"
+			}
+			b := c.Payment.Create().SetPricingSnapshot(pricingJSON(price)).SetFee(price.Fee).SetSubsiteID(subsite).SetChannelID(ch.ID).SetDriverSnapshot(ch.Driver).SetChannel(ch.Code).SetAmount(price.Total).SetExpiresAt(deadline).SetGatewayOrderRef(prefix + ref).SetStatus(payment.StatusPending)
 			if orderID > 0 {
 				b.SetOrderID(orderID)
 			} else {
@@ -171,28 +193,45 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 			if time.Now().Before(a.LeaseUntil) {
 				return fmt.Errorf("payment.IN_PROGRESS: 正在发起支付，请稍后重试")
 			}
-			if time.Until(p.ExpiresAt) <= 179*time.Second {
+			// UPAY only deduplicates pending orders. Repeating an unknown request
+			// after upstream settlement/expiry can create another payable trade.
+			if ch.Driver == "upay" && a.RequestSent {
+				unknown = true
+				return fmt.Errorf("payment.RESULT_UNKNOWN: UPAY PRO 下单结果待核对，请联系管理员；请勿重复付款")
+			}
+			if time.Until(p.ExpiresAt) <= minimum {
 				return fmt.Errorf("payment.ORDER_EXPIRED: 剩余支付时间不足 180 秒，请重新下单")
 			}
 		}
+		a.RequestSent = true
 		a.Lease = lease
 		a.LeaseUntil = time.Now().UTC().Add(time.Minute)
 		_, err = c.Payment.UpdateOneID(p.ID).SetGatewayContext(encodeBepusdtAttempt(a)).Save(txCtx)
 		return err
 	})
 	if err != nil {
+		// A process may have died before recording the request failure. Persist
+		// the review flag outside the rolled-back creation transaction.
+		if unknown && p != nil {
+			if e := data.Client(ctx, r.data).Payment.Update().Where(payment.ID(p.ID), payment.StatusEQ(payment.StatusPending), payment.ReviewReasonEQ("")).SetReviewReason(fmt.Sprintf("UPAY PRO 下单结果待核对，网关商户单号 %s；请勿重复付款", p.GatewayOrderRef)).Exec(ctx); e != nil {
+				return nil, e
+			}
+		}
 		return nil, err
 	}
 	if cached {
 		return &port.RechargePaymentInfo{BaseCents: pricingOf(p).Base, FeeCents: p.Fee, TotalCents: p.Amount, PaymentID: p.ID, Type: "redirect", Payload: a.PaymentURL}, nil
 	}
-	provider, err := r.reg.Provider("bepusdt")
+	provider, err := r.reg.Provider(p.DriverSnapshot)
 	if err != nil {
 		return nil, err
 	}
 	info, createErr := provider.CreatePayment(ctx, port.CreatePaymentRequest{GatewayOrderRef: p.GatewayOrderRef, Deadline: p.ExpiresAt, Amount: money.Cents(p.Amount), Channel: p.Channel, Subject: a.Subject, ReturnURL: a.ReturnURL, NotifyBaseURL: a.NotifyURL, Config: cfg})
+	if createErr == nil && info == nil {
+		createErr = fmt.Errorf("payment.EMPTY_GATEWAY_RESPONSE")
+	}
 	// Release the lease even when the caller disconnected. An unknown response does
-	// not discard the attempt: retry uses the persisted reference and original deadline.
+	// not discard the attempt. UPAY keeps a review flag and never resubmits it.
 	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer cancel()
 	err = data.Tx(saveCtx, r.data, func(txCtx context.Context) error {
@@ -208,6 +247,9 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 		state.Lease = ""
 		state.LeaseUntil = time.Time{}
 		update := c.Payment.UpdateOneID(p.ID)
+		if createErr != nil && p.DriverSnapshot == "upay" && current.Status == payment.StatusPending {
+			update.SetReviewReason(fmt.Sprintf("UPAY PRO 下单结果待核对，网关商户单号 %s；请勿重复付款", p.GatewayOrderRef))
+		}
 		if createErr == nil {
 			if current.ChannelOrderNo != "" && current.ChannelOrderNo != info.ChannelOrderNo {
 				return fmt.Errorf("payment.GATEWAY_ORDER_MISMATCH")
@@ -240,23 +282,34 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 }
 
 func (r *PaymentRepoImpl) checkBepusdtConfigChange(ctx context.Context, ch *ent.PaymentChannel, raw string) error {
-	if ch.Driver != "bepusdt" {
+	if !isNativeCryptoDriver(ch.Driver) {
 		return nil
 	}
-	next, err := adapter.ParseBepusdtConfig(json.RawMessage(raw))
-	if err != nil {
-		return err
-	}
-	old, err := adapter.ParseBepusdtConfig(r.DecryptConfig(ch))
-	if err == nil && old.Equal(next) {
-		return nil
+	if ch.Driver == "upay" {
+		next, err := adapter.ParseUpayConfig(json.RawMessage(raw))
+		if err != nil {
+			return err
+		}
+		old, err := adapter.ParseUpayConfig(r.DecryptConfig(ch))
+		if err == nil && old == next {
+			return nil
+		}
+	} else {
+		next, err := adapter.ParseBepusdtConfig(json.RawMessage(raw))
+		if err != nil {
+			return err
+		}
+		old, err := adapter.ParseBepusdtConfig(r.DecryptConfig(ch))
+		if err == nil && old.Equal(next) {
+			return nil
+		}
 	}
 	pending, err := data.Client(ctx, r.data).Payment.Query().Where(payment.ChannelID(ch.ID), payment.Or(payment.StatusEQ(payment.StatusPending), payment.ReviewReasonNEQ(""))).Exist(ctx)
 	if err != nil {
 		return err
 	}
 	if pending {
-		return fmt.Errorf("payment.CHANNEL_BUSY: 此 BEpusdt 渠道仍有未确认支付，请保留原配置处理回调；更换网关或网络请新建渠道")
+		return fmt.Errorf("payment.CHANNEL_BUSY: 此渠道仍有未确认支付，请保留原配置处理回调；更换网关或网络请新建渠道")
 	}
 	return nil
 }
@@ -268,5 +321,5 @@ func (r *PaymentRepoImpl) lockBepusdtPayment(ctx context.Context, id uint64) (*e
 	if r.data.Dialect != db.SQLite {
 		return c.Payment.Query().Where(payment.ID(id)).ForUpdate().Only(ctx)
 	}
-	return c.Payment.UpdateOneID(id).SetDriverSnapshot("bepusdt").Save(ctx)
+	return c.Payment.UpdateOneID(id).AddAmount(0).Save(ctx)
 }

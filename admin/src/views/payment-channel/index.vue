@@ -96,6 +96,7 @@ const driverBadges: Record<string, { char: string; bg: string; color?: string }>
   wechat: { char: "微", bg: "linear-gradient(135deg,#07c160,#06ad56)", color: "#fff" },
   epay: { char: "易", bg: "linear-gradient(135deg,#8b5cf6,#7c3aed)", color: "#fff" },
   xunhupay: { char: "虎", bg: "linear-gradient(135deg,#ea580c,#c2410c)", color: "#fff" },
+  upay: { char: "U", bg: "linear-gradient(135deg,#26a17b,#1d8a68)", color: "#fff" },
   bepusdt: { char: "₮", bg: "linear-gradient(135deg,#26a17b,#1d8a68)", color: "#fff" },
   epusdt: { char: "₮", bg: "linear-gradient(135deg,#26a17b,#1d8a68)", color: "#fff" },
   stripe: { char: "S", bg: "linear-gradient(135deg,#635bff,#5851ea)", color: "#fff" },
@@ -414,7 +415,7 @@ function openConfig(ch: ChannelRow) {
     echo = {};
   }
   for (const f of currentFields.value) {
-    const v = echo[f.key] ?? (ch.driver === "bepusdt" ? f.default : undefined);
+    const v = echo[f.key] ?? (["bepusdt", "upay"].includes(ch.driver) ? f.default : undefined);
     if (f.type === "number" && v !== undefined && v !== "" && Number.isFinite(Number(v))) {
       form.values[f.key] = Number(v);
     } else if (Array.isArray(v)) {
@@ -640,9 +641,9 @@ onMounted(() => {
             </NButton>
             <NPopconfirm :on-positive-click="() => handleDelete(ch)">
               <template #trigger>
-                <NButton v-auth="'payment:delete'" size="small" type="error" secondary :disabled="ch.driver === 'bepusdt' && ch.enabled" :title="ch.driver === 'bepusdt' && ch.enabled ? '请先停用渠道再删除' : undefined">删除</NButton>
+                <NButton v-auth="'payment:delete'" size="small" type="error" secondary :disabled="['bepusdt', 'upay'].includes(ch.driver) && ch.enabled" :title="['bepusdt', 'upay'].includes(ch.driver) && ch.enabled ? '请先停用渠道再删除' : undefined">删除</NButton>
               </template>
-              {{ ch.driver === 'bepusdt' ? (ch.enabled ? '请先停用渠道再删除。' : '删除后将从渠道列表移除，历史支付记录和到账通知仍会保留，确定删除？') : '删除后该渠道将无法继续收款，确定删除？' }}
+              {{ ['bepusdt', 'upay'].includes(ch.driver) ? (ch.enabled ? '请先停用渠道再删除。' : '删除后将从渠道列表移除，历史支付记录和到账通知仍会保留，确定删除？') : '删除后该渠道将无法继续收款，确定删除？' }}
             </NPopconfirm>
           </div>
         </div>
@@ -857,7 +858,7 @@ onMounted(() => {
                 <div v-if="f.dynamic && dynamicOpts[f.key]?.fallback" class="text-12px opacity-50 mt-4px">
                   无法连接网关，当前为内置选项（配置网关地址后自动刷新）
                 </div>
-                <div v-if="current?.driver === 'bepusdt' && f.help" class="text-12px opacity-70 mt-4px">{{ f.help }}</div>
+                <div v-if="['bepusdt', 'upay'].includes(current?.driver || '') && f.help" class="text-12px opacity-70 mt-4px">{{ f.help }}</div>
               </div>
             </template>
             <template v-else-if="f.type === 'textarea'">
@@ -866,9 +867,9 @@ onMounted(() => {
             <template v-else-if="f.type === 'number'">
               <div class="w-full">
                 <NInputNumber v-model:value="form.values[f.key] as any" style="width: 100%" :placeholder="fieldHint(f)"
-                  :min="current?.driver === 'bepusdt' && f.key === 'timeout' ? 180 : undefined"
-                  :max="current?.driver === 'bepusdt' && f.key === 'timeout' ? 3600 : undefined" />
-                <div v-if="current?.driver === 'bepusdt' && f.help" class="text-12px opacity-70 mt-4px">{{ f.help }}</div>
+                  :min="f.key === 'timeout' ? (current?.driver === 'upay' ? 60 : current?.driver === 'bepusdt' ? 180 : undefined) : undefined"
+                  :max="['bepusdt', 'upay'].includes(current?.driver || '') && f.key === 'timeout' ? 3600 : undefined" />
+                <div v-if="['bepusdt', 'upay'].includes(current?.driver || '') && f.help" class="text-12px opacity-70 mt-4px">{{ f.help }}</div>
               </div>
             </template>
             <template v-else>
@@ -880,7 +881,7 @@ onMounted(() => {
                   :placeholder="fieldHint(f)"
                   @blur="f.key === 'api_url' && f.dynamic !== true && current?.driver === 'epusdt' && refreshAssets()"
                 />
-                <div v-if="['epusdt', 'bepusdt'].includes(current?.driver || '') && f.key === 'api_url' && f.help" class="text-12px opacity-70 mt-4px">
+                <div v-if="f.help && (current?.driver === 'upay' || (['epusdt', 'bepusdt'].includes(current?.driver || '') && f.key === 'api_url'))" class="text-12px opacity-70 mt-4px">
                   {{ f.help }}
                 </div>
               </div>

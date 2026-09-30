@@ -71,7 +71,7 @@ func (r *PaymentRepoImpl) price(ctx context.Context, ch *ent.PaymentChannel, bas
 	if !money.ValidCents(p.Total) {
 		return p, errors.BadRequest("payment.INVALID_AMOUNT", "含手续费金额超出允许范围")
 	}
-	if ch.Driver != "wallet" && ch.Driver != "bepusdt" {
+	if ch.Driver != "wallet" && !isNativeCryptoDriver(ch.Driver) {
 		var err error
 		p.Charge, err = r.computeCharge(ctx, ch.Driver, r.DecryptConfig(ch), money.Cents(p.Total))
 		if err != nil {
@@ -143,7 +143,7 @@ func (s *StorePaymentService) QuotePayment(ctx context.Context, req *storefrontv
 	if ch.Driver == "wallet" && identity.ClaimsFromContext(ctx) == nil {
 		return nil, errors.Unauthorized("identity.UNAUTHORIZED", "余额支付需登录")
 	}
-	if ch.Driver == "bepusdt" && orderID > 0 {
+	if isNativeCryptoDriver(ch.Driver) && orderID > 0 {
 		old, e := data.Client(ctx, s.data).Payment.Query().Where(payment.ChannelID(ch.ID), payment.OrderID(orderID)).Order(ent.Desc(payment.FieldID)).First(ctx)
 		if e == nil {
 			if old.Status != payment.StatusPending || !time.Now().Before(old.ExpiresAt) {

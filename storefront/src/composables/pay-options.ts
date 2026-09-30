@@ -20,7 +20,7 @@ export interface PayOption {
 // 方式/渠道内置 emoji 回落（未配置自定义图标时）
 const EMOJI: Record<string, string> = {
   wallet: '💰', alipay: '🅰️', wxpay: '💬', wechat: '💬', qqpay: '🐧',
-  epay: '⚡', epusdt: '₮', bepusdt: '₮', stripe: '🟦', paypal: '🅿️',
+  epay: '⚡', epusdt: '₮', bepusdt: '₮', upay: '₮', stripe: '🟦', paypal: '🅿️',
 };
 
 export function emojiOf(code: string, driver: string) {
@@ -39,7 +39,7 @@ export function flattenPayOptions(channels: ChannelItem[]): PayOption[] {
           channel: c.code, method: m.code, name: m.name,
           feeText: feeText(c), recommended: !!m.recommended, recommendLabel: m.recommend_label || "推荐", recommendDescription: m.recommend_description || "",
           icon: m.icon || c.icon || undefined, emoji: emojiOf(m.code, c.driver),
-          sub: c.name || (['epusdt', 'bepusdt'].includes(c.driver) ? 'USDT 链上收款' : '在线支付'),
+          sub: c.name || (['epusdt', 'bepusdt', 'upay'].includes(c.driver) ? '数字货币收款' : '在线支付'),
         });
       }
     } else {
@@ -56,7 +56,7 @@ export function flattenPayOptions(channels: ChannelItem[]): PayOption[] {
 
 function feeText(c: ChannelItem): string {
   if (c.driver === 'wallet' || c.fee_bearer !== 'user' || !Number(c.fee)) {
-    return ['epusdt', 'bepusdt'].includes(c.driver) ? '平台免手续费' : '免手续费';
+    return ['epusdt', 'bepusdt', 'upay'].includes(c.driver) ? '平台免手续费' : '免手续费';
   }
   return c.fee_type === 'percent' ? `手续费 ${Number(c.fee) / 100}%` : `手续费 ${formatMoney(Number(c.fee))}`;
 }

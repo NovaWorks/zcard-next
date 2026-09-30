@@ -248,12 +248,12 @@ func methodsJSON(raw string) ([]map[string]any, error) {
 
 // CreateChannel 创建渠道（凭据加密入库；methodsJSON=支付方式列表）。
 func (r *PaymentRepoImpl) CreateChannel(ctx context.Context, name, code, driver, configJSON string, fee int64, feeType string, enabled bool, sort int32, icon string, methods []map[string]any, usage ...ChannelUsage) (*ent.PaymentChannel, error) {
-	if driver == "bepusdt" && len(methods) > 0 {
-		return nil, fmt.Errorf("payment.METHODS_INVALID: BEpusdt 请通过收款模式配置多链收银台，不支持本地支付方式列表")
+	if isNativeCryptoDriver(driver) && len(methods) > 0 {
+		return nil, fmt.Errorf("payment.METHODS_INVALID: 此渠道不支持本地支付方式列表，请在渠道参数中配置币种与网络")
 	}
 	// A deleted channel keeps its code for historical callbacks. A replacement
 	// requested from the visible list must receive a fresh code and encryption AAD.
-	if driver == "bepusdt" {
+	if isNativeCryptoDriver(driver) {
 		c := data.Client(ctx, r.data)
 		reserved, err := c.PaymentChannel.Query().Where(paymentchannel.SubsiteID(0), paymentchannel.Code(code), paymentchannel.DeletedAtNotNil()).Exist(ctx)
 		if err != nil {
@@ -321,8 +321,8 @@ func (r *PaymentRepoImpl) updateChannel(ctx context.Context, id uint64, name, co
 		if err != nil {
 			return nil, err
 		}
-		if ch.Driver == "bepusdt" {
-			return nil, fmt.Errorf("payment.METHODS_INVALID: BEpusdt 请通过收款模式配置多链收银台，不支持本地支付方式列表")
+		if isNativeCryptoDriver(ch.Driver) {
+			return nil, fmt.Errorf("payment.METHODS_INVALID: 此渠道不支持本地支付方式列表，请在渠道参数中配置币种与网络")
 		}
 	}
 	q := data.Client(ctx, r.data).PaymentChannel.UpdateOneID(id)
@@ -377,7 +377,7 @@ func (r *PaymentRepoImpl) DeleteChannel(ctx context.Context, id uint64) error {
 		if err != nil {
 			return err
 		}
-		if ch.Driver == "bepusdt" {
+		if isNativeCryptoDriver(ch.Driver) {
 			if !ch.DeletedAt.IsZero() {
 				return nil
 			}
@@ -562,7 +562,7 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 			return nil, fmt.Errorf("payment.METHOD_INVALID: 请选择该渠道支持的支付方式")
 		}
 	}
-	if ch.Driver == "bepusdt" {
+	if isNativeCryptoDriver(ch.Driver) {
 		return r.createBepusdtPayment(ctx, ch.ID, 0, ro.ID, method)
 	}
 	price, err := r.price(ctx, ch, ro.Amount, method)
@@ -678,8 +678,8 @@ func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, 
 			return err
 		}
 
-		// Native BEpusdt must bind the exact attempt even for duplicate callbacks.
-		if p.DriverSnapshot == "bepusdt" {
+		// Native crypto gateways must bind the exact attempt even for duplicate callbacks.
+		if isNativeCryptoDriver(p.DriverSnapshot) {
 			p, err = r.lockBepusdtPayment(txCtx, p.ID)
 			if err != nil {
 				return err
@@ -848,7 +848,7 @@ func (r *PaymentRepoImpl) settleRecharge(ctx context.Context, p *ent.Payment, fa
 	client := data.Client(ctx, r.data)
 	var ro *ent.RechargeOrder
 	var err error
-	if p.DriverSnapshot == "bepusdt" {
+	if isNativeCryptoDriver(p.DriverSnapshot) {
 		if r.data.Dialect != db.SQLite {
 			ro, err = client.RechargeOrder.Query().Where(rechargeorder.ID(p.RechargeOrderID)).ForUpdate().Only(ctx)
 		} else {
@@ -861,7 +861,7 @@ func (r *PaymentRepoImpl) settleRecharge(ctx context.Context, p *ent.Payment, fa
 		return err
 	}
 	reviewOrReject := func() error {
-		if p.DriverSnapshot == "bepusdt" {
+		if isNativeCryptoDriver(p.DriverSnapshot) {
 			_, err := client.Payment.UpdateOneID(p.ID).SetReviewReason("充值单已处理，本次到账待核对，请处理退款").Save(ctx)
 			return err
 		}

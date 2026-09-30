@@ -609,7 +609,7 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 			return nil, errors.BadRequest("payment.METHOD_INVALID", "请选择该渠道支持的支付方式")
 		}
 	}
-	if ch.Driver == "bepusdt" {
+	if isNativeCryptoDriver(ch.Driver) {
 		info, err := s.repo.createBepusdtPayment(ctx, ch.ID, o.ID, 0, req.GetMethod())
 		if err != nil {
 			return nil, errors.BadRequest("payment.CREATE_FAILED", err.Error())
@@ -722,7 +722,7 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 				return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "verify failed"})
 			}
 		}
-		if !f.Success && ch.Driver != "bepusdt" {
+		if !f.Success && !isNativeCryptoDriver(ch.Driver) {
 			if ch.Driver == "xunhupay" {
 				return ctx.String(http.StatusOK, "success")
 			}
@@ -731,8 +731,8 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 
 		// 6) 定位支付单（订单号定位；充值单 RCH<id> 前缀走 recharge 关联）
 		paymentID := uint64(0)
-		if ch.Driver == "bepusdt" {
-			matched, lookupErr := data.Client(ctx, d).Payment.Query().Where(payment.ChannelID(ch.ID), payment.DriverSnapshot("bepusdt"), payment.GatewayOrderRef(f.GatewayOrderRef)).Only(ctx)
+		if isNativeCryptoDriver(ch.Driver) {
+			matched, lookupErr := data.Client(ctx, d).Payment.Query().Where(payment.ChannelID(ch.ID), payment.DriverSnapshot(ch.Driver), payment.GatewayOrderRef(f.GatewayOrderRef)).Only(ctx)
 			if lookupErr == nil {
 				paymentID = matched.ID
 			}
