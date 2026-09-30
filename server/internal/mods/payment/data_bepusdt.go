@@ -95,7 +95,7 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 			if o.Status != order.StatusPendingPayment || o.ExpiryReview || !time.Now().Before(o.ExpiredAt) {
 				return fmt.Errorf("payment.ORDER_EXPIRED: 订单已关闭或待核对")
 			}
-			if err := checkPaymentUsage(ch, method, scenePurchase); err != nil {
+			if err := r.checkPaymentUsage(ch, method, scenePurchase); err != nil {
 				return err
 			}
 			amount, subsite = o.TotalAmount, o.SubsiteID
@@ -118,7 +118,7 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 			if ro.Target == rechargeorder.TargetSupply {
 				scene = sceneSupplyRecharge
 			}
-			if err := checkPaymentUsage(ch, method, scene); err != nil {
+			if err := r.checkPaymentUsage(ch, method, scene); err != nil {
 				return err
 			}
 			amount = ro.Amount
@@ -135,7 +135,7 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 		if amount <= 0 {
 			return fmt.Errorf("payment.INVALID_CHARGE_AMOUNT")
 		}
-		p, err = q.Order(ent.Desc(payment.FieldID)).First(txCtx)
+		p, err = r.nativeAttempt(txCtx, q, ch, method)
 		if ent.IsNotFound(err) {
 			if time.Until(deadline) <= minimum {
 				return fmt.Errorf("payment.ORDER_EXPIRED: 剩余支付时间不足 180 秒，请重新下单")
@@ -226,7 +226,7 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 	if err != nil {
 		return nil, err
 	}
-	info, createErr := provider.CreatePayment(ctx, port.CreatePaymentRequest{GatewayOrderRef: p.GatewayOrderRef, Deadline: p.ExpiresAt, Amount: money.Cents(p.Amount), Channel: p.Channel, Subject: a.Subject, ReturnURL: a.ReturnURL, NotifyBaseURL: a.NotifyURL, Config: cfg})
+	info, createErr := provider.CreatePayment(ctx, port.CreatePaymentRequest{GatewayOrderRef: p.GatewayOrderRef, Deadline: p.ExpiresAt, Amount: money.Cents(p.Amount), Channel: p.Channel, Subject: a.Subject, ReturnURL: a.ReturnURL, NotifyBaseURL: a.NotifyURL, Config: cfg, MethodCode: pricingOf(p).Method})
 	if createErr == nil && info == nil {
 		createErr = fmt.Errorf("payment.EMPTY_GATEWAY_RESPONSE")
 	}
@@ -291,7 +291,7 @@ func (r *PaymentRepoImpl) checkBepusdtConfigChange(ctx context.Context, ch *ent.
 			return err
 		}
 		old, err := adapter.ParseUpayConfig(r.DecryptConfig(ch))
-		if err == nil && old == next {
+		if err == nil && old.Equal(next) {
 			return nil
 		}
 	} else {

@@ -415,9 +415,11 @@ function openConfig(ch: ChannelRow) {
     echo = {};
   }
   for (const f of currentFields.value) {
-    const v = echo[f.key] ?? (["bepusdt", "upay"].includes(ch.driver) ? f.default : undefined);
+    const v = echo[f.key] ?? (ch.driver === "upay" && f.key === "trade_types" ? echo.trade_type ?? f.default : ["bepusdt", "upay"].includes(ch.driver) ? f.default : undefined);
     if (f.type === "number" && v !== undefined && v !== "" && Number.isFinite(Number(v))) {
       form.values[f.key] = Number(v);
+    } else if (ch.driver === "upay" && f.key === "trade_types") {
+      form.values[f.key] = selectedValues(v);
     } else if (Array.isArray(v)) {
       form.values[f.key] = v; // 多选字段回显
     } else if (ch.driver === "bepusdt" && f.multiple) {
@@ -460,7 +462,7 @@ function handleConfigSave() {
   for (const f of currentFields.value) {
     const v = form.values[f.key];
     const filled = Array.isArray(v) ? v.length > 0 : f.type === "number" ? typeof v === "number" && Number.isFinite(v) : !!String(v ?? "").trim();
-    if (f.required && !configuredKeys.value.has(f.key) && !filled) {
+    if (f.required && (!configuredKeys.value.has(f.key) || (current.value.driver === "upay" && f.key === "trade_types")) && !filled) {
       message.warning(`请填写「${f.label}」`);
       return;
     }

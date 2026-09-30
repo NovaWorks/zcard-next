@@ -144,3 +144,35 @@ func TestUpayConfigAndResponseRejection(t *testing.T) {
 		}
 	}
 }
+
+func TestUpayMultiTradeConfig(t *testing.T) {
+	for _, raw := range []string{`[]`, `null`, `["NOPE"]`, `"TRX"`} {
+		cfg := json.RawMessage(`{"api_url":"https://pay.test","secret_key":"s","trade_types":` + raw + `}`)
+		if _, err := ParseUpayConfig(cfg); err == nil {
+			t.Fatalf("accepted %s", raw)
+		}
+	}
+	cfg, err := ParseUpayConfig(json.RawMessage(`{"api_url":"https://pay.test","secret_key":"s","trade_type":"USDT-TRC20","trade_types":["TRX","USDC-BSC","TRX"]}`))
+	if err != nil || len(cfg.TradeTypes) != 2 || cfg.Options()[0].Value != "TRX" {
+		t.Fatalf("bad config %+v %v", cfg, err)
+	}
+	for _, method := range []string{"", "USDT-TRC20", "USDC-ERC20"} {
+		if _, err := cfg.SelectTrade(method); err == nil {
+			t.Fatalf("accepted unselected method %q", method)
+		}
+	}
+	if trade, err := cfg.SelectTrade("USDC-BSC"); err != nil || trade != "USDC-BSC" {
+		t.Fatalf("selection %s %v", trade, err)
+	}
+	legacy, err := ParseUpayConfig(json.RawMessage(`{"api_url":"https://pay.test","secret_key":"s","trade_type":"TRX"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if trade, err := legacy.SelectTrade(""); err != nil || trade != "TRX" {
+		t.Fatalf("legacy selection %s %v", trade, err)
+	}
+	modern, _ := ParseUpayConfig(json.RawMessage(`{"api_url":"https://pay.test","secret_key":"s","trade_types":["TRX"]}`))
+	if !legacy.Equal(modern) {
+		t.Fatal("equivalent legacy config differs")
+	}
+}

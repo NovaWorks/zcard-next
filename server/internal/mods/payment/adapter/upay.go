@@ -22,10 +22,11 @@ import (
 )
 
 type UpayConfig struct {
-	APIURL    string `json:"api_url"`
-	SecretKey string `json:"secret_key"`
-	TradeType string `json:"trade_type"`
-	Timeout   int64  `json:"timeout"`
+	APIURL     string   `json:"api_url"`
+	SecretKey  string   `json:"secret_key"`
+	TradeType  string   `json:"trade_type,omitempty"`
+	TradeTypes []string `json:"trade_types,omitempty"`
+	Timeout    int64    `json:"timeout"`
 }
 
 var upayTrades = []port.ConfigOption{
@@ -54,11 +55,32 @@ func ParseUpayConfig(raw json.RawMessage) (UpayConfig, error) {
 	if strings.TrimSpace(c.SecretKey) == "" {
 		return c, fmt.Errorf("UPAY PRO 通信密钥必填")
 	}
-	if c.TradeType == "" {
+	legacyDefault := c.TradeType == ""
+	if legacyDefault {
 		c.TradeType = "USDT-TRC20"
 	}
-	if !slices.ContainsFunc(upayTrades, func(o port.ConfigOption) bool { return o.Value == c.TradeType }) {
-		return c, fmt.Errorf("UPAY PRO 不支持该币种与网络组合")
+	var fields map[string]json.RawMessage
+	_ = json.Unmarshal(raw, &fields)
+	if _, exists := fields["trade_types"]; !exists {
+		c.TradeTypes = []string{c.TradeType}
+	}
+	if len(c.TradeTypes) == 0 {
+		return c, fmt.Errorf("UPAY PRO 请至少选择一种币种与网络")
+	}
+	seen := make(map[string]bool)
+	var trades []string
+	for _, trade := range c.TradeTypes {
+		if !slices.ContainsFunc(upayTrades, func(o port.ConfigOption) bool { return o.Value == trade }) {
+			return c, fmt.Errorf("UPAY PRO 不支持该币种与网络组合")
+		}
+		if !seen[trade] {
+			trades = append(trades, trade)
+			seen[trade] = true
+		}
+	}
+	c.TradeTypes = trades
+	if legacyDefault {
+		c.TradeType = trades[0]
 	}
 	if c.Timeout == 0 {
 		c.Timeout = 1200
@@ -79,6 +101,33 @@ func ParseUpayConfig(raw json.RawMessage) (UpayConfig, error) {
 	return c, nil
 }
 
+// SelectTrade permits an omitted choice only for a single enabled network.
+func (c UpayConfig) SelectTrade(method string) (string, error) {
+	if method == "" && len(c.TradeTypes) == 1 {
+		return c.TradeTypes[0], nil
+	}
+	if !slices.Contains(c.TradeTypes, method) {
+		return "", fmt.Errorf("payment.METHOD_INVALID: 请选择该渠道已启用的币种与网络")
+	}
+	return method, nil
+}
+
+func (c UpayConfig) Options() []port.ConfigOption {
+	var options []port.ConfigOption
+	for _, trade := range c.TradeTypes {
+		for _, option := range upayTrades {
+			if option.Value == trade {
+				options = append(options, option)
+			}
+		}
+	}
+	return options
+}
+
+func (c UpayConfig) Equal(other UpayConfig) bool {
+	return c.APIURL == other.APIURL && c.SecretKey == other.SecretKey && c.TradeType == other.TradeType && c.Timeout == other.Timeout && slices.Equal(c.TradeTypes, other.TradeTypes)
+}
+
 type Upay struct{ client *http.Client }
 
 func NewUpay() *Upay {
@@ -94,7 +143,7 @@ func (*Upay) ConfigFields() []port.ConfigField {
 	return []port.ConfigField{
 		{Key: "api_url", Label: "网关地址", Type: "text", Required: true, Placeholder: "https://pay.example.com", Help: "UPAY PRO 服务根地址，不含 /api/create_order"},
 		{Key: "secret_key", Label: "通信密钥", Type: "password", Required: true, Sensitive: true, Help: "UPAY PRO 后台设置中的 SecretKey；留空保留已保存的密钥"},
-		{Key: "trade_type", Label: "收款币种与网络", Type: "select", Required: true, Default: "USDT-TRC20", Options: append([]port.ConfigOption(nil), upayTrades...), Help: "网关需配置对应钱包和汇率。每个渠道固定一种币种与网络；可新增多个渠道供顾客选择。"},
+		{Key: "trade_types", Label: "收款币种与网络", Type: "select", Multiple: true, Required: true, Default: "USDT-TRC20", Options: append([]port.ConfigOption(nil), upayTrades...), Help: "可多选；顾客选择币种与网络后进入对应收银台。请仅启用网关已配置钱包和汇率的选项。"},
 		{Key: "timeout", Label: "本地支付期限（秒）", Type: "number", Default: "1200", Help: "60–3600 秒；同时受商品订单及网关有效期限制。网关期限需在 UPAY PRO 后台另行设置。"},
 	}
 }
@@ -156,13 +205,17 @@ func (p *Upay) CreatePayment(ctx context.Context, req port.CreatePaymentRequest)
 			return nil, fmt.Errorf("UPAY PRO 回调与回跳地址必须为完整 HTTP(S) 地址")
 		}
 	}
+	trade, err := c.SelectTrade(req.MethodCode)
+	if err != nil {
+		return nil, err
+	}
 	amount := json.Number(centsToYuan(int64(req.Amount)))
 	f, err := upayNumber(amount)
 	if err != nil {
 		return nil, err
 	}
-	signature := upaySign(map[string]string{"type": c.TradeType, "amount": fmt.Sprintf("%g", f), "notify_url": req.NotifyBaseURL, "order_id": req.GatewayOrderRef, "redirect_url": req.ReturnURL}, c.SecretKey)
-	body, _ := json.Marshal(map[string]any{"type": c.TradeType, "amount": amount, "order_id": req.GatewayOrderRef, "notify_url": req.NotifyBaseURL, "redirect_url": req.ReturnURL, "signature": signature})
+	signature := upaySign(map[string]string{"type": trade, "amount": fmt.Sprintf("%g", f), "notify_url": req.NotifyBaseURL, "order_id": req.GatewayOrderRef, "redirect_url": req.ReturnURL}, c.SecretKey)
+	body, _ := json.Marshal(map[string]any{"type": trade, "amount": amount, "order_id": req.GatewayOrderRef, "notify_url": req.NotifyBaseURL, "redirect_url": req.ReturnURL, "signature": signature})
 	hreq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.APIURL+"/api/create_order", bytes.NewReader(body))
 	if err != nil {
 		return nil, err

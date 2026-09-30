@@ -290,7 +290,7 @@ func TestUpayAdminConfiguration(t *testing.T) {
 	for _, driver := range drivers.Drivers {
 		if driver.Code == "upay" {
 			found = true
-			if driver.Name != "UPAY PRO" || len(driver.Fields) != 4 {
+			if driver.Name != "UPAY PRO" || len(driver.Fields) != 4 || driver.Fields[2].Key != "trade_types" || !driver.Fields[2].Multiple {
 				t.Fatal("incomplete driver metadata")
 			}
 		}
@@ -313,6 +313,17 @@ func TestUpayAdminConfiguration(t *testing.T) {
 	if !strings.Contains(string(repo.DecryptConfig(stored)), "test-secret") {
 		t.Fatal("blank edit erased secret")
 	}
+	updated, err := svc.UpdateChannel(ctx, &adminv1.UpdateChannelRequest{Id: ch.Id, ConfigJson: `{"trade_types":["USDT-TRC20","USDC-BSC"],"secret_key":""}`})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var echo map[string]any
+	if json.Unmarshal([]byte(updated.ConfigJson), &echo) != nil || len(echo["trade_types"].([]any)) != 2 || strings.Contains(updated.ConfigJson, "test-secret") {
+		t.Fatal("incorrect multiselect echo")
+	}
+	if _, err := svc.UpdateChannel(ctx, &adminv1.UpdateChannelRequest{Id: ch.Id, ConfigJson: `{"trade_types":[]}`}); err == nil {
+		t.Fatal("empty selection saved")
+	}
 	if _, err := repo.CreateChannel(ctx, "bad", "bad", "upay", string(repo.DecryptConfig(stored)), 0, "fixed", true, 0, "", []map[string]any{{"code": "trx"}}); err == nil {
 		t.Fatal("unsupported method overrides accepted")
 	}
@@ -333,7 +344,7 @@ func TestUpayConcurrentClicksAndRechargeConflict(t *testing.T) {
 		upTestResponse(w, m)
 	}))
 	defer gateway.Close()
-	ch := upTestChannel(t, repo, gateway.URL)
+	ch := upTestMultiChannel(t, repo, gateway.URL)
 	ctx := context.Background()
 	ro := d.Client.RechargeOrder.Create().SetUserID(1).SetAmount(1000).SaveX(ctx)
 	type result struct {
@@ -342,14 +353,23 @@ func TestUpayConcurrentClicksAndRechargeConflict(t *testing.T) {
 	}
 	done := make(chan result, 1)
 	go upTestRequest(func(ctx context.Context) {
-		info, err := repo.CreateRechargePayment(ctx, ro.ID, ch.Code, "", 1000)
+		info, err := repo.CreateRechargePayment(ctx, ro.ID, ch.Code, "USDT-TRC20", 1000)
 		done <- result{info, err}
 	})
 	<-started
 	var busy error
-	upTestRequest(func(ctx context.Context) { _, busy = repo.CreateRechargePayment(ctx, ro.ID, ch.Code, "", 1000) })
+	upTestRequest(func(ctx context.Context) {
+		_, busy = repo.CreateRechargePayment(ctx, ro.ID, ch.Code, "USDT-TRC20", 1000)
+	})
+	var switchBusy error
+	upTestRequest(func(ctx context.Context) {
+		_, switchBusy = repo.CreateRechargePayment(ctx, ro.ID, ch.Code, "USDC-BSC", 1000)
+	})
 	close(release)
 	first := <-done
+	if switchBusy == nil || !strings.Contains(switchBusy.Error(), "IN_PROGRESS") {
+		t.Fatalf("concurrent network switch bypassed lease: %v", switchBusy)
+	}
 	if busy == nil || !strings.Contains(busy.Error(), "IN_PROGRESS") || first.err != nil || calls.Load() != 1 {
 		t.Fatalf("concurrent request: %v / %v", busy, first.err)
 	}
@@ -360,7 +380,7 @@ func TestUpayConcurrentClicksAndRechargeConflict(t *testing.T) {
 	}
 	var secondInfo *port.RechargePaymentInfo
 	upTestRequest(func(ctx context.Context) {
-		secondInfo, err = repo.CreateRechargePayment(ctx, ro.ID, second.Code, "", 1000)
+		secondInfo, err = repo.CreateRechargePayment(ctx, ro.ID, second.Code, "USDC-BSC", 1000)
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -382,5 +402,229 @@ func TestUpayConcurrentClicksAndRechargeConflict(t *testing.T) {
 	}
 	if p := d.Client.Payment.GetX(ctx, secondInfo.PaymentID); p.Status != payment.StatusSuccess || p.ReviewReason == "" {
 		t.Fatal("second receipt not recorded for review")
+	}
+}
+
+func upTestMultiChannel(t *testing.T, repo *PaymentRepoImpl, gateway string) *ent.PaymentChannel {
+	t.Helper()
+	ch := upTestChannel(t, repo, gateway)
+	cfg := strings.Replace(string(repo.DecryptConfig(ch)), `"trade_type":"USDT-TRC20"`, `"trade_types":["USDT-TRC20","USDC-BSC"]`, 1)
+	ch, err := repo.UpdateChannel(context.Background(), ch.ID, "", cfg, -1, "", true, -1, false, "", false, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return ch
+}
+
+func TestUpayMultiNetworkPurchase(t *testing.T) {
+	d, repo, _, _, life, _ := newCallbackEnv(t)
+	var calls atomic.Int32
+	gateway := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		var m map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&m)
+		p := d.Client.Payment.Query().Where(payment.GatewayOrderRef(m["order_id"].(string))).OnlyX(context.Background())
+		if pricingOf(p).Method != m["type"] {
+			t.Error("selected network not sent to gateway")
+		}
+		upTestResponse(w, m)
+	}))
+	defer gateway.Close()
+	ch := upTestMultiChannel(t, repo, gateway.URL)
+	ctx := context.Background()
+	o, _ := seedPendingOrder(t, d, ch.Code, 1000)
+	store := NewStorePaymentService(repo, d)
+	var ids []uint64
+	upTestRequest(func(ctx context.Context) {
+		for _, scene := range []string{scenePurchase, sceneMemberRecharge, sceneSupplyRecharge} {
+			list, err := store.ListChannels(ctx, &storefrontv1.ListPaymentChannelsRequest{Scene: scene})
+			if err != nil {
+				t.Fatal(err)
+			}
+			found := false
+			for _, item := range list.Channels {
+				if item.Code == ch.Code {
+					found = true
+					if len(item.Methods) != 2 || item.Methods[1].Code != "USDC-BSC" || item.Methods[1].Name != "USDC · BSC" {
+						t.Fatalf("missing choices %+v", item)
+					}
+				}
+			}
+			if !found {
+				t.Fatal("channel missing")
+			}
+		}
+		for _, method := range []string{"", "TRX", "USDT-ERC20"} {
+			if _, err := store.QuotePayment(ctx, &storefrontv1.PaymentQuoteRequest{OrderNo: o.OrderNo, Channel: ch.Code, Method: method}); err == nil {
+				t.Fatal("invalid quote accepted")
+			}
+			if _, err := store.CreatePayment(ctx, &storefrontv1.CreatePaymentRequest{OrderNo: o.OrderNo, Channel: ch.Code, Method: method}); err == nil {
+				t.Fatal("invalid selection accepted")
+			}
+		}
+		var previousQuote string
+		for _, method := range []string{"USDT-TRC20", "USDC-BSC", "USDT-TRC20"} {
+			q, err := store.QuotePayment(ctx, &storefrontv1.PaymentQuoteRequest{OrderNo: o.OrderNo, Channel: ch.Code, Method: method})
+			if err != nil || q.Method != method {
+				t.Fatalf("wrong quote %+v %v", q, err)
+			}
+			if previousQuote != "" {
+				if _, err := store.CreatePayment(ctx, &storefrontv1.CreatePaymentRequest{OrderNo: o.OrderNo, Channel: ch.Code, Method: method, QuoteKey: previousQuote}); err == nil {
+					t.Fatal("cross-network quote accepted")
+				}
+			}
+			info, err := store.CreatePayment(ctx, &storefrontv1.CreatePaymentRequest{OrderNo: o.OrderNo, Channel: ch.Code, Method: method, QuoteKey: q.QuoteKey})
+			if err != nil {
+				t.Fatal(err)
+			}
+			p := d.Client.Payment.GetX(ctx, info.PaymentId)
+			if info.Payload != "https://pay.test/pay/checkout-counter/T-"+p.GatewayOrderRef {
+				t.Fatal("wrong checkout link")
+			}
+			ids = append(ids, info.PaymentId)
+			previousQuote = q.QuoteKey
+		}
+	})
+	if ids[0] == ids[1] || ids[0] != ids[2] || calls.Load() != 2 {
+		t.Fatalf("bad attempt reuse %v / %d", ids, calls.Load())
+	}
+	for index, id := range ids[:2] {
+		p := d.Client.Payment.GetX(ctx, id)
+		for i := 0; i < 2; i++ {
+			rec := beServeCallback(d, repo, ch, upTestCallback(p.GatewayOrderRef, p.ChannelOrderNo, 10, 2))
+			if rec.Code != 200 {
+				t.Fatalf("callback %d %s", rec.Code, rec.Body.String())
+			}
+		}
+		// fakeLifecycle records calls only; mirror the real order state transition.
+		if index == 0 {
+			d.Client.Order.UpdateOne(o).SetStatus(order.StatusPaid).SaveX(ctx)
+		}
+	}
+	if len(life.markPaidCalls) != 1 || d.Client.Payment.GetX(ctx, ids[1]).ReviewReason == "" {
+		t.Fatal("cross-network double settlement")
+	}
+}
+
+func TestUpayMultiNetworkRecharge(t *testing.T) {
+	for _, target := range []rechargeorder.Target{rechargeorder.TargetBalance, rechargeorder.TargetSupply} {
+		t.Run(string(target), func(t *testing.T) {
+			d, repo, wallet, _, _, supplier := newCallbackEnv(t)
+			var calls atomic.Int32
+			gateway := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				calls.Add(1)
+				var m map[string]any
+				_ = json.NewDecoder(r.Body).Decode(&m)
+				p := d.Client.Payment.Query().Where(payment.GatewayOrderRef(m["order_id"].(string))).OnlyX(context.Background())
+				if pricingOf(p).Method != m["type"] {
+					t.Error("wrong recharge network")
+				}
+				upTestResponse(w, m)
+			}))
+			defer gateway.Close()
+			ch := upTestMultiChannel(t, repo, gateway.URL)
+			ctx := context.Background()
+			ro := d.Client.RechargeOrder.Create().SetUserID(1).SetSupplierAccountID(19).SetTarget(target).SetAmount(1000).SaveX(ctx)
+			var ids []uint64
+			upTestRequest(func(ctx context.Context) {
+				if _, err := repo.CreateRechargePayment(ctx, ro.ID, ch.Code, "TRX", 1000); err == nil {
+					t.Fatal("disabled network accepted")
+				}
+				for _, method := range []string{"USDC-BSC", "USDT-TRC20", "USDC-BSC"} {
+					info, err := repo.CreateRechargePayment(ctx, ro.ID, ch.Code, method, 1000)
+					if err != nil {
+						t.Fatal(err)
+					}
+					ids = append(ids, info.PaymentID)
+				}
+			})
+			if ids[0] == ids[1] || ids[0] != ids[2] || calls.Load() != 2 {
+				t.Fatalf("bad recharge reuse %v", ids)
+			}
+			for _, id := range ids[:2] {
+				p := d.Client.Payment.GetX(ctx, id)
+				rec := beServeCallback(d, repo, ch, upTestCallback(p.GatewayOrderRef, p.ChannelOrderNo, 10, 2))
+				if rec.Code != 200 {
+					t.Fatalf("callback %s", rec.Body.String())
+				}
+			}
+			if target == rechargeorder.TargetBalance {
+				balance, _, err := wallet.GetBalance(ctx, 1)
+				if err != nil || balance != 1000 {
+					t.Fatalf("double credit %d %v", balance, err)
+				}
+			} else if supplier.calls != 1 || supplier.amount != 1000 {
+				t.Fatalf("double supplier credit %+v", supplier)
+			}
+			if d.Client.Payment.GetX(ctx, ids[1]).ReviewReason == "" {
+				t.Fatal("second receipt missing review")
+			}
+		})
+	}
+}
+
+func TestUpayMultiNetworkUnknownCannotSwitch(t *testing.T) {
+	d, repo, _, _, _, _ := newCallbackEnv(t)
+	var calls atomic.Int32
+	gateway := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { calls.Add(1); http.Error(w, "unknown", 502) }))
+	defer gateway.Close()
+	ch := upTestMultiChannel(t, repo, gateway.URL)
+	o, _ := seedPendingOrder(t, d, ch.Code, 1000)
+	upTestRequest(func(ctx context.Context) {
+		if _, err := repo.createBepusdtPayment(ctx, ch.ID, o.ID, 0, "USDC-BSC"); err == nil {
+			t.Fatal("expected unknown")
+		}
+		if _, err := repo.createBepusdtPayment(ctx, ch.ID, o.ID, 0, "USDT-TRC20"); err == nil || !strings.Contains(err.Error(), "RESULT_UNKNOWN") {
+			t.Fatalf("unknown bypassed %v", err)
+		}
+	})
+	if calls.Load() != 1 {
+		t.Fatal("unknown request repeated on another network")
+	}
+}
+
+func TestUpayLegacyPendingChoice(t *testing.T) {
+	d, repo, _, _, _, _ := newCallbackEnv(t)
+	var calls atomic.Int32
+	gateway := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		var m map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&m)
+		upTestResponse(w, m)
+	}))
+	defer gateway.Close()
+	ch := upTestChannel(t, repo, gateway.URL)
+	o, _ := seedPendingOrder(t, d, ch.Code, 1000)
+	var id uint64
+	upTestRequest(func(ctx context.Context) {
+		info, err := repo.createBepusdtPayment(ctx, ch.ID, o.ID, 0, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		id = info.PaymentID
+		p := d.Client.Payment.GetX(ctx, id)
+		price := pricingOf(p)
+		price.Method = ""
+		d.Client.Payment.UpdateOneID(id).SetPricingSnapshot(pricingJSON(price)).SaveX(ctx)
+		cfg := strings.Replace(string(repo.DecryptConfig(ch)), `"trade_type":"USDT-TRC20"`, `"trade_types":["USDT-TRC20"]`, 1)
+		if _, err := repo.UpdateChannel(ctx, ch.ID, "", cfg, -1, "", true, -1, false, "", false, nil); err != nil {
+			t.Fatal(err)
+		}
+		// Changing the legacy fallback could reassign an old attempt to another network.
+		if _, err := repo.UpdateChannel(ctx, ch.ID, "", strings.Replace(cfg, `"trade_types"`, `"trade_type":"USDC-BSC","trade_types"`, 1), -1, "", true, -1, false, "", false, nil); err == nil || !strings.Contains(err.Error(), "CHANNEL_BUSY") {
+			t.Fatalf("legacy attempt reassigned: %v", err)
+		}
+		store := NewStorePaymentService(repo, d)
+		q, err := store.QuotePayment(ctx, &storefrontv1.PaymentQuoteRequest{OrderNo: o.OrderNo, Channel: ch.Code, Method: "USDT-TRC20"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		again, err := store.CreatePayment(ctx, &storefrontv1.CreatePaymentRequest{OrderNo: o.OrderNo, Channel: ch.Code, Method: "USDT-TRC20", QuoteKey: q.QuoteKey})
+		if err != nil || again.PaymentId != id {
+			t.Fatalf("legacy attempt lost %v", err)
+		}
+	})
+	if calls.Load() != 1 {
+		t.Fatal("legacy checkout recreated")
 	}
 }

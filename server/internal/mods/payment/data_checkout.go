@@ -17,6 +17,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/adapter"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
@@ -50,6 +51,16 @@ func validateRecommendation(label, description string) error {
 	return nil
 }
 func (r *PaymentRepoImpl) price(ctx context.Context, ch *ent.PaymentChannel, base int64, method string) (paymentPricing, error) {
+	if ch.Driver == "upay" {
+		cfg, err := adapter.ParseUpayConfig(r.DecryptConfig(ch))
+		if err != nil {
+			return paymentPricing{}, err
+		}
+		method, err = cfg.SelectTrade(method)
+		if err != nil {
+			return paymentPricing{}, err
+		}
+	}
 	p := paymentPricing{Base: base, Total: base, Rate: ch.Fee, Type: string(ch.FeeType), Bearer: string(ch.FeeBearer), Method: method}
 	if err := validateFee(p.Rate, p.Type, p.Bearer); err != nil {
 		return p, err
@@ -137,14 +148,14 @@ func (s *StorePaymentService) QuotePayment(ctx context.Context, req *storefrontv
 	if err != nil || !ch.DeletedAt.IsZero() {
 		return nil, errors.BadRequest("payment.CHANNEL_NOT_FOUND", "支付渠道不可用")
 	}
-	if err = checkPaymentUsage(ch, req.GetMethod(), scene); err != nil {
+	if err = s.repo.checkPaymentUsage(ch, req.GetMethod(), scene); err != nil {
 		return nil, errors.BadRequest("payment.SCENE_DISABLED", err.Error())
 	}
 	if ch.Driver == "wallet" && identity.ClaimsFromContext(ctx) == nil {
 		return nil, errors.Unauthorized("identity.UNAUTHORIZED", "余额支付需登录")
 	}
 	if isNativeCryptoDriver(ch.Driver) && orderID > 0 {
-		old, e := data.Client(ctx, s.data).Payment.Query().Where(payment.ChannelID(ch.ID), payment.OrderID(orderID)).Order(ent.Desc(payment.FieldID)).First(ctx)
+		old, e := s.repo.nativeAttempt(ctx, data.Client(ctx, s.data).Payment.Query().Where(payment.ChannelID(ch.ID), payment.OrderID(orderID), payment.DriverSnapshot(ch.Driver)), ch, req.GetMethod())
 		if e == nil {
 			if old.Status != payment.StatusPending || !time.Now().Before(old.ExpiresAt) {
 				return nil, errors.BadRequest("payment.ORDER_EXPIRED", "支付已关闭或过期，请重新下单")

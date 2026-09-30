@@ -545,7 +545,7 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 	if ro.Target == rechargeorder.TargetSupply {
 		scene = sceneSupplyRecharge
 	}
-	if err := checkPaymentUsage(ch, method, scene); err != nil {
+	if err := r.checkPaymentUsage(ch, method, scene); err != nil {
 		return nil, err
 	}
 	// 方式级路由（与订单支付同口径）：多方式渠道 method 必填且须在启用列表内

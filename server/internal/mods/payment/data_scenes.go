@@ -3,6 +3,7 @@ package payment
 import (
 	"fmt"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/adapter"
 )
 
 const (
@@ -58,6 +59,21 @@ func checkPaymentUsage(ch *ent.PaymentChannel, method, scene string) error {
 			}
 		}
 		return fmt.Errorf("payment.METHOD_INVALID: 请选择该渠道支持的支付方式")
+	}
+	return nil
+}
+
+func (r *PaymentRepoImpl) checkPaymentUsage(ch *ent.PaymentChannel, method, scene string) error {
+	if err := checkPaymentUsage(ch, method, scene); err != nil {
+		return err
+	}
+	if ch.Driver == "upay" {
+		cfg, err := adapter.ParseUpayConfig(r.DecryptConfig(ch))
+		if err != nil {
+			return err
+		}
+		_, err = cfg.SelectTrade(method)
+		return err
 	}
 	return nil
 }

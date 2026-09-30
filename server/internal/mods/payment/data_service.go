@@ -25,6 +25,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/adapter"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
@@ -505,7 +506,17 @@ func (s *StorePaymentService) ListChannels(ctx context.Context, req *storefrontv
 			continue // 待配置渠道不下发
 		}
 		item := &storefrontv1.ChannelItem{Code: ch.Code, Name: paymentChannelName(ch), Driver: ch.Driver, Icon: ch.Icon, Fee: ch.Fee, FeeType: string(ch.FeeType), FeeBearer: string(ch.FeeBearer), Recommended: ch.Recommended, RecommendLabel: ch.RecommendLabel, RecommendDescription: ch.RecommendDescription}
-		for _, m := range parseMethods(ch) {
+		methods := parseMethods(ch)
+		if ch.Driver == "upay" {
+			cfg, e := adapter.ParseUpayConfig(s.repo.DecryptConfig(ch))
+			if e != nil {
+				continue
+			}
+			for _, option := range cfg.Options() {
+				methods = append(methods, ChannelMethod{Code: option.Value, Name: option.Label, Enabled: true})
+			}
+		}
+		for _, m := range methods {
 			if !m.Enabled || !m.ChannelUsage.allows(scene) {
 				continue
 			}
@@ -555,7 +566,7 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 	if !ch.Enabled {
 		return nil, errors.BadRequest("payment.CHANNEL_DISABLED", "支付渠道已停用")
 	}
-	if err := checkPaymentUsage(ch, req.GetMethod(), scenePurchase); err != nil {
+	if err := s.repo.checkPaymentUsage(ch, req.GetMethod(), scenePurchase); err != nil {
 		return nil, errors.BadRequest("payment.SCENE_DISABLED", err.Error())
 	}
 	// wallet 渠道：余额支付（直接 markPaid—— 接 wallet.DebitInTx）
