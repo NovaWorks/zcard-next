@@ -1,0 +1,12 @@
+# Package exactly the already signed release binaries; no second compilation.
+FROM gcr.io/distroless/static-debian12:nonroot
+ARG TARGETARCH
+COPY zcard-linux-${TARGETARCH} /zcard
+COPY --chown=65532:65532 runtime/ /app/
+WORKDIR /app
+ENV ZCARD_CONTAINER=1
+VOLUME ["/app"]
+USER nonroot:nonroot
+EXPOSE 8000
+ENTRYPOINT ["/zcard"]
+CMD ["serve", "-conf", "/app/configs"]

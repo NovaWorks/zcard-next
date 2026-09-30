@@ -5304,7 +5304,9 @@ paths:
             operationId: AdminUpdateService_ApplyUpdate
             requestBody:
                 content:
-                    application/json: {}
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ApplyUpdateRequest'
                 required: true
             responses:
                 "200":
@@ -7756,6 +7758,12 @@ components:
                 seq:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.ApplyUpdateRequest:
+            type: object
+            properties:
+                version:
+                    type: string
+                    description: Version explicitly confirmed by the administrator; required for Docker.
         zcard.api.admin.v1.ApproveReviewRequest:
             required:
                 - id
@@ -12873,6 +12881,12 @@ components:
                     type: string
                 prevVersion:
                     type: string
+                dockerUpdateReady:
+                    type: boolean
+                dockerUpdateHint:
+                    type: string
+                rollbackReady:
+                    type: boolean
         zcard.api.admin.v1.UploadMediaRequest:
             required:
                 - name

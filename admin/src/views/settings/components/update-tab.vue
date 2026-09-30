@@ -71,7 +71,9 @@ const inFlight = computed(() => {
 
 const isContainer = computed(() => status.value?.supervisor_kind === "docker");
 const unknownContainerVersion = computed(() => isContainer.value && !/^v?\d+\.\d+\.\d+$/.test(status.value?.current_version || ""));
-const containerHint = "请在部署服务器运行 bash deploy/docker-install.sh，下载最新正式版并重建镜像和容器。升级前请备份配置和数据卷。";
+const containerHint = computed(() => status.value?.docker_update_hint || "请在原部署目录运行 bash deploy/docker-install.sh --online，接入在线更新助手。");
+const canApply = computed(() => !isContainer.value || status.value?.docker_update_ready === true);
+const canRollback = computed(() => !isContainer.value || (canApply.value && status.value?.rollback_ready === true));
 
 const supervisorTag = computed(() => {
   if (!status.value) return { type: "default" as const, label: "状态未知" };
@@ -116,7 +118,7 @@ const historyHtml = computed(() => {
 // 下载百分比（统一出口——仅 downloading 阶段有值；百分比由进度条 indicator 单点展示，
 // 阶段标题只显示阶段名，避免「下载新版本中 23% + 23%」双显）
 const dlPercent = computed(() =>
-  status.value?.phase === "downloading" ? status.value?.progress_percent || 0 : undefined
+  !isContainer.value && status.value?.phase === "downloading" ? status.value?.progress_percent || 0 : undefined
 );
 
 const sourceText = computed(() => {
@@ -256,11 +258,11 @@ function sanitizeHtml(html: string) {
 }
 
 async function doApply() {
-  if (isContainer.value) { message.info(containerHint); return; }
+  if (!canApply.value) { message.info(containerHint.value); return; }
   updateDone.value = false;
   modalStage.value = "progress"; // 弹窗切换为分步进度（大厂范式：同一弹窗承接全流程）
   try {
-    const { data, error } = await applyUpdate();
+    const { data, error } = await applyUpdate(checkResult.value?.latest_version);
     if (error || !data) throw error || new Error("更新响应为空");
     status.value = data;
     waitingRestart = false;
@@ -276,18 +278,19 @@ async function doApply() {
 }
 
 // ── 分步进度（大厂更新器范式）：四步 + 当前步骤高亮 + 下载步百分比 ──
-const STEPS = [
-  { key: "backing_up", label: "备份数据库" },
-  { key: "downloading", label: "下载新版本" },
+const STEPS = computed(() => [
+  ...(isContainer.value
+    ? [{ key: "downloading", label: "拉取镜像" }, { key: "backing_up", label: "停机备份" }]
+    : [{ key: "backing_up", label: "备份数据库" }, { key: "downloading", label: "下载新版本" }]),
   { key: "applying", label: "应用更新" },
   { key: "restarting", label: "重启服务" },
-] as const;
+]);
 const stepIndex = computed(() => {
   const ph = status.value?.phase || "";
   // verifying（新进程健康检查）归入重启步；failed 停在当前步标红
-  const order = ["backing_up", "downloading", "applying", "restarting", "verifying"];
+  const order = [...STEPS.value.map(s => s.key), "verifying"];
   const idx = order.indexOf(ph);
-  return idx < 0 ? -1 : Math.min(idx, STEPS.length - 1);
+  return idx < 0 ? -1 : Math.min(idx, STEPS.value.length - 1);
 });
 const stepState = (i: number): "done" | "current" | "todo" | "error" => {
   if (updateDone.value) return "done";
@@ -302,7 +305,7 @@ const stepState = (i: number): "done" | "current" | "todo" | "error" => {
 async function retryFromFailed() {
   modalStage.value = "progress";
   try {
-    const { data, error } = await applyUpdate();
+    const { data, error } = await applyUpdate(checkResult.value?.latest_version || status.value?.target_version);
     if (error || !data) throw error || new Error("更新响应为空");
     status.value = data;
     waitingRestart = false;
@@ -318,7 +321,7 @@ async function retryFromFailed() {
 }
 
 async function doRollback() {
-  if (isContainer.value) { message.info(containerHint); return; }
+  if (!canRollback.value) { message.info("没有数据库结构兼容的上一版本可回退"); return; }
   try {
     const { data, error } = await rollbackUpdate();
     if (error || !data) throw error || new Error("回滚响应为空");
@@ -456,11 +459,11 @@ watch(
           <div class="stat-value">
             <NSpace :size="8">
               <NButton size="tiny" type="primary" :loading="checking" :disabled="inFlight || waitingRestart" @click="doCheck()">检查更新</NButton>
-              <NPopconfirm v-if="!isContainer" @positive-click="doRollback">
+              <NPopconfirm v-if="canRollback" @positive-click="doRollback">
                 <template #trigger>
                   <NButton size="tiny" :disabled="inFlight" quaternary type="warning">回滚上一版</NButton>
                 </template>
-                回滚到 zcard.prev 并重启服务？（适用于新版异常时的逃生）
+                {{ isContainer ? "备份后切回上一镜像并重启服务？数据库不会还原。" : "回滚到 zcard.prev 并重启服务？" }}
               </NPopconfirm>
             </NSpace>
           </div>
@@ -494,7 +497,7 @@ watch(
 
       <NAlert v-if="status?.phase === 'failed'" type="error" class="mt-3" :bordered="false">
         <b>更新失败：</b>{{ status?.error_message }}
-        <div class="mt-1 text-xs opacity-70">失败原因与对应处置见上方错误信息（按数据库方言与实际错误给出）。磁盘不足可清理后重试；下载源不可达可在「更新源配置」切换模式。更新在任何阶段失败都不会改动磁盘上的现有版本，可安全重试。</div>
+        <div class="mt-1 text-xs opacity-70">请按错误信息检查当前运行版本和备份。数据库已迁移或状态不明时，请先核对恢复方案，再重试或回退。</div>
       </NAlert>
 
       <!-- 进行中进度 -->
@@ -513,7 +516,7 @@ watch(
           服务正在重启，请稍候。正在等待连接恢复，确认新版本就绪后本页会自动刷新。
         </div>
         <div v-if="status?.phase === 'backing_up'" class="mt-2 text-xs opacity-70">
-          正在备份数据库（SQLite VACUUM INTO / pg_dump）——数据安全优先，跳过不提供。
+          {{ isContainer ? "已暂停应用，正在备份数据卷及数据库；完成后启动新版本。" : "正在备份数据库；备份失败将中止更新。" }}
         </div>
       </div>
     </NCard>
@@ -634,7 +637,7 @@ watch(
             <span class="step-dot">
               <template v-if="stepState(i) === 'done'">✓</template>
               <template v-else-if="stepState(i) === 'error'">✕</template>
-              <template v-else-if="stepState(i) === 'current' && s.key === 'downloading'">{{ status?.progress_percent ?? 0 }}%</template>
+              <template v-else-if="!isContainer && stepState(i) === 'current' && s.key === 'downloading'">{{ status?.progress_percent ?? 0 }}%</template>
               <template v-else>{{ i + 1 }}</template>
             </span>
             <span class="step-label">{{ s.label }}</span>
@@ -644,6 +647,7 @@ watch(
           v-if="status?.phase === 'downloading'"
           type="line"
           :percentage="status?.progress_percent || 0"
+          :indeterminate="isContainer"
           :rail-height="8"
           :border-radius="4"
           :show-indicator="false"
@@ -662,18 +666,18 @@ watch(
             更新失败：{{ status?.error_message }}
             <div class="mt-2 flex justify-center gap-8px">
               <NButton size="tiny" @click="retryFromFailed">重试</NButton>
-              <NButton size="tiny" type="warning" quaternary @click="doRollback">回滚上一版</NButton>
+              <NButton v-if="canRollback" size="tiny" type="warning" quaternary @click="doRollback">回滚上一版</NButton>
               <NButton size="tiny" quaternary @click="showConfirm = false">关闭</NButton>
             </div>
           </template>
-          <template v-else>更新过程中请勿关闭浏览器；失败可安全重试（不会改动现有版本）</template>
+          <template v-else>{{ isContainer ? "任务由升级助手持续执行；服务切换期间会暂时失联，请等待恢复。" : "更新任务正在执行，请等待结果。" }}</template>
         </div>
       </template>
 
       <template #footer>
         <NSpace v-if="modalStage === 'confirm'" justify="end">
-          <NButton size="small" @click="showConfirm = false">{{ isContainer ? "知道了" : "取消" }}</NButton>
-          <NButton v-if="!isContainer" size="small" type="primary" @click="doApply">立即更新</NButton>
+          <NButton size="small" @click="showConfirm = false">{{ canApply ? "取消" : "知道了" }}</NButton>
+          <NButton v-if="canApply" size="small" type="primary" :disabled="inFlight" @click="doApply">立即更新</NButton>
         </NSpace>
         <div v-else class="text-center text-12px opacity-50">zcard 在线更新</div>
       </template>

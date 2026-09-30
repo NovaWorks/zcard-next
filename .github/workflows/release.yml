@@ -51,6 +51,16 @@ jobs:
               -o "../dist/zcard-linux-${arch}" ./cmd/zcard
           done
 
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: 登录 Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: 发布镜像并生成镜像清单
+        run: python3 scripts/publish_docker_release.py --version "${GITHUB_REF_NAME}" --dir dist
+
       - name: 签名清单（ed25519）
         env:
           ZCARD_SIGN_KEY: ${{ secrets.ZCARD_SIGN_KEY }}
@@ -72,6 +82,7 @@ jobs:
             dist/zcard-linux-amd64
             dist/zcard-linux-arm64
             dist/update.json
+            dist/zcard-container-release.json
             dist/SHA256SUMS
             dist/LICENSE
             dist/NOTICE

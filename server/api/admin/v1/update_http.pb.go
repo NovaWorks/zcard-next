@@ -25,7 +25,7 @@ const OperationAdminUpdateServiceRollbackUpdate = "/zcard.api.admin.v1.AdminUpda
 
 type AdminUpdateServiceHTTPServer interface {
 	// ApplyUpdate ApplyUpdate 触发更新（单飞；进行中重复调用返回当前态）。
-	ApplyUpdate(context.Context, *emptypb.Empty) (*UpdateStatus, error)
+	ApplyUpdate(context.Context, *ApplyUpdateRequest) (*UpdateStatus, error)
 	// CheckUpdate CheckUpdate 手动检查更新（源解析+manifest 验签；结果缓存于 status）。
 	CheckUpdate(context.Context, *emptypb.Empty) (*UpdateCheckResult, error)
 	// GetUpdateStatus GetUpdateStatus 当前状态（幂等轮询；含生效源/supervisor 探测/最近 check 结果）。
@@ -82,13 +82,13 @@ func _AdminUpdateService_CheckUpdate0_HTTP_Handler(srv AdminUpdateServiceHTTPSer
 
 func _AdminUpdateService_ApplyUpdate0_HTTP_Handler(srv AdminUpdateServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in emptypb.Empty
+		var in ApplyUpdateRequest
 		if err := ctx.Bind(&in); err != nil {
 			return err
 		}
 		http.SetOperation(ctx, OperationAdminUpdateServiceApplyUpdate)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.ApplyUpdate(ctx, req.(*emptypb.Empty))
+			return srv.ApplyUpdate(ctx, req.(*ApplyUpdateRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
@@ -120,7 +120,7 @@ func _AdminUpdateService_RollbackUpdate0_HTTP_Handler(srv AdminUpdateServiceHTTP
 
 type AdminUpdateServiceHTTPClient interface {
 	// ApplyUpdate ApplyUpdate 触发更新（单飞；进行中重复调用返回当前态）。
-	ApplyUpdate(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *UpdateStatus, err error)
+	ApplyUpdate(ctx context.Context, req *ApplyUpdateRequest, opts ...http.CallOption) (rsp *UpdateStatus, err error)
 	// CheckUpdate CheckUpdate 手动检查更新（源解析+manifest 验签；结果缓存于 status）。
 	CheckUpdate(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *UpdateCheckResult, err error)
 	// GetUpdateStatus GetUpdateStatus 当前状态（幂等轮询；含生效源/supervisor 探测/最近 check 结果）。
@@ -138,7 +138,7 @@ func NewAdminUpdateServiceHTTPClient(client *http.Client) AdminUpdateServiceHTTP
 }
 
 // ApplyUpdate ApplyUpdate 触发更新（单飞；进行中重复调用返回当前态）。
-func (c *AdminUpdateServiceHTTPClientImpl) ApplyUpdate(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*UpdateStatus, error) {
+func (c *AdminUpdateServiceHTTPClientImpl) ApplyUpdate(ctx context.Context, in *ApplyUpdateRequest, opts ...http.CallOption) (*UpdateStatus, error) {
 	var out UpdateStatus
 	pattern := "/api/v1/admin/update/apply"
 	path := http.BuildPath(pattern, in)

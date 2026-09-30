@@ -39,6 +39,8 @@ storefront/dist/
 # 环境变量
 .env
 .env.local
+deploy/.docker-update/
+__pycache__/
 
 # 本地运行产物
 *.rdb

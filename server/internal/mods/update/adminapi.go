@@ -4,6 +4,7 @@ package update
 
 import (
 	context "context"
+	"os"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/updater"
@@ -48,12 +49,18 @@ func (s *AdminUpdateService) CheckUpdate(ctx context.Context, _ *emptypb.Empty) 
 }
 
 // ApplyUpdate 触发更新（单飞；进行中重复调用返回当前态）。
-func (s *AdminUpdateService) ApplyUpdate(ctx context.Context, _ *emptypb.Empty) (*adminv1.UpdateStatus, error) {
-	if updater.IsContainer() {
+func (s *AdminUpdateService) ApplyUpdate(ctx context.Context, req *adminv1.ApplyUpdateRequest) (*adminv1.UpdateStatus, error) {
+	if updater.IsContainer() && os.Getenv("ZCARD_UPDATER_SOCKET") == "" {
 		return nil, errors.Forbidden("update.CONTAINER", updater.ErrContainerUpdate.Error())
 	}
 	if err := s.svc.DisabledErr(); err != nil {
 		return nil, errors.Forbidden("update.DISABLED", err.Error())
+	}
+	if updater.IsContainer() {
+		if err := s.svc.applyDocker(ctx, req.GetVersion(), false); err != nil {
+			return nil, errors.BadRequest("update.DOCKER_FAILED", err.Error())
+		}
+		return toStatusPB(s.svc.Snapshot(ctx)), nil
 	}
 	if err := s.svc.Apply(ctx); err != nil {
 		return toStatusPB(s.svc.Snapshot(ctx)), nil // ErrBusy 亦返回当前态（200 携带 busy）
@@ -63,7 +70,7 @@ func (s *AdminUpdateService) ApplyUpdate(ctx context.Context, _ *emptypb.Empty) 
 
 // RollbackUpdate 回滚上一版本并重启。
 func (s *AdminUpdateService) RollbackUpdate(ctx context.Context, _ *emptypb.Empty) (*adminv1.UpdateStatus, error) {
-	if updater.IsContainer() {
+	if updater.IsContainer() && os.Getenv("ZCARD_UPDATER_SOCKET") == "" {
 		return nil, errors.Forbidden("update.CONTAINER", updater.ErrContainerUpdate.Error())
 	}
 	if err := s.svc.DisabledErr(); err != nil {
@@ -91,6 +98,7 @@ func toStatusPB(st Status) *adminv1.UpdateStatus {
 		BackupDir: st.BackupDir, Busy: st.Busy,
 		History:     toHistoryPB(st.History),
 		PrevVersion: st.Prev, BackupReady: st.BackupReady, BackupHint: st.BackupHint,
+		DockerUpdateReady: st.DockerReady, DockerUpdateHint: st.DockerHint, RollbackReady: st.RollbackReady,
 	}
 }
 

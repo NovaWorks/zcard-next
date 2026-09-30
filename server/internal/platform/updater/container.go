@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var ErrContainerUpdate = errors.New("当前为 Docker/容器部署，请通过重建镜像和容器升级或回退，不支持在容器内替换程序")
+var ErrContainerUpdate = errors.New("Docker 在线更新助手尚未配置，请在原部署目录执行 bash deploy/docker-install.sh --online；容器内不直接替换程序")
 
 // IsContainer checks an image marker and common Docker/Podman/Kubernetes markers.
 // Keep this independent of the user-selected process supervisor.

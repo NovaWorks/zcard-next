@@ -28,6 +28,9 @@ export interface UpdateStatus {
   backup_ready?: boolean;
   backup_hint?: string;
   prev_version?: string;
+  docker_update_ready?: boolean;
+  docker_update_hint?: string;
+  rollback_ready?: boolean;
 }
 
 export interface UpdateCheckResult {
@@ -48,8 +51,8 @@ export function checkUpdate() {
   return request<UpdateCheckResult>({ url: "/api/v1/admin/update/check", method: "post", data: {} });
 }
 
-export function applyUpdate() {
-  return request<UpdateStatus>({ url: "/api/v1/admin/update/apply", method: "post", data: {} });
+export function applyUpdate(version?: string) {
+  return request<UpdateStatus>({ url: "/api/v1/admin/update/apply", method: "post", data: { version } });
 }
 
 export function rollbackUpdate() {

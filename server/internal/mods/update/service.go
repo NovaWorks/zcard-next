@@ -48,24 +48,27 @@ const probeCacheTTL = 10 * time.Minute
 
 // Status 状态快照（admin API 下发；Current/Supervisor 每次现算——重启后即新值）。
 type Status struct {
-	Phase       string
-	Current     string
-	Target      string
-	Progress    int32
-	Err         string
-	Source      string // 生效源展示（github | <accel> | static:<base>）
-	Mode        string // 配置模式
-	Supervisor  string
-	HasUpdate   bool
-	Notes       string
-	Latest      string
-	CheckedAt   time.Time
-	BackupDir   string
-	Busy        bool
-	History     []updater.ReleaseNote // 历史版本 changelog（manifest 权威源）
-	Prev        string                // 上一次版本（最近一次更新的 from——update.state.FromVer 持久保存）
-	BackupReady bool                  // 备份工具就绪（pg_dump/mysqldump 按方言；缺失则更新会被 fail-closed 中止）
-	BackupHint  string                // 缺失时的安装指引（事前警示，不等更新失败才报）
+	Phase         string
+	Current       string
+	Target        string
+	Progress      int32
+	Err           string
+	Source        string // 生效源展示（github | <accel> | static:<base>）
+	Mode          string // 配置模式
+	Supervisor    string
+	HasUpdate     bool
+	Notes         string
+	Latest        string
+	CheckedAt     time.Time
+	BackupDir     string
+	Busy          bool
+	History       []updater.ReleaseNote // 历史版本 changelog（manifest 权威源）
+	Prev          string                // 上一次版本（最近一次更新的 from——update.state.FromVer 持久保存）
+	BackupReady   bool                  // 备份工具就绪（pg_dump/mysqldump 按方言；缺失则更新会被 fail-closed 中止）
+	BackupHint    string                // 缺失时的安装指引（事前警示，不等更新失败才报）
+	DockerReady   bool
+	DockerHint    string
+	RollbackReady bool
 }
 
 // Service 更新编排。
@@ -172,6 +175,11 @@ type CheckResult struct {
 // 更新链进行中拒绝重入：Check 的 phase 迁移会打断下载/应用状态展示，
 // 等待模式被破坏后前端弹窗退回确认态——另一标签页自动检查即触发（线上实录）。
 func (s *Service) Check(ctx context.Context) (*CheckResult, error) {
+	if updater.IsContainer() && os.Getenv("ZCARD_UPDATER_SOCKET") != "" {
+		if st, err := dockerCall(ctx, "/status", nil); err == nil && st.Busy {
+			return nil, ErrBusy
+		}
+	}
 	s.mu.Lock()
 	if s.busy || s.checking || s.st.Phase == PhaseChecking || s.pendingTargetLocked() {
 		s.mu.Unlock()
@@ -240,7 +248,10 @@ func (s *Service) pendingTargetLocked() bool {
 // 链：磁盘预检 → DB 备份 → 落盘下载（进度）→ 原子替换 → 重启 hook。
 func (s *Service) Apply(ctx context.Context) error {
 	if updater.IsContainer() {
-		return updater.ErrContainerUpdate
+		s.mu.Lock()
+		version := s.st.Latest
+		s.mu.Unlock()
+		return s.applyDocker(ctx, version, false)
 	}
 	s.mu.Lock()
 	if s.busy || s.checking || s.st.Phase == PhaseChecking {
@@ -372,7 +383,14 @@ func (s *Service) run() {
 // Rollback 回滚 .prev 并重启（新版不健康时的面板逃生口）。
 func (s *Service) Rollback(ctx context.Context) error {
 	if updater.IsContainer() {
-		return updater.ErrContainerUpdate
+		st, err := dockerCall(ctx, "/status", nil)
+		if err != nil {
+			return err
+		}
+		if !st.RollbackReady {
+			return fmt.Errorf("没有数据库结构兼容的上一版本可回退")
+		}
+		return s.applyDocker(ctx, st.RollbackVersion, true)
 	}
 	if s.binPath == "" {
 		return errors.New("update: 无法定位当前二进制")
@@ -403,6 +421,9 @@ func (s *Service) Snapshot(ctx context.Context) Status {
 	st.Current = cur()
 	st.Busy = busy
 	st.Supervisor = s.supervisorKind(ctx)
+	if updater.IsContainer() {
+		return s.dockerSnapshot(ctx, st)
+	}
 	st.BackupReady, st.BackupHint = s.backupToolStatus()
 	if s.binPath != "" {
 		if state, err := updater.LoadState(s.binPath); err == nil && state != nil {

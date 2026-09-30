@@ -1,0 +1,4 @@
+FROM docker:28-cli
+RUN apk add --no-cache python3 openssl
+COPY deploy/download-release.py deploy/container-release.py deploy/docker-updater.py /opt/zcard-updater/
+ENTRYPOINT ["python3", "/opt/zcard-updater/docker-updater.py"]

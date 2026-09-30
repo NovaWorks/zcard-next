@@ -142,6 +142,7 @@ jobs:
           python3 scripts/test_install.py
           python3 scripts/test_docker_version.py
           python3 scripts/test_docker_release.py
+          python3 scripts/test_docker_updater.py
           for key in ZCARD_JWT_ADMIN_KEY ZCARD_JWT_USER_KEY ZCARD_CARD_KEY ZCARD_DATA_KEY MYSQL_PASSWORD MYSQL_ROOT_PASSWORD; do
             export "$key=deployment-ci"
           done

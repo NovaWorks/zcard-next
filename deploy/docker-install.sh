@@ -11,10 +11,12 @@ done
 docker compose version >/dev/null
 docker info >/dev/null
 mode=release
+online=0
 case "${1:-}" in
   "") ;;
+  --online) online=1; shift ;;
   --source) mode=source; shift ;;
-  *) echo '用法：bash deploy/docker-install.sh [--source]' >&2; exit 1 ;;
+  *) echo '用法：bash deploy/docker-install.sh [--source|--online]' >&2; exit 1 ;;
 esac
 [ "$#" = 0 ] || { echo '不支持的参数' >&2; exit 1; }
 # 旧 .env 中的 dev/历史版本不决定本次升级；显式指定版本用环境变量。
@@ -60,6 +62,13 @@ if [ ! -e "$script_dir/.env" ]; then
   rm -f "$tmp"
 fi
 compose=(docker compose --env-file "$script_dir/.env" -f "$script_dir/docker-compose.yml")
+if [ "$mode" = release ] && python3 -c 'import sys; sys.exit(tuple(map(int,sys.argv[1][1:].split("."))) < (1,2,95))' "$ZCARD_VERSION"; then
+  online=1
+fi
+if [ "$online" = 1 ] || [ -f "$script_dir/.docker-update/installation.env" ]; then
+  command -v openssl >/dev/null || { echo '请先安装 openssl' >&2; exit 1; }
+  exec python3 "$script_dir/docker-online-install.py" --version "$ZCARD_VERSION"
+fi
 "${compose[@]}" config --quiet
 # 下载/验签/构建失败时不触碰正在运行的容器。
 "${compose[@]}" build zcard

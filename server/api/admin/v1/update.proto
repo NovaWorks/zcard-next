@@ -23,7 +23,7 @@ service AdminUpdateService {
     };
   }
   // ApplyUpdate 触发更新（单飞；进行中重复调用返回当前态）。
-  rpc ApplyUpdate(google.protobuf.Empty) returns (UpdateStatus) {
+  rpc ApplyUpdate(ApplyUpdateRequest) returns (UpdateStatus) {
     option (google.api.http) = {
       post: "/api/v1/admin/update/apply"
       body: "*"
@@ -36,6 +36,11 @@ service AdminUpdateService {
       body: "*"
     };
   }
+}
+
+message ApplyUpdateRequest {
+  // Version explicitly confirmed by the administrator; required for Docker.
+  string version = 1;
 }
 
 // ReleaseNoteEntry 历史版本变更记录（manifest history 段透传）。
@@ -66,6 +71,9 @@ message UpdateStatus {
   bool backup_ready = 16;                 // 备份工具就绪（缺 pg_dump/mysqldump 时 false）
   string backup_hint = 17;                // 缺失时的事前安装指引
   string prev_version = 18;               // 上一次版本（最近一次更新的起点，持久保存）
+  bool docker_update_ready = 19;
+  string docker_update_hint = 20;
+  bool rollback_ready = 21;
 }
 
 message UpdateCheckResult {

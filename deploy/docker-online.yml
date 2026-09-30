@@ -1,0 +1,29 @@
+# Added to docker-compose.yml by docker-install.sh --online.
+# image.json pins the application image; installation.env pins this helper.
+services:
+  zcard:
+    environment:
+      ZCARD_UPDATER_SOCKET: /run/zcard-update/updater.sock
+      ZCARD_UPDATER_TOKEN: ${ZCARD_UPDATER_TOKEN:?Use docker-install.sh --online}
+    volumes:
+      - update-control:/run/zcard-update
+    stop_grace_period: 60s
+  updater:
+    image: ${ZCARD_UPDATER_IMAGE:?Use docker-install.sh --online}
+    restart: unless-stopped
+    environment:
+      ZCARD_DEPLOY_DIR: ${ZCARD_DEPLOY_DIR:?Use docker-install.sh --online}
+      ZCARD_COMPOSE_PROJECT: ${ZCARD_COMPOSE_PROJECT:?Use docker-install.sh --online}
+      ZCARD_UPDATER_TOKEN: ${ZCARD_UPDATER_TOKEN:?Use docker-install.sh --online}
+      ZCARD_UPDATER_IMAGE: ${ZCARD_UPDATER_IMAGE:?Use docker-install.sh --online}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${ZCARD_DEPLOY_DIR}:${ZCARD_DEPLOY_DIR}:ro
+      - ${ZCARD_DEPLOY_DIR}/.docker-update:/state
+      - update-control:/run/zcard-update
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+volumes:
+  update-control:

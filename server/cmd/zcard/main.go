@@ -41,6 +41,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/reseller"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/update"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/updater"
@@ -101,6 +102,16 @@ func main() {
 		err = runDBTest(args)
 	case "self-update":
 		err = runSelfUpdate(args)
+	case "docker-backup-check":
+		var bc *conf.Bootstrap
+		bc, err = loadBootstrap("/app/configs")
+		if err == nil {
+			var dialect string
+			dialect, err = update.DockerBackupDialect(bc.Data)
+			if err == nil {
+				fmt.Println(dialect)
+			}
+		}
 	case "version":
 		fmt.Printf("%s %s (%s)\n", Name, Version, id)
 	case "help", "-h", "--help":

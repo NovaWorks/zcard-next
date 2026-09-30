@@ -1,0 +1,5 @@
+**
+!deploy/
+!deploy/docker-updater.py
+!deploy/container-release.py
+!deploy/download-release.py

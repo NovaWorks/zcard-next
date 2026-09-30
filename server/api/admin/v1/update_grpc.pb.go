@@ -39,7 +39,7 @@ type AdminUpdateServiceClient interface {
 	// CheckUpdate 手动检查更新（源解析+manifest 验签；结果缓存于 status）。
 	CheckUpdate(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UpdateCheckResult, error)
 	// ApplyUpdate 触发更新（单飞；进行中重复调用返回当前态）。
-	ApplyUpdate(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UpdateStatus, error)
+	ApplyUpdate(ctx context.Context, in *ApplyUpdateRequest, opts ...grpc.CallOption) (*UpdateStatus, error)
 	// RollbackUpdate 回滚上一版本（zcard.prev）并重启。
 	RollbackUpdate(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UpdateStatus, error)
 }
@@ -72,7 +72,7 @@ func (c *adminUpdateServiceClient) CheckUpdate(ctx context.Context, in *emptypb.
 	return out, nil
 }
 
-func (c *adminUpdateServiceClient) ApplyUpdate(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UpdateStatus, error) {
+func (c *adminUpdateServiceClient) ApplyUpdate(ctx context.Context, in *ApplyUpdateRequest, opts ...grpc.CallOption) (*UpdateStatus, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateStatus)
 	err := c.cc.Invoke(ctx, AdminUpdateService_ApplyUpdate_FullMethodName, in, out, cOpts...)
@@ -105,7 +105,7 @@ type AdminUpdateServiceServer interface {
 	// CheckUpdate 手动检查更新（源解析+manifest 验签；结果缓存于 status）。
 	CheckUpdate(context.Context, *emptypb.Empty) (*UpdateCheckResult, error)
 	// ApplyUpdate 触发更新（单飞；进行中重复调用返回当前态）。
-	ApplyUpdate(context.Context, *emptypb.Empty) (*UpdateStatus, error)
+	ApplyUpdate(context.Context, *ApplyUpdateRequest) (*UpdateStatus, error)
 	// RollbackUpdate 回滚上一版本（zcard.prev）并重启。
 	RollbackUpdate(context.Context, *emptypb.Empty) (*UpdateStatus, error)
 	mustEmbedUnimplementedAdminUpdateServiceServer()
@@ -124,7 +124,7 @@ func (UnimplementedAdminUpdateServiceServer) GetUpdateStatus(context.Context, *e
 func (UnimplementedAdminUpdateServiceServer) CheckUpdate(context.Context, *emptypb.Empty) (*UpdateCheckResult, error) {
 	return nil, status.Error(codes.Unimplemented, "method CheckUpdate not implemented")
 }
-func (UnimplementedAdminUpdateServiceServer) ApplyUpdate(context.Context, *emptypb.Empty) (*UpdateStatus, error) {
+func (UnimplementedAdminUpdateServiceServer) ApplyUpdate(context.Context, *ApplyUpdateRequest) (*UpdateStatus, error) {
 	return nil, status.Error(codes.Unimplemented, "method ApplyUpdate not implemented")
 }
 func (UnimplementedAdminUpdateServiceServer) RollbackUpdate(context.Context, *emptypb.Empty) (*UpdateStatus, error) {
@@ -188,7 +188,7 @@ func _AdminUpdateService_CheckUpdate_Handler(srv interface{}, ctx context.Contex
 }
 
 func _AdminUpdateService_ApplyUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ApplyUpdateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func _AdminUpdateService_ApplyUpdate_Handler(srv interface{}, ctx context.Contex
 		FullMethod: AdminUpdateService_ApplyUpdate_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminUpdateServiceServer).ApplyUpdate(ctx, req.(*emptypb.Empty))
+		return srv.(AdminUpdateServiceServer).ApplyUpdate(ctx, req.(*ApplyUpdateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
