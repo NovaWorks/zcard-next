@@ -24,6 +24,7 @@ func TestSecretKeyCatalog(t *testing.T) {
 	want := map[string]bool{
 		"notify.telegram":           true,
 		"notify.telegram_bot_token": true,
+		"notify.smtp":               true,
 		"notify.smtp_password":      true,
 		"notify.sms_key":            true,
 		"notify.sms_secret":         true,

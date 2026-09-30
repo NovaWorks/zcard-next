@@ -700,10 +700,14 @@ declare namespace App {
           sync_interval_minutes: string;
         };
         notify: {
+          smtp_security: string;
+          smtp_auth: string;
+          smtp_tls_verify: string;
           smtp_host: string;
           smtp_port: string;
           smtp_user: string;
           smtp_password: string;
+          smtp_from: string;
           smtp_name: string;
           sms_provider: string;
           sms_key: string;

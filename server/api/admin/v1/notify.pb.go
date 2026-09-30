@@ -23,6 +23,66 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type TestEmailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Recipient     string                 `protobuf:"bytes,1,opt,name=recipient,proto3" json:"recipient,omitempty"`
+	Subject       string                 `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
+	Content       string                 `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"` // Plain text.
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TestEmailRequest) Reset() {
+	*x = TestEmailRequest{}
+	mi := &file_admin_v1_notify_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestEmailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestEmailRequest) ProtoMessage() {}
+
+func (x *TestEmailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_notify_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestEmailRequest.ProtoReflect.Descriptor instead.
+func (*TestEmailRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *TestEmailRequest) GetRecipient() string {
+	if x != nil {
+		return x.Recipient
+	}
+	return ""
+}
+
+func (x *TestEmailRequest) GetSubject() string {
+	if x != nil {
+		return x.Subject
+	}
+	return ""
+}
+
+func (x *TestEmailRequest) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
 type TestTelegramRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChatId        string                 `protobuf:"bytes,1,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"` // Empty retains the legacy test-all behavior.
@@ -33,7 +93,7 @@ type TestTelegramRequest struct {
 
 func (x *TestTelegramRequest) Reset() {
 	*x = TestTelegramRequest{}
-	mi := &file_admin_v1_notify_proto_msgTypes[0]
+	mi := &file_admin_v1_notify_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +105,7 @@ func (x *TestTelegramRequest) String() string {
 func (*TestTelegramRequest) ProtoMessage() {}
 
 func (x *TestTelegramRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[0]
+	mi := &file_admin_v1_notify_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +118,7 @@ func (x *TestTelegramRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestTelegramRequest.ProtoReflect.Descriptor instead.
 func (*TestTelegramRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{0}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *TestTelegramRequest) GetChatId() string {
@@ -84,7 +144,7 @@ type TestTelegramReply struct {
 
 func (x *TestTelegramReply) Reset() {
 	*x = TestTelegramReply{}
-	mi := &file_admin_v1_notify_proto_msgTypes[1]
+	mi := &file_admin_v1_notify_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -96,7 +156,7 @@ func (x *TestTelegramReply) String() string {
 func (*TestTelegramReply) ProtoMessage() {}
 
 func (x *TestTelegramReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[1]
+	mi := &file_admin_v1_notify_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -109,7 +169,7 @@ func (x *TestTelegramReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestTelegramReply.ProtoReflect.Descriptor instead.
 func (*TestTelegramReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{1}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *TestTelegramReply) GetLogIds() []uint64 {
@@ -135,7 +195,7 @@ type NotifyTemplate struct {
 
 func (x *NotifyTemplate) Reset() {
 	*x = NotifyTemplate{}
-	mi := &file_admin_v1_notify_proto_msgTypes[2]
+	mi := &file_admin_v1_notify_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -147,7 +207,7 @@ func (x *NotifyTemplate) String() string {
 func (*NotifyTemplate) ProtoMessage() {}
 
 func (x *NotifyTemplate) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[2]
+	mi := &file_admin_v1_notify_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -160,7 +220,7 @@ func (x *NotifyTemplate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifyTemplate.ProtoReflect.Descriptor instead.
 func (*NotifyTemplate) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{2}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *NotifyTemplate) GetId() uint64 {
@@ -233,7 +293,7 @@ type UpsertNotifyTemplateRequest struct {
 
 func (x *UpsertNotifyTemplateRequest) Reset() {
 	*x = UpsertNotifyTemplateRequest{}
-	mi := &file_admin_v1_notify_proto_msgTypes[3]
+	mi := &file_admin_v1_notify_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -245,7 +305,7 @@ func (x *UpsertNotifyTemplateRequest) String() string {
 func (*UpsertNotifyTemplateRequest) ProtoMessage() {}
 
 func (x *UpsertNotifyTemplateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[3]
+	mi := &file_admin_v1_notify_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -258,7 +318,7 @@ func (x *UpsertNotifyTemplateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertNotifyTemplateRequest.ProtoReflect.Descriptor instead.
 func (*UpsertNotifyTemplateRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{3}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *UpsertNotifyTemplateRequest) GetEventType() string {
@@ -312,7 +372,7 @@ type ListNotifyTemplatesReply struct {
 
 func (x *ListNotifyTemplatesReply) Reset() {
 	*x = ListNotifyTemplatesReply{}
-	mi := &file_admin_v1_notify_proto_msgTypes[4]
+	mi := &file_admin_v1_notify_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -324,7 +384,7 @@ func (x *ListNotifyTemplatesReply) String() string {
 func (*ListNotifyTemplatesReply) ProtoMessage() {}
 
 func (x *ListNotifyTemplatesReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[4]
+	mi := &file_admin_v1_notify_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -337,7 +397,7 @@ func (x *ListNotifyTemplatesReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNotifyTemplatesReply.ProtoReflect.Descriptor instead.
 func (*ListNotifyTemplatesReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{4}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ListNotifyTemplatesReply) GetTemplates() []*NotifyTemplate {
@@ -358,7 +418,7 @@ type PreviewTemplateRequest struct {
 
 func (x *PreviewTemplateRequest) Reset() {
 	*x = PreviewTemplateRequest{}
-	mi := &file_admin_v1_notify_proto_msgTypes[5]
+	mi := &file_admin_v1_notify_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -370,7 +430,7 @@ func (x *PreviewTemplateRequest) String() string {
 func (*PreviewTemplateRequest) ProtoMessage() {}
 
 func (x *PreviewTemplateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[5]
+	mi := &file_admin_v1_notify_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -383,7 +443,7 @@ func (x *PreviewTemplateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreviewTemplateRequest.ProtoReflect.Descriptor instead.
 func (*PreviewTemplateRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{5}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PreviewTemplateRequest) GetEventType() string {
@@ -418,7 +478,7 @@ type PreviewTemplateReply struct {
 
 func (x *PreviewTemplateReply) Reset() {
 	*x = PreviewTemplateReply{}
-	mi := &file_admin_v1_notify_proto_msgTypes[6]
+	mi := &file_admin_v1_notify_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -430,7 +490,7 @@ func (x *PreviewTemplateReply) String() string {
 func (*PreviewTemplateReply) ProtoMessage() {}
 
 func (x *PreviewTemplateReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[6]
+	mi := &file_admin_v1_notify_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -443,7 +503,7 @@ func (x *PreviewTemplateReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreviewTemplateReply.ProtoReflect.Descriptor instead.
 func (*PreviewTemplateReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{6}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *PreviewTemplateReply) GetSubject() string {
@@ -480,7 +540,7 @@ type ListNotifyLogsRequest struct {
 
 func (x *ListNotifyLogsRequest) Reset() {
 	*x = ListNotifyLogsRequest{}
-	mi := &file_admin_v1_notify_proto_msgTypes[7]
+	mi := &file_admin_v1_notify_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -492,7 +552,7 @@ func (x *ListNotifyLogsRequest) String() string {
 func (*ListNotifyLogsRequest) ProtoMessage() {}
 
 func (x *ListNotifyLogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[7]
+	mi := &file_admin_v1_notify_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -505,7 +565,7 @@ func (x *ListNotifyLogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNotifyLogsRequest.ProtoReflect.Descriptor instead.
 func (*ListNotifyLogsRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{7}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListNotifyLogsRequest) GetChannel() string {
@@ -567,7 +627,7 @@ type NotifyLog struct {
 
 func (x *NotifyLog) Reset() {
 	*x = NotifyLog{}
-	mi := &file_admin_v1_notify_proto_msgTypes[8]
+	mi := &file_admin_v1_notify_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -579,7 +639,7 @@ func (x *NotifyLog) String() string {
 func (*NotifyLog) ProtoMessage() {}
 
 func (x *NotifyLog) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[8]
+	mi := &file_admin_v1_notify_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -592,7 +652,7 @@ func (x *NotifyLog) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifyLog.ProtoReflect.Descriptor instead.
 func (*NotifyLog) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{8}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *NotifyLog) GetId() uint64 {
@@ -719,7 +779,7 @@ type ListNotifyLogsReply struct {
 
 func (x *ListNotifyLogsReply) Reset() {
 	*x = ListNotifyLogsReply{}
-	mi := &file_admin_v1_notify_proto_msgTypes[9]
+	mi := &file_admin_v1_notify_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -731,7 +791,7 @@ func (x *ListNotifyLogsReply) String() string {
 func (*ListNotifyLogsReply) ProtoMessage() {}
 
 func (x *ListNotifyLogsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[9]
+	mi := &file_admin_v1_notify_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -744,7 +804,7 @@ func (x *ListNotifyLogsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNotifyLogsReply.ProtoReflect.Descriptor instead.
 func (*ListNotifyLogsReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{9}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ListNotifyLogsReply) GetLogs() []*NotifyLog {
@@ -784,7 +844,7 @@ type ResendNotifyLogRequest struct {
 
 func (x *ResendNotifyLogRequest) Reset() {
 	*x = ResendNotifyLogRequest{}
-	mi := &file_admin_v1_notify_proto_msgTypes[10]
+	mi := &file_admin_v1_notify_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -796,7 +856,7 @@ func (x *ResendNotifyLogRequest) String() string {
 func (*ResendNotifyLogRequest) ProtoMessage() {}
 
 func (x *ResendNotifyLogRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[10]
+	mi := &file_admin_v1_notify_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -809,7 +869,7 @@ func (x *ResendNotifyLogRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResendNotifyLogRequest.ProtoReflect.Descriptor instead.
 func (*ResendNotifyLogRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{10}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ResendNotifyLogRequest) GetId() uint64 {
@@ -830,7 +890,7 @@ type EstimateBroadcastRequest struct {
 
 func (x *EstimateBroadcastRequest) Reset() {
 	*x = EstimateBroadcastRequest{}
-	mi := &file_admin_v1_notify_proto_msgTypes[11]
+	mi := &file_admin_v1_notify_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -842,7 +902,7 @@ func (x *EstimateBroadcastRequest) String() string {
 func (*EstimateBroadcastRequest) ProtoMessage() {}
 
 func (x *EstimateBroadcastRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[11]
+	mi := &file_admin_v1_notify_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -855,7 +915,7 @@ func (x *EstimateBroadcastRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EstimateBroadcastRequest.ProtoReflect.Descriptor instead.
 func (*EstimateBroadcastRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{11}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *EstimateBroadcastRequest) GetTargetType() string {
@@ -881,7 +941,7 @@ type EstimateBroadcastReply struct {
 
 func (x *EstimateBroadcastReply) Reset() {
 	*x = EstimateBroadcastReply{}
-	mi := &file_admin_v1_notify_proto_msgTypes[12]
+	mi := &file_admin_v1_notify_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -893,7 +953,7 @@ func (x *EstimateBroadcastReply) String() string {
 func (*EstimateBroadcastReply) ProtoMessage() {}
 
 func (x *EstimateBroadcastReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[12]
+	mi := &file_admin_v1_notify_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -906,7 +966,7 @@ func (x *EstimateBroadcastReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EstimateBroadcastReply.ProtoReflect.Descriptor instead.
 func (*EstimateBroadcastReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{12}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *EstimateBroadcastReply) GetAudience() int64 {
@@ -931,7 +991,7 @@ type CreateBroadcastRequest struct {
 
 func (x *CreateBroadcastRequest) Reset() {
 	*x = CreateBroadcastRequest{}
-	mi := &file_admin_v1_notify_proto_msgTypes[13]
+	mi := &file_admin_v1_notify_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -943,7 +1003,7 @@ func (x *CreateBroadcastRequest) String() string {
 func (*CreateBroadcastRequest) ProtoMessage() {}
 
 func (x *CreateBroadcastRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[13]
+	mi := &file_admin_v1_notify_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -956,7 +1016,7 @@ func (x *CreateBroadcastRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBroadcastRequest.ProtoReflect.Descriptor instead.
 func (*CreateBroadcastRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{13}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *CreateBroadcastRequest) GetTitle() string {
@@ -1024,7 +1084,7 @@ type Broadcast struct {
 
 func (x *Broadcast) Reset() {
 	*x = Broadcast{}
-	mi := &file_admin_v1_notify_proto_msgTypes[14]
+	mi := &file_admin_v1_notify_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1036,7 +1096,7 @@ func (x *Broadcast) String() string {
 func (*Broadcast) ProtoMessage() {}
 
 func (x *Broadcast) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[14]
+	mi := &file_admin_v1_notify_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1049,7 +1109,7 @@ func (x *Broadcast) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Broadcast.ProtoReflect.Descriptor instead.
 func (*Broadcast) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{14}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Broadcast) GetId() uint64 {
@@ -1167,7 +1227,7 @@ type ListBroadcastsRequest struct {
 
 func (x *ListBroadcastsRequest) Reset() {
 	*x = ListBroadcastsRequest{}
-	mi := &file_admin_v1_notify_proto_msgTypes[15]
+	mi := &file_admin_v1_notify_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1179,7 +1239,7 @@ func (x *ListBroadcastsRequest) String() string {
 func (*ListBroadcastsRequest) ProtoMessage() {}
 
 func (x *ListBroadcastsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[15]
+	mi := &file_admin_v1_notify_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1192,7 +1252,7 @@ func (x *ListBroadcastsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBroadcastsRequest.ProtoReflect.Descriptor instead.
 func (*ListBroadcastsRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{15}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ListBroadcastsRequest) GetPage() int32 {
@@ -1221,7 +1281,7 @@ type ListBroadcastsReply struct {
 
 func (x *ListBroadcastsReply) Reset() {
 	*x = ListBroadcastsReply{}
-	mi := &file_admin_v1_notify_proto_msgTypes[16]
+	mi := &file_admin_v1_notify_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1233,7 +1293,7 @@ func (x *ListBroadcastsReply) String() string {
 func (*ListBroadcastsReply) ProtoMessage() {}
 
 func (x *ListBroadcastsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[16]
+	mi := &file_admin_v1_notify_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1246,7 +1306,7 @@ func (x *ListBroadcastsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBroadcastsReply.ProtoReflect.Descriptor instead.
 func (*ListBroadcastsReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{16}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ListBroadcastsReply) GetBroadcasts() []*Broadcast {
@@ -1286,7 +1346,7 @@ type CancelBroadcastRequest struct {
 
 func (x *CancelBroadcastRequest) Reset() {
 	*x = CancelBroadcastRequest{}
-	mi := &file_admin_v1_notify_proto_msgTypes[17]
+	mi := &file_admin_v1_notify_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1298,7 +1358,7 @@ func (x *CancelBroadcastRequest) String() string {
 func (*CancelBroadcastRequest) ProtoMessage() {}
 
 func (x *CancelBroadcastRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_notify_proto_msgTypes[17]
+	mi := &file_admin_v1_notify_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1311,7 +1371,7 @@ func (x *CancelBroadcastRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelBroadcastRequest.ProtoReflect.Descriptor instead.
 func (*CancelBroadcastRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_notify_proto_rawDescGZIP(), []int{17}
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *CancelBroadcastRequest) GetId() uint64 {
@@ -1325,7 +1385,11 @@ var File_admin_v1_notify_proto protoreflect.FileDescriptor
 
 const file_admin_v1_notify_proto_rawDesc = "" +
 	"\n" +
-	"\x15admin/v1/notify.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"I\n" +
+	"\x15admin/v1/notify.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"s\n" +
+	"\x10TestEmailRequest\x12!\n" +
+	"\trecipient\x18\x01 \x01(\tB\x03\xe0A\x02R\trecipient\x12\x1d\n" +
+	"\asubject\x18\x02 \x01(\tB\x03\xe0A\x02R\asubject\x12\x1d\n" +
+	"\acontent\x18\x03 \x01(\tB\x03\xe0A\x02R\acontent\"I\n" +
 	"\x13TestTelegramRequest\x12\x17\n" +
 	"\achat_id\x18\x01 \x01(\tR\x06chatId\x12\x19\n" +
 	"\btopic_id\x18\x02 \x01(\x03R\atopicId\",\n" +
@@ -1449,8 +1513,9 @@ const file_admin_v1_notify_proto_rawDesc = "" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"-\n" +
 	"\x16CancelBroadcastRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id2\xb2\v\n" +
-	"\x12AdminNotifyService\x12\x8d\x01\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id2\xa9\f\n" +
+	"\x12AdminNotifyService\x12u\n" +
+	"\tTestEmail\x12$.zcard.api.admin.v1.TestEmailRequest\x1a\x16.google.protobuf.Empty\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/notify/email/test\x12\x8d\x01\n" +
 	"\fTestTelegram\x12'.zcard.api.admin.v1.TestTelegramRequest\x1a%.zcard.api.admin.v1.TestTelegramReply\"-\x82\xd3\xe4\x93\x02':\x01*\"\"/api/v1/admin/notify/telegram/test\x12\x90\x01\n" +
 	"\x0eUpsertTemplate\x12/.zcard.api.admin.v1.UpsertNotifyTemplateRequest\x1a\".zcard.api.admin.v1.NotifyTemplate\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/notify/templates\x12}\n" +
 	"\rListTemplates\x12\x16.google.protobuf.Empty\x1a,.zcard.api.admin.v1.ListNotifyTemplatesReply\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/notify/templates\x12\x9a\x01\n" +
@@ -1474,54 +1539,57 @@ func file_admin_v1_notify_proto_rawDescGZIP() []byte {
 	return file_admin_v1_notify_proto_rawDescData
 }
 
-var file_admin_v1_notify_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_admin_v1_notify_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_admin_v1_notify_proto_goTypes = []any{
-	(*TestTelegramRequest)(nil),         // 0: zcard.api.admin.v1.TestTelegramRequest
-	(*TestTelegramReply)(nil),           // 1: zcard.api.admin.v1.TestTelegramReply
-	(*NotifyTemplate)(nil),              // 2: zcard.api.admin.v1.NotifyTemplate
-	(*UpsertNotifyTemplateRequest)(nil), // 3: zcard.api.admin.v1.UpsertNotifyTemplateRequest
-	(*ListNotifyTemplatesReply)(nil),    // 4: zcard.api.admin.v1.ListNotifyTemplatesReply
-	(*PreviewTemplateRequest)(nil),      // 5: zcard.api.admin.v1.PreviewTemplateRequest
-	(*PreviewTemplateReply)(nil),        // 6: zcard.api.admin.v1.PreviewTemplateReply
-	(*ListNotifyLogsRequest)(nil),       // 7: zcard.api.admin.v1.ListNotifyLogsRequest
-	(*NotifyLog)(nil),                   // 8: zcard.api.admin.v1.NotifyLog
-	(*ListNotifyLogsReply)(nil),         // 9: zcard.api.admin.v1.ListNotifyLogsReply
-	(*ResendNotifyLogRequest)(nil),      // 10: zcard.api.admin.v1.ResendNotifyLogRequest
-	(*EstimateBroadcastRequest)(nil),    // 11: zcard.api.admin.v1.EstimateBroadcastRequest
-	(*EstimateBroadcastReply)(nil),      // 12: zcard.api.admin.v1.EstimateBroadcastReply
-	(*CreateBroadcastRequest)(nil),      // 13: zcard.api.admin.v1.CreateBroadcastRequest
-	(*Broadcast)(nil),                   // 14: zcard.api.admin.v1.Broadcast
-	(*ListBroadcastsRequest)(nil),       // 15: zcard.api.admin.v1.ListBroadcastsRequest
-	(*ListBroadcastsReply)(nil),         // 16: zcard.api.admin.v1.ListBroadcastsReply
-	(*CancelBroadcastRequest)(nil),      // 17: zcard.api.admin.v1.CancelBroadcastRequest
-	(*emptypb.Empty)(nil),               // 18: google.protobuf.Empty
+	(*TestEmailRequest)(nil),            // 0: zcard.api.admin.v1.TestEmailRequest
+	(*TestTelegramRequest)(nil),         // 1: zcard.api.admin.v1.TestTelegramRequest
+	(*TestTelegramReply)(nil),           // 2: zcard.api.admin.v1.TestTelegramReply
+	(*NotifyTemplate)(nil),              // 3: zcard.api.admin.v1.NotifyTemplate
+	(*UpsertNotifyTemplateRequest)(nil), // 4: zcard.api.admin.v1.UpsertNotifyTemplateRequest
+	(*ListNotifyTemplatesReply)(nil),    // 5: zcard.api.admin.v1.ListNotifyTemplatesReply
+	(*PreviewTemplateRequest)(nil),      // 6: zcard.api.admin.v1.PreviewTemplateRequest
+	(*PreviewTemplateReply)(nil),        // 7: zcard.api.admin.v1.PreviewTemplateReply
+	(*ListNotifyLogsRequest)(nil),       // 8: zcard.api.admin.v1.ListNotifyLogsRequest
+	(*NotifyLog)(nil),                   // 9: zcard.api.admin.v1.NotifyLog
+	(*ListNotifyLogsReply)(nil),         // 10: zcard.api.admin.v1.ListNotifyLogsReply
+	(*ResendNotifyLogRequest)(nil),      // 11: zcard.api.admin.v1.ResendNotifyLogRequest
+	(*EstimateBroadcastRequest)(nil),    // 12: zcard.api.admin.v1.EstimateBroadcastRequest
+	(*EstimateBroadcastReply)(nil),      // 13: zcard.api.admin.v1.EstimateBroadcastReply
+	(*CreateBroadcastRequest)(nil),      // 14: zcard.api.admin.v1.CreateBroadcastRequest
+	(*Broadcast)(nil),                   // 15: zcard.api.admin.v1.Broadcast
+	(*ListBroadcastsRequest)(nil),       // 16: zcard.api.admin.v1.ListBroadcastsRequest
+	(*ListBroadcastsReply)(nil),         // 17: zcard.api.admin.v1.ListBroadcastsReply
+	(*CancelBroadcastRequest)(nil),      // 18: zcard.api.admin.v1.CancelBroadcastRequest
+	(*emptypb.Empty)(nil),               // 19: google.protobuf.Empty
 }
 var file_admin_v1_notify_proto_depIdxs = []int32{
-	2,  // 0: zcard.api.admin.v1.ListNotifyTemplatesReply.templates:type_name -> zcard.api.admin.v1.NotifyTemplate
-	8,  // 1: zcard.api.admin.v1.ListNotifyLogsReply.logs:type_name -> zcard.api.admin.v1.NotifyLog
-	14, // 2: zcard.api.admin.v1.ListBroadcastsReply.broadcasts:type_name -> zcard.api.admin.v1.Broadcast
-	0,  // 3: zcard.api.admin.v1.AdminNotifyService.TestTelegram:input_type -> zcard.api.admin.v1.TestTelegramRequest
-	3,  // 4: zcard.api.admin.v1.AdminNotifyService.UpsertTemplate:input_type -> zcard.api.admin.v1.UpsertNotifyTemplateRequest
-	18, // 5: zcard.api.admin.v1.AdminNotifyService.ListTemplates:input_type -> google.protobuf.Empty
-	5,  // 6: zcard.api.admin.v1.AdminNotifyService.PreviewTemplate:input_type -> zcard.api.admin.v1.PreviewTemplateRequest
-	7,  // 7: zcard.api.admin.v1.AdminNotifyService.ListLogs:input_type -> zcard.api.admin.v1.ListNotifyLogsRequest
-	10, // 8: zcard.api.admin.v1.AdminNotifyService.ResendLog:input_type -> zcard.api.admin.v1.ResendNotifyLogRequest
-	11, // 9: zcard.api.admin.v1.AdminNotifyService.EstimateBroadcast:input_type -> zcard.api.admin.v1.EstimateBroadcastRequest
-	13, // 10: zcard.api.admin.v1.AdminNotifyService.CreateBroadcast:input_type -> zcard.api.admin.v1.CreateBroadcastRequest
-	15, // 11: zcard.api.admin.v1.AdminNotifyService.ListBroadcasts:input_type -> zcard.api.admin.v1.ListBroadcastsRequest
-	17, // 12: zcard.api.admin.v1.AdminNotifyService.CancelBroadcast:input_type -> zcard.api.admin.v1.CancelBroadcastRequest
-	1,  // 13: zcard.api.admin.v1.AdminNotifyService.TestTelegram:output_type -> zcard.api.admin.v1.TestTelegramReply
-	2,  // 14: zcard.api.admin.v1.AdminNotifyService.UpsertTemplate:output_type -> zcard.api.admin.v1.NotifyTemplate
-	4,  // 15: zcard.api.admin.v1.AdminNotifyService.ListTemplates:output_type -> zcard.api.admin.v1.ListNotifyTemplatesReply
-	6,  // 16: zcard.api.admin.v1.AdminNotifyService.PreviewTemplate:output_type -> zcard.api.admin.v1.PreviewTemplateReply
-	9,  // 17: zcard.api.admin.v1.AdminNotifyService.ListLogs:output_type -> zcard.api.admin.v1.ListNotifyLogsReply
-	18, // 18: zcard.api.admin.v1.AdminNotifyService.ResendLog:output_type -> google.protobuf.Empty
-	12, // 19: zcard.api.admin.v1.AdminNotifyService.EstimateBroadcast:output_type -> zcard.api.admin.v1.EstimateBroadcastReply
-	14, // 20: zcard.api.admin.v1.AdminNotifyService.CreateBroadcast:output_type -> zcard.api.admin.v1.Broadcast
-	16, // 21: zcard.api.admin.v1.AdminNotifyService.ListBroadcasts:output_type -> zcard.api.admin.v1.ListBroadcastsReply
-	14, // 22: zcard.api.admin.v1.AdminNotifyService.CancelBroadcast:output_type -> zcard.api.admin.v1.Broadcast
-	13, // [13:23] is the sub-list for method output_type
-	3,  // [3:13] is the sub-list for method input_type
+	3,  // 0: zcard.api.admin.v1.ListNotifyTemplatesReply.templates:type_name -> zcard.api.admin.v1.NotifyTemplate
+	9,  // 1: zcard.api.admin.v1.ListNotifyLogsReply.logs:type_name -> zcard.api.admin.v1.NotifyLog
+	15, // 2: zcard.api.admin.v1.ListBroadcastsReply.broadcasts:type_name -> zcard.api.admin.v1.Broadcast
+	0,  // 3: zcard.api.admin.v1.AdminNotifyService.TestEmail:input_type -> zcard.api.admin.v1.TestEmailRequest
+	1,  // 4: zcard.api.admin.v1.AdminNotifyService.TestTelegram:input_type -> zcard.api.admin.v1.TestTelegramRequest
+	4,  // 5: zcard.api.admin.v1.AdminNotifyService.UpsertTemplate:input_type -> zcard.api.admin.v1.UpsertNotifyTemplateRequest
+	19, // 6: zcard.api.admin.v1.AdminNotifyService.ListTemplates:input_type -> google.protobuf.Empty
+	6,  // 7: zcard.api.admin.v1.AdminNotifyService.PreviewTemplate:input_type -> zcard.api.admin.v1.PreviewTemplateRequest
+	8,  // 8: zcard.api.admin.v1.AdminNotifyService.ListLogs:input_type -> zcard.api.admin.v1.ListNotifyLogsRequest
+	11, // 9: zcard.api.admin.v1.AdminNotifyService.ResendLog:input_type -> zcard.api.admin.v1.ResendNotifyLogRequest
+	12, // 10: zcard.api.admin.v1.AdminNotifyService.EstimateBroadcast:input_type -> zcard.api.admin.v1.EstimateBroadcastRequest
+	14, // 11: zcard.api.admin.v1.AdminNotifyService.CreateBroadcast:input_type -> zcard.api.admin.v1.CreateBroadcastRequest
+	16, // 12: zcard.api.admin.v1.AdminNotifyService.ListBroadcasts:input_type -> zcard.api.admin.v1.ListBroadcastsRequest
+	18, // 13: zcard.api.admin.v1.AdminNotifyService.CancelBroadcast:input_type -> zcard.api.admin.v1.CancelBroadcastRequest
+	19, // 14: zcard.api.admin.v1.AdminNotifyService.TestEmail:output_type -> google.protobuf.Empty
+	2,  // 15: zcard.api.admin.v1.AdminNotifyService.TestTelegram:output_type -> zcard.api.admin.v1.TestTelegramReply
+	3,  // 16: zcard.api.admin.v1.AdminNotifyService.UpsertTemplate:output_type -> zcard.api.admin.v1.NotifyTemplate
+	5,  // 17: zcard.api.admin.v1.AdminNotifyService.ListTemplates:output_type -> zcard.api.admin.v1.ListNotifyTemplatesReply
+	7,  // 18: zcard.api.admin.v1.AdminNotifyService.PreviewTemplate:output_type -> zcard.api.admin.v1.PreviewTemplateReply
+	10, // 19: zcard.api.admin.v1.AdminNotifyService.ListLogs:output_type -> zcard.api.admin.v1.ListNotifyLogsReply
+	19, // 20: zcard.api.admin.v1.AdminNotifyService.ResendLog:output_type -> google.protobuf.Empty
+	13, // 21: zcard.api.admin.v1.AdminNotifyService.EstimateBroadcast:output_type -> zcard.api.admin.v1.EstimateBroadcastReply
+	15, // 22: zcard.api.admin.v1.AdminNotifyService.CreateBroadcast:output_type -> zcard.api.admin.v1.Broadcast
+	17, // 23: zcard.api.admin.v1.AdminNotifyService.ListBroadcasts:output_type -> zcard.api.admin.v1.ListBroadcastsReply
+	15, // 24: zcard.api.admin.v1.AdminNotifyService.CancelBroadcast:output_type -> zcard.api.admin.v1.Broadcast
+	14, // [14:25] is the sub-list for method output_type
+	3,  // [3:14] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
 	3,  // [3:3] is the sub-list for extension extendee
 	0,  // [0:3] is the sub-list for field type_name
@@ -1538,7 +1606,7 @@ func file_admin_v1_notify_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_notify_proto_rawDesc), len(file_admin_v1_notify_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

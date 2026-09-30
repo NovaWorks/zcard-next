@@ -8,6 +8,7 @@ import type { TemplateItem } from "@/service/api";
 import { NCheckbox, NCheckboxGroup, NRadioButton, NRadioGroup, NSpace, NTabs as OuterTabs, NTabPane as OuterTabPane } from "naive-ui";
 import { checkAuth } from "@/directives";
 import { resolveMediaUrl } from "@/utils/media";
+import EmailTest from "./components/email-test.vue";
 import TelegramSettings from "./components/telegram-settings.vue";
 import CurrencyTab from "./components/currency-tab.vue";
 import TopButtonField from "./components/top-button-field.vue";
@@ -119,7 +120,9 @@ const INPUT_PLACEHOLDERS: Record<string, Record<string, string>> = {
     sms_sign: "阿里云/腾讯云填签名名称；七牛填签名 ID",
     sms_sdk_app_id: "腾讯云必填，其余通道忽略",
     sms_template_code: "阿里云/腾讯云/七牛均需填写",
-    smtp_host: "如 smtp.exmail.qq.com",
+    smtp_host: "如 smtp.example.com（不含 https:// 或端口）",
+    smtp_user: "邮件服务器的登录账号，通常为完整邮箱地址",
+    smtp_from: "如 hello@example.com；留空使用 SMTP 用户名",
   },
   footer: {
     about: "页脚关于我们文案（留空不显示该栏）",
@@ -128,6 +131,22 @@ const INPUT_PLACEHOLDERS: Record<string, Record<string, string>> = {
     agreement: "用户协议内容或指向文章的 slug",
   },
 };
+
+function smtpHelpOf(item: any): string | undefined {
+  if (item.group !== "notify") return undefined;
+  if (item.key === "smtp_security") {
+    const mode = getVal(item);
+    if (mode === "plain") return "普通 SMTP 不加密，账号密码也可能明文传输；适用于明确要求此方式的可信网络或中继。常见端口 25，请以服务商配置为准。";
+    if (mode === "tls") return "连接建立后立即进行 TLS 握手（支持 TLS 1.2 / 1.3），常见端口 465；也可使用服务商指定的其他端口。";
+    if (mode === "starttls") return "先建立 SMTP 连接，再强制升级为 TLS；服务器不支持升级时会报错。常见端口 587 或 25。";
+    return "自动模式：465 使用 SSL/TLS，其他端口在服务器支持时升级为 STARTTLS。需要确定的连接行为时，请明确选择相应方式。";
+  }
+  if (item.key === "smtp_auth") return "自动选择服务器提供的 PLAIN、LOGIN 或 CRAM-MD5。免认证中继请选择「无需认证」；部分服务商要求填写 SMTP 专用授权码。";
+  if (item.key === "smtp_tls_verify") return getVal(item)
+    ? "校验邮件服务器证书的可信链、域名和有效期。自签名或证书链缺失会在测试发送中显示原因。"
+    : "已关闭证书校验：TLS 仍加密传输，但不会验证服务器身份。仅用于你信任的自建服务；普通 SMTP 不使用此选项。";
+  return undefined;
+}
 
 function inputPlaceholderOf(item: any) {
   return INPUT_PLACEHOLDERS[item.group]?.[item.key];
@@ -307,8 +326,13 @@ async function loadSettings() {
     if (!error && data) {
       items.value = ((data as any).items || []).filter(
         (item: any) => (item.group !== "template" || !THEME_APPEARANCE_KEYS.has(item.key)) &&
-          (item.group !== "notify" || (item.key !== "telegram" && !item.key.startsWith("telegram_"))),
+          (item.group !== "notify" || (item.key !== "smtp" && item.key !== "telegram" && !item.key.startsWith("telegram_"))),
       );
+      if (activeGroup.value === "notify") {
+        const order = ["smtp_host", "smtp_port", "smtp_security", "smtp_auth", "smtp_user", "smtp_password", "smtp_from", "smtp_name", "smtp_tls_verify"];
+        const rank = (key: string) => order.includes(key) ? order.indexOf(key) : order.length;
+        items.value.sort((a, b) => rank(a.key) - rank(b.key));
+      }
     }
   } finally {
     loading.value = false;
@@ -386,6 +410,11 @@ onMounted(() => {
 
           <template v-else>
             <AccountSecurity v-if="activeGroup === 'security'" />
+            <NAlert v-if="activeGroup === 'notify'" type="info" class="mb-16px max-w-760px" title="邮件连接与域名签名">
+              按邮件服务商提供的方式选择普通 SMTP、SSL/TLS 或 STARTTLS，再保存配置并点击「测试邮件发送」。
+              DKIM 的 Selector 和 TXT 公钥记录配置在发件域名的 DNS，签名私钥由邮件服务器管理；它与 SMTP 连接方式分别配置。
+              测试成功代表邮件服务器已接受，最终到达收件箱还需检查投递日志和 SPF / DKIM / DMARC。
+            </NAlert>
             <!-- 页脚配置分区说明：每个设置项对应前台页脚的哪个区块（大厂模式：先给全局地图再进表单） -->
             <div v-if="activeGroup === 'footer'" class="footer-map mt-12px">
               <div class="text-13px font-600 text-gray-700">页脚设置 ↔ 前台位置对照</div>
@@ -403,7 +432,7 @@ onMounted(() => {
             </div>
 
             <h3 v-if="activeGroup === 'ticket'" class="mt-16px font-600">工单设置</h3>
-            <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form" :class="{ 'settings-form-wide': ['ops', 'recharge', 'supplier_recharge'].includes(activeGroup), 'settings-form-stock': activeGroup === 'supply' }">
+            <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form" :class="{ 'settings-form-wide': ['ops', 'recharge', 'supplier_recharge'].includes(activeGroup), 'settings-form-stock': activeGroup === 'supply', 'settings-form-smtp': activeGroup === 'notify' }">
               <NFormItem v-for="item in items" :key="item.key" :label="labelOf(item)">
                 <div class="flex w-full items-center gap-8px">
                   <template v-if="linkListOf(item)">
@@ -474,6 +503,10 @@ onMounted(() => {
                       </NSpace>
                     </NCheckboxGroup>
                   </template>
+                  <template v-else-if="item.group === 'notify' && ['smtp_security', 'smtp_auth'].includes(item.key)">
+                    <NSelect :value="String(getVal(item) ?? 'auto')" class="min-w-0 flex-1" :options="item.options"
+                      :input-props="{ 'aria-label': labelOf(item) }" @update:value="(v: string) => setVal(item, v)" />
+                  </template>
                   <template v-else-if="item.options?.length">
                     <!-- 低基数枚举：单选按钮组直接可见，免下拉展开 -->
                     <NRadioGroup
@@ -531,6 +564,9 @@ onMounted(() => {
                     />
                   </template>
                 </div>
+                <template v-if="smtpHelpOf(item)" #feedback>
+                  <span class="text-13px leading-6">{{ smtpHelpOf(item) }}</span>
+                </template>
               </NFormItem>
             </NForm>
 
@@ -546,6 +582,7 @@ onMounted(() => {
                 {{ activeGroup === 'ticket' ? '保存工单设置' : '保存更改' }}
               </NButton>
             </div>
+            <EmailTest v-if="activeGroup === 'notify'" :unsaved="dirtyKeys.size > 0 || saving" />
             <TelegramSettings v-if="activeGroup === 'ticket'" @dirty="telegramDirty = $event" @busy="telegramSaving = $event" />
           </template>
         </OuterTabPane>
@@ -591,9 +628,9 @@ onMounted(() => {
 .settings-form-wide { max-width: 1100px; }
 @media (max-width: 640px) {
   .settings-form-wide :deep(.n-form-item) { grid-template-columns: minmax(0, 1fr); }
-  .settings-form-stock :deep(.n-form-item) { grid-template-columns: minmax(0, 1fr); grid-template-areas: "label" "blank" "feedback"; grid-template-rows: auto auto auto; }
-  .settings-form-stock :deep(.n-form-item-label) { display: flex; text-align: left; padding-bottom: 6px; }
-  .settings-form-wide :deep(.n-form-item-label), .settings-form-stock :deep(.n-form-item-label) { justify-content: flex-start; }
+  .settings-form-stock :deep(.n-form-item), .settings-form-smtp :deep(.n-form-item) { grid-template-columns: minmax(0, 1fr); grid-template-areas: "label" "blank" "feedback"; grid-template-rows: auto auto auto; }
+  .settings-form-stock :deep(.n-form-item-label), .settings-form-smtp :deep(.n-form-item-label) { display: flex; text-align: left; padding-bottom: 6px; }
+  .settings-form-wide :deep(.n-form-item-label), .settings-form-stock :deep(.n-form-item-label), .settings-form-smtp :deep(.n-form-item-label) { justify-content: flex-start; }
 }
 /* 页脚分区说明卡（浅蓝信息底，与 naive 信息-alert 同语系） */
 .footer-map {

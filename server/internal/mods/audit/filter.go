@@ -169,7 +169,7 @@ func ReadBodyJSON(r *http.Request) map[string]any {
 		}
 	}
 	// Settings wrap secrets inside value_json, so field-name redaction alone is insufficient.
-	if r.URL.Path == "/api/v1/admin/settings/notify/telegram_bot_token" || r.URL.Path == "/api/v1/admin/settings/notify/telegram" {
+	if r.URL.Path == "/api/v1/admin/settings/notify/smtp_password" || r.URL.Path == "/api/v1/admin/settings/notify/telegram_bot_token" || r.URL.Path == "/api/v1/admin/settings/notify/telegram" {
 		for _, key := range []string{"value_json", "valueJson"} {
 			if _, ok := m[key]; ok {
 				m[key] = "****"
@@ -184,13 +184,13 @@ func redact(m map[string]any) map[string]any {
 	sensitive := map[string]bool{
 		"code": true, "totp_code": true, "captcha_code": true, "challenge": true, "recovery_ticket": true, "recovery_code": true, "recovery_codes": true, "otpauth_url": true, "refresh_token": true, "access_token": true, "new_password": true,
 		"current_password": true, "confirm_password": true, "currentpassword": true, "newpassword": true, "confirmpassword": true,
-		"bot_token": true, "telegram_bot_token": true, "password": true, "secret": true, "credentials": true, "api_secret": true,
+		"bot_token": true, "telegram_bot_token": true, "smtp_password": true, "password": true, "secret": true, "credentials": true, "api_secret": true,
 		"app_key": true, "config_json": true, "new_secret": true, "private_key": true,
 	}
 	out := make(map[string]any, len(m))
-	telegramSetting := m["group"] == "notify" && (m["key"] == "telegram_bot_token" || m["key"] == "telegram")
+	secretSetting := m["group"] == "notify" && (m["key"] == "smtp_password" || m["key"] == "telegram_bot_token" || m["key"] == "telegram")
 	for k, v := range m {
-		if telegramSetting && (k == "value_json" || k == "valueJson") {
+		if secretSetting && (k == "value_json" || k == "valueJson") {
 			out[k] = "****"
 			continue
 		}

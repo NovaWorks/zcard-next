@@ -92,6 +92,26 @@ func (s *AdminSettingsService) validateSettingValue(ctx context.Context, group, 
 			return errors.BadRequest("settings.INVALID_VALUE", "库存提醒阈值须为 1–1000000 的整数")
 		}
 	}
+	if group == "notify" {
+		switch key {
+		case "smtp_security", "smtp_auth":
+			var v string
+			g, _ := Group("notify")
+			if json.Unmarshal(value, &v) != nil || g.Options[key][v] == "" {
+				return errors.BadRequest("settings.INVALID_VALUE", "请选择有效的 SMTP 连接或认证方式")
+			}
+		case "smtp_tls_verify":
+			var v *bool
+			if json.Unmarshal(value, &v) != nil || v == nil {
+				return errors.BadRequest("settings.INVALID_VALUE", "SMTP 证书校验须为布尔值")
+			}
+		case "smtp_port":
+			var v *int
+			if json.Unmarshal(value, &v) != nil || v == nil || *v < 1 || *v > 65535 {
+				return errors.BadRequest("settings.INVALID_VALUE", "SMTP 端口须为 1–65535 的整数")
+			}
+		}
+	}
 	if group == "notify" && strings.HasPrefix(key, "telegram_") {
 		invalid := func() error {
 			return errors.BadRequest("settings.INVALID_VALUE", "Telegram 配置格式错误，请检查 Token、Chat ID 或事件选项")

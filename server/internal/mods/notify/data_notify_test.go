@@ -57,7 +57,7 @@ func TestEmailSkipped(t *testing.T) {
 		t.Fatalf("未配置应 skipped, got %v", err)
 	}
 	// enabled=false 同样降级
-	ch2 := NewEmailChannel(fakeSettings{raw: []byte(`{"host":"smtp.x.com","port":465,"enabled":false}`)})
+	ch2 := NewEmailChannel(fakeSettings{values: map[string]string{"notify.smtp": `{"host":"smtp.x.com","port":465,"enabled":false}`}})
 	if err := ch2.Deliver(context.Background(), notifyport.Message{Recipient: "a@b.com"}); err != ErrSkipped {
 		t.Fatalf("禁用应 skipped, got %v", err)
 	}

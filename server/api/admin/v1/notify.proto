@@ -10,6 +10,10 @@ import "google/protobuf/empty.proto";
 
 // AdminNotifyService 通知管理：模板 CRUD/测试发送、发送日志查询/重发。
 service AdminNotifyService {
+  // TestEmail submits one message synchronously using saved SMTP settings.
+  rpc TestEmail(TestEmailRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { post: "/api/v1/admin/notify/email/test" body: "*" };
+  }
   rpc TestTelegram(TestTelegramRequest) returns (TestTelegramReply) {
     option (google.api.http) = { post: "/api/v1/admin/notify/telegram/test" body: "*" };
   }
@@ -67,6 +71,12 @@ service AdminNotifyService {
       body: "*"
     };
   }
+}
+
+message TestEmailRequest {
+  string recipient = 1 [(google.api.field_behavior) = REQUIRED];
+  string subject = 2 [(google.api.field_behavior) = REQUIRED];
+  string content = 3 [(google.api.field_behavior) = REQUIRED]; // Plain text.
 }
 
 message TestTelegramRequest {

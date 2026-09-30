@@ -4,10 +4,13 @@ package notify
 
 import (
 	"context"
+	stderrors "errors"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notificationlog"
 	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	"github.com/go-kratos/kratos/v3/errors"
+	"html"
+	"strings"
 	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -354,4 +357,40 @@ func (s *AdminNotifyService) TestTelegram(ctx context.Context, req *adminv1.Test
 		return nil, err
 	}
 	return reply, nil
+}
+
+// TestEmail uses the same channel as registration/password mail, but never
+// reports success for a skipped delivery. Content is plain text, escaped to HTML.
+func (s *AdminNotifyService) TestEmail(ctx context.Context, req *adminv1.TestEmailRequest) (*emptypb.Empty, error) {
+	recipient := strings.TrimSpace(req.GetRecipient())
+	subject := strings.TrimSpace(req.GetSubject())
+	content := strings.TrimSpace(req.GetContent())
+	if !validMailbox(recipient) || len(recipient) > 254 {
+		return nil, errors.BadRequest("notify.INVALID_EMAIL", "请填写有效的收件邮箱")
+	}
+	if subject == "" || len(subject) > 300 || strings.ContainsAny(subject, "\r\n") {
+		return nil, errors.BadRequest("notify.INVALID_SUBJECT", "请填写邮件标题（最多 300 字节，不能包含换行）")
+	}
+	if content == "" || len(content) > 20000 {
+		return nil, errors.BadRequest("notify.INVALID_CONTENT", "请填写邮件内容（最多 20000 字节）")
+	}
+	channel, ok := s.disp.channels["email"]
+	if !ok {
+		return nil, errors.BadRequest("notify.EMAIL_NOT_READY", "邮件通道未配置")
+	}
+	msg := notifyport.Message{Channel: "email", EventType: "email.test", BizType: "email_test", Locale: "zh_CN",
+		Recipient: recipient, Subject: subject, Body: "<pre>" + html.EscapeString(content) + "</pre>"}
+	err := channel.Deliver(ctx, msg)
+	status, errMessage := "sent", ""
+	if err != nil {
+		status, errMessage = "failed", err.Error()
+	}
+	if stderrors.Is(err, ErrSkipped) {
+		status = "skipped"
+	}
+	_ = s.repo.WriteLog(ctx, logOf(msg, status, errMessage))
+	if err != nil {
+		return nil, smtpTestError(err)
+	}
+	return &emptypb.Empty{}, nil
 }

@@ -26,6 +26,7 @@ const OperationAdminNotifyServiceListLogs = "/zcard.api.admin.v1.AdminNotifyServ
 const OperationAdminNotifyServiceListTemplates = "/zcard.api.admin.v1.AdminNotifyService/ListTemplates"
 const OperationAdminNotifyServicePreviewTemplate = "/zcard.api.admin.v1.AdminNotifyService/PreviewTemplate"
 const OperationAdminNotifyServiceResendLog = "/zcard.api.admin.v1.AdminNotifyService/ResendLog"
+const OperationAdminNotifyServiceTestEmail = "/zcard.api.admin.v1.AdminNotifyService/TestEmail"
 const OperationAdminNotifyServiceTestTelegram = "/zcard.api.admin.v1.AdminNotifyService/TestTelegram"
 const OperationAdminNotifyServiceUpsertTemplate = "/zcard.api.admin.v1.AdminNotifyService/UpsertTemplate"
 
@@ -46,6 +47,8 @@ type AdminNotifyServiceHTTPServer interface {
 	PreviewTemplate(context.Context, *PreviewTemplateRequest) (*PreviewTemplateReply, error)
 	// ResendLog ResendLog 重发失败日志（原变量重投）。
 	ResendLog(context.Context, *ResendNotifyLogRequest) (*emptypb.Empty, error)
+	// TestEmail TestEmail submits one message synchronously using saved SMTP settings.
+	TestEmail(context.Context, *TestEmailRequest) (*emptypb.Empty, error)
 	TestTelegram(context.Context, *TestTelegramRequest) (*TestTelegramReply, error)
 	// UpsertTemplate UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
 	UpsertTemplate(context.Context, *UpsertNotifyTemplateRequest) (*NotifyTemplate, error)
@@ -53,6 +56,7 @@ type AdminNotifyServiceHTTPServer interface {
 
 func RegisterAdminNotifyServiceHTTPServer(s *http.Server, srv AdminNotifyServiceHTTPServer) {
 	r := s.Route("/")
+	r.Handle("POST", "/api/v1/admin/notify/email/test", _AdminNotifyService_TestEmail0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/notify/telegram/test", _AdminNotifyService_TestTelegram0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/notify/templates", _AdminNotifyService_UpsertTemplate0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/notify/templates", _AdminNotifyService_ListTemplates0_HTTP_Handler(srv))
@@ -63,6 +67,25 @@ func RegisterAdminNotifyServiceHTTPServer(s *http.Server, srv AdminNotifyService
 	r.Handle("POST", "/api/v1/admin/notify/broadcasts", _AdminNotifyService_CreateBroadcast0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/notify/broadcasts", _AdminNotifyService_ListBroadcasts0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/notify/broadcasts/{id}/cancel", _AdminNotifyService_CancelBroadcast0_HTTP_Handler(srv))
+}
+
+func _AdminNotifyService_TestEmail0_HTTP_Handler(srv AdminNotifyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in TestEmailRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminNotifyServiceTestEmail)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.TestEmail(ctx, req.(*TestEmailRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _AdminNotifyService_TestTelegram0_HTTP_Handler(srv AdminNotifyServiceHTTPServer) func(ctx http.Context) error {
@@ -278,6 +301,8 @@ type AdminNotifyServiceHTTPClient interface {
 	PreviewTemplate(ctx context.Context, req *PreviewTemplateRequest, opts ...http.CallOption) (rsp *PreviewTemplateReply, err error)
 	// ResendLog ResendLog 重发失败日志（原变量重投）。
 	ResendLog(ctx context.Context, req *ResendNotifyLogRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	// TestEmail TestEmail submits one message synchronously using saved SMTP settings.
+	TestEmail(ctx context.Context, req *TestEmailRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	TestTelegram(ctx context.Context, req *TestTelegramRequest, opts ...http.CallOption) (rsp *TestTelegramReply, err error)
 	// UpsertTemplate UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
 	UpsertTemplate(ctx context.Context, req *UpsertNotifyTemplateRequest, opts ...http.CallOption) (rsp *NotifyTemplate, err error)
@@ -423,6 +448,24 @@ func (c *AdminNotifyServiceHTTPClientImpl) ResendLog(ctx context.Context, in *Re
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminNotifyServiceResendLog),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// TestEmail TestEmail submits one message synchronously using saved SMTP settings.
+func (c *AdminNotifyServiceHTTPClientImpl) TestEmail(ctx context.Context, in *TestEmailRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/notify/email/test"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminNotifyServiceTestEmail),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

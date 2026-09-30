@@ -2827,6 +2827,22 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Broadcast'
+    /api/v1/admin/notify/email/test:
+        post:
+            tags:
+                - AdminNotifyService
+            description: TestEmail submits one message synchronously using saved SMTP settings.
+            operationId: AdminNotifyService_TestEmail
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.TestEmailRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/notify/logs:
         get:
             tags:
@@ -12459,6 +12475,19 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.TemplateItem'
+        zcard.api.admin.v1.TestEmailRequest:
+            required:
+                - recipient
+                - subject
+                - content
+            type: object
+            properties:
+                recipient:
+                    type: string
+                subject:
+                    type: string
+                content:
+                    type: string
         zcard.api.admin.v1.TestInstallConnectionReply:
             type: object
             properties:

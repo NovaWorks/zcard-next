@@ -175,6 +175,16 @@ export function updateSettings(items: { group: string; key: string; value_json: 
   });
 }
 
+export function testEmail(data: { recipient: string; subject: string; content: string }) {
+  return request({
+    url: "/api/v1/admin/notify/email/test",
+    method: "post",
+    data,
+    timeout: 30000,
+    silentError: true,
+  });
+}
+
 // 可用模板清单（WP 主题式选择；settings.template.pc_template 等取值）
 export interface TemplateItem {
   key: string;

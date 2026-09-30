@@ -20,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	AdminNotifyService_TestEmail_FullMethodName         = "/zcard.api.admin.v1.AdminNotifyService/TestEmail"
 	AdminNotifyService_TestTelegram_FullMethodName      = "/zcard.api.admin.v1.AdminNotifyService/TestTelegram"
 	AdminNotifyService_UpsertTemplate_FullMethodName    = "/zcard.api.admin.v1.AdminNotifyService/UpsertTemplate"
 	AdminNotifyService_ListTemplates_FullMethodName     = "/zcard.api.admin.v1.AdminNotifyService/ListTemplates"
@@ -38,6 +39,8 @@ const (
 //
 // AdminNotifyService 通知管理：模板 CRUD/测试发送、发送日志查询/重发。
 type AdminNotifyServiceClient interface {
+	// TestEmail submits one message synchronously using saved SMTP settings.
+	TestEmail(ctx context.Context, in *TestEmailRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	TestTelegram(ctx context.Context, in *TestTelegramRequest, opts ...grpc.CallOption) (*TestTelegramReply, error)
 	// UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
 	UpsertTemplate(ctx context.Context, in *UpsertNotifyTemplateRequest, opts ...grpc.CallOption) (*NotifyTemplate, error)
@@ -65,6 +68,16 @@ type adminNotifyServiceClient struct {
 
 func NewAdminNotifyServiceClient(cc grpc.ClientConnInterface) AdminNotifyServiceClient {
 	return &adminNotifyServiceClient{cc}
+}
+
+func (c *adminNotifyServiceClient) TestEmail(ctx context.Context, in *TestEmailRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminNotifyService_TestEmail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *adminNotifyServiceClient) TestTelegram(ctx context.Context, in *TestTelegramRequest, opts ...grpc.CallOption) (*TestTelegramReply, error) {
@@ -173,6 +186,8 @@ func (c *adminNotifyServiceClient) CancelBroadcast(ctx context.Context, in *Canc
 //
 // AdminNotifyService 通知管理：模板 CRUD/测试发送、发送日志查询/重发。
 type AdminNotifyServiceServer interface {
+	// TestEmail submits one message synchronously using saved SMTP settings.
+	TestEmail(context.Context, *TestEmailRequest) (*emptypb.Empty, error)
 	TestTelegram(context.Context, *TestTelegramRequest) (*TestTelegramReply, error)
 	// UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
 	UpsertTemplate(context.Context, *UpsertNotifyTemplateRequest) (*NotifyTemplate, error)
@@ -202,6 +217,9 @@ type AdminNotifyServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAdminNotifyServiceServer struct{}
 
+func (UnimplementedAdminNotifyServiceServer) TestEmail(context.Context, *TestEmailRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method TestEmail not implemented")
+}
 func (UnimplementedAdminNotifyServiceServer) TestTelegram(context.Context, *TestTelegramRequest) (*TestTelegramReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method TestTelegram not implemented")
 }
@@ -251,6 +269,24 @@ func RegisterAdminNotifyServiceServer(s grpc.ServiceRegistrar, srv AdminNotifySe
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AdminNotifyService_ServiceDesc, srv)
+}
+
+func _AdminNotifyService_TestEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TestEmailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminNotifyServiceServer).TestEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminNotifyService_TestEmail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminNotifyServiceServer).TestEmail(ctx, req.(*TestEmailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AdminNotifyService_TestTelegram_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -440,6 +476,10 @@ var AdminNotifyService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.admin.v1.AdminNotifyService",
 	HandlerType: (*AdminNotifyServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "TestEmail",
+			Handler:    _AdminNotifyService_TestEmail_Handler,
+		},
 		{
 			MethodName: "TestTelegram",
 			Handler:    _AdminNotifyService_TestTelegram_Handler,

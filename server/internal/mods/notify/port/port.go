@@ -47,11 +47,14 @@ type SettingsReader interface {
 
 // SMTPConfig SMTP 通道配置（settings notify 组）。
 type SMTPConfig struct {
-	Host     string `json:"host"`
-	Port     int    `json:"port"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	From     string `json:"from"`
-	FromName string `json:"from_name"`
-	Enabled  bool   `json:"enabled"`
+	Security  string `json:"security"` // auto | plain | tls | starttls
+	Auth      string `json:"auth"`     // auto | plain | login | cram_md5 | none
+	TLSVerify bool   `json:"tls_verify"`
+	Host      string `json:"host"`
+	Port      int    `json:"port"`
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	From      string `json:"from"`
+	FromName  string `json:"from_name"`
+	Enabled   bool   `json:"enabled"`
 }

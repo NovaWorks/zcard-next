@@ -9,10 +9,14 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
+	"net/mail"
 	"net/smtp"
 	"strings"
+	"time"
 
 	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 )
@@ -43,99 +47,188 @@ func (*EmailChannel) Name() string { return "email" }
 
 // smtpConfig 运行时读配置（变更不重启）。
 func (c *EmailChannel) smtpConfig(ctx context.Context) (*notifyport.SMTPConfig, error) {
-	raw, err := c.settings.GetJSON(ctx, "notify", "smtp")
+	// The admin form writes individual smtp_* keys. A persisted host marks that
+	// form as authoritative; clearing it must not reactivate a legacy account.
+	raw, err := c.settings.GetJSON(ctx, "notify", "smtp_host")
 	if err != nil {
 		return nil, err
 	}
-	if len(raw) == 0 {
-		return nil, nil // 未配置 → 降级
+	cfg := &notifyport.SMTPConfig{Port: 465, Security: "auto", Auth: "auto", TLSVerify: true}
+	if len(raw) > 0 {
+		if err := json.Unmarshal(raw, &cfg.Host); err != nil {
+			return nil, fmt.Errorf("notify: SMTP 服务器配置格式错误")
+		}
+		for _, field := range []struct {
+			key  string
+			dest any
+		}{
+			{"smtp_security", &cfg.Security}, {"smtp_auth", &cfg.Auth}, {"smtp_tls_verify", &cfg.TLSVerify},
+			{"smtp_port", &cfg.Port}, {"smtp_user", &cfg.Username},
+			{"smtp_password", &cfg.Password}, {"smtp_from", &cfg.From}, {"smtp_name", &cfg.FromName},
+		} {
+			raw, err := c.settings.GetJSON(ctx, "notify", field.key)
+			if err != nil {
+				return nil, err
+			}
+			if len(raw) > 0 && json.Unmarshal(raw, field.dest) != nil {
+				return nil, fmt.Errorf("notify: SMTP 配置格式错误（%s）", field.key)
+			}
+		}
+		cfg.Enabled = strings.TrimSpace(cfg.Host) != ""
+	} else {
+		raw, err = c.settings.GetJSON(ctx, "notify", "smtp")
+		if err != nil || len(raw) == 0 {
+			return nil, err
+		}
+		if err := jsonUnmarshal(raw, cfg); err != nil {
+			return nil, fmt.Errorf("notify: SMTP 配置不合法: %w", err)
+		}
 	}
-	var cfg notifyport.SMTPConfig
-	if err := jsonUnmarshal(raw, &cfg); err != nil {
-		return nil, fmt.Errorf("notify: SMTP 配置不合法: %w", err)
+	cfg.Host = strings.TrimSpace(cfg.Host)
+	cfg.Username = strings.TrimSpace(cfg.Username)
+	cfg.From = strings.TrimSpace(cfg.From)
+	if cfg.From == "" {
+		cfg.From = cfg.Username
 	}
-	return &cfg, nil
+	if cfg.Security == "" {
+		cfg.Security = "auto"
+	}
+	if cfg.Auth == "" {
+		cfg.Auth = "auto"
+	}
+	return cfg, nil
 }
 
 // ErrSkipped 降级哨兵（配置缺失/禁用；落日志 status=skipped，不算失败不重试）。
 var ErrSkipped = errors.New("notify: 通道未配置或禁用（skipped）")
 
-// Deliver 发送邮件。
-// Ready SMTP 配置齐全（Deliver 的 ErrSkipped 同源判定）。
+// Ready checks the saved configuration before mandatory verification mail.
 func (c *EmailChannel) Ready(ctx context.Context) bool {
 	cfg, err := c.smtpConfig(ctx)
-	return err == nil && cfg != nil && cfg.Enabled && cfg.Host != ""
+	return err == nil && cfg != nil && cfg.Enabled && cfg.Host != "" && cfg.Port > 0 && cfg.Port <= 65535 && validMailbox(cfg.From) && validSMTPMode(cfg.Security) && validSMTPAuth(cfg.Auth)
 }
 
-func (c *EmailChannel) Deliver(ctx context.Context, msg notifyport.Message) error {
+func (c *EmailChannel) Deliver(ctx context.Context, msg notifyport.Message) (result error) {
 	cfg, err := c.smtpConfig(ctx)
 	if err != nil {
-		return err
+		return smtpFailure("configuration", err, cfg)
 	}
 	if cfg == nil || !cfg.Enabled || cfg.Host == "" {
 		return ErrSkipped
 	}
-	if msg.Recipient == "" || !strings.Contains(msg.Recipient, "@") {
-		return fmt.Errorf("notify: 收件邮箱无效 %q", msg.Recipient)
+	stage := "configuration"
+	defer func() {
+		if result != nil {
+			result = smtpFailure(stage, result, cfg)
+		}
+	}()
+	if !validSMTPMode(cfg.Security) || !validSMTPAuth(cfg.Auth) {
+		return fmt.Errorf("SMTP 连接或认证方式无效")
 	}
-	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
-	from := cfg.From
-	if cfg.FromName != "" {
-		from = fmt.Sprintf("%s <%s>", cfg.FromName, cfg.From)
+	if cfg.Port < 1 || cfg.Port > 65535 {
+		return fmt.Errorf("SMTP 端口须为 1–65535")
 	}
-	header := make([]string, 0, 5)
-	header = append(header,
-		"From: "+from,
-		"To: "+msg.Recipient,
-		"Subject: "+mimeEncode(msg.Subject),
+	if !validMailbox(cfg.From) {
+		return fmt.Errorf("发件邮箱无效，请填写发件邮箱或使用完整邮箱作为 SMTP 用户名")
+	}
+	if !validMailbox(msg.Recipient) {
+		return fmt.Errorf("收件邮箱无效")
+	}
+	if strings.ContainsAny(msg.Subject+cfg.FromName, "\r\n") {
+		return fmt.Errorf("邮件标题和发件人名称不能包含换行")
+	}
+	from := (&mail.Address{Name: cfg.FromName, Address: cfg.From}).String()
+	header := []string{
+		"From: " + from,
+		"To: " + msg.Recipient,
+		"Subject: " + mimeEncode(msg.Subject),
+		"Date: " + time.Now().Format(time.RFC1123Z),
 		"MIME-Version: 1.0",
 		"Content-Type: text/html; charset=UTF-8",
-	)
+	}
 	body := strings.Join(header, "\r\n") + "\r\n\r\n" + msg.Body
-
-	var auth smtp.Auth
-	if cfg.Username != "" {
-		auth = smtp.PlainAuth("", cfg.Username, cfg.Password, cfg.Host)
-	}
-	// TLS：465 隐式；587/25 走明文+STARTTLS（服务器支持时客户端自动升级由 net/smtp 处理）
-	if cfg.Port == 465 {
-		return dialTLS(addr, cfg.Host, auth, from, msg.Recipient, body)
-	}
-	return smtp.SendMail(addr, auth, from, []string{msg.Recipient}, []byte(body))
-}
-
-func dialTLS(addr, host string, auth smtp.Auth, from, to, body string) error {
-	conn, err := tls.Dial("tcp", addr, &tls.Config{ServerName: host})
+	// Limit the whole SMTP exchange, including a server that accepts TCP but
+	// never answers. Request cancellation closes the connection immediately.
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	addr := net.JoinHostPort(cfg.Host, fmt.Sprint(cfg.Port))
+	stage = "connect"
+	conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", addr)
 	if err != nil {
-		return fmt.Errorf("notify: SMTP TLS 连接失败: %w", err)
+		return err
 	}
-	client, err := smtp.NewClient(conn, host)
+	rawConn := conn
+	defer rawConn.Close()
+	deadline, _ := ctx.Deadline()
+	_ = conn.SetDeadline(deadline)
+	stop := context.AfterFunc(ctx, func() { _ = rawConn.Close() })
+	defer stop()
+	tlsConfig := &tls.Config{ServerName: cfg.Host, MinVersion: tls.VersionTLS12, InsecureSkipVerify: !cfg.TLSVerify} // Explicit admin choice; verification defaults to true.
+	if cfg.Security == "tls" || (cfg.Security == "auto" && cfg.Port == 465) {
+		stage = "tls"
+		tlsConn := tls.Client(conn, tlsConfig)
+		if err := tlsConn.HandshakeContext(ctx); err != nil {
+			return err
+		}
+		conn = tlsConn
+	}
+	stage = "greeting"
+	client, err := smtp.NewClient(conn, cfg.Host)
 	if err != nil {
-		return fmt.Errorf("notify: SMTP 客户端构造失败: %w", err)
+		return err
 	}
 	defer client.Close()
-	if auth != nil {
-		if err := client.Auth(auth); err != nil {
-			return fmt.Errorf("notify: SMTP 认证失败: %w", err)
+	if cfg.Security == "starttls" || (cfg.Security == "auto" && cfg.Port != 465) {
+		stage = "starttls"
+		if ok, _ := client.Extension("STARTTLS"); ok {
+			if err := client.StartTLS(tlsConfig); err != nil {
+				return err
+			}
+		} else if cfg.Security == "starttls" {
+			return fmt.Errorf("服务器未宣告 STARTTLS 支持")
 		}
 	}
-	if err := client.Mail(from); err != nil {
+	if cfg.Auth != "none" && (cfg.Username != "" || cfg.Auth != "auto") {
+		stage = "auth"
+		auth, err := smtpAuthentication(client, cfg)
+		if err != nil {
+			return err
+		}
+		if err := client.Auth(auth); err != nil {
+			return err
+		}
+	}
+	// MAIL FROM uses the bare address; the display name belongs only in headers.
+	stage = "from"
+	if err := client.Mail(cfg.From); err != nil {
 		return err
 	}
-	if err := client.Rcpt(to); err != nil {
+	stage = "recipient"
+	if err := client.Rcpt(msg.Recipient); err != nil {
 		return err
 	}
+	stage = "data"
 	w, err := client.Data()
 	if err != nil {
 		return err
 	}
+	stage = "body"
 	if _, err := w.Write([]byte(body)); err != nil {
 		return err
 	}
+	stage = "accept"
 	if err := w.Close(); err != nil {
 		return err
 	}
-	return client.Quit()
+	// DATA acceptance means submitted. A QUIT disconnect must not turn it into
+	// a failure and invite duplicate sends.
+	_ = client.Quit()
+	return nil
+}
+
+func validMailbox(value string) bool {
+	address, err := mail.ParseAddress(value)
+	return err == nil && address.Address == value && strings.Contains(value, "@") && !strings.ContainsAny(value, "\r\n")
 }
 
 // mimeEncode 邮件主题编码（非 ASCII → RFC 2047 B 编码）。
