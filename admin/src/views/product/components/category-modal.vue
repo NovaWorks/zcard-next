@@ -138,7 +138,13 @@ async function load() {
   loading.value = true;
   try {
     const { data, error } = await fetchCategories();
-    if (!error && data) categories.value = (data as any).categories || [];
+    if (!error && data) {
+      categories.value = (data as any).categories || [];
+      const existing = new Set(categories.value.map(cat => cat.id));
+      batchChecked.value = new Set([...batchChecked.value].filter(id => existing.has(id)));
+      return true;
+    }
+    return false;
   } finally {
     loading.value = false;
   }
@@ -422,42 +428,78 @@ async function onDropToRoot() {
   }
 }
 
-// ── 批量删除：选择模式（逆序删除保证子分类先于父分类）──
-const batchMode = ref(false);
+// 多选直接在列表中显示，搜索仅改变可见范围，不取消已勾选的分类。
 const batchChecked = ref<Set<number>>(new Set());
+const batchDeleting = ref(false);
+const batchMode = computed(() => batchChecked.value.size > 0 || batchDeleting.value);
+const batchProgress = reactive({ done: 0, total: 0 });
+const batchFailures = ref<{ id: number; name: string; message: string }[]>([]);
+const allFilteredChecked = computed(() => filteredTree.value.length > 0 && filteredTree.value.every(cat => batchChecked.value.has(cat.id)));
+const someFilteredChecked = computed(() => filteredTree.value.some(cat => batchChecked.value.has(cat.id)) && !allFilteredChecked.value);
 
-function toggleBatchMode() {
-  batchMode.value = !batchMode.value;
-  batchChecked.value.clear();
+function clearBatchSelection() {
+  if (batchDeleting.value) return;
+  batchChecked.value = new Set();
+  batchFailures.value = [];
 }
-
 function toggleBatchCheck(id: number, on: boolean) {
-  if (on) batchChecked.value.add(id);
-  else batchChecked.value.delete(id);
-  // 触发 Set 响应（替换引用）
-  batchChecked.value = new Set(batchChecked.value);
+  if (!canDelete.value || batchDeleting.value) return;
+  const next = new Set(batchChecked.value);
+  if (on) next.add(id);
+  else next.delete(id);
+  batchChecked.value = next;
+}
+function selectFiltered(on: boolean) {
+  if (!canDelete.value || batchDeleting.value) return;
+  const next = new Set(batchChecked.value);
+  for (const cat of filteredTree.value) {
+    if (on) next.add(cat.id);
+    else next.delete(cat.id);
+  }
+  batchChecked.value = next;
 }
 
 async function handleBatchDelete() {
-  const ids = [...batchChecked.value];
-  if (!ids.length) return;
-  // flatTree 是先序（父在前）——逆序后子分类先删，父分类随后可删
-  const order = [...flatTree.value].reverse();
-  const sorted = order.filter((c) => batchChecked.value.has(c.id));
-  let ok = 0;
-  const failed: string[] = [];
-  for (const cat of sorted) {
-    const { error } = await deleteCategory(cat.id);
-    if (!error) ok++;
-    else failed.push(cat.name);
+  if (!canDelete.value || batchDeleting.value || !batchChecked.value.size) return;
+  // 逆序删除所选分类：先子后父；没有勾选的子分类不会被删除。
+  const selected = [...flatTree.value].reverse().filter(cat => batchChecked.value.has(cat.id));
+  batchDeleting.value = true;
+  batchFailures.value = [];
+  batchProgress.done = 0;
+  batchProgress.total = selected.length;
+  let deleted = 0;
+  try {
+    for (const cat of selected) {
+      if (!canDelete.value) break;
+      const { error } = await deleteCategory(cat.id, true);
+      batchProgress.done++;
+      if (!error) {
+        deleted++;
+        batchChecked.value = new Set([...batchChecked.value].filter(id => id !== cat.id));
+      } else {
+        const response = (error as any).response;
+        batchFailures.value.push({ id: cat.id, name: cat.path, message: response?.data?.message || error.message || "删除失败，请刷新后重试" });
+        if (response?.status === 401 || response?.status === 403) break;
+      }
+    }
+    if (await load()) {
+      // A lost DELETE reply can still mean the server deleted the category.
+      // Confirm against the refreshed list instead of offering a second deletion.
+      const existing = new Set(categories.value.map(cat => cat.id));
+      const remaining = batchFailures.value.filter(item => existing.has(item.id));
+      deleted += batchFailures.value.length - remaining.length;
+      batchFailures.value = remaining;
+    }
+    if (deleted) {
+      window.$message?.success(`已删除 ${deleted} 个分类`);
+      emit("refresh");
+    }
+    if (batchFailures.value.length) window.$message?.warning(`${batchFailures.value.length} 个分类未删除，已保留勾选，请查看原因`);
+  } finally {
+    batchDeleting.value = false;
   }
-  if (ok) window.$message?.success(`已删除 ${ok} 个分类`);
-  if (failed.length) window.$message?.warning(`${failed.length} 个未删除（有商品或子分类）：${failed.slice(0, 3).join("、")}${failed.length > 3 ? "…" : ""}`);
-  batchMode.value = false;
-  batchChecked.value.clear();
-  load();
-  emit("refresh");
 }
+watch(() => props.embedded || props.show, () => { if (!batchDeleting.value) clearBatchSelection(); });
 
 
 const showMerge = ref(false);
@@ -492,7 +534,6 @@ async function runMerge(preview: boolean) {
       window.$message?.success(`已合并 ${data.categories} 个分类，迁移 ${data.products} 件商品`);
       showMerge.value = false;
       batchChecked.value = new Set();
-      batchMode.value = false;
       await load();
       emit("refresh");
     }
@@ -517,37 +558,42 @@ async function onSortBlur(cat: any) {
 
 <template>
   <component :is="embedded ? NCard : NModal"
-    v-bind="embedded ? { title: '商品分类' } : { show: visible, preset: 'card', title: '分类管理', style: 'width: 960px; max-width: 94vw' }"
+    v-bind="embedded ? { title: '商品分类' } : { show: visible, preset: 'card', title: '分类管理', style: 'width: 960px; max-width: 94vw', closable: !batchDeleting, maskClosable: !batchDeleting, closeOnEsc: !batchDeleting }"
     class="category-manager" :class="{ 'category-manager-page': embedded }"
     @update:show="visible = $event">
     <div class="mb-12px flex flex-wrap items-center gap-8px">
-      <NInput v-model:value="search" clearable placeholder="搜索分类名称或完整路径" :input-props="{ 'aria-label': '搜索分类' }" class="min-w-180px flex-1" />
-      <NButton :loading="loading" @click="load">刷新</NButton>
+      <NInput v-model:value="search" :disabled="batchDeleting" clearable placeholder="搜索分类名称或完整路径" :input-props="{ 'aria-label': '搜索分类' }" class="min-w-180px flex-1" />
+      <NButton :loading="loading" :disabled="batchDeleting" @click="load">刷新</NButton>
     </div>
     <div class="mb-12px flex flex-wrap items-center justify-between gap-8px">
       <div class="flex flex-wrap items-center gap-8px">
         <span class="text-13px text-gray-500">共 {{ flatTree.length }} 个分类<template v-if="search.trim()">，找到 {{ filteredTree.length }} 个</template></span>
-        <template v-if="batchMode">
+        <template v-if="canDelete">
+          <NCheckbox aria-label="全选当前筛选结果" :aria-disabled="batchDeleting || loading || !filteredTree.length" :checked="allFilteredChecked" :indeterminate="someFilteredChecked" :disabled="batchDeleting || loading || !filteredTree.length" @update:checked="selectFiltered">全选当前筛选结果</NCheckbox>
           <NTag size="small" :bordered="false">已选 {{ batchChecked.size }}</NTag>
-          <NButton v-auth="'catalog:category_delete'" size="tiny" :disabled="!batchChecked.size" @click="openMerge">合并所选</NButton>
-          <NPopconfirm @positive-click="handleBatchDelete">
+          <NButton size="small" :disabled="!batchChecked.size || batchDeleting" @click="clearBatchSelection">清空选择</NButton>
+          <NButton size="small" :disabled="!batchChecked.size || batchDeleting" @click="openMerge">合并所选</NButton>
+          <NPopconfirm positive-text="确认删除" negative-text="取消" :disabled="!batchChecked.size || batchDeleting" @positive-click="handleBatchDelete">
             <template #trigger>
-              <NButton v-auth="'catalog:category_delete'" size="tiny" type="error" :disabled="!batchChecked.size">
-                删除所选（{{ batchChecked.size }}）
+              <NButton size="small" type="error" :loading="batchDeleting" :disabled="!batchChecked.size || batchDeleting">
+                批量删除（{{ batchChecked.size }}）
               </NButton>
             </template>
-            删除选中的 {{ batchChecked.size }} 个分类？有商品或子分类的会自动跳过。
+            删除勾选的 {{ batchChecked.size }} 个分类？仅删除所选分类，先子后父；有商品或未选中子分类的会保留。
           </NPopconfirm>
         </template>
       </div>
       <div class="flex flex-wrap items-center gap-8px">
-        <NButton v-auth="'catalog:category_write'" size="small" quaternary @click="toggleBatchMode">
-          {{ batchMode ? "退出批量" : "批量管理" }}
-        </NButton>
-        <NButton v-auth="'catalog:category_write'" size="small" type="primary" @click="showCreate = !showCreate">
+        <NButton v-auth="'catalog:category_write'" size="small" type="primary" :disabled="batchDeleting" @click="showCreate = !showCreate">
           {{ showCreate ? "收起" : "新建分类" }}
         </NButton>
       </div>
+    </div>
+
+    <p v-if="batchDeleting" role="status" class="mb-12px text-13px">正在删除分类：{{ batchProgress.done }} / {{ batchProgress.total }}</p>
+    <div v-if="batchFailures.length" role="status" class="category-delete-failures mb-12px rounded-4px border border-orange-200 p-12px">
+      <p class="mb-6px">以下分类未删除，仍保持勾选：</p>
+      <ul class="m-0 pl-20px"><li v-for="item in batchFailures" :key="item.id">{{ item.name }}：{{ item.message }}</li></ul>
     </div>
 
     <!-- 新建 -->
@@ -609,7 +655,7 @@ async function onSortBlur(cat: any) {
     <!-- 树列表（行可拖拽：上/下边缘=排序插入，行中间=设为子级；顶部释放区=顶级） -->
     <div v-if="canWrite" class="mb-4px text-12px text-gray-400">搜索时暂停拖拽；也可通过操作菜单调整上级。拖到行上/下边缘 = 排序；拖到行中间 = 设为子级；拖到顶部虚线区 = 设为顶级</div>
     <div
-      v-if="canWrite && !search.trim()"
+      v-if="canWrite && !batchMode && !search.trim()"
       class="mb-4px rounded-4px border border-dashed px-10px py-6px text-center text-12px"
       :class="dropToRoot ? 'border-blue-400 bg-blue-50 text-blue-500' : 'border-gray-300 text-gray-400 dark:border-gray-600'"
       @dragover.prevent="dropToRoot = true"
@@ -628,7 +674,7 @@ async function onSortBlur(cat: any) {
       <div
         v-for="cat in filteredTree"
         :key="cat.id"
-        :draggable="canWrite && !search.trim()"
+        :draggable="canWrite && !batchMode && !search.trim()"
         class="category-manage-row group flex cursor-grab items-center gap-8px rounded-4px py-7px pr-8px text-13px hover:bg-gray-100 dark:hover:bg-gray-800 active:cursor-grabbing"
         :class="rowClass(cat)"
         :style="rowStyle(cat)"
@@ -640,7 +686,10 @@ async function onSortBlur(cat: any) {
       >
         <!-- 批量模式勾选框 -->
         <NCheckbox
-          v-if="batchMode"
+          v-if="canDelete"
+          :aria-label="`选择分类 ${cat.path}`"
+          :aria-disabled="batchDeleting"
+          :disabled="batchDeleting"
           :checked="batchChecked.has(cat.id)"
           class="shrink-0"
           @update:checked="(v: boolean) => toggleBatchCheck(cat.id, v)"
@@ -705,7 +754,7 @@ async function onSortBlur(cat: any) {
         <span title="该分类及下级分类的未删除商品总数（含隐藏、下架商品）" class="w-76px shrink-0 text-right text-12px text-gray-500">{{ cat.product_count || 0 }} 件</span>
         <NInputNumber
           v-model:value="cat.sort"
-          :disabled="!canWrite"
+          :disabled="!canWrite || batchDeleting"
           :input-props="{ 'aria-label': `${cat.name}排序` }"
           size="tiny"
           :min="0"
@@ -715,7 +764,7 @@ async function onSortBlur(cat: any) {
           @blur="onSortBlur(cat)"
           @keyup.enter="onSortBlur(cat)"
         />
-        <NDropdown v-if="menuOptions.length"
+        <NDropdown v-if="!batchDeleting && menuOptions.length"
           class="shrink-0"
           :options="menuOptions"
           trigger="click"

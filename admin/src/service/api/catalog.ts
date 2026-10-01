@@ -125,10 +125,11 @@ export function updateCategory(id: number, data: Record<string, any>) {
   });
 }
 
-export function deleteCategory(id: number) {
+export function deleteCategory(id: number, silentError = false) {
   return request({
     url: `/api/v1/admin/categories/${id}`,
     method: "delete",
+    silentError,
   });
 }
 
