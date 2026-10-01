@@ -9,7 +9,6 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
-	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 	kerrors "github.com/go-kratos/kratos/v3/errors"
 )
 
@@ -105,11 +104,11 @@ func (r *SupplierRepoImpl) upsertPriceRule(ctx context.Context, accountID, produ
 		if productID == 0 || price <= 0 || categoryID != 0 || discount != 0 {
 			return invalid("请选择商品并填写大于零的专属价")
 		}
-		n, err := client.Product.Update().Where(product.ID(productID), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID), product.StatusGTE(0)).AddLockVersion(0).Save(ctx)
+		exists, err := r.lockCatalogProduct(ctx, productID, false)
 		if err != nil {
 			return err
 		}
-		if n != 1 {
+		if !exists {
 			return invalid("商品不存在或已删除")
 		}
 		if skuID > 0 {
@@ -132,11 +131,11 @@ func (r *SupplierRepoImpl) upsertPriceRule(ctx context.Context, accountID, produ
 			if categoryID == 0 {
 				return invalid("请选择分类")
 			}
-			n, err := client.Category.Update().Where(category.ID(categoryID), category.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).AddPlacementVersion(0).Save(ctx)
+			exists, err := r.lockCatalogCategory(ctx, categoryID)
 			if err != nil {
 				return err
 			}
-			if n != 1 {
+			if !exists {
 				return invalid("分类不存在或已删除")
 			}
 		} else if categoryID != 0 {

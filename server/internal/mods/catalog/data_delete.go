@@ -173,23 +173,13 @@ func (s *AdminCatalogService) DeleteProduct(ctx context.Context, req *adminv1.De
 	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
 		c := data.Client(ctx, s.repo.data)
 		tenant := tenancy.FromContext(ctx).SubsiteID
-		if _, err := data.GuardProductWrite(ctx, s.repo.data, req.Id); err != nil {
-			return err
-		}
-		// 条件写取得商品行锁；销售/同步/删除串行，事务失败不留下半删除状态。
-		n, err := c.Product.Update().Where(product.ID(req.Id), product.SubsiteID(tenant), product.StatusGTE(0)).AddSort(0).Save(ctx)
+		p, err := data.GuardProductWrite(ctx, s.repo.data, req.Id)
 		if err != nil {
 			return err
 		}
-		if n != 1 {
-			return errors.NotFound("catalog.PRODUCT_NOT_FOUND", "商品不存在或已删除，请刷新后重试")
-		}
-		// 锁住关联订单，再重新读取其状态，阻止支付/退款在检查后更改订单。
+		// GuardProductWrite has already locked the current product. Do not infer
+		// existence from a no-op UPDATE's changed-row count on MySQL.
 		_, err = c.Order.Update().Where(order.HasItemsWith(orderitem.ProductID(req.Id))).AddVersion(0).Save(ctx)
-		if err != nil {
-			return err
-		}
-		p, err := c.Product.Get(ctx, req.Id)
 		if err != nil {
 			return err
 		}

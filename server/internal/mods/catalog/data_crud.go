@@ -538,7 +538,18 @@ func descendantCategoryIDs(ctx context.Context, client *ent.Client, id uint64) (
 func (r *ProductRepoImpl) deleteCategory(ctx context.Context, id uint64) error {
 	client := data.Client(ctx, r.data)
 	tenant := tenancy.FromContext(ctx).SubsiteID
-	if _, err := client.Category.Query().Where(category.ID(id), category.SubsiteID(tenant)).Only(ctx); err != nil {
+	// Lock before checking children and cleaning price rules, so concurrent
+	// supplier category pricing cannot create a rule after deletion cleanup.
+	if r.data.Dialect == db.SQLite {
+		if err := client.Category.Update().Where(category.ID(id), category.SubsiteID(tenant)).AddPlacementVersion(0).Exec(ctx); err != nil {
+			return err
+		}
+	}
+	q := client.Category.Query().Where(category.ID(id), category.SubsiteID(tenant))
+	if r.data.Dialect != db.SQLite {
+		q.ForUpdate()
+	}
+	if _, err := q.Only(ctx); err != nil {
 		if ent.IsNotFound(err) {
 			return fmt.Errorf("catalog.CATEGORY_NOT_FOUND")
 		}
