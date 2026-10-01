@@ -11,7 +11,12 @@ import (
 	"strings"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
+	kerrors "github.com/go-kratos/kratos/v3/errors"
+	"github.com/google/uuid"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -119,11 +124,28 @@ func (s *AdminSupplierService) SetIPWhitelist(ctx context.Context, req *adminv1.
 
 // Recharge 充值（账本入账；reference 幂等由调用方保证）。
 func (s *AdminSupplierService) Recharge(ctx context.Context, req *adminv1.RechargeSupplierRequest) (*emptypb.Empty, error) {
-	if req.GetAmountCents() <= 0 {
-		return nil, errors.New("supplier.INVALID_AMOUNT")
+	if req.GetAmountCents() <= 0 || !money.ValidCents(req.GetAmountCents()) {
+		return nil, kerrors.BadRequest("supplier.INVALID_AMOUNT", "充值金额须大于零且不能超过单笔金额上限")
 	}
-	ref := fmt.Sprintf("recharge:manual:%d:%d", req.GetId(), req.GetAmountCents())
+	key := strings.TrimSpace(req.GetReference())
+	if len(key) > 80 {
+		return nil, kerrors.BadRequest("supplier.INVALID_REFERENCE", "充值幂等键不能超过 80 字节")
+	}
+	if key == "" { // 兼容尚未发送幂等键的客户端；金额不能充当充值标识。
+		key = uuid.NewString()
+	}
+	ref := fmt.Sprintf("recharge:manual:%d:%s", req.GetId(), key)
 	if err := s.repo.Recharge(ctx, req.GetId(), req.GetAmountCents(), ref, orEmpty(req.GetRemark(), "管理员充值")); err != nil {
+		if errors.Is(err, ErrDuplicateLedger) {
+			entry, e := data.Client(ctx, s.repo.data).SupplierLedgerEntry.Query().Where(supplierledgerentry.Reference(ref)).Only(ctx)
+			if e != nil {
+				return nil, e
+			}
+			if entry.AccountID == req.GetId() && entry.Type == "recharge" && entry.Amount == req.GetAmountCents() {
+				return &emptypb.Empty{}, nil
+			}
+			return nil, kerrors.Conflict("supplier.RECHARGE_REFERENCE_CONFLICT", "此充值已提交，请使用原金额重试；新充值请重新打开充值窗口")
+		}
 		return nil, err
 	}
 	return &emptypb.Empty{}, nil

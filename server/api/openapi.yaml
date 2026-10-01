@@ -11591,6 +11591,9 @@ components:
                     type: string
                 remark:
                     type: string
+                reference:
+                    type: string
+                    description: 一次充值使用一个幂等键；重试沿用原键，下一笔充值使用新键。
         zcard.api.admin.v1.ReconciliationItemDetail:
             type: object
             properties:

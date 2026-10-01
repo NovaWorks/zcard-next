@@ -27,7 +27,8 @@ func deleteFixture(t *testing.T, status order.Status) (*data.Data, *AdminCatalog
 func TestDeleteProductKeepsHistoryAndBlocksResurrection(t *testing.T) {
 	d, s, p, o, _ := deleteFixture(t, order.StatusCompleted)
 	ctx := context.Background()
-	d.Client.Product.UpdateOneID(p.ID).SetUpstreamSourceID(1).SetUpstreamProductCode("old-code").ExecX(ctx)
+	cover := d.Client.Media.Create().SetName("history-cover").SetPath("history.png").SetMime("image/png").SetSize(1).SetSha256("history-cover").SetRefCount(1).SaveX(ctx)
+	d.Client.Product.UpdateOneID(p.ID).SetUpstreamSourceID(1).SetUpstreamProductCode("old-code").SetCover("/uploads/history.png").ExecX(ctx)
 	ca := d.Client.Card.Create().SetProductID(p.ID).SetContent([]byte("cipher")).SetContentHash("old").SetStatus(card.StatusUsed).SetOrderID(o.ID).SaveX(ctx)
 	pre, err := s.PreviewDeleteProduct(ctx, &adminv1.GetProductRequest{Id: p.ID})
 	if err != nil || pre.OrderCount != 1 || pre.DeleteBlockReason != "" {
@@ -51,6 +52,9 @@ func TestDeleteProductKeepsHistoryAndBlocksResurrection(t *testing.T) {
 	}
 	if string(d.Client.Product.GetX(ctx, p.ID).DirectContent) != "encrypted-content" || d.Client.Card.GetX(ctx, ca.ID).OrderID != o.ID {
 		t.Fatal("historical fulfillment damaged")
+	}
+	if d.Client.Media.GetX(ctx, cover.ID).RefCount != 1 {
+		t.Fatal("historical cover is no longer protected from media cleanup")
 	}
 	if n, err := s.repo.BatchUpdateStatus(ctx, []uint64{p.ID}, 1); err != nil || n != 0 {
 		t.Fatalf("batch revived %d %v", n, err)
@@ -110,11 +114,8 @@ func TestDeleteProductGuards(t *testing.T) {
 		name   string
 		modify func(context.Context, *data.Data, *ent.Product, *ent.Order)
 	}{
-		{"onshelf", func(c context.Context, d *data.Data, p *ent.Product, o *ent.Order) {
-			d.Client.Product.UpdateOneID(p.ID).SetStatus(1).ExecX(c)
-		}},
-		{"hidden", func(c context.Context, d *data.Data, p *ent.Product, o *ent.Order) {
-			d.Client.Product.UpdateOneID(p.ID).SetStatus(2).ExecX(c)
+		{"locked", func(c context.Context, d *data.Data, p *ent.Product, o *ent.Order) {
+			d.Client.Product.UpdateOneID(p.ID).SetIsLocked(true).ExecX(c)
 		}},
 		{"foreign", func(c context.Context, d *data.Data, p *ent.Product, o *ent.Order) {
 			d.Client.Product.UpdateOneID(p.ID).SetSubsiteID(99).ExecX(c)
@@ -128,8 +129,8 @@ func TestDeleteProductGuards(t *testing.T) {
 		{"refund", func(c context.Context, d *data.Data, p *ent.Product, o *ent.Order) {
 			d.Client.RefundOrder.Create().SetOrderID(o.ID).SetAmount(100).SetChannel("gateway").SetStatus("processing").SaveX(c)
 		}},
-		{"stock", func(c context.Context, d *data.Data, p *ent.Product, o *ent.Order) {
-			d.Client.Card.Create().SetProductID(p.ID).SetContent([]byte("cipher")).SetContentHash("unused").SetStatus(card.StatusAvailable).SaveX(c)
+		{"reserved-stock", func(c context.Context, d *data.Data, p *ent.Product, o *ent.Order) {
+			d.Client.Card.Create().SetProductID(p.ID).SetContent([]byte("cipher")).SetContentHash("reserved").SetStatus(card.StatusReserved).SaveX(c)
 		}},
 	}
 	for _, tt := range cases {

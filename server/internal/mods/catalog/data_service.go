@@ -391,7 +391,16 @@ func (s *AdminCatalogService) ReorderCategories(ctx context.Context, req *adminv
 // DeleteCategory 删除分类。
 func (s *AdminCatalogService) DeleteCategory(ctx context.Context, req *adminv1.DeleteCategoryRequest) (*emptypb.Empty, error) {
 	if err := s.repo.DeleteCategory(ctx, req.GetId()); err != nil {
-		return nil, errors.BadRequest("catalog.CATEGORY_DELETE_FAILED", "删除失败（有子分类或商品）")
+		switch err.Error() {
+		case "catalog.CATEGORY_HAS_CHILDREN":
+			return nil, errors.BadRequest("catalog.CATEGORY_HAS_CHILDREN", "该分类还有子分类，请先删除子分类")
+		case "catalog.CATEGORY_HAS_PRODUCTS":
+			return nil, errors.BadRequest("catalog.CATEGORY_HAS_PRODUCTS", "该分类还有商品（含隐藏、下架商品），请先移走或删除商品")
+		case "catalog.CATEGORY_NOT_FOUND":
+			return nil, errors.NotFound("catalog.CATEGORY_NOT_FOUND", "分类不存在或已删除")
+		default:
+			return nil, errors.InternalServer("catalog.CATEGORY_DELETE_FAILED", "删除分类失败，请稍后重试")
+		}
 	}
 	return &emptypb.Empty{}, nil
 }

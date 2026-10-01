@@ -17,6 +17,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/tag"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	mediamods "github.com/NovaWorks/zcard-next/server/internal/mods/media"
@@ -535,21 +537,38 @@ func descendantCategoryIDs(ctx context.Context, client *ent.Client, id uint64) (
 // DeleteCategory 删除（有子分类或有商品时拒删）。
 func (r *ProductRepoImpl) deleteCategory(ctx context.Context, id uint64) error {
 	client := data.Client(ctx, r.data)
-	hasChildren, err := client.Category.Query().Where(category.ParentID(id)).Exist(ctx)
+	tenant := tenancy.FromContext(ctx).SubsiteID
+	if _, err := client.Category.Query().Where(category.ID(id), category.SubsiteID(tenant)).Only(ctx); err != nil {
+		if ent.IsNotFound(err) {
+			return fmt.Errorf("catalog.CATEGORY_NOT_FOUND")
+		}
+		return err
+	}
+	hasChildren, err := client.Category.Query().Where(category.ParentID(id), category.SubsiteID(tenant)).Exist(ctx)
 	if err != nil {
 		return err
 	}
 	if hasChildren {
 		return fmt.Errorf("catalog.CATEGORY_HAS_CHILDREN")
 	}
-	hasProducts, err := client.Product.Query().Where(product.CategoryID(id)).Exist(ctx)
+	hasProducts, err := client.Product.Query().Where(product.CategoryID(id), product.SubsiteID(tenant), product.StatusGTE(0)).Exist(ctx)
 	if err != nil {
 		return err
 	}
 	if hasProducts {
 		return fmt.Errorf("catalog.CATEGORY_HAS_PRODUCTS")
 	}
-	n, err := client.Category.Delete().Where(category.ID(id)).Exec(ctx)
+	// 旧版归档商品可能仍引用分类；历史订单不依赖分类，删除前释放引用。
+	if _, err = client.Product.Update().Where(product.CategoryID(id), product.SubsiteID(tenant), product.StatusLT(0)).ClearCategoryID().Save(ctx); err != nil {
+		return err
+	}
+	if _, err = client.SupplierProductPrice.Delete().Where(supplierproductprice.CategoryID(id), supplierproductprice.Scope("category")).Exec(ctx); err != nil {
+		return err
+	}
+	if _, err = client.SupplyMapping.Update().Where(supplymapping.LocalCategoryID(id)).ClearLocalCategoryID().Save(ctx); err != nil {
+		return err
+	}
+	n, err := client.Category.Delete().Where(category.ID(id), category.SubsiteID(tenant)).Exec(ctx)
 	if err != nil {
 		return err
 	}
@@ -1181,7 +1200,10 @@ func (r *ProductRepoImpl) ListForSupply(ctx context.Context, f port.AdminFilter)
 
 // GetForSupply 供货单品（含下架）。
 func (r *ProductRepoImpl) GetForSupply(ctx context.Context, productID uint64) (*port.SupplierProduct, error) {
-	row, err := data.Client(ctx, r.data).Product.Get(ctx, productID)
+	row, err := data.Client(ctx, r.data).Product.Query().Where(product.ID(productID), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID), product.StatusGTE(0)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, ErrProductNotFound
+	}
 	if err != nil {
 		return nil, err
 	}

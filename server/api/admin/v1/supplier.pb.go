@@ -652,10 +652,12 @@ func (x *SetSupplierNotifyURLRequest) GetNotifyUrl() string {
 }
 
 type RechargeSupplierRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	AmountCents   int64                  `protobuf:"varint,2,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
-	Remark        string                 `protobuf:"bytes,3,opt,name=remark,proto3" json:"remark,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	AmountCents int64                  `protobuf:"varint,2,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
+	Remark      string                 `protobuf:"bytes,3,opt,name=remark,proto3" json:"remark,omitempty"`
+	// 一次充值使用一个幂等键；重试沿用原键，下一笔充值使用新键。
+	Reference     string `protobuf:"bytes,4,opt,name=reference,proto3" json:"reference,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -707,6 +709,13 @@ func (x *RechargeSupplierRequest) GetAmountCents() int64 {
 func (x *RechargeSupplierRequest) GetRemark() string {
 	if x != nil {
 		return x.Remark
+	}
+	return ""
+}
+
+func (x *RechargeSupplierRequest) GetReference() string {
+	if x != nil {
+		return x.Reference
 	}
 	return ""
 }
@@ -1689,11 +1698,12 @@ const file_admin_v1_supplier_proto_rawDesc = "" +
 	"\x1bSetSupplierNotifyURLRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\"\n" +
 	"\n" +
-	"notify_url\x18\x02 \x01(\tB\x03\xe0A\x02R\tnotifyUrl\"n\n" +
+	"notify_url\x18\x02 \x01(\tB\x03\xe0A\x02R\tnotifyUrl\"\x8c\x01\n" +
 	"\x17RechargeSupplierRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12&\n" +
 	"\famount_cents\x18\x02 \x01(\x03B\x03\xe0A\x02R\vamountCents\x12\x16\n" +
-	"\x06remark\x18\x03 \x01(\tR\x06remark\"k\n" +
+	"\x06remark\x18\x03 \x01(\tR\x06remark\x12\x1c\n" +
+	"\treference\x18\x04 \x01(\tR\treference\"k\n" +
 	"\x19ListSupplierLedgerRequest\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\x04R\taccountId\x12\x12\n" +

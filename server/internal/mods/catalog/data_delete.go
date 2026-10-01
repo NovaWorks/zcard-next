@@ -10,6 +10,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/affiliatecommission"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/cartitem"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/categoryproductplacement"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryactivity"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotterydraw"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryprize"
@@ -24,6 +25,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/review"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyorder"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
@@ -57,9 +59,6 @@ func inspectProductDeletion(ctx context.Context, c *ent.Client, p *ent.Product) 
 		reply.DeleteOrdersBlockReason = reply.DeleteBlockReason
 		return reply, nil, nil
 	}
-	if p.Status != 0 {
-		reply.DeleteBlockReason = "请先将商品下架，再进行删除"
-	}
 	rows, err := c.Order.Query().Where(order.HasItemsWith(orderitem.ProductID(p.ID))).WithItems().All(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -68,9 +67,7 @@ func inspectProductDeletion(ctx context.Context, c *ent.Client, p *ent.Product) 
 	itemIDs := []uint64{}
 	reply.OrderCount = int64(len(rows))
 	if p.GoodsType == "physical" && len(rows) > 0 {
-		reply.DeleteBlockReason = "实体商品已有订单，请下架保留，以便退款及退货入库"
-		reply.DeleteOrdersBlockReason = reply.DeleteBlockReason
-		return reply, nil, nil
+		reply.DeleteOrdersBlockReason = "实体商品已有订单，只能删除商品并保留订单，以便退款及退货入库"
 	}
 	for _, o := range rows {
 		ids = append(ids, o.ID)
@@ -92,12 +89,12 @@ func inspectProductDeletion(ctx context.Context, c *ent.Client, p *ent.Product) 
 			reply.DeleteOrdersBlockReason = "关联订单属于父子订单，只能删除商品并保留订单"
 		}
 	}
-	n, err := c.Card.Query().Where(card.ProductID(p.ID), card.StatusIn(card.StatusAvailable, card.StatusReserved)).Count(ctx)
+	n, err := c.Card.Query().Where(card.ProductID(p.ID), card.StatusEQ(card.StatusReserved)).Count(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 	if n > 0 {
-		reply.DeleteBlockReason = fmt.Sprintf("还有 %d 张未售或锁定卡密，请先导出并清理库存或处理占用订单", n)
+		reply.DeleteBlockReason = fmt.Sprintf("还有 %d 张卡密被订单占用，请先处理占用订单", n)
 	}
 	// 分批检查，避免大目录超过数据库绑定参数上限。
 	for start := 0; start < len(ids); start += 200 {
@@ -179,13 +176,13 @@ func (s *AdminCatalogService) DeleteProduct(ctx context.Context, req *adminv1.De
 		if _, err := data.GuardProductWrite(ctx, s.repo.data, req.Id); err != nil {
 			return err
 		}
-		// 条件写取得商品行锁；下架/同步/删除串行，事务失败不留下半删除状态。
-		n, err := c.Product.Update().Where(product.ID(req.Id), product.SubsiteID(tenant), product.Status(0)).AddSort(0).Save(ctx)
+		// 条件写取得商品行锁；销售/同步/删除串行，事务失败不留下半删除状态。
+		n, err := c.Product.Update().Where(product.ID(req.Id), product.SubsiteID(tenant), product.StatusGTE(0)).AddSort(0).Save(ctx)
 		if err != nil {
 			return err
 		}
 		if n != 1 {
-			return errors.BadRequest("catalog.DELETE_REQUIRES_OFFSHELF", "商品不存在、已删除或未下架，请刷新后重试")
+			return errors.NotFound("catalog.PRODUCT_NOT_FOUND", "商品不存在或已删除，请刷新后重试")
 		}
 		// 锁住关联订单，再重新读取其状态，阻止支付/退款在检查后更改订单。
 		_, err = c.Order.Update().Where(order.HasItemsWith(orderitem.ProductID(req.Id))).AddVersion(0).Save(ctx)
@@ -220,6 +217,8 @@ func (s *AdminCatalogService) DeleteProduct(ctx context.Context, req *adminv1.De
 			if err := c.Product.UpdateOneID(p.ID).ClearDirectContent().Exec(ctx); err != nil {
 				return err
 			}
+		} else if _, err := c.Card.Update().Where(card.ProductID(p.ID), card.StatusEQ(card.StatusAvailable)).SetStatus(card.StatusDisabled).Save(ctx); err != nil {
+			return err
 		}
 		if _, err = c.CartItem.Delete().Where(cartitem.ProductID(p.ID)).Exec(ctx); err != nil {
 			return err
@@ -227,11 +226,19 @@ func (s *AdminCatalogService) DeleteProduct(ctx context.Context, req *adminv1.De
 		if _, err = c.SupplyMapping.Delete().Where(supplymapping.LocalProductID(p.ID)).Exec(ctx); err != nil {
 			return err
 		}
-		if err := data.SyncProductMediaRefs(ctx, s.repo.data, p, nil); err != nil {
+		if _, err = c.CategoryProductPlacement.Delete().Where(categoryproductplacement.ProductID(p.ID), categoryproductplacement.SubsiteID(tenant)).Exec(ctx); err != nil {
 			return err
 		}
+		if _, err = c.SupplierProductPrice.Delete().Where(supplierproductprice.ProductID(p.ID), supplierproductprice.Scope("product")).Exec(ctx); err != nil {
+			return err
+		}
+		if req.DeleteOrders || preview.OrderCount == 0 {
+			if err := data.SyncProductMediaRefs(ctx, s.repo.data, p, nil); err != nil {
+				return err
+			}
+		}
 		// 仅删除商品时保留历史卡密、封面与直发密文，历史订单可继续查询和取货。
-		return c.Product.UpdateOneID(p.ID).SetStatus(deletedProductStatus).SetIsRecommend(false).ClearCategoryID().Exec(ctx)
+		return c.Product.UpdateOneID(p.ID).SetStatus(deletedProductStatus).SetIsRecommend(false).SetAutoListing(false).SetListingRestocked(false).AddLockVersion(1).ClearCategoryID().Exec(ctx)
 	})
 	if err != nil {
 		return nil, err

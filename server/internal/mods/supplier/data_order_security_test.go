@@ -36,7 +36,9 @@ func securityStock(t *testing.T, svc *SupplyAPIService, count int) {
 	}
 	repo := inventory.NewCardRepoImpl(svc.repo.data, cipher)
 	svc.inv, svc.cards = repo, repo
-	if _, err := svc.repo.data.Client.Product.Create().SetID(1).SetName("security fixture").SetSlug("security-fixture").SetPrice(1000).Save(ctx); err != nil {
+	if _, err := svc.repo.data.Client.Product.Get(ctx, 1); ent.IsNotFound(err) {
+		svc.repo.data.Client.Product.Create().SetID(1).SetName("security fixture").SetSlug("security-fixture").SetPrice(1000).SetStatus(1).SaveX(ctx)
+	} else if err != nil {
 		t.Fatal(err)
 	}
 	for i := 0; i < count; i++ {
@@ -48,6 +50,33 @@ func securityStock(t *testing.T, svc *SupplyAPIService, count int) {
 		if _, err := svc.repo.data.Client.Card.Create().SetProductID(1).SetContent(encrypted).SetContentHash(cipher.ContentHash(plain)).Save(ctx); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func TestArchivedProductRejectsStaleSupplyCatalogAndKeepsOrderRetry(t *testing.T) {
+	svc, repo, _ := newCompatEnv(t)
+	securityStock(t, svc, 2)
+	a := seedCompatAccount(t, repo, "zcard", "archived-supply", "secret", 10000)
+	ctx := context.Background()
+	first, err := svc.fulfillOrder(ctx, a.ID, 1, 1, "before-delete", "", "")
+	if err != nil || !first.delivered {
+		t.Fatalf("initial order: %v %v", first, err)
+	}
+	repo.data.Client.Product.UpdateOneID(1).SetStatus(-1).ExecX(ctx)
+	// The catalog stub deliberately still advertises status=1: database state wins.
+	newOrder, err := svc.fulfillOrder(ctx, a.ID, 1, 1, "after-delete", "", "")
+	if err != nil || !newOrder.rejected || newOrder.errCode != "product_unavailable" {
+		t.Fatalf("stale catalog sold archived product: %v %v", newOrder, err)
+	}
+	retry, err := svc.fulfillOrder(ctx, a.ID, 1, 1, "before-delete", "", "")
+	if err != nil || !retry.delivered || len(retry.cards) != 1 || retry.cards[0] != first.cards[0] {
+		t.Fatalf("historical supply order retry failed: %v %v", retry, err)
+	}
+	if balance, _ := repo.BalanceOf(ctx, a.ID); balance != 9000 {
+		t.Fatalf("rejected order or retry charged balance: %d", balance)
+	}
+	if repo.data.Client.SupplyOrder.Query().CountX(ctx) != 1 {
+		t.Fatal("rejected sale created a supply order")
 	}
 }
 

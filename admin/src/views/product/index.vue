@@ -1155,13 +1155,16 @@ async function saveBatchCategory() {
   }
 }
 
-// ── 批量删除（并发逐条调删除接口；未下架或仍有待处理订单/库存的商品后端会拒绝，成功失败分别计数）──
+// ── 批量删除（保留历史订单；锁定或有待处理订单/占用库存的商品后端会拒绝）──
 const batchDeleting = ref(false);
 async function handleBatchDelete() {
-  if (!checkedKeys.value.length) return;
+  if (!checkedKeys.value.length || batchDeleting.value) return;
+  const ids = [...checkedKeys.value];
   batchDeleting.value = true;
   try {
-    const results = await Promise.all(checkedKeys.value.map((id) => deleteProduct(id)));
+    // 顺序提交，避免 SQLite 写锁竞争；过程中改变选择不影响本次删除范围。
+    const results: Awaited<ReturnType<typeof deleteProduct>>[] = [];
+    for (const id of ids) results.push(await deleteProduct(id));
     const ok = results.filter((r) => !r.error).length;
     const skipped = results.filter(
       (r) => (r.error as any)?.response?.data?.reason === "catalog.PRODUCT_LOCKED",
@@ -1169,13 +1172,14 @@ async function handleBatchDelete() {
     batchFailures.value = results.flatMap((r, i) =>
       r.error && (r.error as any)?.response?.data?.reason !== "catalog.PRODUCT_LOCKED"
         ? [
-            `${products.value.find((p) => p.id === checkedKeys.value[i])?.name || `商品 ${checkedKeys.value[i]}`}：${(r.error as any)?.response?.data?.message || "删除未成功，请刷新后重试"}`,
+            `${products.value.find((p) => p.id === ids[i])?.name || `商品 ${ids[i]}`}：${(r.error as any)?.response?.data?.message || "删除未成功，请刷新后重试"}`,
           ]
         : [],
     );
     batchReport.value = `已删除 ${ok} 件，跳过锁定商品 ${skipped} 件，失败 ${batchFailures.value.length} 件`;
-    checkedKeys.value = [];
-    loadList();
+    checkedKeys.value = ids.filter((_, i) => !!results[i].error);
+    await loadList();
+    await loadCategories();
   } finally {
     batchDeleting.value = false;
   }
@@ -1377,7 +1381,7 @@ onMounted(() => {
       :show="!!deleteTarget"
       :product="deleteTarget"
       @update:show="!$event && (deleteTarget = null)"
-      @deleted="loadList"
+      @deleted="loadList(); loadCategories()"
     />
     <!-- 左侧：分类树（大厂后台交互——左树筛选 + 右列表；悬停显示完整分类名） -->
     <NCard
@@ -1626,7 +1630,7 @@ onMounted(() => {
           </template>
           确定删除选中的
           {{ checkedKeys.length }}
-          件商品？仅删除已下架且可删除的商品，保留历史订单；失败不影响其余商品。
+          件商品？商品立即从商城和供货目录移除，剩余库存归档，历史订单保留；失败不影响其余商品。
         </NPopconfirm>
         <NButton v-if="checkedKeys.length" size="small" quaternary @click="checkedKeys = []"
           >取消选择</NButton

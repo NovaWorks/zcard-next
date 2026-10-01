@@ -165,6 +165,8 @@ message RechargeSupplierRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
   int64 amount_cents = 2 [(google.api.field_behavior) = REQUIRED];
   string remark = 3;
+  // 一次充值使用一个幂等键；重试沿用原键，下一笔充值使用新键。
+  string reference = 4;
 }
 
 message ListSupplierLedgerRequest {

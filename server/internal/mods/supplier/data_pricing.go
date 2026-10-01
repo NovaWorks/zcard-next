@@ -9,6 +9,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 	kerrors "github.com/go-kratos/kratos/v3/errors"
 )
 
@@ -82,6 +83,12 @@ func (p *supplierPricing) Price(productID, skuID, categoryID uint64, base int64)
 }
 
 func (r *SupplierRepoImpl) UpsertPriceRule(ctx context.Context, accountID, productID, skuID, categoryID uint64, scope string, price int64, discount int32) error {
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		return r.upsertPriceRule(ctx, accountID, productID, skuID, categoryID, scope, price, discount)
+	})
+}
+
+func (r *SupplierRepoImpl) upsertPriceRule(ctx context.Context, accountID, productID, skuID, categoryID uint64, scope string, price int64, discount int32) error {
 	invalid := func(message string) error { return kerrors.BadRequest("supplier.INVALID_PRICING", message) }
 	if scope == "" {
 		scope = "product"
@@ -98,11 +105,12 @@ func (r *SupplierRepoImpl) UpsertPriceRule(ctx context.Context, accountID, produ
 		if productID == 0 || price <= 0 || categoryID != 0 || discount != 0 {
 			return invalid("请选择商品并填写大于零的专属价")
 		}
-		if _, err := client.Product.Get(ctx, productID); err != nil {
-			if ent.IsNotFound(err) {
-				return invalid("商品不存在")
-			}
+		n, err := client.Product.Update().Where(product.ID(productID), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID), product.StatusGTE(0)).AddLockVersion(0).Save(ctx)
+		if err != nil {
 			return err
+		}
+		if n != 1 {
+			return invalid("商品不存在或已删除")
 		}
 		if skuID > 0 {
 			sku, e := client.ProductSku.Get(ctx, skuID)
@@ -124,11 +132,12 @@ func (r *SupplierRepoImpl) UpsertPriceRule(ctx context.Context, accountID, produ
 			if categoryID == 0 {
 				return invalid("请选择分类")
 			}
-			if _, err := client.Category.Get(ctx, categoryID); err != nil {
-				if ent.IsNotFound(err) {
-					return invalid("分类不存在")
-				}
+			n, err := client.Category.Update().Where(category.ID(categoryID), category.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).AddPlacementVersion(0).Save(ctx)
+			if err != nil {
 				return err
+			}
+			if n != 1 {
+				return invalid("分类不存在或已删除")
 			}
 		} else if categoryID != 0 {
 			return invalid("整站规则不能指定分类")

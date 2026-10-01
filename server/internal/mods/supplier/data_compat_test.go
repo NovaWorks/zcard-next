@@ -89,6 +89,10 @@ func newCompatEnv(t *testing.T) (*SupplyAPIService, *SupplierRepoImpl, *fakeCata
 		{ID: 1, Name: "月卡", Price: 1000, FactoryPrice: 500, CategoryID: 7, Status: 1, Description: "描述"},
 		{ID: 2, Name: "下架品", Price: 500, CategoryID: 7, Status: 0},
 	}}
+	// 供货下单与商品删除共用真实商品行锁；目录端口仍可独立控制报价。
+	for _, p := range cat.prods {
+		repo.data.Client.Product.Create().SetID(p.ID).SetName(p.Name).SetSlug(fmt.Sprintf("compat-%d", p.ID)).SetPrice(p.Price).SetStatus(p.Status).SaveX(context.Background())
+	}
 	svc := &SupplyAPIService{repo: repo, reader: cat, inv: &fakeInv{}, cards: &fakeCards{}}
 	return svc, repo, cat
 }

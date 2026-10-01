@@ -62,7 +62,7 @@ async function submit(deleteOrders: boolean) {
           <p>关联订单：<strong>{{ orderCount }}</strong> 条</p>
           <NAlert v-if="preview.delete_block_reason" type="warning" :bordered="false">{{ preview.delete_block_reason }}</NAlert>
           <template v-if="!withOrders">
-            <p><strong>仅删除商品：</strong>从商城和商品管理移除，商品详情链接失效；保留历史订单、已交付内容和取货记录，方便查询与售后。</p>
+            <p><strong>仅删除商品：</strong>立即从商城、商品管理和供货目录移除，释放分类，商品详情链接失效；保留历史订单、已交付内容和取货记录，方便查询与售后。剩余库存随商品归档，不再销售。</p>
             <p><strong>删除商品及关联订单：</strong>同时删除关联订单、取货、退款及采购明细，客户将无法查询或取货，无法撤销。</p>
             <p class="text-12px text-gray-500">支付幂等记录及钱包、积分、佣金等账务流水保留，账户余额不变。更换供货商通常选择“仅删除商品”即可。</p>
             <NAlert v-if="!preview.delete_block_reason && preview.delete_orders_block_reason" type="info" :bordered="false">{{ preview.delete_orders_block_reason }}</NAlert>

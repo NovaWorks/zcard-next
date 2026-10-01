@@ -211,24 +211,35 @@ const showRecharge = ref(false);
 const rechargeTarget = ref<any>(null);
 const rechargeYuan = ref<number | null>(null);
 const rechargeRemark = ref("");
+const rechargeReference = ref("");
 const recharging = ref(false);
 function openRecharge(row: any) {
+  if (recharging.value) return;
   rechargeTarget.value = row;
   rechargeYuan.value = null;
   rechargeRemark.value = "";
+  rechargeReference.value = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
   showRecharge.value = true;
 }
 async function submitRecharge() {
-  if (rechargeYuan.value === null || rechargeYuan.value === 0) {
-    window.$message?.warning("请填写充值金额（元）");
+  if (recharging.value || !rechargeTarget.value) return;
+  if (rechargeYuan.value === null || !Number.isFinite(rechargeYuan.value) || rechargeYuan.value <= 0) {
+    window.$message?.warning("请填写大于零的充值金额（元）");
+    return;
+  }
+  let amountCents: number;
+  try { amountCents = yuanToFen(rechargeYuan.value); }
+  catch { window.$message?.warning("充值金额必须精确到分"); return; }
+  if (!Number.isSafeInteger(amountCents) || amountCents <= 0 || amountCents > 1_000_000_000) {
+    window.$message?.warning("充值金额须在 0.01 至 10,000,000 元之间");
     return;
   }
   recharging.value = true;
   try {
     const { error } = await rechargeSupplierAccount(
       rechargeTarget.value.id,
-      yuanToFen(rechargeYuan.value),
-      `recharge:admin:${Date.now()}`,
+      amountCents,
+      rechargeReference.value,
       rechargeRemark.value || "管理员充值",
     );
     if (!error) {
@@ -583,20 +594,20 @@ onMounted(load);
     </NModal>
 
     <!-- 充值 -->
-    <NModal v-model:show="showRecharge" preset="dialog" :title="`充值：${rechargeTarget?.name || ''}`" style="width: 420px; max-width: 96vw">
+    <NModal v-model:show="showRecharge" preset="dialog" :title="`充值：${rechargeTarget?.name || ''}`" :closable="!recharging" :mask-closable="!recharging" :close-on-esc="!recharging" style="width: 420px; max-width: 96vw">
       <NForm label-placement="top">
         <NFormItem label="当前余额">
           <span>{{ fenToYuan(rechargeTarget?.balance_cache || 0) }} 元</span>
         </NFormItem>
         <NFormItem label="充值金额（元）" required>
-          <NInputNumber v-model:value="rechargeYuan" :min="0.01" :precision="2" class="w-full" />
+          <NInputNumber v-model:value="rechargeYuan" :min="0.01" :max="10_000_000" :precision="2" :disabled="recharging" class="w-full" />
         </NFormItem>
         <NFormItem label="备注">
-          <NInput v-model:value="rechargeRemark" placeholder="将写入账本" />
+          <NInput v-model:value="rechargeRemark" :disabled="recharging" placeholder="将写入账本" />
         </NFormItem>
       </NForm>
       <template #action>
-        <NButton @click="showRecharge = false">取消</NButton>
+        <NButton :disabled="recharging" @click="showRecharge = false">取消</NButton>
         <NButton type="primary" :loading="recharging" @click="submitRecharge">充值</NButton>
       </template>
     </NModal>

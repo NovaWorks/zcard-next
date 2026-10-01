@@ -22,11 +22,13 @@ import (
 	supplyv1 "github.com/NovaWorks/zcard-next/server/api/supply/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	invport "github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/id"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 	kerrors "github.com/go-kratos/kratos/v3/errors"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -283,6 +285,14 @@ func (s *SupplyAPIService) fulfillOrderTx(ctx context.Context, accountID, produc
 	}
 	if !errors.Is(err, ErrNotFound) {
 		return nil, false, err
+	}
+	// 与商品删除共用商品行锁；等待删除提交后不能再按旧目录售出库存。
+	n, err := data.Client(ctx, s.repo.data).Product.Update().Where(product.ID(productID), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID), product.Status(1)).AddLockVersion(0).Save(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+	if n != 1 {
+		return &fulfillOutcome{rejected: true, errCode: "product_unavailable", errMsg: "商品不可用"}, false, nil
 	}
 	p, err := s.reader.GetForSupply(ctx, productID)
 	if err != nil || p.Status != 1 {

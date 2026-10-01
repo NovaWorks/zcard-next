@@ -30,9 +30,8 @@ export function resetSupplierSecret(id: number) {
   return request({ url: `/api/v1/admin/supplier/accounts/${id}/reset-secret`, method: "post" });
 }
 
-export function rechargeSupplierAccount(id: number, amount: number, reference: string, remark?: string) {
-  // amount 单位分（铁律 15：界面输入元，提交前换算）
-  return request({ url: `/api/v1/admin/supplier/accounts/${id}/recharge`, method: "post", data: { amount, reference, remark } });
+export function rechargeSupplierAccount(id: number, amountCents: number, reference: string, remark?: string) {
+  return request({ url: `/api/v1/admin/supplier/accounts/${id}/recharge`, method: "post", data: { amount_cents: amountCents, reference, remark } });
 }
 
 export function fetchSupplierLedger(params: { account_id?: number; page?: number; page_size?: number }) {
