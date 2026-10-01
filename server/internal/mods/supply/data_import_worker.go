@@ -258,11 +258,21 @@ func (s *SyncService) validateImportItem(ctx context.Context, conn *ent.SupplyCo
 	if err != nil {
 		return err
 	}
-	if p.UpstreamSourceID != conn.ID || p.UpstreamProductCode != item.Code || productRevision(p) != item.LocalRevision {
+	revision := productRevision(p)
+	if strings.HasPrefix(item.LocalRevision, "sms-rule-v1:") {
+		revision, err = s.repo.importProductRevision(ctx, p)
+		if err != nil {
+			return err
+		}
+	}
+	if p.UpstreamSourceID != conn.ID || p.UpstreamProductCode != item.Code || revision != item.LocalRevision {
 		return errImportChanged
 	}
 	if e := data.GuardUpstreamDelivery(ctx, c, p); e != nil {
 		return e
+	}
+	if p.ProductKind == "sms_channel" {
+		return nil // Channel entries have dynamic prices, never a static-price baseline.
 	}
 	if item.Saved {
 		return nil
@@ -377,7 +387,11 @@ func (s *SyncService) attemptImportItem(ctx context.Context, task *ent.SupplySyn
 		if err != nil {
 			return err
 		}
-		return s.repo.entClient(ctx).SupplyImportItem.UpdateOneID(item.ID).SetSaved(true).SetSnapshot(json.RawMessage(`{}`)).SetCreated(created).SetLocalProductID(id).SetLocalRevision(productRevision(local)).SetStage("stock").SetState("pending").SetAttempts(0).SetNextAttemptAt(0).SetErrorCode("").SetErrorSummary("").SetActivateAfterStock(created && p.IsActive && payload.Mode != PriceModePending).Exec(ctx)
+		revision, err := s.repo.importProductRevision(ctx, local)
+		if err != nil {
+			return err
+		}
+		return s.repo.entClient(ctx).SupplyImportItem.UpdateOneID(item.ID).SetSaved(true).SetSnapshot(json.RawMessage(`{}`)).SetCreated(created).SetLocalProductID(id).SetLocalRevision(revision).SetStage("stock").SetState("pending").SetAttempts(0).SetNextAttemptAt(0).SetErrorCode("").SetErrorSummary("").SetActivateAfterStock(created && p.IsActive && payload.Mode != PriceModePending).Exec(ctx)
 	}
 	_, err = s.importOne(ctx, conn, &p, payload.Categories, payload.Mode, payload.Percent, payload.Amount, cp)
 	return err

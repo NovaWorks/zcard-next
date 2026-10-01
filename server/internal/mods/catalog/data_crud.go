@@ -694,6 +694,12 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
 		var e error
 		id, created, e = r.upsertUpstreamProduct(ctx, in)
+		if e == nil && in.ProductKind == "sms_channel" {
+			// Modern channel catalogs supersede the source's legacy offer rows.
+			// Preserve IDs for paid orders and in-flight intents. Ordinary goods
+			// and operator-locked products are outside this conversion.
+			e = data.Client(ctx, r.data).Product.Update().Where(product.SubsiteID(tenancy.FromContext(ctx).SubsiteID), product.UpstreamSourceID(in.ConnectionID), product.DeliveryKind("sms_activation"), product.ProductKindNEQ("sms_channel"), product.StatusGTE(0), product.IsLocked(false)).SetStatus(-1).SetAutoListing(false).AddLockVersion(1).Exec(ctx)
+		}
 		return e
 	})
 	return

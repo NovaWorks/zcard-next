@@ -50,6 +50,28 @@ func productRevision(p *ent.Product) string {
 	return hex.EncodeToString(h[:])
 }
 
+// Dynamic retail rules live on mappings, rather than in the product's static
+// price. Include them in new checkpoints so queued imports preserve later edits.
+func (r *SupplyRepoImpl) importProductRevision(ctx context.Context, p *ent.Product) (string, error) {
+	if p.ProductKind != "sms_channel" {
+		return productRevision(p), nil
+	}
+	m, err := r.GetMapping(ctx, p.UpstreamSourceID, p.UpstreamProductCode, "")
+	if err != nil && err != ErrNotFound {
+		return "", err
+	}
+	var rule any
+	if m != nil {
+		rule = m.PricingOverride["rule"]
+	}
+	raw, err := json.Marshal([]any{productRevision(p), rule})
+	if err != nil {
+		return "", err
+	}
+	h := sha256.Sum256(raw)
+	return "sms-rule-v1:" + hex.EncodeToString(h[:]), nil
+}
+
 func importRequestIdentity(req *adminv1.ImportProductsRequest) (string, string, error) {
 	if len(req.Codes) == 0 || len(req.Codes) > 5000 {
 		return "", "", fmt.Errorf("请选择 1–5000 件商品")
@@ -266,7 +288,11 @@ func (s *AdminSupplyService) createImportTask(ctx context.Context, conn *ent.Sup
 				}
 				b := c.SupplyImportItem.Create().SetTaskID(task.ID).SetCode(code).SetName(p.Name).SetSnapshot(raw)
 				if local := byCode[code]; local != nil {
-					b.SetLocalProductID(local.ID).SetLocalRevision(productRevision(local))
+					revision, err := s.repo.importProductRevision(ctx, local)
+					if err != nil {
+						return err
+					}
+					b.SetLocalProductID(local.ID).SetLocalRevision(revision)
 					if local.IsLocked {
 						b.SetState("skipped").SetErrorCode("PRODUCT_LOCKED").SetErrorSummary("商品已锁定，已跳过")
 					}
