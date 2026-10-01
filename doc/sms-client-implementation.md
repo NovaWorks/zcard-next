@@ -162,3 +162,7 @@ admin/dist       f6073650def290bd99ae21f49e93f0f392563f184bfdd3cd24aa7ddc8d75812
 ## v1.2.99 发布记录
 
 独立接码渠道商品及复查修复纳入 v1.2.99。正式发行以提交源码构建，发布说明、频道公告与签名历史同步更新；最终产物指纹以该版本 Release 的 `SHA256SUMS` 和 `update.json` 为准，前述 `server/bin/` 文件仅为本地复查产物。真实供应商取号、收码及资金闭环仍需单独验收，版本发布不代表生产站点已部署。
+
+### 2026-10-01 私有供货端目录联调
+
+私有供货端的 SMSCode 导入和自动采集现已统一为每渠道一个正式商品，并在新客户端目录中过滤旧接码明细。存量站点部署新版私有程序后，对原 SMSCode 渠道重新执行一次导入或采集，才会生成/绑定渠道商品并归档旧明细。开源侧采集渠道商品时，会归档同一供货连接下未锁定的旧接码明细，保留历史商品 ID、订单和会话；其他连接及普通商品不受转换影响。持久导入任务不再用静态售价基线检查渠道商品；版本和锁定检查仍保留；新检查点同时记录映射中的动态加价规则，任务排队后人工修改规则会被保护，旧检查点仍可恢复。真实供货目录 JSON 经过签名 HTTP 接口送入开源采集，两次采集只保留一个商品、无 SKU，第二次更新动态加价，无聚合库存请求。跨仓库回归：私有 `ZCARD_SMS_CONTRACT_FILE=/tmp/zcard-sms-channel-provider.json go test ./internal/mods/supply -run TestSMSChannelPublicImportAndPublication -count=1`；随后开源 `ZCARD_HTTPX_ALLOW_PRIVATE=1 ZCARD_SMS_CONTRACT_FILE=/tmp/zcard-sms-channel-provider.json go test -tags integration ./internal/mods/supply -run TestSMSPrivateProviderCatalogImportsOneProduct -count=1`。
