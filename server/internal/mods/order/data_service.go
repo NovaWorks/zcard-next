@@ -8,6 +8,7 @@ import (
 	stderrors "errors"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -166,6 +167,9 @@ func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetO
 		if name == "" {
 			name = names[it.ProductID]
 		}
+		if it.DeliveryKind == "sms_activation" {
+			name, _ = sanitize.SMSPublicContent("sms_channel", name, "")
+		}
 		if it.SkuName != "" {
 			name += " / " + it.SkuName
 		}
@@ -213,6 +217,9 @@ func (s *StoreOrderService) ListMyOrders(ctx context.Context, req *storefrontv1.
 						break
 					}
 				}
+			}
+			if line.DeliveryKind == "sms_activation" {
+				name, _ = sanitize.SMSPublicContent("sms_channel", name, "")
 			}
 			if line.SkuName != "" {
 				name += " · " + line.SkuName

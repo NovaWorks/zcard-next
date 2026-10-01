@@ -13,6 +13,32 @@ const server=http.createServer((req,res)=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`;
  const browser=await chromium.launch({headless:true,...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{})});
  try{
+  for(const width of [1440,390]) {
+   const page = await browser.newPage({viewport:{width,height:980}}), requests=[], errors=[];
+   page.on('pageerror', e=>errors.push(e.message));
+   await page.route('**/api/v1/**',async route=>{
+    const req=route.request(), p=new URL(req.url()).pathname;requests.push({method:req.method(),path:p});
+    let data={items:[],total:0,categories:[],posts:[],currencies:[],entries:[]};
+    if(p.endsWith('/config'))data={entries:[{key:'site.name',value_json:'"Fixture"'},{key:'trade.cart_enabled',value_json:'false'},{key:'i18n.base_currency',value_json:'"CNY"'}]};
+    if(p.endsWith('/products/1'))data=product;
+    if(p.endsWith('/sms/options'))data={countries:[{id:'1',name:'美国'},{id:'2',name:'英国'}],platforms:[{id:'7',name:'WhatsApp'}]};
+    if(p.endsWith('/sms/offers'))data={offers:[{offer_id:'guest-offer',name:'美国 · WhatsApp',price_cents:350,stock:3}],has_more:false};
+    await route.fulfill({json:data}).catch(()=>{});
+   });
+   await page.goto(base+'/product/1');
+   await expect(page.locator('#sms-country')).toContainText('美国');await page.locator('#sms-country').selectOption('1');
+   await expect(page.locator('#sms-platform')).toContainText('WhatsApp');await page.locator('#sms-platform').selectOption('7');
+   await expect(page.getByRole('radio')).toHaveCount(1);await page.getByRole('radio').check();
+   await expect(page.locator('.sms-offer strong')).toContainText('3.50');
+   const login=page.getByRole('link',{name:'登录后购买',exact:true});await expect(login).toBeVisible();
+   assert.equal(requests.some(r=>/sms\/(quotes|buy|sessions)|\/wallet$/.test(r.path)),false,'guest requested private or purchase data');
+   await expect(page.getByRole('button',{name:'确认价格',exact:true})).toHaveCount(0);
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'guest horizontal overflow');
+   await page.screenshot({path:`/tmp/zcard-next-sms-guest-${width}.png`,fullPage:true});
+   await login.click();await expect(page).toHaveURL(/\/login\?redirect=(%2F|\/)product(%2F|\/)1/);
+   assert.equal(requests.some(r=>r.method==='POST'&&(/sms\/(quotes|buy)/.test(r.path)||r.path.endsWith('/orders'))),false,'guest allocated a number');
+   assert.equal(errors.length,0,errors.join('\n'));await page.close();
+  }
   for(const width of [1440,390]){
    const page=await browser.newPage({viewport:{width,height:980}});const errors=[],buys=[],quotes=[];let created=false,ordered=false,lostResponse=true,refunded=false,sessionState='waiting_sms',lostAction=true; const actions=[]; let operation={operation_request_id:'00000000-0000-4000-8000-000000000001',operation_action:'finish',operation_status:'rejected'};
    page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());await page.addInitScript(()=>localStorage.setItem('zcard_token','fixture-member'));

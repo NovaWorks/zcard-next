@@ -38,21 +38,34 @@ type retailChannel struct {
 	rule     productPricingRule
 }
 
-func (s *StoreSMSChannelService) channel(ctx context.Context, id uint64) (*retailChannel, error) {
+func (s *StoreSMSChannelService) channel(ctx context.Context, id uint64, requireLogin bool) (*retailChannel, error) {
 	if tr, ok := transport.FromServerContext(ctx); ok {
 		tr.ReplyHeader().Set("Cache-Control", "no-store, private")
 	}
 	claims := identity.ClaimsFromContext(ctx)
-	if claims == nil || claims.Realm != authn.RealmUser || claims.Subject == 0 {
+	member := claims != nil && claims.Realm == authn.RealmUser && claims.Subject != 0
+	if requireLogin && !member {
 		return nil, errors.Unauthorized("sms.LOGIN_REQUIRED", "请登录使用接码商品")
 	}
 	if tenancy.FromContext(ctx).SubsiteID != 0 {
 		return nil, errors.BadRequest("sms.MAIN_SITE_ONLY", "接码商品仅支持主站")
 	}
 	p, e := data.ProductForDelivery(ctx, data.Client(ctx, s.gw.repo.data), 0, id)
-	if e != nil || p.ProductKind != supplyport.SMSProductKind || p.DeliveryKind != supplyport.SMSDelivery || p.Status < 1 || p.UpstreamSourceID == 0 {
+	if e != nil || p.ProductKind != supplyport.SMSProductKind || p.DeliveryKind != supplyport.SMSDelivery || (p.Status != 1 && !(member && p.Status == 2)) || p.UpstreamSourceID == 0 {
 		return nil, errors.NotFound("sms.PRODUCT_UNAVAILABLE", "接码商品不可售")
 	}
+	hidden, e := data.HiddenCategoryIDs(ctx, data.Client(ctx, s.gw.repo.data), 0)
+	if e != nil {
+		return nil, e
+	}
+	if data.CategoryHidden(hidden, p.CategoryID) {
+		return nil, errors.NotFound("sms.PRODUCT_UNAVAILABLE", "接码商品不可售")
+	}
+	var user uint64
+	if member {
+		user = claims.Subject
+	}
+
 	conn, e := s.gw.repo.GetConnection(ctx, p.UpstreamSourceID)
 	if e != nil {
 		return nil, e
@@ -94,7 +107,7 @@ func (s *StoreSMSChannelService) channel(ctx context.Context, id uint64) (*retai
 	if !ok {
 		return nil, errors.BadRequest("sms.UNSUPPORTED", "货源不支持渠道商品")
 	}
-	return &retailChannel{p: p, conn: conn, mapping: m, client: client, revision: data.SMSRetailPricingRevision(conn, m), user: claims.Subject, rule: *rule}, nil
+	return &retailChannel{p: p, conn: conn, mapping: m, client: client, revision: data.SMSRetailPricingRevision(conn, m), user: user, rule: *rule}, nil
 }
 func channelFilter(country, platform, keyword string, page, size int32) (supplyport.SMSChannelFilter, error) {
 	if page == 0 {
@@ -135,7 +148,7 @@ func (s *StoreSMSChannelService) Options(ctx context.Context, r *storefrontv1.SM
 	if e != nil {
 		return nil, e
 	}
-	ch, e := s.channel(ctx, r.ProductId)
+	ch, e := s.channel(ctx, r.ProductId, false)
 	if e != nil {
 		return nil, e
 	}
@@ -160,7 +173,7 @@ func (s *StoreSMSChannelService) Offers(ctx context.Context, r *storefrontv1.SMS
 	if e != nil {
 		return nil, e
 	}
-	ch, e := s.channel(ctx, r.ProductId)
+	ch, e := s.channel(ctx, r.ProductId, false)
 	if e != nil {
 		return nil, e
 	}
@@ -192,7 +205,7 @@ func (s *StoreSMSChannelService) Quote(ctx context.Context, r *storefrontv1.SMSC
 	if e != nil {
 		return nil, e
 	}
-	ch, e := s.channel(ctx, r.ProductId)
+	ch, e := s.channel(ctx, r.ProductId, true)
 	if e != nil {
 		return nil, e
 	}

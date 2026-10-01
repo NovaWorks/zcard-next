@@ -1208,13 +1208,14 @@ func (r *ProductRepoImpl) GetForSupply(ctx context.Context, productID uint64) (*
 }
 
 func toSupplierProduct(row *ent.Product) port.SupplierProduct {
+	name, description := sanitize.SMSPublicContent(row.ProductKind, row.Name, row.Description)
 	return port.SupplierProduct{
 		ID:           row.ID,
-		Name:         row.Name,
+		Name:         name,
 		Price:        row.Price,
 		FactoryPrice: row.FactoryPrice,
 		CategoryID:   row.CategoryID,
-		Description:  row.Description,
+		Description:  description,
 		Cover:        row.Cover,
 		Status:       row.Status,
 	}

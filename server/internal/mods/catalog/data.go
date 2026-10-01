@@ -19,6 +19,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 )
 
@@ -173,15 +174,16 @@ func (r *ProductRepoImpl) Get(ctx context.Context, subsiteID, id uint64) (*port.
 }
 
 func toPortProduct(row *ent.Product) port.Product {
+	name, description := sanitize.SMSPublicContent(row.ProductKind, row.Name, row.Description)
 	return port.Product{
 		ProductKind: row.ProductKind, DeliveryKind: row.DeliveryKind, SMSProduct: row.SmsProduct,
 		GoodsType: row.GoodsType, ShippingMode: row.ShippingMode, ShippingFee: row.ShippingFee, ShippingCountries: row.ShippingCountries, PhysicalStock: row.PhysicalStock,
 		ID:              row.ID,
 		SubsiteID:       row.SubsiteID,
-		Name:            row.Name,
+		Name:            name,
 		Slug:            row.Slug,
 		Cover:           row.Cover,
-		Description:     row.Description,
+		Description:     description,
 		Price:           money.Cents(row.Price),
 		FactoryPrice:    money.Cents(row.FactoryPrice),
 		StockType:       string(row.StockType),

@@ -14,6 +14,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/go-kratos/kratos/v3/errors"
@@ -263,6 +264,7 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 // toStorefrontProduct preserves source-aware stock: >=0 finite, -1 unlimited,
 // -2 unknown. Stock visibility only controls display, never purchase validation.
 func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int64) *storefrontv1.Product {
+	name, description := sanitize.SMSPublicContent(p.ProductKind, p.Name, p.Description)
 	stock, ok := stocks[p.ID]
 	if !ok {
 		stock = -2
@@ -272,10 +274,10 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 		ProductKind: p.ProductKind, DeliveryKind: p.DeliveryKind, SmsProduct: p.SMSProduct, SmsSalesEnabled: data.SMSSalesEnabled(),
 		GoodsType: p.GoodsType, ShippingMode: p.ShippingMode, ShippingFeeCents: p.ShippingFee, ShippingCountries: p.ShippingCountries,
 		Id:              p.ID,
-		Name:            p.Name,
+		Name:            name,
 		Slug:            p.Slug,
 		Cover:           p.Cover,
-		Description:     p.Description, // 商品详情（上游采集/后台编辑； 漏映射导致前台全部无描述）
+		Description:     description, // 商品详情（上游采集/后台编辑； 漏映射导致前台全部无描述）
 		PriceCents:      int64(p.Price),
 		StockType:       p.StockType,
 		FulfillmentMode: p.FulfillmentMode, ManualStock: p.ManualStock,

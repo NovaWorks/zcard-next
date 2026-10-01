@@ -11,6 +11,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
+	kerrors "github.com/go-kratos/kratos/v3/errors"
+	khttp "github.com/go-kratos/kratos/v3/transport/http"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -55,9 +57,34 @@ func TestStoreChannelHTTPContractRetailPricing(t *testing.T) {
 	s := NewStoreSMSChannelService(NewGateway(repo, nil, catalog.NewProductRepoImpl(d, nil)))
 	ctx := identity.WithClaims(context.Background(), &authn.Claims{Subject: 1, Realm: authn.RealmUser})
 	req := &storefrontv1.SMSChannelBrowseRequest{ProductId: p.ID, CountryId: "1", PlatformId: "2", Page: 1, PageSize: 50}
-	if _, e = s.Options(context.Background(), req); e == nil {
-		t.Fatal("anonymous browse accepted")
+	if out, e := s.Options(context.Background(), req); e != nil || len(out.Countries) != 1 {
+		t.Fatal("guest browse failed", e)
 	}
+	if out, e := s.Offers(context.Background(), req); e != nil || len(out.Offers) != 1 || out.Offers[0].PriceCents != 323 {
+		t.Fatal("guest retail pricing failed", e)
+	}
+	if _, e := s.Quote(context.Background(), &storefrontv1.SMSChannelQuoteRequest{ProductId: p.ID, OfferId: "opaque"}); kerrors.Code(e) != 401 {
+		t.Fatal("guest quote accepted", e)
+	}
+	public := khttp.NewServer()
+	storefrontv1.RegisterStoreSMSChannelServiceHTTPServer(public, s)
+	for _, path := range []string{"options", "offers"} {
+		w := httptest.NewRecorder()
+		public.ServeHTTP(w, httptest.NewRequest("GET", fmt.Sprintf("/api/v1/storefront/products/%d/sms/%s?country_id=1&platform_id=2", p.ID, path), nil))
+		if w.Code != 200 {
+			t.Fatalf("guest HTTP %s: %d %s", path, w.Code, w.Body.String())
+		}
+	}
+	if d.Client.SMSRetailQuote.Query().CountX(context.Background()) != 0 {
+		t.Fatal("guest created quotes")
+	}
+	for _, status := range []int8{0, 2, -1} {
+		d.Client.Product.UpdateOneID(p.ID).SetStatus(status).ExecX(context.Background())
+		if _, e := s.Options(context.Background(), req); kerrors.Code(e) != 404 {
+			t.Fatalf("guest saw status %d: %v", status, e)
+		}
+	}
+	d.Client.Product.UpdateOneID(p.ID).SetStatus(1).ExecX(context.Background())
 	if out, e := s.Options(ctx, req); e != nil || len(out.Platforms) != 1 {
 		t.Fatal(e)
 	}

@@ -129,9 +129,11 @@ watch(storageKey, () => {
   optionsLoading.value = offersLoading.value = false;
   error.value = notice.value = historyError.value = "";
   if (timer) clearTimeout(timer);
-  restoreIntent();
+  if (loggedIn.value) restoreIntent();
+  else { pending.value = undefined; pendingActions.value = {}; }
+  void loadOptions();
+  void loadOffers();
   if (loggedIn.value) {
-    void loadOptions();
     void loadHistory();
     void loadBalance();
   }
@@ -150,6 +152,12 @@ watch(loggedIn, (value) => {
     optionsGeneration++;
     historyGeneration++;
     if (timer) clearTimeout(timer);
+    void loadOptions();
+    void loadOffers();
+  } else {
+    restoreIntent();
+    void loadHistory();
+    void loadBalance();
   }
 });
 function savePending(value?: Buy) {
@@ -167,7 +175,6 @@ async function loadBalance() {
   if (sameSession(member) && r.data) balance.value = r.data.available_cents;
 }
 async function loadOptions() {
-  if (!loggedIn.value) return;
   const version = ++optionsGeneration;
   optionsLoading.value = true;
   error.value = "";
@@ -228,7 +235,7 @@ watch(keyword, () => {
   searchTimer = setTimeout(() => void loadOptions(), 300);
 });
 async function confirmQuote() {
-  if (!choice.value || busy.value) return;
+  if (!loggedIn.value || !choice.value || busy.value) return;
   const version = generation,
     offer = choice.value;
   const displayedPrice = Number(offer.price_cents);
@@ -257,7 +264,7 @@ async function confirmQuote() {
   }
 }
 async function buy() {
-  if (busy.value) return;
+  if (!loggedIn.value || busy.value) return;
   if (!pending.value) {
     if (!quote.value || quote.value.expires_at <= Date.now() / 1000) {
       quote.value = undefined;
@@ -425,7 +432,7 @@ function changePage(n: number) {
   void loadOffers();
 }
 async function act(order: Order, action: "cancel" | "finish") {
-  if (busy.value) return;
+  if (!loggedIn.value || busy.value) return;
   const existing = pendingActions.value[order.supply_order_id];
   if (existing && existing.action !== action) return;
   if (
@@ -460,9 +467,9 @@ async function act(order: Order, action: "cancel" | "finish") {
   } else if (r.data) {
     notice.value =
       r.data.operation_status === "pending"
-        ? "操作已受理，正在等待渠道确认。"
+        ? "操作已受理，正在等待服务确认。"
         : r.data.operation_status === "rejected"
-          ? "渠道未接受操作，请查看号码当前状态。"
+          ? "服务未接受操作，请查看号码当前状态。"
           : r.data.operation_status === "review"
             ? "操作结果待核对，请凭订单号联系客服。"
             : "操作已完成";
@@ -491,9 +498,9 @@ function visible() {
   }
 }
 onMounted(() => {
+  void loadOptions();
   if (loggedIn.value) {
     restoreIntent();
-    void loadOptions();
     void loadHistory();
     void loadBalance();
   }
@@ -524,13 +531,9 @@ onBeforeUnmount(() => {
       <section class="sms-panel" aria-labelledby="sms-select-title">
         <h2 id="sms-select-title">选择号码</h2>
         <p v-if="!loggedIn" class="sms-empty">
-          登录后选择服务并使用账户余额购买。<router-link
-            :to="{ path: '/login', query: { redirect: `/product/${product.id}` } }"
-            >前往登录</router-link
-          >
+          可直接筛选国家、服务并查看价格，购买时需要登录。
         </p>
-        <template v-else>
-          <p class="sms-wallet">
+          <p v-if="loggedIn" class="sms-wallet">
             可用余额：<strong>{{ balance === undefined ? "加载中" : formatMoney(balance) }}</strong
             ><router-link to="/member">充值</router-link>
           </p>
@@ -611,7 +614,7 @@ onBeforeUnmount(() => {
                 下一页
               </button>
             </div>
-            <p class="muted">每次购买 1 个号码。可用时长及取消规则以购买后的渠道返回为准。</p>
+            <p class="muted">每次购买 1 个号码。可用时长及取消规则以购买后的服务说明为准。</p>
           </fieldset>
           <div v-if="quote || pending" class="sms-total">
             <span>本次实付</span
@@ -620,8 +623,13 @@ onBeforeUnmount(() => {
           <p v-if="quote && !pending" class="muted">
             报价有效至 {{ new Date(Number(quote.expires_at) * 1000).toLocaleTimeString() }}
           </p>
+          <router-link
+            v-if="!loggedIn"
+            class="btn btn-primary sms-submit"
+            :to="{ path: '/login', query: { redirect: `/product/${product.id}` } }"
+          >登录后购买</router-link>
           <button
-            v-if="pending"
+            v-else-if="pending"
             type="button"
             class="btn btn-primary sms-submit"
             :disabled="busy"
@@ -647,7 +655,6 @@ onBeforeUnmount(() => {
           >
             {{ busy ? "确认价格中…" : "确认价格" }}
           </button>
-        </template>
         <p v-if="error" role="alert" class="sms-error">{{ error }}</p>
         <button
           v-if="pending?.order_no"
