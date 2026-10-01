@@ -52,3 +52,36 @@ func catalogDeleteAfterPricing(h *Harness) {
 		t.Fatal("deleted catalog retained price rules")
 	}
 }
+
+func TestCategoryCascadeMySQL(t *testing.T) { categoryCascade(MySQL(t)) }
+func TestCategoryCascadePG(t *testing.T)    { categoryCascade(PG(t)) }
+func categoryCascade(h *Harness) {
+	t, d, ctx := h.T, h.Data, context.Background()
+	repo := catalog.NewProductRepoImpl(d, nil)
+	svc := catalog.NewAdminCatalogService(repo, nil, nil, nil)
+	root := d.Client.Category.Create().SetName("root").SaveX(ctx)
+	child := d.Client.Category.Create().SetName("child").SetParentID(root.ID).SaveX(ctx)
+	keep := d.Client.Category.Create().SetName("keep").SaveX(ctx)
+	for i := 0; i < 12; i++ {
+		p := d.Client.Product.Create().SetName("snapshot name").SetSlug(fmt.Sprint(i)).SetCategoryID(child.ID).SetIsLocked(true).SetStatus(int8(i % 3)).SetPrice(100).SaveX(ctx)
+		o := d.Client.Order.Create().SetOrderNo(fmt.Sprint(i)).SetStatus("fulfilling").SetTotalAmount(100).SaveX(ctx)
+		d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(p.ID).SetQuantity(1).SetUnitPrice(100).SetAmount(100).SetFulfillmentType("auto").SaveX(ctx)
+		d.Client.SupplierProductPrice.Create().SetSupplierAccountID(1).SetProductID(p.ID).SetPrice(80).SaveX(ctx)
+	}
+	if _, e := svc.DeleteCategory(ctx, &adminv1.DeleteCategoryRequest{Id: root.ID}); e != nil {
+		t.Fatal(e)
+	}
+	if d.Client.Category.Query().CountX(ctx) != 1 || d.Client.Category.Query().OnlyX(ctx).ID != keep.ID || d.Client.Order.Query().CountX(ctx) != 12 || d.Client.SupplierProductPrice.Query().CountX(ctx) != 0 {
+		t.Fatal("cascade/history/pricing cleanup failed")
+	}
+	for _, p := range d.Client.Product.Query().AllX(ctx) {
+		if p.Status != -1 || p.CategoryID != 0 {
+			t.Fatal("product not removed")
+		}
+	}
+	for _, it := range d.Client.OrderItem.Query().AllX(ctx) {
+		if it.ProductName != "snapshot name" || it.Amount != 100 {
+			t.Fatal("snapshot corrupted")
+		}
+	}
+}

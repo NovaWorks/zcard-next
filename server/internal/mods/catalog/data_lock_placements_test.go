@@ -28,10 +28,7 @@ func TestProductLockProtectsMaintenanceAndBatches(t *testing.T) {
 			_, e := s.UpdateProduct(ctx, &adminv1.UpdateProductRequest{Id: p.ID, Name: "覆盖"})
 			return e
 		},
-		"delete": func() error {
-			_, e := s.DeleteProduct(ctx, &adminv1.DeleteProductRequest{Id: p.ID, DeleteOrders: true, ConfirmName: p.Name})
-			return e
-		},
+
 		"sku update": func() error { _, e := s.repo.UpdateSku(ctx, sku.ID, SkuInput{Name: "覆盖"}); return e },
 		"sku create": func() error {
 			_, e := s.repo.CreateSku(ctx, SkuInput{ProductID: p.ID, Name: "new", SpecValues: map[string]string{}})
@@ -52,8 +49,8 @@ func TestProductLockProtectsMaintenanceAndBatches(t *testing.T) {
 		})
 	}
 	preview, e := s.PreviewDeleteProduct(ctx, &adminv1.GetProductRequest{Id: p.ID})
-	if e != nil || preview.DeleteBlockReason == "" {
-		t.Fatal("missing lock explanation")
+	if e != nil || preview.DeleteBlockReason != "" {
+		t.Fatal("explicit deletion should preserve history without lock restriction")
 	}
 	status, e := s.BatchUpdateProductStatus(ctx, &adminv1.BatchUpdateProductStatusRequest{Ids: []uint64{p.ID, other.ID, p.ID}, Status: 1})
 	if e != nil || status.Updated != 1 || status.SkippedLocked != 1 {

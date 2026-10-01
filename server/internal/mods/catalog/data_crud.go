@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	placement "github.com/NovaWorks/zcard-next/server/internal/data/ent/categoryproductplacement"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"strings"
 	"time"
 
@@ -534,57 +533,84 @@ func descendantCategoryIDs(ctx context.Context, client *ent.Client, id uint64) (
 	return out, nil
 }
 
-// DeleteCategory 删除（有子分类或有商品时拒删）。
+// deleteCategory removes the entire tenant-owned subtree and its live products.
+// Orders, deliveries and financial records are retained; failure rolls back all.
 func (r *ProductRepoImpl) deleteCategory(ctx context.Context, id uint64) error {
 	client := data.Client(ctx, r.data)
 	tenant := tenancy.FromContext(ctx).SubsiteID
-	// Lock before checking children and cleaning price rules, so concurrent
-	// supplier category pricing cannot create a rule after deletion cleanup.
-	if r.data.Dialect == db.SQLite {
-		if err := client.Category.Update().Where(category.ID(id), category.SubsiteID(tenant)).AddPlacementVersion(0).Exec(ctx); err != nil {
-			return err
-		}
+	if err := lockCategoryStructure(ctx, r.data); err != nil {
+		return err
 	}
-	q := client.Category.Query().Where(category.ID(id), category.SubsiteID(tenant))
+	q := client.Category.Query().Where(category.SubsiteID(tenant)).Order(ent.Asc(category.FieldID))
 	if r.data.Dialect != db.SQLite {
 		q.ForUpdate()
 	}
-	if _, err := q.Only(ctx); err != nil {
-		if ent.IsNotFound(err) {
-			return fmt.Errorf("catalog.CATEGORY_NOT_FOUND")
+	rows, err := q.All(ctx)
+	if err != nil {
+		return err
+	}
+	children := map[uint64][]uint64{}
+	found := false
+	for _, row := range rows {
+		if row.ID == id {
+			found = true
 		}
-		return err
+		children[row.ParentID] = append(children[row.ParentID], row.ID)
 	}
-	hasChildren, err := client.Category.Query().Where(category.ParentID(id), category.SubsiteID(tenant)).Exist(ctx)
-	if err != nil {
-		return err
-	}
-	if hasChildren {
-		return fmt.Errorf("catalog.CATEGORY_HAS_CHILDREN")
-	}
-	hasProducts, err := client.Product.Query().Where(product.CategoryID(id), product.SubsiteID(tenant), product.StatusGTE(0)).Exist(ctx)
-	if err != nil {
-		return err
-	}
-	if hasProducts {
-		return fmt.Errorf("catalog.CATEGORY_HAS_PRODUCTS")
-	}
-	// 旧版归档商品可能仍引用分类；历史订单不依赖分类，删除前释放引用。
-	if _, err = client.Product.Update().Where(product.CategoryID(id), product.SubsiteID(tenant), product.StatusLT(0)).ClearCategoryID().Save(ctx); err != nil {
-		return err
-	}
-	if _, err = client.SupplierProductPrice.Delete().Where(supplierproductprice.CategoryID(id), supplierproductprice.Scope("category")).Exec(ctx); err != nil {
-		return err
-	}
-	if _, err = client.SupplyMapping.Update().Where(supplymapping.LocalCategoryID(id)).ClearLocalCategoryID().Save(ctx); err != nil {
-		return err
-	}
-	n, err := client.Category.Delete().Where(category.ID(id), category.SubsiteID(tenant)).Exec(ctx)
-	if err != nil {
-		return err
-	}
-	if n == 0 {
+	if !found {
 		return fmt.Errorf("catalog.CATEGORY_NOT_FOUND")
+	}
+	ids := []uint64{id}
+	seen := map[uint64]bool{id: true}
+	for i := 0; i < len(ids); i++ {
+		for _, child := range children[ids[i]] {
+			if !seen[child] {
+				seen[child] = true
+				ids = append(ids, child)
+			}
+		}
+	}
+	// Chunk IN predicates for SQLite parameter limits; hold locks until commit.
+	for start := 0; start < len(ids); start += 200 {
+		end := start + 200
+		if end > len(ids) {
+			end = len(ids)
+		}
+		chunk := ids[start:end]
+		pq := client.Product.Query().Where(product.SubsiteID(tenant), product.CategoryIDIn(chunk...), product.StatusGTE(0)).Order(ent.Asc(product.FieldID))
+		if r.data.Dialect != db.SQLite {
+			pq.ForUpdate()
+		}
+		products, err := pq.All(ctx)
+		if err != nil {
+			return err
+		}
+		for _, p := range products {
+			if err = r.archiveProduct(ctx, p.ID); err != nil {
+				return err
+			}
+		}
+		if err = client.Product.Update().Where(product.CategoryIDIn(chunk...), product.SubsiteID(tenant), product.StatusLT(0)).ClearCategoryID().Exec(ctx); err != nil {
+			return err
+		}
+		if _, err = client.SupplierProductPrice.Delete().Where(supplierproductprice.CategoryIDIn(chunk...), supplierproductprice.Scope("category")).Exec(ctx); err != nil {
+			return err
+		}
+		if err = client.SupplyMapping.Update().Where(supplymapping.LocalCategoryIDIn(chunk...)).ClearLocalCategoryID().Exec(ctx); err != nil {
+			return err
+		}
+		if _, err = client.CategoryProductPlacement.Delete().Where(placement.CategoryIDIn(chunk...), placement.SubsiteID(tenant)).Exec(ctx); err != nil {
+			return err
+		}
+	}
+	for start := 0; start < len(ids); start += 200 {
+		end := start + 200
+		if end > len(ids) {
+			end = len(ids)
+		}
+		if _, err = client.Category.Delete().Where(category.IDIn(ids[start:end]...), category.SubsiteID(tenant)).Exec(ctx); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -1283,28 +1309,7 @@ func (r *ProductRepoImpl) UpdateProduct(ctx context.Context, id uint64, in port.
 	return
 }
 func (r *ProductRepoImpl) DeleteProduct(ctx context.Context, id uint64) error {
-	return data.Tx(ctx, r.data, func(ctx context.Context) error {
-		if _, e := data.GuardProductWrite(ctx, r.data, id); e != nil {
-			return e
-		}
-		old, e := data.Client(ctx, r.data).Product.Get(ctx, id)
-		if e != nil {
-			return e
-		}
-		if old.GoodsType == "physical" {
-			used, e := data.Client(ctx, r.data).OrderItem.Query().Where(orderitem.ProductID(id)).Exist(ctx)
-			if e != nil {
-				return e
-			}
-			if used {
-				return fmt.Errorf("实体商品已有订单，请下架商品")
-			}
-		}
-		if e = r.deleteProduct(ctx, id); e != nil {
-			return e
-		}
-		return data.SyncProductMediaRefs(ctx, r.data, old, nil)
-	})
+	return data.Tx(ctx, r.data, func(ctx context.Context) error { return r.archiveProduct(ctx, id) })
 }
 
 func (r *ProductRepoImpl) UpdateCategory(ctx context.Context, id uint64, name string, icon *string, hide *bool, sort *int32, parentID *int64) (out *ent.Category, err error) {
@@ -1324,16 +1329,7 @@ func (r *ProductRepoImpl) UpdateCategory(ctx context.Context, id uint64, name st
 	return
 }
 func (r *ProductRepoImpl) DeleteCategory(ctx context.Context, id uint64) error {
-	return data.Tx(ctx, r.data, func(ctx context.Context) error {
-		if e := lockCategoryStructure(ctx, r.data); e != nil {
-			return e
-		}
-		if e := r.deleteCategory(ctx, id); e != nil {
-			return e
-		}
-		_, e := data.Client(ctx, r.data).CategoryProductPlacement.Delete().Where(placement.CategoryID(id), placement.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).Exec(ctx)
-		return e
-	})
+	return data.Tx(ctx, r.data, func(ctx context.Context) error { return r.deleteCategory(ctx, id) })
 }
 func (r *ProductRepoImpl) guardCategoryProducts(ctx context.Context, ids []uint64) error {
 	c := data.Client(ctx, r.data)

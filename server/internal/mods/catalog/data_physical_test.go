@@ -59,8 +59,8 @@ func TestPhysicalStockAdjustmentsAndDeliveryGuards(t *testing.T) {
 	if e = repo.DeleteSku(ctx, sku.ID); e == nil {
 		t.Fatal("referenced physical SKU deleted")
 	}
-	if e = repo.DeleteProduct(ctx, p.ID); e == nil {
-		t.Fatal("referenced physical product deleted")
+	if e = repo.DeleteProduct(ctx, p.ID); e != nil {
+		t.Fatal("physical product archive failed", e)
 	}
 }
 

@@ -681,7 +681,7 @@ function actionsCol(t: TableTier) {
   return {
     title: "操作",
     key: "actions",
-    width: t === "compact" ? 96 : 216,
+    width: t === "compact" ? 96 : 270,
     render: (row: any) =>
       t === "compact"
         ? h(
@@ -691,6 +691,7 @@ function actionsCol(t: TableTier) {
           )
         : h("div", { class: "flex flex-wrap items-center gap-4px" }, [
             h(NButton, { size: "tiny", loading: pinging[row.id], onClick: () => handlePing(row) }, { default: () => "测试" }),
+            canWrite() ? h(NButton, { size: "tiny", type: "primary", secondary: true, onClick: () => onRowAction(row, "import") }, { default: () => "导入商品" }) : null,
             canWrite()
               ? h(
                   NDropdown,

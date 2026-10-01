@@ -62,16 +62,18 @@ func TestCategoryDeletionReasonsAndTenantBoundary(t *testing.T) {
 			t.Fatalf("delete %d: %v, want %d/%s", id, err, code, reason)
 		}
 	}
-	check(ctx, parent.ID, 400, "catalog.CATEGORY_HAS_CHILDREN")
+
 	check(ctx, foreign.ID, 404, "catalog.CATEGORY_NOT_FOUND")
 	other := tenancy.WithContext(ctx, tenancy.Context{SubsiteID: 9})
 	check(other, parent.ID, 404, "catalog.CATEGORY_NOT_FOUND")
 	for _, status := range []int8{0, 1, 2} {
 		cat := d.Client.Category.Create().SetName(fmt.Sprintf("status%d", status)).SaveX(ctx)
 		d.Client.Product.Create().SetName("kept").SetSlug(fmt.Sprintf("kept%d", status)).SetPrice(1).SetStatus(status).SetCategoryID(cat.ID).SaveX(ctx)
-		check(ctx, cat.ID, 400, "catalog.CATEGORY_HAS_PRODUCTS")
+		if _, e := s.DeleteCategory(ctx, &adminv1.DeleteCategoryRequest{Id: cat.ID}); e != nil {
+			t.Fatal(e)
+		}
 	}
-	if d.Client.Category.Query().CountX(ctx) != 6 {
+	if d.Client.Category.Query().CountX(ctx) != 3 {
 		t.Fatal("failed deletion modified categories")
 	}
 }

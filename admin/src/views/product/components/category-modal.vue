@@ -211,16 +211,20 @@ async function handleRename() {
   }
 }
 
+const deletingCategory = ref(false);
 async function handleDelete() {
   const cat = deleteConfirm.cat;
-  if (!cat) return;
-  const { error } = await deleteCategory(cat.id);
-  if (!error) {
-    window.$message?.success("分类已删除");
-    deleteConfirm.show = false;
-    load();
-    emit("refresh");
-  }
+  if (!cat || deletingCategory.value) return;
+  deletingCategory.value = true;
+  try {
+    const { error } = await deleteCategory(cat.id);
+    if (!error) {
+      window.$message?.success("分类、子分类及其中商品已删除，订单记录已保留");
+      deleteConfirm.show = false;
+      await load();
+      emit("refresh");
+    }
+  } finally { deletingCategory.value = false; }
 }
 
 const visibilityBusy = ref<number | null>(null);
@@ -461,8 +465,19 @@ function selectFiltered(on: boolean) {
 
 async function handleBatchDelete() {
   if (!canDelete.value || batchDeleting.value || !batchChecked.value.size) return;
-  // 逆序删除所选分类：先子后父；没有勾选的子分类不会被删除。
-  const selected = [...flatTree.value].reverse().filter(cat => batchChecked.value.has(cat.id));
+  // A selected parent already includes its entire subtree. Submit each root once.
+  const byID = new Map(flatTree.value.map(cat => [cat.id, cat]));
+  const selected = flatTree.value.filter(cat => {
+    if (!batchChecked.value.has(cat.id)) return false;
+    const seen = new Set<number>([cat.id]);
+    let parent = cat.parent_id;
+    while (parent && !seen.has(parent)) {
+      if (batchChecked.value.has(parent)) return false;
+      seen.add(parent); parent = byID.get(parent)?.parent_id || 0;
+    }
+    return true;
+  });
+  const initialIDs = new Set(categories.value.map(cat => cat.id));
   batchDeleting.value = true;
   batchFailures.value = [];
   batchProgress.done = 0;
@@ -474,8 +489,9 @@ async function handleBatchDelete() {
       const { error } = await deleteCategory(cat.id, true);
       batchProgress.done++;
       if (!error) {
-        deleted++;
-        batchChecked.value = new Set([...batchChecked.value].filter(id => id !== cat.id));
+        const removed = new Set<number>([cat.id]);
+        for (const node of flatTree.value) if (removed.has(node.parent_id)) removed.add(node.id);
+        batchChecked.value = new Set([...batchChecked.value].filter(id => !removed.has(id)));
       } else {
         const response = (error as any).response;
         batchFailures.value.push({ id: cat.id, name: cat.path, message: response?.data?.message || error.message || "删除失败，请刷新后重试" });
@@ -487,7 +503,7 @@ async function handleBatchDelete() {
       // Confirm against the refreshed list instead of offering a second deletion.
       const existing = new Set(categories.value.map(cat => cat.id));
       const remaining = batchFailures.value.filter(item => existing.has(item.id));
-      deleted += batchFailures.value.length - remaining.length;
+      deleted = [...initialIDs].filter(id => !existing.has(id)).length;
       batchFailures.value = remaining;
     }
     if (deleted) {
@@ -579,7 +595,7 @@ async function onSortBlur(cat: any) {
                 批量删除（{{ batchChecked.size }}）
               </NButton>
             </template>
-            删除勾选的 {{ batchChecked.size }} 个分类？仅删除所选分类，先子后父；有商品或未选中子分类的会保留。
+            删除勾选的 {{ batchChecked.size }} 个分类？同时删除全部子分类和其中商品（包括隐藏、下架及锁定商品）；保留订单快照、交付和退款记录。
           </NPopconfirm>
         </template>
       </div>
@@ -820,12 +836,13 @@ async function onSortBlur(cat: any) {
       preset="dialog"
       title="删除分类"
       style="width: 400px"
-      @update:show="(v: boolean) => !v && (deleteConfirm.show = false)"
+      :closable="!deletingCategory" :mask-closable="false" :close-on-esc="!deletingCategory"
+      @update:show="(v: boolean) => !v && !deletingCategory && (deleteConfirm.show = false)"
     >
-      确定删除分类「{{ deleteConfirm.cat?.name }}」？分类下仍有商品时将无法删除。
+      确定删除分类「{{ deleteConfirm.cat?.name }}」？将同时删除全部子分类和其中商品（包括隐藏、下架及锁定商品），保留订单快照、交付和退款记录。
       <template #action>
-        <NButton @click="deleteConfirm.show = false">取消</NButton>
-        <NButton v-auth="'catalog:category_delete'" type="error" @click="handleDelete">删除</NButton>
+        <NButton :disabled="deletingCategory" @click="deleteConfirm.show = false">取消</NButton>
+        <NButton v-auth="'catalog:category_delete'" type="error" :loading="deletingCategory" @click="handleDelete">删除</NButton>
       </template>
     </NModal>
   </component>

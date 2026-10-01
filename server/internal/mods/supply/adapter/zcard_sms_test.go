@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -47,7 +48,7 @@ func TestZCardSMSPublicContractTwoSources(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/api/supply/products":
-			if r.URL.Query().Get("capabilities") != supplyport.SMSCapability+","+supplyport.SMSProductCatalog+","+supplyport.SMSProductPurchase || r.URL.Query().Get("page") != "2001" {
+			if strings.Join(r.URL.Query()["capabilities"], ",") != supplyport.SMSCapability+","+supplyport.SMSProductCatalog+","+supplyport.SMSProductPurchase || r.URL.Query().Get("page") != "2001" {
 				t.Error("catalog capability or high page absent")
 			}
 			fmt.Fprint(w, `{"items":[{"id":9007199254740993,"name":"opaque service","price":"101","delivery_kind":"sms_activation","sms_product":{"country_id":"optional-id","future_key":"ignored"}}],"total":"100001","page_size":50,"has_more":false}`)

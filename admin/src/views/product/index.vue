@@ -360,7 +360,7 @@ function updateCheckedKeys(keys: Array<string | number>) {
   checkedKeys.value = [
     ...new Set([
       ...checkedKeys.value.filter((id) => !pageIDs.has(id)),
-      ...keys.map(Number).filter((id) => !products.value.find((p) => p.id === id)?.is_locked),
+      ...keys.map(Number),
     ]),
   ];
 }
@@ -665,7 +665,7 @@ function stepNext() {
 }
 
 const columns: DataTableColumns<any> = [
-  { type: "selection", disabled: (row: any) => !!row.is_locked },
+  { type: "selection" },
   { title: "ID", key: "id", width: 56 },
   {
     title: "封面",
@@ -716,7 +716,7 @@ const columns: DataTableColumns<any> = [
           ? h(
               NTag,
               { size: "small", bordered: false },
-              { default: () => "已锁定 · 批量操作自动跳过" },
+              { default: () => "已锁定 · 编辑和同步受保护" },
             )
           : null,
         row.is_recommend
@@ -980,8 +980,7 @@ const columns: DataTableColumns<any> = [
                   {
                     size: "small",
                     type: "error",
-                    disabled: !!row.is_locked,
-                    title: row.is_locked ? "请先解锁后再删除" : "删除商品",
+                    title: "删除商品，保留订单快照",
                     onClick: () => {
                       deleteTarget.value = row;
                     },
@@ -1008,8 +1007,7 @@ async function loadList() {
     if (sequence !== listSequence) return;
     if (!error && data) {
       products.value = (data as any).products || [];
-      const locked = new Set(products.value.filter((p) => p.is_locked).map((p) => p.id));
-      checkedKeys.value = checkedKeys.value.filter((id) => !locked.has(id));
+
       total.value = (data as any).total || 0;
     }
   } finally {
@@ -1155,7 +1153,7 @@ async function saveBatchCategory() {
   }
 }
 
-// ── 批量删除（保留历史订单；锁定或有待处理订单/占用库存的商品后端会拒绝）──
+// ── 批量删除（保留订单快照及履约记录）──
 const batchDeleting = ref(false);
 async function handleBatchDelete() {
   if (!checkedKeys.value.length || batchDeleting.value) return;
@@ -1166,17 +1164,10 @@ async function handleBatchDelete() {
     const results: Awaited<ReturnType<typeof deleteProduct>>[] = [];
     for (const id of ids) results.push(await deleteProduct(id));
     const ok = results.filter((r) => !r.error).length;
-    const skipped = results.filter(
-      (r) => (r.error as any)?.response?.data?.reason === "catalog.PRODUCT_LOCKED",
-    ).length;
-    batchFailures.value = results.flatMap((r, i) =>
-      r.error && (r.error as any)?.response?.data?.reason !== "catalog.PRODUCT_LOCKED"
-        ? [
-            `${products.value.find((p) => p.id === ids[i])?.name || `商品 ${ids[i]}`}：${(r.error as any)?.response?.data?.message || "删除未成功，请刷新后重试"}`,
-          ]
-        : [],
-    );
-    batchReport.value = `已删除 ${ok} 件，跳过锁定商品 ${skipped} 件，失败 ${batchFailures.value.length} 件`;
+    batchFailures.value = results.flatMap((r, i) => r.error ? [
+      `${products.value.find((p) => p.id === ids[i])?.name || `商品 ${ids[i]}`}：${(r.error as any)?.response?.data?.message || "删除未成功，请刷新后重试"}`,
+    ] : []);
+    batchReport.value = `已删除 ${ok} 件，保留订单记录，失败 ${batchFailures.value.length} 件`;
     checkedKeys.value = ids.filter((_, i) => !!results[i].error);
     await loadList();
     await loadCategories();
@@ -1494,7 +1485,7 @@ onMounted(() => {
           ></template
         >
         <span v-if="pageLockedCount" class="text-13px"
-          >本页 {{ pageLockedCount }} 件已锁定，全选会自动跳过。</span
+          >本页 {{ pageLockedCount }} 件已锁定，编辑和同步会跳过，删除仍可选。</span
         >
       </div>
       <NAlert
@@ -1572,7 +1563,7 @@ onMounted(() => {
       >
         <span class="text-13px"
           >已选 <b>{{ checkedKeys.length }}</b> 件<span v-if="pageLockedCount"
-            >，本页跳过 {{ pageLockedCount }} 件锁定商品</span
+            >，编辑操作会跳过本页 {{ pageLockedCount }} 件锁定商品</span
           ><span v-if="offPageSelected">（其他页 {{ offPageSelected }} 件）</span></span
         >
         <NPopconfirm @positive-click="handleBatchStatus([...checkedKeys], 1, '上架')">
@@ -1745,7 +1736,7 @@ onMounted(() => {
       :class="step === 3 ? 'product-editor-step-modal' : undefined"
     >
       <NAlert v-if="editorLocked" type="info" class="mb-12px"
-        >商品已锁定，暂不可修改或删除，批量操作会自动跳过。
+        >商品已锁定，编辑和同步受保护；仍可在列表删除并保留订单记录。
         <span v-if="editingProduct.locked_at"
           >锁定时间：{{ new Date(editingProduct.locked_at * 1000).toLocaleString() }}。</span
         >

@@ -357,8 +357,17 @@ func TestCatalogGuardsAndLiveEligibility(t *testing.T) {
 	c.Product.UpdateOneID(p.ID).SetStatus(0).ExecX(ctx)
 	svc := catalog.NewAdminCatalogService(cat, nil, nil, nil)
 	pre, e := svc.PreviewDeleteProduct(ctx, &adminv1.GetProductRequest{Id: p.ID})
-	if e != nil || pre.DeleteBlockReason == "" || pre.DeleteOrdersBlockReason == "" {
+	if e != nil || pre.DeleteBlockReason != "" || pre.DeleteOrdersBlockReason == "" {
 		t.Fatal("lottery history purge guard", pre, e)
+	}
+	if _, e = svc.DeleteProduct(ctx, &adminv1.DeleteProductRequest{Id: p.ID}); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = r.Draw(ctx, a.Id, uid, "deleted-prize-123456"); e == nil {
+		t.Fatal("deleted product awarded")
+	}
+	if _, e = r.Content(ctx, d); e != nil {
+		t.Fatal("historical award lost after deletion", e)
 	}
 }
 

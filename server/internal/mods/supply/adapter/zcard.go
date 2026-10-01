@@ -385,7 +385,7 @@ func decodeZCard(raw []byte, v any) error {
 	return d.Decode(v)
 }
 func smsCatalogQuery() url.Values {
-	return url.Values{"capabilities": {supplyport.SMSCapability + "," + supplyport.SMSProductCatalog + "," + supplyport.SMSProductPurchase}}
+	return url.Values{"capabilities": {supplyport.SMSCapability, supplyport.SMSProductCatalog, supplyport.SMSProductPurchase}}
 }
 func normalizedDeliveryKind(v string) string {
 	if v == "" {

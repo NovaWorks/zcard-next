@@ -58,7 +58,7 @@ func TestSMSPrivateProviderCatalogImportsOneProduct(t *testing.T) {
 		case "/api/supply/categories":
 			fmt.Fprintf(w, `{"categories":[{"id":%q,"name":"短信接码"}]}`, entry.CategoryID)
 		case "/api/supply/products":
-			if !strings.Contains(r.URL.Query().Get("capabilities"), "sms_channel_catalog.v1") {
+			if !strings.Contains(strings.Join(r.URL.Query()["capabilities"], ","), "sms_channel_catalog.v1") {
 				t.Error("collector did not negotiate channel catalog")
 			}
 			w.Write(response)

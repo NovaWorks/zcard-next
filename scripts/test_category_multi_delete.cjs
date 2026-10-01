@@ -14,7 +14,7 @@ const server=http.createServer((req,res)=>{
  for(const width of [1440,390]){
   const page=await browser.newPage({viewport:{width,height:1000}}),errors=[],deletes=[];page.setDefaultTimeout(10000);
   page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(()=>localStorage.setItem('token',JSON.stringify('fixture')));
-  let permissions=['*'], categories=[{id:1,name:'空父类',sort:0},{id:2,name:'空子类',parent_id:1,sort:0},{id:3,name:'保留父类',sort:1},{id:4,name:'保留子类',parent_id:3,sort:0},{id:5,name:'有商品',product_count:1,sort:2},{id:6,name:'空分类',sort:3},{id:7,name:'网络重试',sort:4},{id:8,name:'响应丢失',sort:5}],retry=true;
+  let permissions=['*'], categories=[{id:1,name:'空父类',sort:0},{id:2,name:'空子类',parent_id:1,sort:0},{id:3,name:'保留父类',sort:1},{id:4,name:'保留子类',parent_id:3,sort:0},{id:5,name:'有商品',product_count:1,sort:2},{id:6,name:'空分类',sort:3},{id:7,name:'网络重试',sort:4},{id:8,name:'响应丢失',sort:5},{id:9,name:'保留分类',sort:6}],retry=true;
   await page.route('**/api/v1/**',async route=>{
    const req=route.request(),p=new URL(req.url()).pathname;let data={items:[],total:0,categories:[],products:[],skus:[],controls:[]};
    if(p.endsWith('/auth/profile'))data={admin:{id:1,username:'fixture'},permissions};
@@ -25,8 +25,8 @@ const server=http.createServer((req,res)=>{
     await new Promise(r=>setTimeout(r,120));
     if(id===8){categories=categories.filter(c=>c.id!==id);return route.abort('failed');}
     if(id===7&&retry){retry=false;return route.fulfill({status:503,json:{code:503,message:'连接失败，请重试'}});}
-    if(id===5||categories.some(c=>c.parent_id===id))return route.fulfill({status:400,json:{code:400,message:'删除失败（有子分类或商品）'}});
-    categories=categories.filter(c=>c.id!==id);data={};
+    const removed=new Set([id]);for(const c of categories)if(removed.has(c.parent_id))removed.add(c.id);
+    categories=categories.filter(c=>!removed.has(c.id));data={};
    }
    await route.fulfill({json:data}).catch(()=>{});
   });
@@ -47,21 +47,22 @@ const server=http.createServer((req,res)=>{
   await expect(search).toBeDisabled();await expect(selectAll).toBeDisabled();
   await expect(page.locator('.category-delete-failures')).toContainText('连接失败，请重试');
   await expect(search).toBeEnabled();
-  assert.deepEqual(deletes,[8,7,6,5,3,2,1],'selected children must be removed before parent, never unselected children');
-  await expect(select('保留父类')).toBeChecked();await expect(select('有商品')).toBeChecked();await expect(select('网络重试')).toBeChecked();await expect(select('保留父类 / 保留子类')).not.toBeChecked();
-  await expect(select('空父类')).toHaveCount(0);await expect(select('响应丢失')).toHaveCount(0);await expect(page.locator('.category-delete-failures')).not.toContainText('响应丢失');await expect(page.getByText('已选 3',{exact:true})).toBeVisible();
-  // Retry only the failed requests; successes must never be repeated.
+  assert.deepEqual(deletes,[1,3,5,6,7,8],'selected parents must include descendants without duplicate requests');
+  await expect(select('网络重试')).toBeChecked();
+  await expect(select('保留父类')).toHaveCount(0);await expect(select('保留父类 / 保留子类')).toHaveCount(0);await expect(select('有商品')).toHaveCount(0);await expect(select('保留分类')).not.toBeChecked();
+  await expect(select('空父类')).toHaveCount(0);await expect(select('响应丢失')).toHaveCount(0);await expect(page.locator('.category-delete-failures')).not.toContainText('响应丢失');await expect(page.getByText('已选 1',{exact:true})).toBeVisible();
+  // Retry only the failed request; successes and cascaded children stay removed.
   await action().click();await page.getByRole('button',{name:'确认删除',exact:true}).click();await expect(select('网络重试')).toHaveCount(0);await expect(search).toBeEnabled();
-  assert.deepEqual(deletes,[8,7,6,5,3,2,1,7,5,3]);await expect(page.getByText('已选 2',{exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'清空选择',exact:true}).click();await expect(action()).toBeDisabled();await expect(page.locator('.category-delete-failures')).toHaveCount(0);await expect(select('保留父类')).not.toBeChecked();await expect(select('有商品')).not.toBeChecked();await expect(selectAll).not.toBeChecked();
+  assert.deepEqual(deletes,[1,3,5,6,7,8,7]);await expect(action()).toBeDisabled();
+  await select('保留分类').check();await page.getByRole('button',{name:'清空选择',exact:true}).click();await expect(action()).toBeDisabled();await expect(page.locator('.category-delete-failures')).toHaveCount(0);await expect(select('保留分类')).not.toBeChecked();await expect(selectAll).not.toBeChecked();
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'mobile overflow');
   await page.screenshot({path:`/tmp/${path.basename(path.resolve(__dirname,'..'))}-category-multi-delete-${width}.png`,fullPage:true,animations:'disabled'});
   // Permission to delete alone must be sufficient; read-only cannot select/delete.
-  permissions=['catalog:category_read','catalog:category_delete'];await page.reload();await expect(select('有商品')).toBeVisible();await expect(page.getByRole('button',{name:'新建分类',exact:true})).toHaveCount(0);
-  permissions=['catalog:category_read'];await page.reload();await expect(page.getByText('有商品',{exact:true}).first()).toBeVisible();await expect(page.getByRole('checkbox')).toHaveCount(0);await expect(action()).toHaveCount(0);
+  permissions=['catalog:category_read','catalog:category_delete'];await page.reload();await expect(select('保留分类')).toBeVisible();await expect(page.getByRole('button',{name:'新建分类',exact:true})).toHaveCount(0);
+  permissions=['catalog:category_read'];await page.reload();await expect(page.getByText('保留分类',{exact:true}).first()).toBeVisible();await expect(page.getByRole('checkbox')).toHaveCount(0);await expect(action()).toHaveCount(0);
   permissions=['*'];await page.goto(base+'/admin/product');await page.locator('.product-category-card').getByRole('button',{name:'管理',exact:true}).click();
-  const modal=page.locator('.n-modal').filter({hasText:'分类管理'});await expect(modal.getByRole('checkbox',{name:'选择分类 有商品',exact:true})).toBeVisible();
-  assert.deepEqual(errors,[]);await page.close();console.log(JSON.stringify({width,filteredMultiSelect:true,partialDelete:true,childFirst:true,retainFailed:true,retry:true,permissions:true,reusedModal:true}));
+  const modal=page.locator('.n-modal').filter({hasText:'分类管理'});await expect(modal.getByRole('checkbox',{name:'选择分类 保留分类',exact:true})).toBeVisible();
+  assert.deepEqual(errors,[]);await page.close();console.log(JSON.stringify({width,filteredMultiSelect:true,partialDelete:true,cascade:true,parentDeduplicated:true,retainFailed:true,retry:true,permissions:true,reusedModal:true}));
  }
  }finally{await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1});
