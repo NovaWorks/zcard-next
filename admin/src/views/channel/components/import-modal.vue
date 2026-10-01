@@ -235,6 +235,11 @@ async function loadPreview(refresh = false, preserve = false) {
       categories.value = ((data as any).categories || []).map((cat: PreviewCategory) => ({
         ...cat, products: cat.products.map(p => ({ ...p, quote_status: p.quote_status || "pending" })),
       }));
+      // A one-product channel catalog should be visible immediately.
+      if (!preserveExisting && !hasMore.value && allProducts.value.length === 1 && allProducts.value[0]?.product_kind === "sms_channel") {
+        expandedCats.value = new Set(categories.value.map(cat => cat.code));
+        checked.value = allProducts.value.filter(p => !p.is_locked).map(p => p.code);
+      }
       if (preserveExisting) {
         const available = new Set(allProducts.value.filter(p => !p.is_locked).map(p => p.code));
         const before = checked.value.length;
