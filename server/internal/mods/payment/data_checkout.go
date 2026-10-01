@@ -21,6 +21,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 	"github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/proto"
 )
@@ -116,6 +117,39 @@ func checkQuote(ctx context.Context, q *storefrontv1.PaymentQuote) error {
 	}
 	return nil
 }
+
+func paymentOrderOwner(ctx context.Context, o *ent.Order) bool {
+	claims := identity.ClaimsFromContext(ctx)
+	return claims != nil && o.UserID != 0 && claims.Subject == o.UserID
+}
+
+// Both public payment entry points require the same tenant and order access.
+// A legacy order without a password can only be paid by its signed-in owner.
+func (s *StorePaymentService) paymentOrder(ctx context.Context, no, password string) (*ent.Order, error) {
+	o, err := data.Client(ctx, s.data).Order.Query().
+		Where(order.OrderNo(no), order.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, errors.NotFound("order.NOT_FOUND", "订单不存在或查询密码错误")
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !paymentOrderOwner(ctx, o) && (o.QueryPasswordHash == "" || !crypto.VerifyPassword(o.QueryPasswordHash, password)) {
+		return nil, errors.NotFound("order.NOT_FOUND", "订单不存在或查询密码错误")
+	}
+	return o, nil
+}
+
+func authorizeWalletPayment(ctx context.Context, o *ent.Order) error {
+	if identity.ClaimsFromContext(ctx) == nil {
+		return errors.Unauthorized("identity.UNAUTHORIZED", "余额支付需登录订单所属账户")
+	}
+	if !paymentOrderOwner(ctx, o) {
+		return errors.Forbidden("payment.ORDER_OWNER_REQUIRED", "余额支付只能由订单所属账户操作")
+	}
+	return nil
+}
+
 func (s *StorePaymentService) QuotePayment(ctx context.Context, req *storefrontv1.PaymentQuoteRequest) (*storefrontv1.PaymentQuote, error) {
 	scene := req.GetScene()
 	if scene == "" {
@@ -123,20 +157,18 @@ func (s *StorePaymentService) QuotePayment(ctx context.Context, req *storefrontv
 	}
 	base := req.GetAmountCents()
 	var subsite, orderID uint64
+	var purchaseOrder *ent.Order
 	scope := scene
 	if scene == scenePurchase {
-		o, err := data.Client(ctx, s.data).Order.Query().Where(order.OrderNo(req.GetOrderNo())).Only(ctx)
+		o, err := s.paymentOrder(ctx, req.GetOrderNo(), req.GetQueryPassword())
 		if err != nil {
-			return nil, errors.NotFound("order.NOT_FOUND", "订单不存在")
-		}
-		claims := identity.ClaimsFromContext(ctx)
-		if !(claims != nil && o.UserID != 0 && claims.Subject == o.UserID) && (o.QueryPasswordHash == "" || !crypto.VerifyPassword(o.QueryPasswordHash, req.GetQueryPassword())) {
-			return nil, errors.NotFound("order.NOT_FOUND", "订单不存在")
+			return nil, err
 		}
 		if o.Status != order.StatusPendingPayment || o.ExpiryReview || !time.Now().Before(o.ExpiredAt) {
 			return nil, errors.BadRequest("payment.ORDER_NOT_PENDING", "订单不在待支付状态")
 		}
 		base, subsite, orderID, scope = o.TotalAmount, o.SubsiteID, o.ID, o.OrderNo
+		purchaseOrder = o
 	} else if scene == sceneMemberRecharge || scene == sceneSupplyRecharge {
 		if identity.ClaimsFromContext(ctx) == nil {
 			return nil, errors.Unauthorized("identity.UNAUTHORIZED", "请先登录")
@@ -151,8 +183,10 @@ func (s *StorePaymentService) QuotePayment(ctx context.Context, req *storefrontv
 	if err = s.repo.checkPaymentUsage(ch, req.GetMethod(), scene); err != nil {
 		return nil, errors.BadRequest("payment.SCENE_DISABLED", err.Error())
 	}
-	if ch.Driver == "wallet" && identity.ClaimsFromContext(ctx) == nil {
-		return nil, errors.Unauthorized("identity.UNAUTHORIZED", "余额支付需登录")
+	if ch.Driver == "wallet" && purchaseOrder != nil {
+		if err := authorizeWalletPayment(ctx, purchaseOrder); err != nil {
+			return nil, err
+		}
 	}
 	if isNativeCryptoDriver(ch.Driver) && orderID > 0 {
 		old, e := s.repo.nativeAttempt(ctx, data.Client(ctx, s.data).Payment.Query().Where(payment.ChannelID(ch.ID), payment.OrderID(orderID), payment.DriverSnapshot(ch.Driver)), ch, req.GetMethod())

@@ -14,7 +14,7 @@ import (
 
 func TestPaymentUsageMatrixAndServerEnforcement(t *testing.T) {
 	d, repo, _, _, _, _ := newCallbackEnv(t)
-	ctx := context.Background()
+	ctx := checkoutUser()
 	svc := NewStorePaymentService(repo, d)
 	ch := d.Client.PaymentChannel.Query().Where(paymentchannel.Code("epay")).OnlyX(ctx)
 	for mask := 0; mask < 8; mask++ {
@@ -36,7 +36,7 @@ func TestPaymentUsageMatrixAndServerEnforcement(t *testing.T) {
 			}
 			before := d.Client.Payment.Query().CountX(ctx)
 			if scene == scenePurchase {
-				o := d.Client.Order.Create().SetOrderNo(fmt.Sprintf("SCENE-%d", mask)).SetTotalAmount(100).SetExpiredAt(time.Now().Add(time.Hour)).SaveX(ctx)
+				o := d.Client.Order.Create().SetOrderNo(fmt.Sprintf("SCENE-%d", mask)).SetUserID(1).SetTotalAmount(100).SetExpiredAt(time.Now().Add(time.Hour)).SaveX(ctx)
 				_, err = svc.CreatePayment(ctx, &storefrontv1.CreatePaymentRequest{OrderNo: o.OrderNo, Channel: "epay"})
 			} else {
 				target := rechargeorder.TargetBalance

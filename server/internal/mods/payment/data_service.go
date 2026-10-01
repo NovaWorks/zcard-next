@@ -558,10 +558,7 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 	client := data.Client(ctx, s.data)
 
 	// 查订单
-	o, err := client.Order.Query().Where(order.OrderNo(req.GetOrderNo()), order.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).Only(ctx)
-	if ent.IsNotFound(err) {
-		return nil, errors.NotFound("order.NOT_FOUND", "订单不存在")
-	}
+	o, err := s.paymentOrder(ctx, req.GetOrderNo(), req.GetQueryPassword())
 	if err != nil {
 		return nil, err
 	}
@@ -590,6 +587,9 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 	}
 	// wallet 渠道：余额支付（直接 markPaid—— 接 wallet.DebitInTx）
 	if ch.Driver == "wallet" {
+		if err := authorizeWalletPayment(ctx, o); err != nil {
+			return nil, err
+		}
 		p, err := s.repo.CreatePayment(ctx, o.ID, ch.Code, o.TotalAmount, "", req.GetMethod())
 		if err != nil {
 			return nil, paymentCreationError(err)

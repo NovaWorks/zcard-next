@@ -1,7 +1,6 @@
 package payment
 
 import (
-	"context"
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
@@ -17,7 +16,7 @@ import (
 )
 
 func TestEpayIndependentChannels(t *testing.T) {
-	ctx := context.Background()
+	ctx := checkoutUser()
 	d, repo, _, _, _, _ := newCallbackEnv(t)
 	admin := NewAdminPaymentService(repo, d)
 	store := NewStorePaymentService(repo, d)
