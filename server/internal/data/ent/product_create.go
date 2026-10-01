@@ -66,6 +66,20 @@ func (_c *ProductCreate) SetNillableSubsiteID(v *uint64) *ProductCreate {
 	return _c
 }
 
+// SetProductKind sets the "product_kind" field.
+func (_c *ProductCreate) SetProductKind(v string) *ProductCreate {
+	_c.mutation.SetProductKind(v)
+	return _c
+}
+
+// SetNillableProductKind sets the "product_kind" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableProductKind(v *string) *ProductCreate {
+	if v != nil {
+		_c.SetProductKind(*v)
+	}
+	return _c
+}
+
 // SetDeliveryKind sets the "delivery_kind" field.
 func (_c *ProductCreate) SetDeliveryKind(v string) *ProductCreate {
 	_c.mutation.SetDeliveryKind(v)
@@ -757,6 +771,10 @@ func (_c *ProductCreate) defaults() {
 		v := product.DefaultSubsiteID
 		_c.mutation.SetSubsiteID(v)
 	}
+	if _, ok := _c.mutation.ProductKind(); !ok {
+		v := product.DefaultProductKind
+		_c.mutation.SetProductKind(v)
+	}
 	if _, ok := _c.mutation.DeliveryKind(); !ok {
 		v := product.DefaultDeliveryKind
 		_c.mutation.SetDeliveryKind(v)
@@ -901,6 +919,9 @@ func (_c *ProductCreate) check() error {
 	}
 	if _, ok := _c.mutation.SubsiteID(); !ok {
 		return &ValidationError{Name: "subsite_id", err: errors.New(`ent: missing required field "Product.subsite_id"`)}
+	}
+	if _, ok := _c.mutation.ProductKind(); !ok {
+		return &ValidationError{Name: "product_kind", err: errors.New(`ent: missing required field "Product.product_kind"`)}
 	}
 	if _, ok := _c.mutation.DeliveryKind(); !ok {
 		return &ValidationError{Name: "delivery_kind", err: errors.New(`ent: missing required field "Product.delivery_kind"`)}
@@ -1091,6 +1112,10 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SubsiteID(); ok {
 		_spec.SetField(product.FieldSubsiteID, field.TypeUint64, value)
 		_node.SubsiteID = value
+	}
+	if value, ok := _c.mutation.ProductKind(); ok {
+		_spec.SetField(product.FieldProductKind, field.TypeString, value)
+		_node.ProductKind = value
 	}
 	if value, ok := _c.mutation.DeliveryKind(); ok {
 		_spec.SetField(product.FieldDeliveryKind, field.TypeString, value)
@@ -1395,6 +1420,18 @@ func (u *ProductUpsert) UpdateSubsiteID() *ProductUpsert {
 // AddSubsiteID adds v to the "subsite_id" field.
 func (u *ProductUpsert) AddSubsiteID(v uint64) *ProductUpsert {
 	u.Add(product.FieldSubsiteID, v)
+	return u
+}
+
+// SetProductKind sets the "product_kind" field.
+func (u *ProductUpsert) SetProductKind(v string) *ProductUpsert {
+	u.Set(product.FieldProductKind, v)
+	return u
+}
+
+// UpdateProductKind sets the "product_kind" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateProductKind() *ProductUpsert {
+	u.SetExcluded(product.FieldProductKind)
 	return u
 }
 
@@ -2243,6 +2280,20 @@ func (u *ProductUpsertOne) AddSubsiteID(v uint64) *ProductUpsertOne {
 func (u *ProductUpsertOne) UpdateSubsiteID() *ProductUpsertOne {
 	return u.Update(func(s *ProductUpsert) {
 		s.UpdateSubsiteID()
+	})
+}
+
+// SetProductKind sets the "product_kind" field.
+func (u *ProductUpsertOne) SetProductKind(v string) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetProductKind(v)
+	})
+}
+
+// UpdateProductKind sets the "product_kind" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateProductKind() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateProductKind()
 	})
 }
 
@@ -3384,6 +3435,20 @@ func (u *ProductUpsertBulk) AddSubsiteID(v uint64) *ProductUpsertBulk {
 func (u *ProductUpsertBulk) UpdateSubsiteID() *ProductUpsertBulk {
 	return u.Update(func(s *ProductUpsert) {
 		s.UpdateSubsiteID()
+	})
+}
+
+// SetProductKind sets the "product_kind" field.
+func (u *ProductUpsertBulk) SetProductKind(v string) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetProductKind(v)
+	})
+}
+
+// UpdateProductKind sets the "product_kind" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateProductKind() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateProductKind()
 	})
 }
 

@@ -22,6 +22,7 @@ interface PreviewCategory {
   products: {
     code: string;
     name: string;
+    product_kind?: string;
     delivery_kind?: string;
     sms_product?: Record<string,string>;
     price_cents: number;
@@ -289,6 +290,7 @@ function pumpQuotes() {
   if (!props.show || loading.value || importing.value) return;
   for (const p of expandedProducts.value) {
     if (quoteRequests.size >= 2) break;
+    if (p.product_kind=== "sms_channel") {p.quote_status="ready";continue;}
     if (p.quote_status === "pending") void loadQuote(p);
   }
 }
@@ -453,7 +455,7 @@ async function submit() {
           <NSpace justify="space-between"><span>分类预览：共 {{ruleResults.length}} 件</span><NSpace><NButton size="small" :disabled="rulePage<=1" @click="rulePage--">上一页</NButton><span>{{rulePage}} / {{Math.max(1,Math.ceil(ruleResults.length/50))}}</span><NButton size="small" :disabled="rulePage*50>=ruleResults.length" @click="rulePage++">下一页</NButton></NSpace></NSpace>
           <div class="rule-preview">
             <div v-for="p in visibleRuleResults" :key="p.code" class="rule-preview-row">
-              <span>{{ p.name }}<NTag v-if="p.delivery_kind==='sms_activation'" size="tiny" type="info">短信接码 · 单件</NTag><small v-if="p.delivery_kind==='sms_activation'">{{Object.entries(p.sms_product||{}).map(([k,v])=>`${k}: ${v}`).join(" · ")}}</small><small>{{ productCategories[p.code] !== undefined ? ' · 手工指定' : p.category_protected ? ' · 保留手动分类' : p.rule >= 0 ? ` · 规则 ${p.rule + 1}` : ' · 未命中，沿用分类映射或原分类' }}</small></span>
+              <span>{{ p.name }}<NTag v-if="p.delivery_kind==='sms_activation'" size="tiny" type="info">{{p.product_kind==='sms_channel'?'接码渠道 · 只采集此商品':'短信接码 · 单件'}}</NTag><small v-if="p.delivery_kind==='sms_activation'">{{Object.entries(p.sms_product||{}).map(([k,v])=>`${k}: ${v}`).join(" · ")}}</small><small>{{ productCategories[p.code] !== undefined ? ' · 手工指定' : p.category_protected ? ' · 保留手动分类' : p.rule >= 0 ? ` · 规则 ${p.rule + 1}` : ' · 未命中，沿用分类映射或原分类' }}</small></span>
               <NTreeSelect :value="p.category" :options="[{key:0,label:'未分类'}, ...localCategoryOptions]" clearable filterable show-path placeholder="沿用分类" @update:value="v => v === null ? delete productCategories[p.code] : productCategories[p.code] = Number(v)" />
             </div>
           </div>
@@ -493,9 +495,10 @@ async function submit() {
               <div class="product-list">
                 <div v-for="p in cat.products" :key="p.code" class="product-item">
                 <NCheckbox :value="p.code" :disabled="p.is_locked" :aria-disabled="p.is_locked">
-                  <span class="break-all" :class="{ 'text-gray-400': !p.is_active }">{{ p.name }}<NTag v-if="p.delivery_kind==='sms_activation'" size="tiny" type="info">短信接码 · 单件</NTag><small v-if="p.delivery_kind==='sms_activation'">{{Object.entries(p.sms_product||{}).map(([k,v])=>`${k}: ${v}`).join(" · ")}}</small></span>
+                  <span class="break-all" :class="{ 'text-gray-400': !p.is_active }">{{ p.name }}<NTag v-if="p.delivery_kind==='sms_activation'" size="tiny" type="info">{{p.product_kind==='sms_channel'?'接码渠道 · 只采集此商品':'短信接码 · 单件'}}</NTag><small v-if="p.delivery_kind==='sms_activation'">{{Object.entries(p.sms_product||{}).map(([k,v])=>`${k}: ${v}`).join(" · ")}}</small></span>
                   <span class="ml-4px text-12px" aria-live="polite">
-                    <template v-if="p.quote_status === 'ready'">成本 {{ formatMoney(p.cost_price_cents ?? 0) }}{{ p.cost_is_minimum ? ' 起' : '' }}</template>
+                    <template v-if="p.product_kind==='sms_channel'">独立接码商品 · 按选项实时定价</template>
+                    <template v-else-if="p.quote_status === 'ready'">成本 {{ formatMoney(p.cost_price_cents ?? 0) }}{{ p.cost_is_minimum ? ' 起' : '' }}</template>
                     <template v-else-if="p.quote_status === 'failed'">成本查询失败</template>
                     <template v-else>成本查询中…</template>
                     <template v-if="p.stock >= 0"> · 库存 {{ p.stock }}</template>
@@ -520,7 +523,7 @@ async function submit() {
         <div class="text-12px text-gray-400">只处理所选商品涉及的分类；草稿保存前不会出现在商城。保存后的映射也用于后续全量同步及该上游分类的其他已导入商品。</div>
           <NAlert :type="pricing.mode === 'channel' ? 'info' : 'warning'" class="mb-12px">
             <template v-if="pricing.mode === 'channel'">
-              跟随渠道：账号报价 × {{ connection.exchange_rate || 1 }} ×（1 + {{ connection.price_markup_percent || 0 }}%）+ {{ formatMoney(connection.price_markup_amount || 0) }}，再按渠道取整规则计算；商品和规格使用同一规则。
+              跟随渠道：账号报价 × {{ connection.exchange_rate || 1 }} ×（1 + {{ connection.price_markup_percent || 0 }}%）+ {{ formatMoney(connection.price_markup_amount || 0) }}，再按渠道取整规则计算；商品和规格使用同一规则；接码渠道商品的规则应用于每个动态选项。
             </template>
             <template v-else>当前为独立导入策略，不叠加渠道加价。规则会保存到所选商品，后续同步继续使用；待定价商品保持现价和下架状态。重新导入会更新未受人工改价保护的商品规则。</template>
           </NAlert>

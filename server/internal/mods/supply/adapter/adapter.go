@@ -78,6 +78,7 @@ type SKU struct {
 
 // Product 上游商品（统一输出分）。
 type Product struct {
+	ProductKind    string
 	DeliveryKind   string
 	SMSProduct     map[string]string
 	ID             string

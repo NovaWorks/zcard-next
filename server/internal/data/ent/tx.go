@@ -158,6 +158,8 @@ type Tx struct {
 	SMSIntent *SMSIntentClient
 	// SMSOperation is the client for interacting with the SMSOperation builders.
 	SMSOperation *SMSOperationClient
+	// SMSRetailQuote is the client for interacting with the SMSRetailQuote builders.
+	SMSRetailQuote *SMSRetailQuoteClient
 	// SecurityAuditLog is the client for interacting with the SecurityAuditLog builders.
 	SecurityAuditLog *SecurityAuditLogClient
 	// Session is the client for interacting with the Session builders.
@@ -416,6 +418,7 @@ func (tx *Tx) init() {
 	tx.RolePermission = NewRolePermissionClient(tx.config)
 	tx.SMSIntent = NewSMSIntentClient(tx.config)
 	tx.SMSOperation = NewSMSOperationClient(tx.config)
+	tx.SMSRetailQuote = NewSMSRetailQuoteClient(tx.config)
 	tx.SecurityAuditLog = NewSecurityAuditLogClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)

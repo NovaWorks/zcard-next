@@ -50,7 +50,7 @@ func validateLowStockPlan(settings map[string]any) error {
 	return nil
 }
 func monitorEligible(p *ent.Product) bool {
-	return !p.IsLocked && p.SubsiteID == 0 && (p.Status > 0 || p.Status == 0 && p.AutoListing && p.ListingReason == "stock_out")
+	return p.ProductKind != "sms_channel" && !p.IsLocked && p.SubsiteID == 0 && (p.Status > 0 || p.Status == 0 && p.AutoListing && p.ListingReason == "stock_out")
 }
 
 // These probes never acquire the catalog-task lease or change catalog metadata.
@@ -93,7 +93,7 @@ func (s *SyncService) ScanLowStock(ctx context.Context) {
 }
 func (s *SyncService) ensureStockSlots(ctx context.Context, conn *ent.SupplyConnection) error {
 	c := s.repo.entClient(ctx)
-	ps, err := c.Product.Query().Where(product.SubsiteID(0), product.UpstreamSourceID(conn.ID), product.IsLocked(false), product.Or(product.StatusGT(0), product.And(product.Status(0), product.AutoListing(true), product.ListingReason("stock_out"))), func(outer *entsql.Selector) {
+	ps, err := c.Product.Query().Where(product.SubsiteID(0), product.UpstreamSourceID(conn.ID), product.IsLocked(false), product.ProductKindNEQ("sms_channel"), product.Or(product.StatusGT(0), product.And(product.Status(0), product.AutoListing(true), product.ListingReason("stock_out"))), func(outer *entsql.Selector) {
 		sk := entsql.Table(productsku.Table)
 		m := entsql.Table(supplymapping.Table)
 		mappings := entsql.Select(m.C(supplymapping.FieldID)).From(m).Where(entsql.And(
@@ -166,6 +166,7 @@ func (s *SyncService) probeLowStock(ctx context.Context, conn *ent.SupplyConnect
 		productMatch := entsql.Select(p.C(product.FieldID)).From(p).Where(entsql.And(
 			entsql.ColumnsEQ(p.C(product.FieldID), outer.C(supplymapping.FieldLocalProductID)),
 			entsql.EQ(p.C(product.FieldSubsiteID), 0), entsql.EQ(p.C(product.FieldIsLocked), false),
+			entsql.NEQ(p.C(product.FieldProductKind), "sms_channel"),
 			entsql.EQ(p.C(product.FieldUpstreamSourceID), conn.ID),
 			entsql.ColumnsEQ(p.C(product.FieldUpstreamProductCode), outer.C(supplymapping.FieldUpstreamProduct)),
 			entsql.Or(entsql.GT(p.C(product.FieldStatus), 0), entsql.And(entsql.EQ(p.C(product.FieldStatus), 0), entsql.EQ(p.C(product.FieldAutoListing), true), entsql.EQ(p.C(product.FieldListingReason), "stock_out"))),

@@ -225,6 +225,9 @@ type SMSIntent func(*sql.Selector)
 // SMSOperation is the predicate function for smsoperation builders.
 type SMSOperation func(*sql.Selector)
 
+// SMSRetailQuote is the predicate function for smsretailquote builders.
+type SMSRetailQuote func(*sql.Selector)
+
 // SecurityAuditLog is the predicate function for securityauditlog builders.
 type SecurityAuditLog func(*sql.Selector)
 

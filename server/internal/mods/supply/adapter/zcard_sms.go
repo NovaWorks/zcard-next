@@ -9,10 +9,17 @@ import (
 )
 
 func (a *zCardAdapter) CreateSMS(ctx context.Context, req supplyport.SMSPurchase) (*supplyport.SMSOrder, error) {
-	if req.ProductID == "" || req.Quantity != 1 || req.RequiredCapability != supplyport.SMSCapability || req.Currency != "CNY" || req.MaxSupplyAmountCents <= 0 || req.DownstreamOrderNo == "" || utf8.RuneCountInString(req.DownstreamOrderNo) > 64 {
+	if req.ProductID == "" || req.Quantity != 1 || (req.RequiredCapability != supplyport.SMSCapability && req.RequiredCapability != supplyport.SMSProductPurchase) || req.Currency != "CNY" || req.MaxSupplyAmountCents <= 0 || req.DownstreamOrderNo == "" || utf8.RuneCountInString(req.DownstreamOrderNo) > 64 {
 		return nil, fmt.Errorf("adapter.zcard: invalid SMS purchase intent")
 	}
-	raw, err := a.request(withoutRetries(ctx), "POST", "/api/supply/orders", nil, req)
+	path := "/api/supply/orders"
+	if req.RequiredCapability == supplyport.SMSProductPurchase {
+		if req.SMSQuoteID == "" {
+			return nil, fmt.Errorf("adapter.zcard: missing channel quote")
+		}
+		path = "/api/supply/sms/channel-orders"
+	}
+	raw, err := a.request(withoutRetries(ctx), "POST", path, nil, req)
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +118,10 @@ func (a *zCardAdapter) RefreshProduct(ctx context.Context, source *Product) (*Pr
 		return nil, fmt.Errorf("adapter.zcard: product identity mismatch")
 	}
 	copy := *source
+	if normalizedProductKind(p.ProductKind) != normalizedProductKind(source.ProductKind) {
+		return nil, fmt.Errorf("adapter.zcard: product kind changed")
+	}
+	copy.ProductKind = normalizedProductKind(p.ProductKind)
 	copy.Price = int64(p.Price)
 	copy.FactoryPrice = int64(p.Price)
 	copy.IsActive = p.IsActive

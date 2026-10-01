@@ -58,6 +58,20 @@ func (_u *ProductUpdate) AddSubsiteID(v int64) *ProductUpdate {
 	return _u
 }
 
+// SetProductKind sets the "product_kind" field.
+func (_u *ProductUpdate) SetProductKind(v string) *ProductUpdate {
+	_u.mutation.SetProductKind(v)
+	return _u
+}
+
+// SetNillableProductKind sets the "product_kind" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableProductKind(v *string) *ProductUpdate {
+	if v != nil {
+		_u.SetProductKind(*v)
+	}
+	return _u
+}
+
 // SetDeliveryKind sets the "delivery_kind" field.
 func (_u *ProductUpdate) SetDeliveryKind(v string) *ProductUpdate {
 	_u.mutation.SetDeliveryKind(v)
@@ -1077,6 +1091,9 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.AddedSubsiteID(); ok {
 		_spec.AddField(product.FieldSubsiteID, field.TypeUint64, value)
 	}
+	if value, ok := _u.mutation.ProductKind(); ok {
+		_spec.SetField(product.FieldProductKind, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.DeliveryKind(); ok {
 		_spec.SetField(product.FieldDeliveryKind, field.TypeString, value)
 	}
@@ -1458,6 +1475,20 @@ func (_u *ProductUpdateOne) SetNillableSubsiteID(v *uint64) *ProductUpdateOne {
 // AddSubsiteID adds value to the "subsite_id" field.
 func (_u *ProductUpdateOne) AddSubsiteID(v int64) *ProductUpdateOne {
 	_u.mutation.AddSubsiteID(v)
+	return _u
+}
+
+// SetProductKind sets the "product_kind" field.
+func (_u *ProductUpdateOne) SetProductKind(v string) *ProductUpdateOne {
+	_u.mutation.SetProductKind(v)
+	return _u
+}
+
+// SetNillableProductKind sets the "product_kind" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableProductKind(v *string) *ProductUpdateOne {
+	if v != nil {
+		_u.SetProductKind(*v)
+	}
 	return _u
 }
 
@@ -2509,6 +2540,9 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if value, ok := _u.mutation.AddedSubsiteID(); ok {
 		_spec.AddField(product.FieldSubsiteID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.ProductKind(); ok {
+		_spec.SetField(product.FieldProductKind, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.DeliveryKind(); ok {
 		_spec.SetField(product.FieldDeliveryKind, field.TypeString, value)

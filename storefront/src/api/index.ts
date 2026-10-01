@@ -34,6 +34,7 @@ export interface Sku {
 }
 
 export interface Product {
+ product_kind?: string;
  delivery_kind?:string; sms_product?:Record<string,string>; sms_sales_enabled?:boolean;
  goods_type?:string; shipping_mode?:string; shipping_fee_cents?:number; shipping_countries?:string[];
  fulfillment_mode?: string; manual_stock?: number;

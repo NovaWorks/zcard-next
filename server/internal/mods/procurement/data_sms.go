@@ -232,7 +232,7 @@ func (s *ProcureService) smsReplayOperation(ctx context.Context, row *ent.SMSInt
 			}
 			if errors.As(actionErr, &fault) {
 				status, reason, _ := fault.SMSFailure()
-				review = review || status == 409 && reason != "supply.ALLOCATING"
+				review = review || status == 409 && reason != "supply.ALLOCATING" && reason != "order.CONCURRENT_UPDATE"
 			}
 			if review {
 				q.SetStatus("review").SetErrorCode("operation_reconciliation_required")
@@ -422,7 +422,7 @@ func (s *ProcureService) smsFailure(ctx context.Context, row *ent.SMSIntent, err
 		if status == 401 || status == 403 {
 			code = "account_unavailable"
 		}
-		if status == 409 && reason != "supply.ALLOCATING" {
+		if status == 409 && reason != "supply.ALLOCATING" && reason != "order.CONCURRENT_UPDATE" {
 			s.smsReview(ctx, row, "upstream_conflict")
 			return
 		}

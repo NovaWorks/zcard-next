@@ -372,6 +372,9 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 					return e
 				}
 				p := list0.Items[i]
+				if p.ProductKind == "sms_channel" {
+					continue // Stock belongs to each offer, never to the channel product.
+				}
 				stockTotal++
 				if p.Stock < -1 {
 					stockFailed++
@@ -595,7 +598,7 @@ func (s *SyncService) syncOneLocked(ctx context.Context, taskID uint64, task *en
 
 	// upsert 本地商品（价格 -1 = 不更新）
 	write := catalogport.UpstreamProductInput{
-		DeliveryKind: p.DeliveryKind, SMSProduct: p.SMSProduct,
+		ProductKind: p.ProductKind, DeliveryKind: p.DeliveryKind, SMSProduct: p.SMSProduct,
 		ConnectionID:        conn.ID,
 		UpstreamProductCode: p.ID,
 		UpstreamSyncedAt:    time.Now().UTC(),
@@ -777,6 +780,10 @@ func stockObservationTime(p *adapter.Product) time.Time {
 func (s *SyncService) backfillStocks(ctx context.Context, a adapter.Adapter, cfg scheduleSettings, items []adapter.Product, taskID uint64) error {
 	var missing []int
 	for i := range items {
+		if items[i].ProductKind == "sms_channel" {
+			items[i].Stock = -2
+			continue
+		}
 		// ACG 的目录库存由调用方先标为未知；其他协议明确的 0/-1 保持原语义。
 		if items[i].Stock < -1 {
 			missing = append(missing, i)
@@ -1050,7 +1057,13 @@ func (s *SyncService) importOne(ctx context.Context, conn *ent.SupplyConnection,
 	rule := productPricingRule{Mode: mode, Percent: markupPercent, Amount: markupAmount}
 	importPrice := func(upstream int64) int64 { return rule.price(conn, upstream) }
 	price := importPrice(p.Price)
-	if p.IsActive && mode != PriceModePending && (p.Price <= 0 || price <= 0) {
+	if p.ProductKind == "sms_channel" {
+		if conn.Driver != "zcard" || conn.ExchangeRate != 1 || len(p.SKUs) > 0 {
+			return false, fmt.Errorf("渠道接码商品须使用人民币 ZCard 连接且无 SKU")
+		}
+		price = 0
+	}
+	if p.ProductKind != "sms_channel" && p.IsActive && mode != PriceModePending && (p.Price <= 0 || price <= 0) {
 		return false, fmt.Errorf("商品 %s 报价无效，未导入", p.ID)
 	}
 	status := int8(1)
@@ -1068,7 +1081,7 @@ func (s *SyncService) importOne(ctx context.Context, conn *ent.SupplyConnection,
 		return false, merr
 	}
 	write := catalogport.UpstreamProductInput{
-		DeliveryKind: p.DeliveryKind, SMSProduct: p.SMSProduct,
+		ProductKind: p.ProductKind, DeliveryKind: p.DeliveryKind, SMSProduct: p.SMSProduct,
 		ConnectionID:        conn.ID,
 		UpstreamProductCode: p.ID,
 		UpstreamSyncedAt:    time.Now().UTC(),

@@ -31,6 +31,9 @@ func ObserveListing(ctx context.Context, d *Data, p *ent.Product, stock int32, a
 		return nil
 	}
 	q := Client(ctx, d).Product.UpdateOneID(p.ID).SetListingObservedAt(checked.UnixMilli())
+	if p.ProductKind == "sms_channel" {
+		return q.SetAutoListing(false).SetListingZeroSince(0).SetListingRestocked(false).SetListingMessage("接码渠道库存由选项报价确认，普通库存自动管理已暂停").Exec(ctx)
+	}
 	if stock < -1 && active {
 		return q.SetListingZeroSince(0).SetListingMessage("库存待确认，保留当前上下架状态").Exec(ctx)
 	}

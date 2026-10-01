@@ -9,11 +9,16 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsintent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsretailquote"
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
 	"github.com/google/uuid"
+	"time"
 )
 
 func (uc *OrderUsecase) freezeSMS(ctx context.Context, it *ent.OrderItem, q supplyport.SMSQuote) error {
+	return uc.freezeSMSSelection(ctx, it, q, CreateOrderInput{}, "")
+}
+func (uc *OrderUsecase) freezeSMSSelection(ctx context.Context, it *ent.OrderItem, q supplyport.SMSQuote, in CreateOrderInput, orderNo string) error {
 	c := data.Client(ctx, uc.Data)
 	p, err := c.Product.Get(ctx, it.ProductID)
 	if err != nil {
@@ -30,9 +35,19 @@ func (uc *OrderUsecase) freezeSMS(ctx context.Context, it *ent.OrderItem, q supp
 		return fmt.Errorf("order.FORM_INVALID: 接码商品或货源已变化")
 	}
 	request := supplyport.SMSPurchase{ProductID: p.UpstreamProductCode, Quantity: 1, DownstreamOrderNo: "sms_" + uuid.NewString(), RequiredCapability: supplyport.SMSCapability, MaxSupplyAmountCents: supplyport.Integer(q.Amount), Currency: "CNY"}
+	metadata := p.SmsProduct
+	if p.ProductKind == "sms_channel" {
+		retail, e := uc.retailSMSQuote(ctx, p, in, true, orderNo)
+		if e != nil {
+			return e
+		}
+		request.RequiredCapability = supplyport.SMSProductPurchase
+		request.SMSQuoteID = retail.UpstreamQuoteID
+		metadata = retail.Selection
+	}
 	raw, _ := json.Marshal(request)
 	snap, _ := json.Marshal(data.FrozenSMS{Description: p.Description, ConnectionID: q.ConnectionID, Identity: q.Identity, Request: string(raw), Hash: fmt.Sprintf("%x", sha256.Sum256(raw)), RequestNo: request.DownstreamOrderNo})
-	return c.OrderItem.UpdateOneID(it.ID).SetDeliveryKind(supplyport.SMSDelivery).SetSmsProduct(p.SmsProduct).SetSmsPurchaseSnapshot(string(snap)).SetCost(q.Amount).Exec(ctx)
+	return c.OrderItem.UpdateOneID(it.ID).SetDeliveryKind(supplyport.SMSDelivery).SetSmsProduct(metadata).SetSmsPurchaseSnapshot(string(snap)).SetCost(q.Amount).Exec(ctx)
 }
 func (uc *OrderUsecase) createSMSIntents(ctx context.Context, o *ent.Order) error {
 	c := data.Client(ctx, uc.Data)
@@ -94,6 +109,17 @@ func (uc *OrderUsecase) validateSMSPayment(ctx context.Context, orderID uint64) 
 		var req supplyport.SMSPurchase
 		if json.Unmarshal([]byte(it.SmsPurchaseSnapshot), &f) != nil || json.Unmarshal([]byte(f.Request), &req) != nil {
 			return fmt.Errorf("接码购买意图异常")
+		}
+		if req.RequiredCapability == supplyport.SMSProductPurchase {
+			o, e := c.Order.Get(ctx, it.OrderID)
+			if e != nil {
+				return e
+			}
+			quote, e := c.SMSRetailQuote.Query().Where(smsretailquote.ConsumedBy(o.OrderNo), smsretailquote.ProductID(it.ProductID), smsretailquote.UserID(o.UserID), smsretailquote.SubsiteID(o.SubsiteID)).Only(ctx)
+			if e != nil || quote.ExpiresAt <= time.Now().Unix() {
+				return fmt.Errorf("接码报价已过期，请取消未付款订单后重新选价")
+			}
+			continue
 		}
 		q, e := g.PrepareSMS(ctx, f.ConnectionID, req.ProductID)
 		if e != nil {

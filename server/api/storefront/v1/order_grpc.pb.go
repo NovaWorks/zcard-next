@@ -404,14 +404,16 @@ var StoreOrderService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	StoreSMSService_GetSMS_FullMethodName = "/zcard.api.storefront.v1.StoreSMSService/GetSMS"
-	StoreSMSService_ActSMS_FullMethodName = "/zcard.api.storefront.v1.StoreSMSService/ActSMS"
+	StoreSMSService_ListSMSProduct_FullMethodName = "/zcard.api.storefront.v1.StoreSMSService/ListSMSProduct"
+	StoreSMSService_GetSMS_FullMethodName         = "/zcard.api.storefront.v1.StoreSMSService/GetSMS"
+	StoreSMSService_ActSMS_FullMethodName         = "/zcard.api.storefront.v1.StoreSMSService/ActSMS"
 )
 
 // StoreSMSServiceClient is the client API for StoreSMSService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StoreSMSServiceClient interface {
+	ListSMSProduct(ctx context.Context, in *SMSProductHistoryRequest, opts ...grpc.CallOption) (*SMSProductHistoryReply, error)
 	GetSMS(ctx context.Context, in *SMSOrderRequest, opts ...grpc.CallOption) (*SMSOrderReply, error)
 	ActSMS(ctx context.Context, in *SMSActionRequest, opts ...grpc.CallOption) (*SMSOrderReply, error)
 }
@@ -422,6 +424,16 @@ type storeSMSServiceClient struct {
 
 func NewStoreSMSServiceClient(cc grpc.ClientConnInterface) StoreSMSServiceClient {
 	return &storeSMSServiceClient{cc}
+}
+
+func (c *storeSMSServiceClient) ListSMSProduct(ctx context.Context, in *SMSProductHistoryRequest, opts ...grpc.CallOption) (*SMSProductHistoryReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SMSProductHistoryReply)
+	err := c.cc.Invoke(ctx, StoreSMSService_ListSMSProduct_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *storeSMSServiceClient) GetSMS(ctx context.Context, in *SMSOrderRequest, opts ...grpc.CallOption) (*SMSOrderReply, error) {
@@ -448,6 +460,7 @@ func (c *storeSMSServiceClient) ActSMS(ctx context.Context, in *SMSActionRequest
 // All implementations must embed UnimplementedStoreSMSServiceServer
 // for forward compatibility.
 type StoreSMSServiceServer interface {
+	ListSMSProduct(context.Context, *SMSProductHistoryRequest) (*SMSProductHistoryReply, error)
 	GetSMS(context.Context, *SMSOrderRequest) (*SMSOrderReply, error)
 	ActSMS(context.Context, *SMSActionRequest) (*SMSOrderReply, error)
 	mustEmbedUnimplementedStoreSMSServiceServer()
@@ -460,6 +473,9 @@ type StoreSMSServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedStoreSMSServiceServer struct{}
 
+func (UnimplementedStoreSMSServiceServer) ListSMSProduct(context.Context, *SMSProductHistoryRequest) (*SMSProductHistoryReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSMSProduct not implemented")
+}
 func (UnimplementedStoreSMSServiceServer) GetSMS(context.Context, *SMSOrderRequest) (*SMSOrderReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSMS not implemented")
 }
@@ -485,6 +501,24 @@ func RegisterStoreSMSServiceServer(s grpc.ServiceRegistrar, srv StoreSMSServiceS
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&StoreSMSService_ServiceDesc, srv)
+}
+
+func _StoreSMSService_ListSMSProduct_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SMSProductHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreSMSServiceServer).ListSMSProduct(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreSMSService_ListSMSProduct_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreSMSServiceServer).ListSMSProduct(ctx, req.(*SMSProductHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _StoreSMSService_GetSMS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -530,6 +564,10 @@ var StoreSMSService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.storefront.v1.StoreSMSService",
 	HandlerType: (*StoreSMSServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListSMSProduct",
+			Handler:    _StoreSMSService_ListSMSProduct_Handler,
+		},
 		{
 			MethodName: "GetSMS",
 			Handler:    _StoreSMSService_GetSMS_Handler,

@@ -194,6 +194,7 @@ message GetProductRequest {
 
 // AdminProduct 管理面商品（含成本价等敏感字段）。
 message AdminProduct {
+ string product_kind = 70;
   string goods_type = 50;
   string shipping_mode = 51;
   int64 shipping_fee_cents = 52;

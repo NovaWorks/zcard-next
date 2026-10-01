@@ -1713,6 +1713,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "product_kind", Type: field.TypeString, Default: "standard"},
 		{Name: "delivery_kind", Type: field.TypeString, Default: "card"},
 		{Name: "sms_product", Type: field.TypeJSON, Nullable: true},
 		{Name: "category_id", Type: field.TypeUint64, Nullable: true},
@@ -1771,27 +1772,27 @@ var (
 			{
 				Name:    "product_subsite_id_slug",
 				Unique:  true,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[14]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[15]},
 			},
 			{
 				Name:    "product_subsite_id_category_id",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[6]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[7]},
 			},
 			{
 				Name:    "product_subsite_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[35]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[36]},
 			},
 			{
 				Name:    "product_upstream_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[36]},
+				Columns: []*schema.Column{ProductsColumns[37]},
 			},
 			{
 				Name:    "product_subsite_id_upstream_source_id_upstream_product_code",
 				Unique:  true,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[36], ProductsColumns[37]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[37], ProductsColumns[38]},
 			},
 		},
 	}
@@ -2401,6 +2402,45 @@ var (
 				Name:    "smsoperation_intent_id_status",
 				Unique:  false,
 				Columns: []*schema.Column{SmsOperationsColumns[4], SmsOperationsColumns[7]},
+			},
+		},
+	}
+	// SmsRetailQuotesColumns holds the columns for the "sms_retail_quotes" table.
+	SmsRetailQuotesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 64},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "user_id", Type: field.TypeUint64},
+		{Name: "product_id", Type: field.TypeUint64},
+		{Name: "connection_id", Type: field.TypeUint64},
+		{Name: "connection_identity", Type: field.TypeString},
+		{Name: "pricing_revision", Type: field.TypeString},
+		{Name: "product_revision", Type: field.TypeInt64},
+		{Name: "upstream_quote_id", Type: field.TypeString, Size: 64},
+		{Name: "upstream_product_id", Type: field.TypeString},
+		{Name: "cost_cents", Type: field.TypeInt64},
+		{Name: "amount_cents", Type: field.TypeInt64},
+		{Name: "expires_at", Type: field.TypeInt64},
+		{Name: "offer_name", Type: field.TypeString},
+		{Name: "selection", Type: field.TypeJSON, Nullable: true},
+		{Name: "consumed_by", Type: field.TypeString, Default: ""},
+	}
+	// SmsRetailQuotesTable holds the schema information for the "sms_retail_quotes" table.
+	SmsRetailQuotesTable = &schema.Table{
+		Name:       "sms_retail_quotes",
+		Columns:    SmsRetailQuotesColumns,
+		PrimaryKey: []*schema.Column{SmsRetailQuotesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "smsretailquote_subsite_id_user_id_product_id",
+				Unique:  false,
+				Columns: []*schema.Column{SmsRetailQuotesColumns[3], SmsRetailQuotesColumns[4], SmsRetailQuotesColumns[5]},
+			},
+			{
+				Name:    "smsretailquote_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{SmsRetailQuotesColumns[14]},
 			},
 		},
 	}
@@ -3323,6 +3363,7 @@ var (
 		RolePermissionsTable,
 		SmsIntentsTable,
 		SmsOperationsTable,
+		SmsRetailQuotesTable,
 		SecurityAuditLogsTable,
 		SessionsTable,
 		SettingsTable,

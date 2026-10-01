@@ -55,3 +55,19 @@ func TestSMSConfirmedRefundSupersedesActionWarning(t *testing.T) {
 		t.Fatal("obsolete action warning obscures confirmed refund", e, got)
 	}
 }
+
+func TestSMSReplyIdentifiesExactBrowserOperation(t *testing.T) {
+	s, d, row := smsEnv(t)
+	ctx := context.Background()
+	first, second := uuid.NewString(), uuid.NewString()
+	d.Client.SMSOperation.Create().SetIntentID(row.ID).SetOperationID("smsop_" + first).SetAction("cancel").SetStatus("rejected").SaveX(ctx)
+	got, e := NewStoreSMSService(s).reply(ctx, row)
+	if e != nil || got.OperationRequestId != first || got.OperationStatus != "rejected" {
+		t.Fatal("old receipt not identified", e, got)
+	}
+	d.Client.SMSOperation.Create().SetIntentID(row.ID).SetOperationID("smsop_" + second).SetAction("finish").SetStatus("pending").SaveX(ctx)
+	got, e = NewStoreSMSService(s).reply(ctx, row)
+	if e != nil || got.OperationRequestId != second || got.OperationAction != "finish" || got.OperationStatus != "pending" {
+		t.Fatal("new operation confused with old receipt", e, got)
+	}
+}

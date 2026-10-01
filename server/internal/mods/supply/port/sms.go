@@ -51,6 +51,7 @@ type SMSSnapshot struct {
 	ErrorCode           string  `json:"error_code"`
 }
 type SMSPurchase struct {
+	SMSQuoteID           string  `json:"sms_quote_id,omitempty"`
 	ProductID            string  `json:"product_id"`
 	Quantity             int     `json:"quantity"`
 	DownstreamOrderNo    string  `json:"downstream_order_no"`

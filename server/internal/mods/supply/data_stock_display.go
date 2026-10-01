@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
 	"golang.org/x/sync/singleflight"
@@ -41,6 +42,15 @@ func (g *Gateway) DisplayStock(ctx context.Context, connectionID uint64, code st
 		bounded, cancel := context.WithTimeout(context.WithoutCancel(ctx), 8*time.Second)
 		defer cancel()
 		m, err := data.Client(bounded, g.repo.data).SupplyMapping.Query().Where(supplymapping.ConnectionID(connectionID), supplymapping.UpstreamProduct(code), supplymapping.UpstreamSkuEQ("")).Only(bounded)
+		if err == nil {
+			channel, e := data.Client(bounded, g.repo.data).Product.Query().Where(product.ID(m.LocalProductID), product.ProductKind("sms_channel")).Exist(bounded)
+			if e != nil {
+				return int32(-2), e
+			}
+			if channel {
+				return int32(-2), nil
+			}
+		}
 		if err == nil && !m.StockCheckedAt.IsZero() && time.Since(m.StockCheckedAt) < 15*time.Second {
 			return m.UpStock, nil
 		}

@@ -10,6 +10,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 )
 
@@ -162,5 +164,53 @@ func TestListingBatchPreviewConflictScopeAndRetry(t *testing.T) {
 	preview, e = s.ManageProductListing(ctx, &adminv1.ManageProductListingRequest{Action: "enable", Ids: []uint64{b.ID}})
 	if e != nil || preview.Unsupported != 1 {
 		t.Fatal("mixed source accepted", e)
+	}
+}
+
+func TestChannelRejectsAggregateAutoListingAndPreservesSaleStatus(t *testing.T) {
+	d, s := newStatsEnv(t)
+	ctx := batchContext()
+	p := d.Client.Product.Create().SetName("service").SetSlug("sms-service-listing").SetProductKind("sms_channel").SetDeliveryKind("sms_activation").SetPrice(0).SetStatus(1).SetAutoListing(true).SetUpstreamSourceID(1).SaveX(ctx)
+	out, e := s.ManageProductListing(ctx, &adminv1.ManageProductListingRequest{Action: "enable", Ids: []uint64{p.ID}})
+	if e != nil || out.Unsupported != 1 {
+		t.Fatal("channel advertised ordinary auto listing", e, out)
+	}
+	e = data.Tx(ctx, d, func(ctx context.Context) error {
+		current, e := data.GuardProductWrite(ctx, d, p.ID)
+		if e != nil {
+			return e
+		}
+		return data.ObserveListing(ctx, d, current, 0, true, time.Now().Add(-time.Minute))
+	})
+	if e != nil {
+		t.Fatal(e)
+	}
+	got := d.Client.Product.GetX(ctx, p.ID)
+	if got.Status != 1 || got.AutoListing || got.ListingZeroSince != 0 {
+		t.Fatal("aggregate stock changed service availability", got)
+	}
+}
+
+func TestHiddenChannelDetailMatchesMemberPurchaseVisibility(t *testing.T) {
+	d, s := newStatsEnv(t)
+	base := context.Background()
+	p := d.Client.Product.Create().SetName("hidden service").SetSlug("hidden-service-detail").SetProductKind("sms_channel").SetStatus(2).SaveX(base)
+	uc := NewCatalogUsecase(s.repo)
+	for _, ctx := range []context.Context{base, identity.WithClaims(base, &authn.Claims{Subject: 1, Realm: authn.RealmAdmin})} {
+		if _, e := uc.GetVisible(ctx, 0, p.ID); e == nil {
+			t.Fatal("hidden service exposed to non-member")
+		}
+	}
+	member := identity.WithClaims(base, &authn.Claims{Subject: 1, Realm: authn.RealmUser})
+	if _, e := uc.GetVisible(member, 0, p.ID); e != nil {
+		t.Fatal("member cannot open purchasable hidden service", e)
+	}
+	d.Client.Product.UpdateOneID(p.ID).SetProductKind("standard").ExecX(base)
+	if _, e := uc.GetVisible(member, 0, p.ID); e == nil {
+		t.Fatal("ordinary hidden product behavior changed")
+	}
+	d.Client.Product.UpdateOneID(p.ID).SetProductKind("sms_channel").SetStatus(0).ExecX(base)
+	if _, e := uc.GetVisible(member, 0, p.ID); e == nil {
+		t.Fatal("unlisted service became purchasable")
 	}
 }

@@ -23,6 +23,7 @@ var ProviderSet = wire.NewSet(
 	NewPacer,
 	NewScheduler,
 	NewGateway,
+	NewStoreSMSChannelService,
 	wire.Bind(new(port.UpstreamGateway), new(*Gateway)),
 	// ：对账上游数据源端口（dashboard 消费，通道 A）
 	wire.Bind(new(dashboardport.UpstreamOrderSource), new(*Gateway)),

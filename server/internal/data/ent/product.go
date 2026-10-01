@@ -24,6 +24,8 @@ type Product struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// 租户（0=主站；由 interceptor 自动注入，业务不手写）
 	SubsiteID uint64 `json:"subsite_id,omitempty"`
+	// ProductKind holds the value of the "product_kind" field.
+	ProductKind string `json:"product_kind,omitempty"`
 	// DeliveryKind holds the value of the "delivery_kind" field.
 	DeliveryKind string `json:"delivery_kind,omitempty"`
 	// SmsProduct holds the value of the "sms_product" field.
@@ -166,7 +168,7 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldShippingFee, product.FieldPhysicalStock, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldManualStock, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID, product.FieldListingRestoreStatus, product.FieldListingChangedAt, product.FieldListingObservedAt, product.FieldListingZeroSince, product.FieldListingLastStock, product.FieldLockVersion, product.FieldLockedBy:
 			values[i] = new(sql.NullInt64)
-		case product.FieldDeliveryKind, product.FieldName, product.FieldGoodsType, product.FieldShippingMode, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldFulfillmentMode, product.FieldDeliveryMode, product.FieldUpstreamProductCode, product.FieldListingReason, product.FieldListingMessage:
+		case product.FieldProductKind, product.FieldDeliveryKind, product.FieldName, product.FieldGoodsType, product.FieldShippingMode, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldFulfillmentMode, product.FieldDeliveryMode, product.FieldUpstreamProductCode, product.FieldListingReason, product.FieldListingMessage:
 			values[i] = new(sql.NullString)
 		case product.FieldCreatedAt, product.FieldUpdatedAt, product.FieldUpstreamSyncedAt, product.FieldLockedAt:
 			values[i] = new(sql.NullTime)
@@ -208,6 +210,12 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field subsite_id", values[i])
 			} else if value.Valid {
 				_m.SubsiteID = uint64(value.Int64)
+			}
+		case product.FieldProductKind:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field product_kind", values[i])
+			} else if value.Valid {
+				_m.ProductKind = value.String
 			}
 		case product.FieldDeliveryKind:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -562,6 +570,9 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("subsite_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SubsiteID))
+	builder.WriteString(", ")
+	builder.WriteString("product_kind=")
+	builder.WriteString(_m.ProductKind)
 	builder.WriteString(", ")
 	builder.WriteString("delivery_kind=")
 	builder.WriteString(_m.DeliveryKind)

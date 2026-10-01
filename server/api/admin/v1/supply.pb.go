@@ -1714,6 +1714,7 @@ func (x *PreviewProductsRequest) GetRefresh() bool {
 
 type PreviewProduct struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
+	ProductKind       string                 `protobuf:"bytes,30,opt,name=product_kind,json=productKind,proto3" json:"product_kind,omitempty"`
 	DeliveryKind      string                 `protobuf:"bytes,16,opt,name=delivery_kind,json=deliveryKind,proto3" json:"delivery_kind,omitempty"`
 	SmsProduct        map[string]string      `protobuf:"bytes,17,rep,name=sms_product,json=smsProduct,proto3" json:"sms_product,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Code              string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
@@ -1763,6 +1764,13 @@ func (x *PreviewProduct) ProtoReflect() protoreflect.Message {
 // Deprecated: Use PreviewProduct.ProtoReflect.Descriptor instead.
 func (*PreviewProduct) Descriptor() ([]byte, []int) {
 	return file_admin_v1_supply_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *PreviewProduct) GetProductKind() string {
+	if x != nil {
+		return x.ProductKind
+	}
+	return ""
 }
 
 func (x *PreviewProduct) GetDeliveryKind() string {
@@ -3346,8 +3354,9 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"snapshotId\x12\x12\n" +
 	"\x04page\x18\x06 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\a \x01(\x05R\bpageSize\x12\x18\n" +
-	"\arefresh\x18\x05 \x01(\bR\arefresh\"\xd7\x05\n" +
-	"\x0ePreviewProduct\x12#\n" +
+	"\arefresh\x18\x05 \x01(\bR\arefresh\"\xfa\x05\n" +
+	"\x0ePreviewProduct\x12!\n" +
+	"\fproduct_kind\x18\x1e \x01(\tR\vproductKind\x12#\n" +
 	"\rdelivery_kind\x18\x10 \x01(\tR\fdeliveryKind\x12S\n" +
 	"\vsms_product\x18\x11 \x03(\v22.zcard.api.admin.v1.PreviewProduct.SmsProductEntryR\n" +
 	"smsProduct\x12\x12\n" +

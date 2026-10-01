@@ -85,7 +85,7 @@ func (s *Scheduler) Scan(ctx context.Context) {
 		cfg := loadScheduleConfig(conn)
 		// An explicit per-product opt-in enables its channel's full status
 		// checks even if general collect/price schedules are disabled.
-		hasAuto, e := s.repo.entClient(ctx).Product.Query().Where(product.UpstreamSourceID(conn.ID), product.SubsiteID(0), product.AutoListing(true), product.IsLocked(false), product.StatusGTE(0)).Exist(ctx)
+		hasAuto, e := s.repo.entClient(ctx).Product.Query().Where(product.UpstreamSourceID(conn.ID), product.SubsiteID(0), product.AutoListing(true), product.IsLocked(false), product.StatusGTE(0), product.ProductKindNEQ("sms_channel")).Exist(ctx)
 		if e != nil {
 			s.log.Warn("scheduler.listing_failed", "err", e)
 			continue

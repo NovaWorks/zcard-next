@@ -14,8 +14,9 @@
         <div class="pc-name" :title="p.name">{{ p.name }}</div>
         <span v-if="p.is_recommend || p.category_recommend" class="pc-recommend-tag">推荐</span>
       </div>
-      <div class="pc-price">{{ formatMoney(flash.price(p.price_cents, p.flash_sale)) }}<span v-if="flash.active(p.flash_sale)" class="pc-flash-label">{{ (p.flash_sale?.remaining || 0) > 0 ? '秒杀' : '已抢完' }}</span></div>
-      <div v-if="showSales || showStock" class="pc-meta">
+      <div v-if="p.product_kind === 'sms_channel'" class="pc-price">进入选价</div>
+      <div v-else class="pc-price">{{ formatMoney(flash.price(p.price_cents, p.flash_sale)) }}<span v-if="flash.active(p.flash_sale)" class="pc-flash-label">{{ (p.flash_sale?.remaining || 0) > 0 ? '秒杀' : '已抢完' }}</span></div>
+      <div v-if="p.product_kind !== 'sms_channel' && (showSales || showStock)" class="pc-meta">
         <span v-if="showSales" class="pc-sales">已售 {{ p.sales_count || 0 }}</span>
         <span v-if="showStock && p.stock_visible && p.stock_status === 'stale'" class="pc-stock-reference" :title="stockHint(p)">{{ p.stock_reference === -1 ? '上次库存不限' : `参考库存 ${p.stock_reference ?? 0}` }}</span>
         <span v-else-if="showStock && p.stock_visible && stockValue(p) >= 0">{{ stockValue(p) === 0 ? '暂时售罄' : `库存 ${stockValue(p)}` }}</span>
@@ -34,7 +35,7 @@ const flash = useFlashOffers();
 import { formatMoney } from '@/api/client';
 import { NO_IMAGE, onImgError } from '@/no-image';
 function stockValue(p: Product) { return p.stock ?? (p.stock_status === 'unknown' || p.stock_status === 'stale' ? -2 : 0); }
-function buyLabel(p: Product, mode?: string) { return mode !== 'list' ? '查看详情' : stockValue(p) === 0 ? '查看' : stockValue(p) < -1 ? '查看详情' : '购买'; }
+function buyLabel(p: Product, mode?: string) { if(p.product_kind === 'sms_channel') return '选价接码'; return mode !== 'list' ? '查看详情' : stockValue(p) === 0 ? '查看' : stockValue(p) < -1 ? '查看详情' : '购买'; }
 function stockHint(p: Product) {
   const date = p.stock_checked_at ? new Date(p.stock_checked_at * 1000).toLocaleString() : '';
   return `上次同步${date ? '：' + date : ''}，仅供参考；进入商品详情重新核对库存`;

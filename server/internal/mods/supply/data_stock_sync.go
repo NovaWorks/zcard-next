@@ -35,7 +35,7 @@ func (s *SyncService) runStockOnly(ctx context.Context, task *ent.SupplySyncTask
 		items := make([]adapter.Product, 0, len(rows))
 		for _, m := range rows {
 			lastID = m.ID
-			exists, err := client.Product.Query().Where(product.ID(m.LocalProductID), product.UpstreamSourceID(conn.ID), product.UpstreamProductCode(m.UpstreamProduct), product.StatusGTE(0)).Exist(ctx)
+			exists, err := client.Product.Query().Where(product.ID(m.LocalProductID), product.UpstreamSourceID(conn.ID), product.UpstreamProductCode(m.UpstreamProduct), product.StatusGTE(0), product.ProductKindNEQ("sms_channel")).Exist(ctx)
 			if err != nil {
 				return err
 			}

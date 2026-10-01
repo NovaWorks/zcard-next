@@ -92,6 +92,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/shipment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsintent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsoperation"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsretailquote"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/stockalert"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
@@ -268,6 +269,8 @@ type Client struct {
 	SMSIntent *SMSIntentClient
 	// SMSOperation is the client for interacting with the SMSOperation builders.
 	SMSOperation *SMSOperationClient
+	// SMSRetailQuote is the client for interacting with the SMSRetailQuote builders.
+	SMSRetailQuote *SMSRetailQuoteClient
 	// SecurityAuditLog is the client for interacting with the SecurityAuditLog builders.
 	SecurityAuditLog *SecurityAuditLogClient
 	// Session is the client for interacting with the Session builders.
@@ -406,6 +409,7 @@ func (c *Client) init() {
 	c.RolePermission = NewRolePermissionClient(c.config)
 	c.SMSIntent = NewSMSIntentClient(c.config)
 	c.SMSOperation = NewSMSOperationClient(c.config)
+	c.SMSRetailQuote = NewSMSRetailQuoteClient(c.config)
 	c.SecurityAuditLog = NewSecurityAuditLogClient(c.config)
 	c.Session = NewSessionClient(c.config)
 	c.Setting = NewSettingClient(c.config)
@@ -598,6 +602,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		RolePermission:           NewRolePermissionClient(cfg),
 		SMSIntent:                NewSMSIntentClient(cfg),
 		SMSOperation:             NewSMSOperationClient(cfg),
+		SMSRetailQuote:           NewSMSRetailQuoteClient(cfg),
 		SecurityAuditLog:         NewSecurityAuditLogClient(cfg),
 		Session:                  NewSessionClient(cfg),
 		Setting:                  NewSettingClient(cfg),
@@ -717,6 +722,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		RolePermission:           NewRolePermissionClient(cfg),
 		SMSIntent:                NewSMSIntentClient(cfg),
 		SMSOperation:             NewSMSOperationClient(cfg),
+		SMSRetailQuote:           NewSMSRetailQuoteClient(cfg),
 		SecurityAuditLog:         NewSecurityAuditLogClient(cfg),
 		Session:                  NewSessionClient(cfg),
 		Setting:                  NewSettingClient(cfg),
@@ -789,7 +795,7 @@ func (c *Client) Use(hooks ...Hook) {
 		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
 		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
 		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
-		c.RiskLockKey, c.RolePermission, c.SMSIntent, c.SMSOperation,
+		c.RiskLockKey, c.RolePermission, c.SMSIntent, c.SMSOperation, c.SMSRetailQuote,
 		c.SecurityAuditLog, c.Session, c.Setting, c.Shipment, c.StockAlert,
 		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
 		c.SupplyCatalogSnapshot, c.SupplyConnection, c.SupplyImportItem,
@@ -822,7 +828,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
 		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
 		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
-		c.RiskLockKey, c.RolePermission, c.SMSIntent, c.SMSOperation,
+		c.RiskLockKey, c.RolePermission, c.SMSIntent, c.SMSOperation, c.SMSRetailQuote,
 		c.SecurityAuditLog, c.Session, c.Setting, c.Shipment, c.StockAlert,
 		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
 		c.SupplyCatalogSnapshot, c.SupplyConnection, c.SupplyImportItem,
@@ -984,6 +990,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SMSIntent.mutate(ctx, m)
 	case *SMSOperationMutation:
 		return c.SMSOperation.mutate(ctx, m)
+	case *SMSRetailQuoteMutation:
+		return c.SMSRetailQuote.mutate(ctx, m)
 	case *SecurityAuditLogMutation:
 		return c.SecurityAuditLog.mutate(ctx, m)
 	case *SessionMutation:
@@ -11008,6 +11016,139 @@ func (c *SMSOperationClient) mutate(ctx context.Context, m *SMSOperationMutation
 	}
 }
 
+// SMSRetailQuoteClient is a client for the SMSRetailQuote schema.
+type SMSRetailQuoteClient struct {
+	config
+}
+
+// NewSMSRetailQuoteClient returns a client for the SMSRetailQuote from the given config.
+func NewSMSRetailQuoteClient(c config) *SMSRetailQuoteClient {
+	return &SMSRetailQuoteClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `smsretailquote.Hooks(f(g(h())))`.
+func (c *SMSRetailQuoteClient) Use(hooks ...Hook) {
+	c.hooks.SMSRetailQuote = append(c.hooks.SMSRetailQuote, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `smsretailquote.Intercept(f(g(h())))`.
+func (c *SMSRetailQuoteClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SMSRetailQuote = append(c.inters.SMSRetailQuote, interceptors...)
+}
+
+// Create returns a builder for creating a SMSRetailQuote entity.
+func (c *SMSRetailQuoteClient) Create() *SMSRetailQuoteCreate {
+	mutation := newSMSRetailQuoteMutation(c.config, OpCreate)
+	return &SMSRetailQuoteCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SMSRetailQuote entities.
+func (c *SMSRetailQuoteClient) CreateBulk(builders ...*SMSRetailQuoteCreate) *SMSRetailQuoteCreateBulk {
+	return &SMSRetailQuoteCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SMSRetailQuoteClient) MapCreateBulk(slice any, setFunc func(*SMSRetailQuoteCreate, int)) *SMSRetailQuoteCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SMSRetailQuoteCreateBulk{err: fmt.Errorf("calling to SMSRetailQuoteClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SMSRetailQuoteCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SMSRetailQuoteCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SMSRetailQuote.
+func (c *SMSRetailQuoteClient) Update() *SMSRetailQuoteUpdate {
+	mutation := newSMSRetailQuoteMutation(c.config, OpUpdate)
+	return &SMSRetailQuoteUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SMSRetailQuoteClient) UpdateOne(_m *SMSRetailQuote) *SMSRetailQuoteUpdateOne {
+	mutation := newSMSRetailQuoteMutation(c.config, OpUpdateOne, withSMSRetailQuote(_m))
+	return &SMSRetailQuoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SMSRetailQuoteClient) UpdateOneID(id string) *SMSRetailQuoteUpdateOne {
+	mutation := newSMSRetailQuoteMutation(c.config, OpUpdateOne, withSMSRetailQuoteID(id))
+	return &SMSRetailQuoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SMSRetailQuote.
+func (c *SMSRetailQuoteClient) Delete() *SMSRetailQuoteDelete {
+	mutation := newSMSRetailQuoteMutation(c.config, OpDelete)
+	return &SMSRetailQuoteDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SMSRetailQuoteClient) DeleteOne(_m *SMSRetailQuote) *SMSRetailQuoteDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SMSRetailQuoteClient) DeleteOneID(id string) *SMSRetailQuoteDeleteOne {
+	builder := c.Delete().Where(smsretailquote.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SMSRetailQuoteDeleteOne{builder}
+}
+
+// Query returns a query builder for SMSRetailQuote.
+func (c *SMSRetailQuoteClient) Query() *SMSRetailQuoteQuery {
+	return &SMSRetailQuoteQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSMSRetailQuote},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SMSRetailQuote entity by its id.
+func (c *SMSRetailQuoteClient) Get(ctx context.Context, id string) (*SMSRetailQuote, error) {
+	return c.Query().Where(smsretailquote.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SMSRetailQuoteClient) GetX(ctx context.Context, id string) *SMSRetailQuote {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SMSRetailQuoteClient) Hooks() []Hook {
+	return c.hooks.SMSRetailQuote
+}
+
+// Interceptors returns the client interceptors.
+func (c *SMSRetailQuoteClient) Interceptors() []Interceptor {
+	return c.inters.SMSRetailQuote
+}
+
+func (c *SMSRetailQuoteClient) mutate(ctx context.Context, m *SMSRetailQuoteMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SMSRetailQuoteCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SMSRetailQuoteUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SMSRetailQuoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SMSRetailQuoteDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SMSRetailQuote mutation op: %q", m.Op())
+	}
+}
+
 // SecurityAuditLogClient is a client for the SecurityAuditLog schema.
 type SecurityAuditLogClient struct {
 	config
@@ -14616,12 +14757,12 @@ type (
 		Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
 		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
 		ResellerRelatedAccount, ResellerSite, Review, RiskLockKey, RolePermission,
-		SMSIntent, SMSOperation, SecurityAuditLog, Session, Setting, Shipment,
-		StockAlert, SupplierAccount, SupplierLedgerEntry, SupplierProductPrice,
-		SupplyCatalogSnapshot, SupplyConnection, SupplyImportItem, SupplyMapping,
-		SupplyNonce, SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User,
-		UserGroup, UserSession, V1IDMap, VirtualReview, VisitLog, WalletAccount,
-		WalletTransaction, Withdrawal []ent.Hook
+		SMSIntent, SMSOperation, SMSRetailQuote, SecurityAuditLog, Session, Setting,
+		Shipment, StockAlert, SupplierAccount, SupplierLedgerEntry,
+		SupplierProductPrice, SupplyCatalogSnapshot, SupplyConnection,
+		SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag,
+		Ticket, TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview,
+		VisitLog, WalletAccount, WalletTransaction, Withdrawal []ent.Hook
 	}
 	inters struct {
 		AdminRole, AdminUser, AffiliateCommission, AuditLog, Banner, Card, CardImport,
@@ -14638,11 +14779,11 @@ type (
 		Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
 		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
 		ResellerRelatedAccount, ResellerSite, Review, RiskLockKey, RolePermission,
-		SMSIntent, SMSOperation, SecurityAuditLog, Session, Setting, Shipment,
-		StockAlert, SupplierAccount, SupplierLedgerEntry, SupplierProductPrice,
-		SupplyCatalogSnapshot, SupplyConnection, SupplyImportItem, SupplyMapping,
-		SupplyNonce, SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User,
-		UserGroup, UserSession, V1IDMap, VirtualReview, VisitLog, WalletAccount,
-		WalletTransaction, Withdrawal []ent.Interceptor
+		SMSIntent, SMSOperation, SMSRetailQuote, SecurityAuditLog, Session, Setting,
+		Shipment, StockAlert, SupplierAccount, SupplierLedgerEntry,
+		SupplierProductPrice, SupplyCatalogSnapshot, SupplyConnection,
+		SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag,
+		Ticket, TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview,
+		VisitLog, WalletAccount, WalletTransaction, Withdrawal []ent.Interceptor
 	}
 )

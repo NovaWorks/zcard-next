@@ -79,6 +79,7 @@ message FlashOffer {
 }
 
 message Product {
+ string product_kind = 70;
  string delivery_kind = 60;
  map<string,string> sms_product = 61;
  bool sms_sales_enabled = 62;

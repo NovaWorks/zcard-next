@@ -294,6 +294,7 @@ func (x *GetProductRequest) GetId() uint64 {
 // AdminProduct 管理面商品（含成本价等敏感字段）。
 type AdminProduct struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
+	ProductKind         string                 `protobuf:"bytes,70,opt,name=product_kind,json=productKind,proto3" json:"product_kind,omitempty"`
 	GoodsType           string                 `protobuf:"bytes,50,opt,name=goods_type,json=goodsType,proto3" json:"goods_type,omitempty"`
 	ShippingMode        string                 `protobuf:"bytes,51,opt,name=shipping_mode,json=shippingMode,proto3" json:"shipping_mode,omitempty"`
 	ShippingFeeCents    int64                  `protobuf:"varint,52,opt,name=shipping_fee_cents,json=shippingFeeCents,proto3" json:"shipping_fee_cents,omitempty"`
@@ -376,6 +377,13 @@ func (x *AdminProduct) ProtoReflect() protoreflect.Message {
 // Deprecated: Use AdminProduct.ProtoReflect.Descriptor instead.
 func (*AdminProduct) Descriptor() ([]byte, []int) {
 	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AdminProduct) GetProductKind() string {
+	if x != nil {
+		return x.ProductKind
+	}
+	return ""
 }
 
 func (x *AdminProduct) GetGoodsType() string {
@@ -5904,8 +5912,9 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"(\n" +
 	"\x11GetProductRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xf8\f\n" +
-	"\fAdminProduct\x12\x1d\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\x9b\r\n" +
+	"\fAdminProduct\x12!\n" +
+	"\fproduct_kind\x18F \x01(\tR\vproductKind\x12\x1d\n" +
 	"\n" +
 	"goods_type\x182 \x01(\tR\tgoodsType\x12#\n" +
 	"\rshipping_mode\x183 \x01(\tR\fshippingMode\x12,\n" +

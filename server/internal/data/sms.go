@@ -8,10 +8,13 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsintent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsretailquote"
 	"os"
+	"time"
 )
 
-func SMSSalesEnabled() bool { return os.Getenv("ZCARD_SMS_SALES_ENABLED") == "true" }
+// SMS purchases are available on normal startup; an explicit false pauses only new sales.
+func SMSSalesEnabled() bool { return os.Getenv("ZCARD_SMS_SALES_ENABLED") != "false" }
 func SMSConnectionIdentity(c *ent.SupplyConnection) string {
 	b, _ := json.Marshal([]any{c.ID, c.Driver, c.BaseURL, c.Credentials})
 	return fmt.Sprintf("%x", sha256.Sum256(b))
@@ -78,6 +81,33 @@ func ValidateSMSPayment(ctx context.Context, c *ent.Client, orderID uint64) erro
 		conn, e := c.SupplyConnection.Get(ctx, f.ConnectionID)
 		if e != nil {
 			return e
+		}
+		var req struct {
+			RequiredCapability string `json:"required_capability"`
+		}
+		if json.Unmarshal([]byte(f.Request), &req) != nil {
+			return fmt.Errorf("接码购买意图无效")
+		}
+		if req.RequiredCapability == "sms_channel_purchase.v1" {
+			o, e := c.Order.Get(ctx, orderID)
+			if e != nil {
+				return e
+			}
+			q, e := c.SMSRetailQuote.Query().Where(smsretailquote.ConsumedBy(o.OrderNo), smsretailquote.ProductID(it.ProductID), smsretailquote.UserID(o.UserID), smsretailquote.SubsiteID(o.SubsiteID)).Only(ctx)
+			if e != nil || q.ExpiresAt <= time.Now().Unix() {
+				return fmt.Errorf("接码报价已过期，请取消未付款订单后重新选价")
+			}
+			p, e := c.Product.Get(ctx, it.ProductID)
+			if e != nil {
+				return e
+			}
+			rev, e := SMSRetailCurrentRevision(ctx, c, p)
+			if e != nil {
+				return e
+			}
+			if p.Status < 1 || p.ProductKind != "sms_channel" || p.LockVersion != q.ProductRevision || rev != q.PricingRevision {
+				return fmt.Errorf("接码商品或加价规则已变化，请取消未付款订单后重新选价")
+			}
 		}
 		if string(conn.Status) != "active" || SMSConnectionIdentity(conn) != f.Identity {
 			return fmt.Errorf("接码货源账号已变化或停用，请重新购买")

@@ -6878,6 +6878,133 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.Product'
+    /api/v1/storefront/products/{productId}/sms/offers:
+        get:
+            tags:
+                - StoreSMSChannelService
+            operationId: StoreSMSChannelService_Offers
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: countryId
+                  in: query
+                  schema:
+                    type: string
+                - name: platformId
+                  in: query
+                  schema:
+                    type: string
+                - name: keyword
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SMSChannelOffersReply'
+    /api/v1/storefront/products/{productId}/sms/options:
+        get:
+            tags:
+                - StoreSMSChannelService
+            operationId: StoreSMSChannelService_Options
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: countryId
+                  in: query
+                  schema:
+                    type: string
+                - name: platformId
+                  in: query
+                  schema:
+                    type: string
+                - name: keyword
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SMSChannelOptionsReply'
+    /api/v1/storefront/products/{productId}/sms/quotes:
+        post:
+            tags:
+                - StoreSMSChannelService
+            operationId: StoreSMSChannelService_Quote
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.SMSChannelQuoteRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SMSChannelQuoteReply'
+    /api/v1/storefront/products/{productId}/sms/sessions:
+        get:
+            tags:
+                - StoreSMSService
+            operationId: StoreSMSService_ListSMSProduct
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SMSProductHistoryReply'
     /api/v1/storefront/shipping/regions:
         get:
             tags:
@@ -7681,6 +7808,8 @@ components:
         zcard.api.admin.v1.AdminProduct:
             type: object
             properties:
+                productKind:
+                    type: string
                 goodsType:
                     type: string
                 shippingMode:
@@ -11196,6 +11325,8 @@ components:
         zcard.api.admin.v1.PreviewProduct:
             type: object
             properties:
+                productKind:
+                    type: string
                 deliveryKind:
                     type: string
                 smsProduct:
@@ -13587,6 +13718,8 @@ components:
                 - items
             type: object
             properties:
+                smsQuoteId:
+                    type: string
                 shippingAddress:
                     type: object
                     additionalProperties:
@@ -14673,6 +14806,8 @@ components:
         zcard.api.storefront.v1.Product:
             type: object
             properties:
+                productKind:
+                    type: string
                 deliveryKind:
                     type: string
                 smsProduct:
@@ -14967,6 +15102,75 @@ components:
                     type: string
                 requestId:
                     type: string
+        zcard.api.storefront.v1.SMSChannelOffer:
+            type: object
+            properties:
+                offerId:
+                    type: string
+                name:
+                    type: string
+                priceCents:
+                    type: string
+                stock:
+                    type: integer
+                    format: int32
+        zcard.api.storefront.v1.SMSChannelOffersReply:
+            type: object
+            properties:
+                offers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.SMSChannelOffer'
+                hasMore:
+                    type: boolean
+        zcard.api.storefront.v1.SMSChannelOption:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+        zcard.api.storefront.v1.SMSChannelOptionsReply:
+            type: object
+            properties:
+                countries:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.SMSChannelOption'
+                platforms:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.SMSChannelOption'
+        zcard.api.storefront.v1.SMSChannelQuoteReply:
+            type: object
+            properties:
+                quoteId:
+                    type: string
+                amountCents:
+                    type: string
+                currency:
+                    type: string
+                expiresAt:
+                    type: string
+                offerName:
+                    type: string
+        zcard.api.storefront.v1.SMSChannelQuoteRequest:
+            type: object
+            properties:
+                productId:
+                    type: string
+                offerId:
+                    type: string
+                countryId:
+                    type: string
+                platformId:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.storefront.v1.SMSOrderReply:
             type: object
             properties:
@@ -14998,6 +15202,26 @@ components:
                     type: string
                 active:
                     type: boolean
+                operationRequestId:
+                    type: string
+        zcard.api.storefront.v1.SMSProductHistoryReply:
+            type: object
+            properties:
+                orders:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.SMSRetailSession'
+        zcard.api.storefront.v1.SMSRetailSession:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                offerName:
+                    type: string
+                amountCents:
+                    type: string
+                sms:
+                    $ref: '#/components/schemas/zcard.api.storefront.v1.SMSOrderReply'
         zcard.api.storefront.v1.SendRegisterCodeReply:
             type: object
             properties: {}
@@ -15603,6 +15827,7 @@ tags:
     - name: StorePaymentService
       description: StorePaymentService 顾客支付。
     - name: StoreReviewService
+    - name: StoreSMSChannelService
     - name: StoreSMSService
     - name: StoreSupplierService
       description: |-

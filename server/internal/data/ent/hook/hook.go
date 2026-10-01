@@ -885,6 +885,18 @@ func (f SMSOperationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SMSOperationMutation", m)
 }
 
+// The SMSRetailQuoteFunc type is an adapter to allow the use of ordinary
+// function as SMSRetailQuote mutator.
+type SMSRetailQuoteFunc func(context.Context, *ent.SMSRetailQuoteMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SMSRetailQuoteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SMSRetailQuoteMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SMSRetailQuoteMutation", m)
+}
+
 // The SecurityAuditLogFunc type is an adapter to allow the use of ordinary
 // function as SecurityAuditLog mutator.
 type SecurityAuditLogFunc func(context.Context, *ent.SecurityAuditLogMutation) (ent.Value, error)

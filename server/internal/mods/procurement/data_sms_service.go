@@ -19,6 +19,7 @@ import (
 	"github.com/go-kratos/kratos/v3/transport"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"strings"
 	"time"
 )
 
@@ -86,6 +87,9 @@ func (s *StoreSMSService) reply(ctx context.Context, row *ent.SMSIntent) (*store
 	if op != nil {
 		out.OperationStatus = op.Status
 		out.OperationAction = op.Action
+		if strings.HasPrefix(op.OperationID, "smsop_") {
+			out.OperationRequestId = strings.TrimPrefix(op.OperationID, "smsop_")
+		}
 		if op.Status == "pending" || op.Status == "review" {
 			out.CanCancel = false
 			out.CanFinish = false

@@ -322,7 +322,7 @@ func (s *SyncService) attemptImportItem(ctx context.Context, task *ent.SupplySyn
 		if e != nil {
 			return e
 		}
-		if fresh.DeliveryKind != p.DeliveryKind || !fresh.IsActive {
+		if fresh.DeliveryKind != p.DeliveryKind || fresh.ProductKind != p.ProductKind || !fresh.IsActive {
 			return fmt.Errorf("接码商品交付类型变化或已下架")
 		}
 		p = *fresh
@@ -386,12 +386,23 @@ func (s *SyncService) attemptImportItem(ctx context.Context, task *ent.SupplySyn
 func (s *SyncService) importStock(ctx context.Context, task *ent.SupplySyncTask, payload *importPayload, conn *ent.SupplyConnection, a adapter.Adapter, item *ent.SupplyImportItem) error {
 	started := time.Now().UTC()
 	stockCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	stock, err := a.GetStock(stockCtx, item.Code, "")
+	local, e := s.repo.entClient(ctx).Product.Get(ctx, item.LocalProductID)
+	if e != nil {
+		cancel()
+		return e
+	}
+	var stock int32
+	var err error
+	if local.ProductKind == "sms_channel" {
+		stock = -2
+	} else {
+		stock, err = a.GetStock(stockCtx, item.Code, "")
+	}
 	cancel()
 	if err != nil {
 		return err
 	}
-	if stock < -1 {
+	if stock < -1 && local.ProductKind != "sms_channel" {
 		return fmt.Errorf("货源库存无效")
 	}
 	return data.Tx(ctx, s.repo.data, func(ctx context.Context) error {

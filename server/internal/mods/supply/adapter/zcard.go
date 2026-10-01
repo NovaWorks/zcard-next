@@ -297,6 +297,7 @@ func (a *zCardAdapter) RefundOrder(ctx context.Context, upstreamOrderID string) 
 
 // zCardProduct 上游商品行（字段对齐 1.x mapProduct）。
 type zCardProduct struct {
+	ProductKind    string             `json:"product_kind"`
 	DeliveryKind   string             `json:"delivery_kind"`
 	SMSProduct     map[string]string  `json:"sms_product"`
 	ID             any                `json:"id"`
@@ -313,7 +314,7 @@ type zCardProduct struct {
 
 func (p zCardProduct) toProduct() Product {
 	return Product{
-		DeliveryKind: normalizedDeliveryKind(p.DeliveryKind), SMSProduct: publicSMSProduct(p.SMSProduct),
+		ProductKind: normalizedProductKind(p.ProductKind), DeliveryKind: normalizedDeliveryKind(p.DeliveryKind), SMSProduct: publicSMSProduct(p.SMSProduct),
 		ID:             idString(p.ID),
 		Name:           p.Name,
 		CategoryID:     idString(p.CategoryID),
@@ -383,7 +384,9 @@ func decodeZCard(raw []byte, v any) error {
 	d.UseNumber()
 	return d.Decode(v)
 }
-func smsCatalogQuery() url.Values { return url.Values{"capabilities": {supplyport.SMSCapability}} }
+func smsCatalogQuery() url.Values {
+	return url.Values{"capabilities": {supplyport.SMSCapability + "," + supplyport.SMSProductCatalog + "," + supplyport.SMSProductPurchase}}
+}
 func normalizedDeliveryKind(v string) string {
 	if v == "" {
 		return "card"
@@ -398,4 +401,11 @@ func publicSMSProduct(in map[string]string) map[string]string {
 		}
 	}
 	return out
+}
+
+func normalizedProductKind(v string) string {
+	if v == "" {
+		return "standard"
+	}
+	return v
 }

@@ -110,6 +110,7 @@ func (uc *OrderUsecase) SetStockGate(g orderport.UpstreamStockGate) {
 
 // CreateOrderInput 下单输入。
 type CreateOrderInput struct {
+	SMSQuoteID      string
 	ShippingAddress map[string]string
 	QuoteKey        string
 	QuoteOnly       bool
@@ -189,6 +190,9 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		if err != nil {
 			return nil, err
 		}
+		if p.ProductKind != "sms_channel" && (in.SMSQuoteID != "") {
+			return nil, fmt.Errorf("order.FORM_INVALID: 报价仅适用于接码渠道商品")
+		}
 		revisions[p.ID] = p.LockVersion
 		if p.DeliveryKind != "" && p.DeliveryKind != "card" {
 			if p.DeliveryKind != supplyport.SMSDelivery {
@@ -211,15 +215,26 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			if data.FulfillmentMode(p, nil) != "upstream" {
 				return nil, fmt.Errorf("order.FORM_INVALID: 接码须使用上游履约")
 			}
-			gateway, ok := uc.StockGate.(supplyport.SMSGateway)
-			if !ok {
-				return nil, fmt.Errorf("order.FORM_INVALID: 接码服务未就绪")
+			if p.ProductKind == "sms_channel" {
+				if in.SubsiteID != 0 || in.QuoteOnly || in.IdempotencyKey == "" {
+					return nil, fmt.Errorf("order.FORM_INVALID: 渠道接码须在主站使用有效报价和请求标识")
+				}
+				q, e := uc.retailSMSQuote(ctx, p, in, false, "")
+				if e != nil {
+					return nil, e
+				}
+				smsQuotes[p.ID] = supplyport.SMSQuote{ProductID: q.UpstreamProductID, ConnectionID: q.ConnectionID, Identity: q.ConnectionIdentity, Amount: q.CostCents}
+			} else {
+				gateway, ok := uc.StockGate.(supplyport.SMSGateway)
+				if !ok {
+					return nil, fmt.Errorf("order.FORM_INVALID: 接码服务未就绪")
+				}
+				quote, e := gateway.PrepareSMS(ctx, p.UpstreamSourceID, p.UpstreamProductCode)
+				if e != nil {
+					return nil, fmt.Errorf("order.FORM_INVALID: %w", e)
+				}
+				smsQuotes[p.ID] = quote
 			}
-			quote, e := gateway.PrepareSMS(ctx, p.UpstreamSourceID, p.UpstreamProductCode)
-			if e != nil {
-				return nil, fmt.Errorf("order.FORM_INVALID: %w", e)
-			}
-			smsQuotes[p.ID] = quote
 			hasSMS = true
 		}
 		if p.GoodsType == "physical" {
@@ -422,7 +437,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			if err != nil {
 				return err
 			}
-			if p.Status != 1 || data.CategoryHidden(hiddenCategories, p.CategoryID) {
+			if (p.Status != 1 && !(p.ProductKind == "sms_channel" && p.Status == 2 && in.UserID > 0)) || data.CategoryHidden(hiddenCategories, p.CategoryID) {
 				return fmt.Errorf("order.PRODUCT_NOT_AVAILABLE") // 下架/隐藏
 			}
 			// ：积分兑换单——全部商品须为积分商品（混合单拒绝，口径清晰）
@@ -435,12 +450,19 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 
 			// Invalid/missing SKUs must not silently fall back to the product price.
 			basePrice := money.Cents(p.Price)
-			if uc.Catalog != nil {
+			if uc.Catalog != nil && p.ProductKind != "sms_channel" {
 				sp, err := uc.Catalog.ResolvePrice(txCtx, item.ProductID, item.SkuID)
 				if err != nil {
 					return fmt.Errorf("order.SKU_INVALID: %w", err)
 				}
 				basePrice = sp
+			}
+			if p.ProductKind == "sms_channel" {
+				q, e := uc.retailSMSQuote(txCtx, p, in, false, "")
+				if e != nil {
+					return e
+				}
+				basePrice = money.Cents(q.AmountCents)
 			}
 			// 商品组必须携带叠加策略；解析失败不能绕过禁止叠加的设置。
 			var group catalogport.GroupDiscount
@@ -458,6 +480,9 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				} else {
 					itemMemberRate = 0
 				}
+			}
+			if p.ProductKind == "sms_channel" {
+				itemMemberRate, groupRate = 0, 0
 			}
 			priceInput := PriceInput{BasePrice: basePrice, Quantity: 1, MemberRate: itemMemberRate, GroupRate: groupRate}
 			discountedUnit := PriceCalculator(priceInput).Total
@@ -608,6 +633,16 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		// 5) 写 orders（父单）
 		ttl := time.Duration(uc.ttlMinutes(txCtx)) * time.Minute
 		exp := time.Now().Add(ttl).UTC()
+		if in.SMSQuoteID != "" {
+			q, e := client.SMSRetailQuote.Get(txCtx, in.SMSQuoteID)
+			if e != nil {
+				return e
+			}
+			deadline := time.Unix(q.ExpiresAt, 0).UTC()
+			if deadline.Before(exp) {
+				exp = deadline
+			}
+		}
 		extra := map[string]any{}
 		if len(flashReservations) > 0 {
 			extra["flash_reservations"] = flashReservations
@@ -762,7 +797,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			}
 
 			if hasSMS {
-				if err := uc.freezeSMS(txCtx, orderItem, smsQuotes[r.input.ProductID]); err != nil {
+				if err := uc.freezeSMSSelection(txCtx, orderItem, smsQuotes[r.input.ProductID], in, orderNo); err != nil {
 					return err
 				}
 			}
@@ -1131,6 +1166,9 @@ func isDigitStr(s string) bool {
 //
 // 读取失败走保守默认（强制密码 + any）。
 func (uc *OrderUsecase) validateTradeRequirements(ctx context.Context, in CreateOrderInput) error {
+	if in.SMSQuoteID != "" && in.UserID > 0 {
+		return nil
+	}
 	// 查询密码强制（所有下单者——含登录用户：取货三重门的核心凭证）
 	if uc.queryPasswordRequired(ctx) {
 		if len(in.QueryPassword) < 4 {

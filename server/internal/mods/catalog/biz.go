@@ -8,6 +8,8 @@ import (
 	"context"
 
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
 )
 
 // ProductRepo 商品仓储（模块内端口，实现于 data.go）。
@@ -61,7 +63,10 @@ func (uc *CatalogUsecase) GetVisible(ctx context.Context, subsiteID, id uint64) 
 	}
 	// status: 1=上架（游客+会员可见）；2=隐藏（仅会员可见，M1 接会员上下文后放开）
 	if p.Status != 1 {
-		return nil, ErrProductNotFound
+		claims := identity.ClaimsFromContext(ctx)
+		if p.ProductKind != "sms_channel" || subsiteID != 0 || p.Status != 2 || claims == nil || claims.Subject == 0 || claims.Realm != authn.RealmUser {
+			return nil, ErrProductNotFound
+		}
 	}
 	return p, nil
 }

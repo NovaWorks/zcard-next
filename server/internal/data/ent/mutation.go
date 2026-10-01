@@ -90,6 +90,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/shipment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsintent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsoperation"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsretailquote"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/stockalert"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
@@ -197,6 +198,7 @@ const (
 	TypeRolePermission           = "RolePermission"
 	TypeSMSIntent                = "SMSIntent"
 	TypeSMSOperation             = "SMSOperation"
+	TypeSMSRetailQuote           = "SMSRetailQuote"
 	TypeSecurityAuditLog         = "SecurityAuditLog"
 	TypeSession                  = "Session"
 	TypeSetting                  = "Setting"
@@ -59329,6 +59331,7 @@ type ProductMutation struct {
 	updated_at                *time.Time
 	subsite_id                *uint64
 	addsubsite_id             *int64
+	product_kind              *string
 	delivery_kind             *string
 	sms_product               *map[string]string
 	category_id               *uint64
@@ -59639,6 +59642,42 @@ func (m *ProductMutation) AddedSubsiteID() (r int64, exists bool) {
 func (m *ProductMutation) ResetSubsiteID() {
 	m.subsite_id = nil
 	m.addsubsite_id = nil
+}
+
+// SetProductKind sets the "product_kind" field.
+func (m *ProductMutation) SetProductKind(s string) {
+	m.product_kind = &s
+}
+
+// ProductKind returns the value of the "product_kind" field in the mutation.
+func (m *ProductMutation) ProductKind() (r string, exists bool) {
+	v := m.product_kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProductKind returns the old "product_kind" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldProductKind(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProductKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProductKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProductKind: %w", err)
+	}
+	return oldValue.ProductKind, nil
+}
+
+// ResetProductKind resets all changes to the "product_kind" field.
+func (m *ProductMutation) ResetProductKind() {
+	m.product_kind = nil
 }
 
 // SetDeliveryKind sets the "delivery_kind" field.
@@ -62074,7 +62113,7 @@ func (m *ProductMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductMutation) Fields() []string {
-	fields := make([]string, 0, 51)
+	fields := make([]string, 0, 52)
 	if m.created_at != nil {
 		fields = append(fields, product.FieldCreatedAt)
 	}
@@ -62083,6 +62122,9 @@ func (m *ProductMutation) Fields() []string {
 	}
 	if m.subsite_id != nil {
 		fields = append(fields, product.FieldSubsiteID)
+	}
+	if m.product_kind != nil {
+		fields = append(fields, product.FieldProductKind)
 	}
 	if m.delivery_kind != nil {
 		fields = append(fields, product.FieldDeliveryKind)
@@ -62242,6 +62284,8 @@ func (m *ProductMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case product.FieldSubsiteID:
 		return m.SubsiteID()
+	case product.FieldProductKind:
+		return m.ProductKind()
 	case product.FieldDeliveryKind:
 		return m.DeliveryKind()
 	case product.FieldSmsProduct:
@@ -62353,6 +62397,8 @@ func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldUpdatedAt(ctx)
 	case product.FieldSubsiteID:
 		return m.OldSubsiteID(ctx)
+	case product.FieldProductKind:
+		return m.OldProductKind(ctx)
 	case product.FieldDeliveryKind:
 		return m.OldDeliveryKind(ctx)
 	case product.FieldSmsProduct:
@@ -62478,6 +62524,13 @@ func (m *ProductMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSubsiteID(v)
+		return nil
+	case product.FieldProductKind:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProductKind(v)
 		return nil
 	case product.FieldDeliveryKind:
 		v, ok := value.(string)
@@ -63184,6 +63237,9 @@ func (m *ProductMutation) ResetField(name string) error {
 		return nil
 	case product.FieldSubsiteID:
 		m.ResetSubsiteID()
+		return nil
+	case product.FieldProductKind:
+		m.ResetProductKind()
 		return nil
 	case product.FieldDeliveryKind:
 		m.ResetDeliveryKind()
@@ -85356,6 +85412,1491 @@ func (m *SMSOperationMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *SMSOperationMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown SMSOperation edge %s", name)
+}
+
+// SMSRetailQuoteMutation represents an operation that mutates the SMSRetailQuote nodes in the graph.
+type SMSRetailQuoteMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *string
+	created_at          *time.Time
+	updated_at          *time.Time
+	subsite_id          *uint64
+	addsubsite_id       *int64
+	user_id             *uint64
+	adduser_id          *int64
+	product_id          *uint64
+	addproduct_id       *int64
+	connection_id       *uint64
+	addconnection_id    *int64
+	connection_identity *string
+	pricing_revision    *string
+	product_revision    *int64
+	addproduct_revision *int64
+	upstream_quote_id   *string
+	upstream_product_id *string
+	cost_cents          *int64
+	addcost_cents       *int64
+	amount_cents        *int64
+	addamount_cents     *int64
+	expires_at          *int64
+	addexpires_at       *int64
+	offer_name          *string
+	selection           *map[string]string
+	consumed_by         *string
+	clearedFields       map[string]struct{}
+	done                bool
+	oldValue            func(context.Context) (*SMSRetailQuote, error)
+	predicates          []predicate.SMSRetailQuote
+}
+
+var _ ent.Mutation = (*SMSRetailQuoteMutation)(nil)
+
+// smsretailquoteOption allows management of the mutation configuration using functional options.
+type smsretailquoteOption func(*SMSRetailQuoteMutation)
+
+// newSMSRetailQuoteMutation creates new mutation for the SMSRetailQuote entity.
+func newSMSRetailQuoteMutation(c config, op Op, opts ...smsretailquoteOption) *SMSRetailQuoteMutation {
+	m := &SMSRetailQuoteMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSMSRetailQuote,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSMSRetailQuoteID sets the ID field of the mutation.
+func withSMSRetailQuoteID(id string) smsretailquoteOption {
+	return func(m *SMSRetailQuoteMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *SMSRetailQuote
+		)
+		m.oldValue = func(ctx context.Context) (*SMSRetailQuote, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().SMSRetailQuote.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSMSRetailQuote sets the old SMSRetailQuote of the mutation.
+func withSMSRetailQuote(node *SMSRetailQuote) smsretailquoteOption {
+	return func(m *SMSRetailQuoteMutation) {
+		m.oldValue = func(context.Context) (*SMSRetailQuote, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m SMSRetailQuoteMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m SMSRetailQuoteMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of SMSRetailQuote entities.
+func (m *SMSRetailQuoteMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *SMSRetailQuoteMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *SMSRetailQuoteMutation) IDs(ctx context.Context) ([]string, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []string{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().SMSRetailQuote.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *SMSRetailQuoteMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *SMSRetailQuoteMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *SMSRetailQuoteMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *SMSRetailQuoteMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *SMSRetailQuoteMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *SMSRetailQuoteMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetSubsiteID sets the "subsite_id" field.
+func (m *SMSRetailQuoteMutation) SetSubsiteID(u uint64) {
+	m.subsite_id = &u
+	m.addsubsite_id = nil
+}
+
+// SubsiteID returns the value of the "subsite_id" field in the mutation.
+func (m *SMSRetailQuoteMutation) SubsiteID() (r uint64, exists bool) {
+	v := m.subsite_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubsiteID returns the old "subsite_id" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldSubsiteID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubsiteID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubsiteID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubsiteID: %w", err)
+	}
+	return oldValue.SubsiteID, nil
+}
+
+// AddSubsiteID adds u to the "subsite_id" field.
+func (m *SMSRetailQuoteMutation) AddSubsiteID(u int64) {
+	if m.addsubsite_id != nil {
+		*m.addsubsite_id += u
+	} else {
+		m.addsubsite_id = &u
+	}
+}
+
+// AddedSubsiteID returns the value that was added to the "subsite_id" field in this mutation.
+func (m *SMSRetailQuoteMutation) AddedSubsiteID() (r int64, exists bool) {
+	v := m.addsubsite_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSubsiteID resets all changes to the "subsite_id" field.
+func (m *SMSRetailQuoteMutation) ResetSubsiteID() {
+	m.subsite_id = nil
+	m.addsubsite_id = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *SMSRetailQuoteMutation) SetUserID(u uint64) {
+	m.user_id = &u
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *SMSRetailQuoteMutation) UserID() (r uint64, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldUserID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds u to the "user_id" field.
+func (m *SMSRetailQuoteMutation) AddUserID(u int64) {
+	if m.adduser_id != nil {
+		*m.adduser_id += u
+	} else {
+		m.adduser_id = &u
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *SMSRetailQuoteMutation) AddedUserID() (r int64, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *SMSRetailQuoteMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+}
+
+// SetProductID sets the "product_id" field.
+func (m *SMSRetailQuoteMutation) SetProductID(u uint64) {
+	m.product_id = &u
+	m.addproduct_id = nil
+}
+
+// ProductID returns the value of the "product_id" field in the mutation.
+func (m *SMSRetailQuoteMutation) ProductID() (r uint64, exists bool) {
+	v := m.product_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProductID returns the old "product_id" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldProductID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProductID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProductID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProductID: %w", err)
+	}
+	return oldValue.ProductID, nil
+}
+
+// AddProductID adds u to the "product_id" field.
+func (m *SMSRetailQuoteMutation) AddProductID(u int64) {
+	if m.addproduct_id != nil {
+		*m.addproduct_id += u
+	} else {
+		m.addproduct_id = &u
+	}
+}
+
+// AddedProductID returns the value that was added to the "product_id" field in this mutation.
+func (m *SMSRetailQuoteMutation) AddedProductID() (r int64, exists bool) {
+	v := m.addproduct_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetProductID resets all changes to the "product_id" field.
+func (m *SMSRetailQuoteMutation) ResetProductID() {
+	m.product_id = nil
+	m.addproduct_id = nil
+}
+
+// SetConnectionID sets the "connection_id" field.
+func (m *SMSRetailQuoteMutation) SetConnectionID(u uint64) {
+	m.connection_id = &u
+	m.addconnection_id = nil
+}
+
+// ConnectionID returns the value of the "connection_id" field in the mutation.
+func (m *SMSRetailQuoteMutation) ConnectionID() (r uint64, exists bool) {
+	v := m.connection_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConnectionID returns the old "connection_id" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldConnectionID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConnectionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConnectionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConnectionID: %w", err)
+	}
+	return oldValue.ConnectionID, nil
+}
+
+// AddConnectionID adds u to the "connection_id" field.
+func (m *SMSRetailQuoteMutation) AddConnectionID(u int64) {
+	if m.addconnection_id != nil {
+		*m.addconnection_id += u
+	} else {
+		m.addconnection_id = &u
+	}
+}
+
+// AddedConnectionID returns the value that was added to the "connection_id" field in this mutation.
+func (m *SMSRetailQuoteMutation) AddedConnectionID() (r int64, exists bool) {
+	v := m.addconnection_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetConnectionID resets all changes to the "connection_id" field.
+func (m *SMSRetailQuoteMutation) ResetConnectionID() {
+	m.connection_id = nil
+	m.addconnection_id = nil
+}
+
+// SetConnectionIdentity sets the "connection_identity" field.
+func (m *SMSRetailQuoteMutation) SetConnectionIdentity(s string) {
+	m.connection_identity = &s
+}
+
+// ConnectionIdentity returns the value of the "connection_identity" field in the mutation.
+func (m *SMSRetailQuoteMutation) ConnectionIdentity() (r string, exists bool) {
+	v := m.connection_identity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConnectionIdentity returns the old "connection_identity" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldConnectionIdentity(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConnectionIdentity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConnectionIdentity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConnectionIdentity: %w", err)
+	}
+	return oldValue.ConnectionIdentity, nil
+}
+
+// ResetConnectionIdentity resets all changes to the "connection_identity" field.
+func (m *SMSRetailQuoteMutation) ResetConnectionIdentity() {
+	m.connection_identity = nil
+}
+
+// SetPricingRevision sets the "pricing_revision" field.
+func (m *SMSRetailQuoteMutation) SetPricingRevision(s string) {
+	m.pricing_revision = &s
+}
+
+// PricingRevision returns the value of the "pricing_revision" field in the mutation.
+func (m *SMSRetailQuoteMutation) PricingRevision() (r string, exists bool) {
+	v := m.pricing_revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPricingRevision returns the old "pricing_revision" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldPricingRevision(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPricingRevision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPricingRevision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPricingRevision: %w", err)
+	}
+	return oldValue.PricingRevision, nil
+}
+
+// ResetPricingRevision resets all changes to the "pricing_revision" field.
+func (m *SMSRetailQuoteMutation) ResetPricingRevision() {
+	m.pricing_revision = nil
+}
+
+// SetProductRevision sets the "product_revision" field.
+func (m *SMSRetailQuoteMutation) SetProductRevision(i int64) {
+	m.product_revision = &i
+	m.addproduct_revision = nil
+}
+
+// ProductRevision returns the value of the "product_revision" field in the mutation.
+func (m *SMSRetailQuoteMutation) ProductRevision() (r int64, exists bool) {
+	v := m.product_revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProductRevision returns the old "product_revision" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldProductRevision(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProductRevision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProductRevision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProductRevision: %w", err)
+	}
+	return oldValue.ProductRevision, nil
+}
+
+// AddProductRevision adds i to the "product_revision" field.
+func (m *SMSRetailQuoteMutation) AddProductRevision(i int64) {
+	if m.addproduct_revision != nil {
+		*m.addproduct_revision += i
+	} else {
+		m.addproduct_revision = &i
+	}
+}
+
+// AddedProductRevision returns the value that was added to the "product_revision" field in this mutation.
+func (m *SMSRetailQuoteMutation) AddedProductRevision() (r int64, exists bool) {
+	v := m.addproduct_revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetProductRevision resets all changes to the "product_revision" field.
+func (m *SMSRetailQuoteMutation) ResetProductRevision() {
+	m.product_revision = nil
+	m.addproduct_revision = nil
+}
+
+// SetUpstreamQuoteID sets the "upstream_quote_id" field.
+func (m *SMSRetailQuoteMutation) SetUpstreamQuoteID(s string) {
+	m.upstream_quote_id = &s
+}
+
+// UpstreamQuoteID returns the value of the "upstream_quote_id" field in the mutation.
+func (m *SMSRetailQuoteMutation) UpstreamQuoteID() (r string, exists bool) {
+	v := m.upstream_quote_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpstreamQuoteID returns the old "upstream_quote_id" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldUpstreamQuoteID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpstreamQuoteID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpstreamQuoteID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpstreamQuoteID: %w", err)
+	}
+	return oldValue.UpstreamQuoteID, nil
+}
+
+// ResetUpstreamQuoteID resets all changes to the "upstream_quote_id" field.
+func (m *SMSRetailQuoteMutation) ResetUpstreamQuoteID() {
+	m.upstream_quote_id = nil
+}
+
+// SetUpstreamProductID sets the "upstream_product_id" field.
+func (m *SMSRetailQuoteMutation) SetUpstreamProductID(s string) {
+	m.upstream_product_id = &s
+}
+
+// UpstreamProductID returns the value of the "upstream_product_id" field in the mutation.
+func (m *SMSRetailQuoteMutation) UpstreamProductID() (r string, exists bool) {
+	v := m.upstream_product_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpstreamProductID returns the old "upstream_product_id" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldUpstreamProductID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpstreamProductID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpstreamProductID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpstreamProductID: %w", err)
+	}
+	return oldValue.UpstreamProductID, nil
+}
+
+// ResetUpstreamProductID resets all changes to the "upstream_product_id" field.
+func (m *SMSRetailQuoteMutation) ResetUpstreamProductID() {
+	m.upstream_product_id = nil
+}
+
+// SetCostCents sets the "cost_cents" field.
+func (m *SMSRetailQuoteMutation) SetCostCents(i int64) {
+	m.cost_cents = &i
+	m.addcost_cents = nil
+}
+
+// CostCents returns the value of the "cost_cents" field in the mutation.
+func (m *SMSRetailQuoteMutation) CostCents() (r int64, exists bool) {
+	v := m.cost_cents
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCostCents returns the old "cost_cents" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldCostCents(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCostCents is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCostCents requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCostCents: %w", err)
+	}
+	return oldValue.CostCents, nil
+}
+
+// AddCostCents adds i to the "cost_cents" field.
+func (m *SMSRetailQuoteMutation) AddCostCents(i int64) {
+	if m.addcost_cents != nil {
+		*m.addcost_cents += i
+	} else {
+		m.addcost_cents = &i
+	}
+}
+
+// AddedCostCents returns the value that was added to the "cost_cents" field in this mutation.
+func (m *SMSRetailQuoteMutation) AddedCostCents() (r int64, exists bool) {
+	v := m.addcost_cents
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCostCents resets all changes to the "cost_cents" field.
+func (m *SMSRetailQuoteMutation) ResetCostCents() {
+	m.cost_cents = nil
+	m.addcost_cents = nil
+}
+
+// SetAmountCents sets the "amount_cents" field.
+func (m *SMSRetailQuoteMutation) SetAmountCents(i int64) {
+	m.amount_cents = &i
+	m.addamount_cents = nil
+}
+
+// AmountCents returns the value of the "amount_cents" field in the mutation.
+func (m *SMSRetailQuoteMutation) AmountCents() (r int64, exists bool) {
+	v := m.amount_cents
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAmountCents returns the old "amount_cents" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldAmountCents(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAmountCents is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAmountCents requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAmountCents: %w", err)
+	}
+	return oldValue.AmountCents, nil
+}
+
+// AddAmountCents adds i to the "amount_cents" field.
+func (m *SMSRetailQuoteMutation) AddAmountCents(i int64) {
+	if m.addamount_cents != nil {
+		*m.addamount_cents += i
+	} else {
+		m.addamount_cents = &i
+	}
+}
+
+// AddedAmountCents returns the value that was added to the "amount_cents" field in this mutation.
+func (m *SMSRetailQuoteMutation) AddedAmountCents() (r int64, exists bool) {
+	v := m.addamount_cents
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAmountCents resets all changes to the "amount_cents" field.
+func (m *SMSRetailQuoteMutation) ResetAmountCents() {
+	m.amount_cents = nil
+	m.addamount_cents = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *SMSRetailQuoteMutation) SetExpiresAt(i int64) {
+	m.expires_at = &i
+	m.addexpires_at = nil
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *SMSRetailQuoteMutation) ExpiresAt() (r int64, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldExpiresAt(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// AddExpiresAt adds i to the "expires_at" field.
+func (m *SMSRetailQuoteMutation) AddExpiresAt(i int64) {
+	if m.addexpires_at != nil {
+		*m.addexpires_at += i
+	} else {
+		m.addexpires_at = &i
+	}
+}
+
+// AddedExpiresAt returns the value that was added to the "expires_at" field in this mutation.
+func (m *SMSRetailQuoteMutation) AddedExpiresAt() (r int64, exists bool) {
+	v := m.addexpires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *SMSRetailQuoteMutation) ResetExpiresAt() {
+	m.expires_at = nil
+	m.addexpires_at = nil
+}
+
+// SetOfferName sets the "offer_name" field.
+func (m *SMSRetailQuoteMutation) SetOfferName(s string) {
+	m.offer_name = &s
+}
+
+// OfferName returns the value of the "offer_name" field in the mutation.
+func (m *SMSRetailQuoteMutation) OfferName() (r string, exists bool) {
+	v := m.offer_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOfferName returns the old "offer_name" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldOfferName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOfferName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOfferName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOfferName: %w", err)
+	}
+	return oldValue.OfferName, nil
+}
+
+// ResetOfferName resets all changes to the "offer_name" field.
+func (m *SMSRetailQuoteMutation) ResetOfferName() {
+	m.offer_name = nil
+}
+
+// SetSelection sets the "selection" field.
+func (m *SMSRetailQuoteMutation) SetSelection(value map[string]string) {
+	m.selection = &value
+}
+
+// Selection returns the value of the "selection" field in the mutation.
+func (m *SMSRetailQuoteMutation) Selection() (r map[string]string, exists bool) {
+	v := m.selection
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSelection returns the old "selection" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldSelection(ctx context.Context) (v map[string]string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSelection is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSelection requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSelection: %w", err)
+	}
+	return oldValue.Selection, nil
+}
+
+// ClearSelection clears the value of the "selection" field.
+func (m *SMSRetailQuoteMutation) ClearSelection() {
+	m.selection = nil
+	m.clearedFields[smsretailquote.FieldSelection] = struct{}{}
+}
+
+// SelectionCleared returns if the "selection" field was cleared in this mutation.
+func (m *SMSRetailQuoteMutation) SelectionCleared() bool {
+	_, ok := m.clearedFields[smsretailquote.FieldSelection]
+	return ok
+}
+
+// ResetSelection resets all changes to the "selection" field.
+func (m *SMSRetailQuoteMutation) ResetSelection() {
+	m.selection = nil
+	delete(m.clearedFields, smsretailquote.FieldSelection)
+}
+
+// SetConsumedBy sets the "consumed_by" field.
+func (m *SMSRetailQuoteMutation) SetConsumedBy(s string) {
+	m.consumed_by = &s
+}
+
+// ConsumedBy returns the value of the "consumed_by" field in the mutation.
+func (m *SMSRetailQuoteMutation) ConsumedBy() (r string, exists bool) {
+	v := m.consumed_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConsumedBy returns the old "consumed_by" field's value of the SMSRetailQuote entity.
+// If the SMSRetailQuote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SMSRetailQuoteMutation) OldConsumedBy(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConsumedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConsumedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConsumedBy: %w", err)
+	}
+	return oldValue.ConsumedBy, nil
+}
+
+// ResetConsumedBy resets all changes to the "consumed_by" field.
+func (m *SMSRetailQuoteMutation) ResetConsumedBy() {
+	m.consumed_by = nil
+}
+
+// Where appends a list predicates to the SMSRetailQuoteMutation builder.
+func (m *SMSRetailQuoteMutation) Where(ps ...predicate.SMSRetailQuote) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the SMSRetailQuoteMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *SMSRetailQuoteMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.SMSRetailQuote, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *SMSRetailQuoteMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *SMSRetailQuoteMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (SMSRetailQuote).
+func (m *SMSRetailQuoteMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *SMSRetailQuoteMutation) Fields() []string {
+	fields := make([]string, 0, 17)
+	if m.created_at != nil {
+		fields = append(fields, smsretailquote.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, smsretailquote.FieldUpdatedAt)
+	}
+	if m.subsite_id != nil {
+		fields = append(fields, smsretailquote.FieldSubsiteID)
+	}
+	if m.user_id != nil {
+		fields = append(fields, smsretailquote.FieldUserID)
+	}
+	if m.product_id != nil {
+		fields = append(fields, smsretailquote.FieldProductID)
+	}
+	if m.connection_id != nil {
+		fields = append(fields, smsretailquote.FieldConnectionID)
+	}
+	if m.connection_identity != nil {
+		fields = append(fields, smsretailquote.FieldConnectionIdentity)
+	}
+	if m.pricing_revision != nil {
+		fields = append(fields, smsretailquote.FieldPricingRevision)
+	}
+	if m.product_revision != nil {
+		fields = append(fields, smsretailquote.FieldProductRevision)
+	}
+	if m.upstream_quote_id != nil {
+		fields = append(fields, smsretailquote.FieldUpstreamQuoteID)
+	}
+	if m.upstream_product_id != nil {
+		fields = append(fields, smsretailquote.FieldUpstreamProductID)
+	}
+	if m.cost_cents != nil {
+		fields = append(fields, smsretailquote.FieldCostCents)
+	}
+	if m.amount_cents != nil {
+		fields = append(fields, smsretailquote.FieldAmountCents)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, smsretailquote.FieldExpiresAt)
+	}
+	if m.offer_name != nil {
+		fields = append(fields, smsretailquote.FieldOfferName)
+	}
+	if m.selection != nil {
+		fields = append(fields, smsretailquote.FieldSelection)
+	}
+	if m.consumed_by != nil {
+		fields = append(fields, smsretailquote.FieldConsumedBy)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *SMSRetailQuoteMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case smsretailquote.FieldCreatedAt:
+		return m.CreatedAt()
+	case smsretailquote.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case smsretailquote.FieldSubsiteID:
+		return m.SubsiteID()
+	case smsretailquote.FieldUserID:
+		return m.UserID()
+	case smsretailquote.FieldProductID:
+		return m.ProductID()
+	case smsretailquote.FieldConnectionID:
+		return m.ConnectionID()
+	case smsretailquote.FieldConnectionIdentity:
+		return m.ConnectionIdentity()
+	case smsretailquote.FieldPricingRevision:
+		return m.PricingRevision()
+	case smsretailquote.FieldProductRevision:
+		return m.ProductRevision()
+	case smsretailquote.FieldUpstreamQuoteID:
+		return m.UpstreamQuoteID()
+	case smsretailquote.FieldUpstreamProductID:
+		return m.UpstreamProductID()
+	case smsretailquote.FieldCostCents:
+		return m.CostCents()
+	case smsretailquote.FieldAmountCents:
+		return m.AmountCents()
+	case smsretailquote.FieldExpiresAt:
+		return m.ExpiresAt()
+	case smsretailquote.FieldOfferName:
+		return m.OfferName()
+	case smsretailquote.FieldSelection:
+		return m.Selection()
+	case smsretailquote.FieldConsumedBy:
+		return m.ConsumedBy()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *SMSRetailQuoteMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case smsretailquote.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case smsretailquote.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case smsretailquote.FieldSubsiteID:
+		return m.OldSubsiteID(ctx)
+	case smsretailquote.FieldUserID:
+		return m.OldUserID(ctx)
+	case smsretailquote.FieldProductID:
+		return m.OldProductID(ctx)
+	case smsretailquote.FieldConnectionID:
+		return m.OldConnectionID(ctx)
+	case smsretailquote.FieldConnectionIdentity:
+		return m.OldConnectionIdentity(ctx)
+	case smsretailquote.FieldPricingRevision:
+		return m.OldPricingRevision(ctx)
+	case smsretailquote.FieldProductRevision:
+		return m.OldProductRevision(ctx)
+	case smsretailquote.FieldUpstreamQuoteID:
+		return m.OldUpstreamQuoteID(ctx)
+	case smsretailquote.FieldUpstreamProductID:
+		return m.OldUpstreamProductID(ctx)
+	case smsretailquote.FieldCostCents:
+		return m.OldCostCents(ctx)
+	case smsretailquote.FieldAmountCents:
+		return m.OldAmountCents(ctx)
+	case smsretailquote.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case smsretailquote.FieldOfferName:
+		return m.OldOfferName(ctx)
+	case smsretailquote.FieldSelection:
+		return m.OldSelection(ctx)
+	case smsretailquote.FieldConsumedBy:
+		return m.OldConsumedBy(ctx)
+	}
+	return nil, fmt.Errorf("unknown SMSRetailQuote field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SMSRetailQuoteMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case smsretailquote.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case smsretailquote.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case smsretailquote.FieldSubsiteID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubsiteID(v)
+		return nil
+	case smsretailquote.FieldUserID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case smsretailquote.FieldProductID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProductID(v)
+		return nil
+	case smsretailquote.FieldConnectionID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConnectionID(v)
+		return nil
+	case smsretailquote.FieldConnectionIdentity:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConnectionIdentity(v)
+		return nil
+	case smsretailquote.FieldPricingRevision:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPricingRevision(v)
+		return nil
+	case smsretailquote.FieldProductRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProductRevision(v)
+		return nil
+	case smsretailquote.FieldUpstreamQuoteID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpstreamQuoteID(v)
+		return nil
+	case smsretailquote.FieldUpstreamProductID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpstreamProductID(v)
+		return nil
+	case smsretailquote.FieldCostCents:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCostCents(v)
+		return nil
+	case smsretailquote.FieldAmountCents:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAmountCents(v)
+		return nil
+	case smsretailquote.FieldExpiresAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case smsretailquote.FieldOfferName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOfferName(v)
+		return nil
+	case smsretailquote.FieldSelection:
+		v, ok := value.(map[string]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSelection(v)
+		return nil
+	case smsretailquote.FieldConsumedBy:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConsumedBy(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SMSRetailQuote field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *SMSRetailQuoteMutation) AddedFields() []string {
+	var fields []string
+	if m.addsubsite_id != nil {
+		fields = append(fields, smsretailquote.FieldSubsiteID)
+	}
+	if m.adduser_id != nil {
+		fields = append(fields, smsretailquote.FieldUserID)
+	}
+	if m.addproduct_id != nil {
+		fields = append(fields, smsretailquote.FieldProductID)
+	}
+	if m.addconnection_id != nil {
+		fields = append(fields, smsretailquote.FieldConnectionID)
+	}
+	if m.addproduct_revision != nil {
+		fields = append(fields, smsretailquote.FieldProductRevision)
+	}
+	if m.addcost_cents != nil {
+		fields = append(fields, smsretailquote.FieldCostCents)
+	}
+	if m.addamount_cents != nil {
+		fields = append(fields, smsretailquote.FieldAmountCents)
+	}
+	if m.addexpires_at != nil {
+		fields = append(fields, smsretailquote.FieldExpiresAt)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *SMSRetailQuoteMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case smsretailquote.FieldSubsiteID:
+		return m.AddedSubsiteID()
+	case smsretailquote.FieldUserID:
+		return m.AddedUserID()
+	case smsretailquote.FieldProductID:
+		return m.AddedProductID()
+	case smsretailquote.FieldConnectionID:
+		return m.AddedConnectionID()
+	case smsretailquote.FieldProductRevision:
+		return m.AddedProductRevision()
+	case smsretailquote.FieldCostCents:
+		return m.AddedCostCents()
+	case smsretailquote.FieldAmountCents:
+		return m.AddedAmountCents()
+	case smsretailquote.FieldExpiresAt:
+		return m.AddedExpiresAt()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *SMSRetailQuoteMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case smsretailquote.FieldSubsiteID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSubsiteID(v)
+		return nil
+	case smsretailquote.FieldUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
+		return nil
+	case smsretailquote.FieldProductID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProductID(v)
+		return nil
+	case smsretailquote.FieldConnectionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddConnectionID(v)
+		return nil
+	case smsretailquote.FieldProductRevision:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProductRevision(v)
+		return nil
+	case smsretailquote.FieldCostCents:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCostCents(v)
+		return nil
+	case smsretailquote.FieldAmountCents:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAmountCents(v)
+		return nil
+	case smsretailquote.FieldExpiresAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddExpiresAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown SMSRetailQuote numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *SMSRetailQuoteMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(smsretailquote.FieldSelection) {
+		fields = append(fields, smsretailquote.FieldSelection)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *SMSRetailQuoteMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *SMSRetailQuoteMutation) ClearField(name string) error {
+	switch name {
+	case smsretailquote.FieldSelection:
+		m.ClearSelection()
+		return nil
+	}
+	return fmt.Errorf("unknown SMSRetailQuote nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *SMSRetailQuoteMutation) ResetField(name string) error {
+	switch name {
+	case smsretailquote.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case smsretailquote.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case smsretailquote.FieldSubsiteID:
+		m.ResetSubsiteID()
+		return nil
+	case smsretailquote.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case smsretailquote.FieldProductID:
+		m.ResetProductID()
+		return nil
+	case smsretailquote.FieldConnectionID:
+		m.ResetConnectionID()
+		return nil
+	case smsretailquote.FieldConnectionIdentity:
+		m.ResetConnectionIdentity()
+		return nil
+	case smsretailquote.FieldPricingRevision:
+		m.ResetPricingRevision()
+		return nil
+	case smsretailquote.FieldProductRevision:
+		m.ResetProductRevision()
+		return nil
+	case smsretailquote.FieldUpstreamQuoteID:
+		m.ResetUpstreamQuoteID()
+		return nil
+	case smsretailquote.FieldUpstreamProductID:
+		m.ResetUpstreamProductID()
+		return nil
+	case smsretailquote.FieldCostCents:
+		m.ResetCostCents()
+		return nil
+	case smsretailquote.FieldAmountCents:
+		m.ResetAmountCents()
+		return nil
+	case smsretailquote.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case smsretailquote.FieldOfferName:
+		m.ResetOfferName()
+		return nil
+	case smsretailquote.FieldSelection:
+		m.ResetSelection()
+		return nil
+	case smsretailquote.FieldConsumedBy:
+		m.ResetConsumedBy()
+		return nil
+	}
+	return fmt.Errorf("unknown SMSRetailQuote field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *SMSRetailQuoteMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *SMSRetailQuoteMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *SMSRetailQuoteMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *SMSRetailQuoteMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *SMSRetailQuoteMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *SMSRetailQuoteMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *SMSRetailQuoteMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown SMSRetailQuote unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *SMSRetailQuoteMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown SMSRetailQuote edge %s", name)
 }
 
 // SecurityAuditLogMutation represents an operation that mutates the SecurityAuditLog nodes in the graph.

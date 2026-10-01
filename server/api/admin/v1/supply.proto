@@ -301,6 +301,7 @@ message PreviewProductsRequest {
 }
 
 message PreviewProduct {
+ string product_kind = 30;
   string delivery_kind = 16;
   map<string,string> sms_product = 17;
   string code = 1;

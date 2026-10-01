@@ -87,6 +87,9 @@ func listingRevision(p *ent.Product) string {
 }
 
 func (s *AdminCatalogService) listingUnsupported(ctx context.Context, p *ent.Product) string {
+	if p.ProductKind == "sms_channel" {
+		return "接码渠道按选项报价和库存，不支持普通库存自动上下架"
+	}
 	if p.SubsiteID != 0 {
 		return "仅主站上游商品支持自动上下架"
 	}

@@ -104,6 +104,9 @@ func (s *AdminCatalogService) SetDeliverySource(ctx context.Context, req *adminv
 		if e != nil {
 			return e
 		}
+		if p.ProductKind == "sms_channel" {
+			return fmt.Errorf("渠道接码不能改为本地发货")
+		}
 		if p.GoodsType == "physical" {
 			return fmt.Errorf("实体商品只支持快递发货")
 		}

@@ -75,7 +75,7 @@ func (s *AdminSupplyService) previewCatalogPage(ctx context.Context, req *adminv
 			g = &adminv1.PreviewCategory{Code: p.CategoryID, Name: name, Path: name, ParentCode: parents[p.CategoryID]}
 			groups[p.CategoryID] = g
 		}
-		g.Products = append(g.Products, &adminv1.PreviewProduct{Code: p.ID, Name: p.Name, PriceCents: p.Price, FactoryPriceCents: p.FactoryPrice, CategoryCode: p.CategoryID, CategoryName: g.Name, IsActive: p.IsActive, Stock: p.Stock, DeliveryKind: p.DeliveryKind, SmsProduct: p.SMSProduct})
+		g.Products = append(g.Products, &adminv1.PreviewProduct{Code: p.ID, Name: p.Name, PriceCents: p.Price, FactoryPriceCents: p.FactoryPrice, CategoryCode: p.CategoryID, CategoryName: g.Name, IsActive: p.IsActive, Stock: p.Stock, ProductKind: p.ProductKind, DeliveryKind: p.DeliveryKind, SmsProduct: p.SMSProduct})
 	}
 	cats := []*adminv1.PreviewCategory{}
 	for _, g := range groups {

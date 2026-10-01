@@ -44,6 +44,8 @@ service StoreOrderService {
 }
 
 message CreateOrderRequest {
+ string sms_quote_id = 20;
+
   map<string,string> shipping_address = 11;
   string quote_key = 12;
   repeated OrderItemInput items = 1 [(google.api.field_behavior) = REQUIRED];
@@ -175,6 +177,7 @@ message ShippingRegionsReply { string data_json = 1; }
 message ReceiveShipmentRequest { string order_no = 1; uint64 shipment_id = 2; string query_password = 3; }
 
 service StoreSMSService {
+ rpc ListSMSProduct(SMSProductHistoryRequest) returns(SMSProductHistoryReply){option(google.api.http)={get:"/api/v1/storefront/products/{product_id}/sms/sessions"};}
  rpc GetSMS(SMSOrderRequest) returns (SMSOrderReply) { option (google.api.http) = { get: "/api/v1/storefront/orders/{order_no}/sms" }; }
  rpc ActSMS(SMSActionRequest) returns (SMSOrderReply) { option (google.api.http) = { post: "/api/v1/storefront/orders/{order_no}/sms/{action}" body: "*" }; }
 }
@@ -186,4 +189,9 @@ message SMSOrderReply {
  string cancel_available_at = 7; bool can_cancel = 8; bool can_finish = 9;
  string operation_status = 10; string operation_action = 11;
  string refund_status = 12; string message = 13; bool active = 14;
+ string operation_request_id = 15;
 }
+
+message SMSProductHistoryRequest{uint64 product_id=1;int32 page=2;}
+message SMSRetailSession{string order_no=1;string offer_name=2;int64 amount_cents=3;SMSOrderReply sms=4;}
+message SMSProductHistoryReply{repeated SMSRetailSession orders=1;}

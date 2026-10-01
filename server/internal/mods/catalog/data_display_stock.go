@@ -26,6 +26,9 @@ func (r *ProductRepoImpl) refreshDisplayStocks(ctx context.Context, rows []*ent.
 	}
 	pending := make(chan job, len(rows))
 	for _, p := range rows {
+		if p.ProductKind == "sms_channel" {
+			continue
+		}
 		if local, e := data.HasLocalDelivery(ctx, data.Client(ctx, r.data), p); e != nil || local {
 			continue
 		}

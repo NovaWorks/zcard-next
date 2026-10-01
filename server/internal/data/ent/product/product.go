@@ -21,6 +21,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldSubsiteID holds the string denoting the subsite_id field in the database.
 	FieldSubsiteID = "subsite_id"
+	// FieldProductKind holds the string denoting the product_kind field in the database.
+	FieldProductKind = "product_kind"
 	// FieldDeliveryKind holds the string denoting the delivery_kind field in the database.
 	FieldDeliveryKind = "delivery_kind"
 	// FieldSmsProduct holds the string denoting the sms_product field in the database.
@@ -145,6 +147,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldSubsiteID,
+	FieldProductKind,
 	FieldDeliveryKind,
 	FieldSmsProduct,
 	FieldCategoryID,
@@ -214,6 +217,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultSubsiteID holds the default value on creation for the "subsite_id" field.
 	DefaultSubsiteID uint64
+	// DefaultProductKind holds the default value on creation for the "product_kind" field.
+	DefaultProductKind string
 	// DefaultDeliveryKind holds the default value on creation for the "delivery_kind" field.
 	DefaultDeliveryKind string
 	// DefaultCategoryProtected holds the default value on creation for the "category_protected" field.
@@ -364,6 +369,11 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 // BySubsiteID orders the results by the subsite_id field.
 func BySubsiteID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubsiteID, opts...).ToFunc()
+}
+
+// ByProductKind orders the results by the product_kind field.
+func ByProductKind(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProductKind, opts...).ToFunc()
 }
 
 // ByDeliveryKind orders the results by the delivery_kind field.

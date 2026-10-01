@@ -174,7 +174,7 @@ func (r *ProductRepoImpl) Get(ctx context.Context, subsiteID, id uint64) (*port.
 
 func toPortProduct(row *ent.Product) port.Product {
 	return port.Product{
-		DeliveryKind: row.DeliveryKind, SMSProduct: row.SmsProduct,
+		ProductKind: row.ProductKind, DeliveryKind: row.DeliveryKind, SMSProduct: row.SmsProduct,
 		GoodsType: row.GoodsType, ShippingMode: row.ShippingMode, ShippingFee: row.ShippingFee, ShippingCountries: row.ShippingCountries, PhysicalStock: row.PhysicalStock,
 		ID:              row.ID,
 		SubsiteID:       row.SubsiteID,

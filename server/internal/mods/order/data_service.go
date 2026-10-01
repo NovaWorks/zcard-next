@@ -76,7 +76,8 @@ func (s *StoreOrderService) createOrder(ctx context.Context, req *storefrontv1.C
 		userID = claims.Subject
 	}
 	input := CreateOrderInput{
-		QuoteOnly: quote, QuoteKey: req.QuoteKey, ShippingAddress: req.ShippingAddress,
+		SMSQuoteID: req.SmsQuoteId,
+		QuoteOnly:  quote, QuoteKey: req.QuoteKey, ShippingAddress: req.ShippingAddress,
 		Items: items, UserID: userID, GuestContact: req.GetGuestContact(),
 		QueryPassword: req.GetQueryPassword(), Contact: req.GetContact(),
 		CouponCode: req.GetCouponCode(), ControlAnswers: req.GetControlAnswers(),

@@ -25,6 +25,7 @@ const (
 
 type CreateOrderRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
+	SmsQuoteId      string                 `protobuf:"bytes,20,opt,name=sms_quote_id,json=smsQuoteId,proto3" json:"sms_quote_id,omitempty"`
 	ShippingAddress map[string]string      `protobuf:"bytes,11,rep,name=shipping_address,json=shippingAddress,proto3" json:"shipping_address,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	QuoteKey        string                 `protobuf:"bytes,12,opt,name=quote_key,json=quoteKey,proto3" json:"quote_key,omitempty"`
 	Items           []*OrderItemInput      `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
@@ -73,6 +74,13 @@ func (x *CreateOrderRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateOrderRequest.ProtoReflect.Descriptor instead.
 func (*CreateOrderRequest) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_order_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *CreateOrderRequest) GetSmsQuoteId() string {
+	if x != nil {
+		return x.SmsQuoteId
+	}
+	return ""
 }
 
 func (x *CreateOrderRequest) GetShippingAddress() map[string]string {
@@ -1374,23 +1382,24 @@ func (x *SMSActionRequest) GetRequestId() string {
 }
 
 type SMSOrderReply struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	State             string                 `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
-	Phase             string                 `protobuf:"bytes,2,opt,name=phase,proto3" json:"phase,omitempty"`
-	PhoneNumber       string                 `protobuf:"bytes,3,opt,name=phone_number,json=phoneNumber,proto3" json:"phone_number,omitempty"`
-	OtpCode           string                 `protobuf:"bytes,4,opt,name=otp_code,json=otpCode,proto3" json:"otp_code,omitempty"`
-	OtpMessage        string                 `protobuf:"bytes,5,opt,name=otp_message,json=otpMessage,proto3" json:"otp_message,omitempty"`
-	ExpiresAt         string                 `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	CancelAvailableAt string                 `protobuf:"bytes,7,opt,name=cancel_available_at,json=cancelAvailableAt,proto3" json:"cancel_available_at,omitempty"`
-	CanCancel         bool                   `protobuf:"varint,8,opt,name=can_cancel,json=canCancel,proto3" json:"can_cancel,omitempty"`
-	CanFinish         bool                   `protobuf:"varint,9,opt,name=can_finish,json=canFinish,proto3" json:"can_finish,omitempty"`
-	OperationStatus   string                 `protobuf:"bytes,10,opt,name=operation_status,json=operationStatus,proto3" json:"operation_status,omitempty"`
-	OperationAction   string                 `protobuf:"bytes,11,opt,name=operation_action,json=operationAction,proto3" json:"operation_action,omitempty"`
-	RefundStatus      string                 `protobuf:"bytes,12,opt,name=refund_status,json=refundStatus,proto3" json:"refund_status,omitempty"`
-	Message           string                 `protobuf:"bytes,13,opt,name=message,proto3" json:"message,omitempty"`
-	Active            bool                   `protobuf:"varint,14,opt,name=active,proto3" json:"active,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	State              string                 `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
+	Phase              string                 `protobuf:"bytes,2,opt,name=phase,proto3" json:"phase,omitempty"`
+	PhoneNumber        string                 `protobuf:"bytes,3,opt,name=phone_number,json=phoneNumber,proto3" json:"phone_number,omitempty"`
+	OtpCode            string                 `protobuf:"bytes,4,opt,name=otp_code,json=otpCode,proto3" json:"otp_code,omitempty"`
+	OtpMessage         string                 `protobuf:"bytes,5,opt,name=otp_message,json=otpMessage,proto3" json:"otp_message,omitempty"`
+	ExpiresAt          string                 `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	CancelAvailableAt  string                 `protobuf:"bytes,7,opt,name=cancel_available_at,json=cancelAvailableAt,proto3" json:"cancel_available_at,omitempty"`
+	CanCancel          bool                   `protobuf:"varint,8,opt,name=can_cancel,json=canCancel,proto3" json:"can_cancel,omitempty"`
+	CanFinish          bool                   `protobuf:"varint,9,opt,name=can_finish,json=canFinish,proto3" json:"can_finish,omitempty"`
+	OperationStatus    string                 `protobuf:"bytes,10,opt,name=operation_status,json=operationStatus,proto3" json:"operation_status,omitempty"`
+	OperationAction    string                 `protobuf:"bytes,11,opt,name=operation_action,json=operationAction,proto3" json:"operation_action,omitempty"`
+	RefundStatus       string                 `protobuf:"bytes,12,opt,name=refund_status,json=refundStatus,proto3" json:"refund_status,omitempty"`
+	Message            string                 `protobuf:"bytes,13,opt,name=message,proto3" json:"message,omitempty"`
+	Active             bool                   `protobuf:"varint,14,opt,name=active,proto3" json:"active,omitempty"`
+	OperationRequestId string                 `protobuf:"bytes,15,opt,name=operation_request_id,json=operationRequestId,proto3" json:"operation_request_id,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *SMSOrderReply) Reset() {
@@ -1521,12 +1530,185 @@ func (x *SMSOrderReply) GetActive() bool {
 	return false
 }
 
+func (x *SMSOrderReply) GetOperationRequestId() string {
+	if x != nil {
+		return x.OperationRequestId
+	}
+	return ""
+}
+
+type SMSProductHistoryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SMSProductHistoryRequest) Reset() {
+	*x = SMSProductHistoryRequest{}
+	mi := &file_storefront_v1_order_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SMSProductHistoryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SMSProductHistoryRequest) ProtoMessage() {}
+
+func (x *SMSProductHistoryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_order_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SMSProductHistoryRequest.ProtoReflect.Descriptor instead.
+func (*SMSProductHistoryRequest) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_order_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *SMSProductHistoryRequest) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *SMSProductHistoryRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+type SMSRetailSession struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	OfferName     string                 `protobuf:"bytes,2,opt,name=offer_name,json=offerName,proto3" json:"offer_name,omitempty"`
+	AmountCents   int64                  `protobuf:"varint,3,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
+	Sms           *SMSOrderReply         `protobuf:"bytes,4,opt,name=sms,proto3" json:"sms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SMSRetailSession) Reset() {
+	*x = SMSRetailSession{}
+	mi := &file_storefront_v1_order_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SMSRetailSession) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SMSRetailSession) ProtoMessage() {}
+
+func (x *SMSRetailSession) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_order_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SMSRetailSession.ProtoReflect.Descriptor instead.
+func (*SMSRetailSession) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_order_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *SMSRetailSession) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *SMSRetailSession) GetOfferName() string {
+	if x != nil {
+		return x.OfferName
+	}
+	return ""
+}
+
+func (x *SMSRetailSession) GetAmountCents() int64 {
+	if x != nil {
+		return x.AmountCents
+	}
+	return 0
+}
+
+func (x *SMSRetailSession) GetSms() *SMSOrderReply {
+	if x != nil {
+		return x.Sms
+	}
+	return nil
+}
+
+type SMSProductHistoryReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Orders        []*SMSRetailSession    `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SMSProductHistoryReply) Reset() {
+	*x = SMSProductHistoryReply{}
+	mi := &file_storefront_v1_order_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SMSProductHistoryReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SMSProductHistoryReply) ProtoMessage() {}
+
+func (x *SMSProductHistoryReply) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_order_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SMSProductHistoryReply.ProtoReflect.Descriptor instead.
+func (*SMSProductHistoryReply) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_order_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *SMSProductHistoryReply) GetOrders() []*SMSRetailSession {
+	if x != nil {
+		return x.Orders
+	}
+	return nil
+}
+
 var File_storefront_v1_order_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_order_proto_rawDesc = "" +
 	"\n" +
-	"\x19storefront/v1/order.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xd6\x05\n" +
-	"\x12CreateOrderRequest\x12k\n" +
+	"\x19storefront/v1/order.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xf8\x05\n" +
+	"\x12CreateOrderRequest\x12 \n" +
+	"\fsms_quote_id\x18\x14 \x01(\tR\n" +
+	"smsQuoteId\x12k\n" +
 	"\x10shipping_address\x18\v \x03(\v2@.zcard.api.storefront.v1.CreateOrderRequest.ShippingAddressEntryR\x0fshippingAddress\x12\x1b\n" +
 	"\tquote_key\x18\f \x01(\tR\bquoteKey\x12B\n" +
 	"\x05items\x18\x01 \x03(\v2'.zcard.api.storefront.v1.OrderItemInputB\x03\xe0A\x02R\x05items\x12#\n" +
@@ -1670,7 +1852,7 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x16\n" +
 	"\x06action\x18\x02 \x01(\tR\x06action\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x03 \x01(\tR\trequestId\"\xd4\x03\n" +
+	"request_id\x18\x03 \x01(\tR\trequestId\"\x86\x04\n" +
 	"\rSMSOrderReply\x12\x14\n" +
 	"\x05state\x18\x01 \x01(\tR\x05state\x12\x14\n" +
 	"\x05phase\x18\x02 \x01(\tR\x05phase\x12!\n" +
@@ -1690,7 +1872,20 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\x10operation_action\x18\v \x01(\tR\x0foperationAction\x12#\n" +
 	"\rrefund_status\x18\f \x01(\tR\frefundStatus\x12\x18\n" +
 	"\amessage\x18\r \x01(\tR\amessage\x12\x16\n" +
-	"\x06active\x18\x0e \x01(\bR\x06active2\xb7\t\n" +
+	"\x06active\x18\x0e \x01(\bR\x06active\x120\n" +
+	"\x14operation_request_id\x18\x0f \x01(\tR\x12operationRequestId\"M\n" +
+	"\x18SMSProductHistoryRequest\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\x04R\tproductId\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\"\xa9\x01\n" +
+	"\x10SMSRetailSession\x12\x19\n" +
+	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x1d\n" +
+	"\n" +
+	"offer_name\x18\x02 \x01(\tR\tofferName\x12!\n" +
+	"\famount_cents\x18\x03 \x01(\x03R\vamountCents\x128\n" +
+	"\x03sms\x18\x04 \x01(\v2&.zcard.api.storefront.v1.SMSOrderReplyR\x03sms\"[\n" +
+	"\x16SMSProductHistoryReply\x12A\n" +
+	"\x06orders\x18\x01 \x03(\v2).zcard.api.storefront.v1.SMSRetailSessionR\x06orders2\xb7\t\n" +
 	"\x11StoreOrderService\x12\x90\x01\n" +
 	"\n" +
 	"QuoteOrder\x12+.zcard.api.storefront.v1.CreateOrderRequest\x1a).zcard.api.storefront.v1.CreateOrderReply\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/storefront/orders/quote\x12\x9e\x01\n" +
@@ -1700,8 +1895,9 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\bGetOrder\x12(.zcard.api.storefront.v1.GetOrderRequest\x1a&.zcard.api.storefront.v1.GetOrderReply\",\x82\xd3\xe4\x93\x02&\x12$/api/v1/storefront/orders/{order_no}\x12\x8e\x01\n" +
 	"\fListMyOrders\x12,.zcard.api.storefront.v1.ListMyOrdersRequest\x1a*.zcard.api.storefront.v1.ListMyOrdersReply\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/api/v1/storefront/my-orders\x12\x9a\x01\n" +
 	"\x0fListGuestOrders\x12/.zcard.api.storefront.v1.ListGuestOrdersRequest\x1a-.zcard.api.storefront.v1.ListGuestOrdersReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/storefront/guest-orders\x12\x8e\x01\n" +
-	"\rCancelMyOrder\x12-.zcard.api.storefront.v1.CancelMyOrderRequest\x1a\x16.google.protobuf.Empty\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/v1/storefront/orders/{order_no}/cancel2\xbc\x02\n" +
-	"\x0fStoreSMSService\x12\x8c\x01\n" +
+	"\rCancelMyOrder\x12-.zcard.api.storefront.v1.CancelMyOrderRequest\x1a\x16.google.protobuf.Empty\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/v1/storefront/orders/{order_no}/cancel2\xf2\x03\n" +
+	"\x0fStoreSMSService\x12\xb3\x01\n" +
+	"\x0eListSMSProduct\x121.zcard.api.storefront.v1.SMSProductHistoryRequest\x1a/.zcard.api.storefront.v1.SMSProductHistoryReply\"=\x82\xd3\xe4\x93\x027\x125/api/v1/storefront/products/{product_id}/sms/sessions\x12\x8c\x01\n" +
 	"\x06GetSMS\x12(.zcard.api.storefront.v1.SMSOrderRequest\x1a&.zcard.api.storefront.v1.SMSOrderReply\"0\x82\xd3\xe4\x93\x02*\x12(/api/v1/storefront/orders/{order_no}/sms\x12\x99\x01\n" +
 	"\x06ActSMS\x12).zcard.api.storefront.v1.SMSActionRequest\x1a&.zcard.api.storefront.v1.SMSOrderReply\"<\x82\xd3\xe4\x93\x026:\x01*\"1/api/v1/storefront/orders/{order_no}/sms/{action}BGZEgithub.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1b\x06proto3"
 
@@ -1717,69 +1913,76 @@ func file_storefront_v1_order_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_order_proto_rawDescData
 }
 
-var file_storefront_v1_order_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_storefront_v1_order_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_storefront_v1_order_proto_goTypes = []any{
-	(*CreateOrderRequest)(nil),     // 0: zcard.api.storefront.v1.CreateOrderRequest
-	(*OrderItemInput)(nil),         // 1: zcard.api.storefront.v1.OrderItemInput
-	(*CreateOrderReply)(nil),       // 2: zcard.api.storefront.v1.CreateOrderReply
-	(*GetOrderRequest)(nil),        // 3: zcard.api.storefront.v1.GetOrderRequest
-	(*GetOrderReply)(nil),          // 4: zcard.api.storefront.v1.GetOrderReply
-	(*OrderItemReply)(nil),         // 5: zcard.api.storefront.v1.OrderItemReply
-	(*ListGuestOrdersRequest)(nil), // 6: zcard.api.storefront.v1.ListGuestOrdersRequest
-	(*ListGuestOrdersReply)(nil),   // 7: zcard.api.storefront.v1.ListGuestOrdersReply
-	(*GuestOrderItem)(nil),         // 8: zcard.api.storefront.v1.GuestOrderItem
-	(*ListMyOrdersRequest)(nil),    // 9: zcard.api.storefront.v1.ListMyOrdersRequest
-	(*ListMyOrdersReply)(nil),      // 10: zcard.api.storefront.v1.ListMyOrdersReply
-	(*MyOrderItem)(nil),            // 11: zcard.api.storefront.v1.MyOrderItem
-	(*CancelMyOrderRequest)(nil),   // 12: zcard.api.storefront.v1.CancelMyOrderRequest
-	(*ShippingRegionsRequest)(nil), // 13: zcard.api.storefront.v1.ShippingRegionsRequest
-	(*ShippingRegionsReply)(nil),   // 14: zcard.api.storefront.v1.ShippingRegionsReply
-	(*ReceiveShipmentRequest)(nil), // 15: zcard.api.storefront.v1.ReceiveShipmentRequest
-	(*SMSOrderRequest)(nil),        // 16: zcard.api.storefront.v1.SMSOrderRequest
-	(*SMSActionRequest)(nil),       // 17: zcard.api.storefront.v1.SMSActionRequest
-	(*SMSOrderReply)(nil),          // 18: zcard.api.storefront.v1.SMSOrderReply
-	nil,                            // 19: zcard.api.storefront.v1.CreateOrderRequest.ShippingAddressEntry
-	nil,                            // 20: zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
-	nil,                            // 21: zcard.api.storefront.v1.OrderItemInput.ControlAnswersEntry
-	nil,                            // 22: zcard.api.storefront.v1.GetOrderReply.ShippingAddressEntry
-	nil,                            // 23: zcard.api.storefront.v1.OrderItemReply.SmsProductEntry
-	(*emptypb.Empty)(nil),          // 24: google.protobuf.Empty
+	(*CreateOrderRequest)(nil),       // 0: zcard.api.storefront.v1.CreateOrderRequest
+	(*OrderItemInput)(nil),           // 1: zcard.api.storefront.v1.OrderItemInput
+	(*CreateOrderReply)(nil),         // 2: zcard.api.storefront.v1.CreateOrderReply
+	(*GetOrderRequest)(nil),          // 3: zcard.api.storefront.v1.GetOrderRequest
+	(*GetOrderReply)(nil),            // 4: zcard.api.storefront.v1.GetOrderReply
+	(*OrderItemReply)(nil),           // 5: zcard.api.storefront.v1.OrderItemReply
+	(*ListGuestOrdersRequest)(nil),   // 6: zcard.api.storefront.v1.ListGuestOrdersRequest
+	(*ListGuestOrdersReply)(nil),     // 7: zcard.api.storefront.v1.ListGuestOrdersReply
+	(*GuestOrderItem)(nil),           // 8: zcard.api.storefront.v1.GuestOrderItem
+	(*ListMyOrdersRequest)(nil),      // 9: zcard.api.storefront.v1.ListMyOrdersRequest
+	(*ListMyOrdersReply)(nil),        // 10: zcard.api.storefront.v1.ListMyOrdersReply
+	(*MyOrderItem)(nil),              // 11: zcard.api.storefront.v1.MyOrderItem
+	(*CancelMyOrderRequest)(nil),     // 12: zcard.api.storefront.v1.CancelMyOrderRequest
+	(*ShippingRegionsRequest)(nil),   // 13: zcard.api.storefront.v1.ShippingRegionsRequest
+	(*ShippingRegionsReply)(nil),     // 14: zcard.api.storefront.v1.ShippingRegionsReply
+	(*ReceiveShipmentRequest)(nil),   // 15: zcard.api.storefront.v1.ReceiveShipmentRequest
+	(*SMSOrderRequest)(nil),          // 16: zcard.api.storefront.v1.SMSOrderRequest
+	(*SMSActionRequest)(nil),         // 17: zcard.api.storefront.v1.SMSActionRequest
+	(*SMSOrderReply)(nil),            // 18: zcard.api.storefront.v1.SMSOrderReply
+	(*SMSProductHistoryRequest)(nil), // 19: zcard.api.storefront.v1.SMSProductHistoryRequest
+	(*SMSRetailSession)(nil),         // 20: zcard.api.storefront.v1.SMSRetailSession
+	(*SMSProductHistoryReply)(nil),   // 21: zcard.api.storefront.v1.SMSProductHistoryReply
+	nil,                              // 22: zcard.api.storefront.v1.CreateOrderRequest.ShippingAddressEntry
+	nil,                              // 23: zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
+	nil,                              // 24: zcard.api.storefront.v1.OrderItemInput.ControlAnswersEntry
+	nil,                              // 25: zcard.api.storefront.v1.GetOrderReply.ShippingAddressEntry
+	nil,                              // 26: zcard.api.storefront.v1.OrderItemReply.SmsProductEntry
+	(*emptypb.Empty)(nil),            // 27: google.protobuf.Empty
 }
 var file_storefront_v1_order_proto_depIdxs = []int32{
-	19, // 0: zcard.api.storefront.v1.CreateOrderRequest.shipping_address:type_name -> zcard.api.storefront.v1.CreateOrderRequest.ShippingAddressEntry
+	22, // 0: zcard.api.storefront.v1.CreateOrderRequest.shipping_address:type_name -> zcard.api.storefront.v1.CreateOrderRequest.ShippingAddressEntry
 	1,  // 1: zcard.api.storefront.v1.CreateOrderRequest.items:type_name -> zcard.api.storefront.v1.OrderItemInput
-	20, // 2: zcard.api.storefront.v1.CreateOrderRequest.control_answers:type_name -> zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
-	21, // 3: zcard.api.storefront.v1.OrderItemInput.control_answers:type_name -> zcard.api.storefront.v1.OrderItemInput.ControlAnswersEntry
-	22, // 4: zcard.api.storefront.v1.GetOrderReply.shipping_address:type_name -> zcard.api.storefront.v1.GetOrderReply.ShippingAddressEntry
+	23, // 2: zcard.api.storefront.v1.CreateOrderRequest.control_answers:type_name -> zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
+	24, // 3: zcard.api.storefront.v1.OrderItemInput.control_answers:type_name -> zcard.api.storefront.v1.OrderItemInput.ControlAnswersEntry
+	25, // 4: zcard.api.storefront.v1.GetOrderReply.shipping_address:type_name -> zcard.api.storefront.v1.GetOrderReply.ShippingAddressEntry
 	5,  // 5: zcard.api.storefront.v1.GetOrderReply.items:type_name -> zcard.api.storefront.v1.OrderItemReply
-	23, // 6: zcard.api.storefront.v1.OrderItemReply.sms_product:type_name -> zcard.api.storefront.v1.OrderItemReply.SmsProductEntry
+	26, // 6: zcard.api.storefront.v1.OrderItemReply.sms_product:type_name -> zcard.api.storefront.v1.OrderItemReply.SmsProductEntry
 	8,  // 7: zcard.api.storefront.v1.ListGuestOrdersReply.orders:type_name -> zcard.api.storefront.v1.GuestOrderItem
 	11, // 8: zcard.api.storefront.v1.ListMyOrdersReply.orders:type_name -> zcard.api.storefront.v1.MyOrderItem
-	0,  // 9: zcard.api.storefront.v1.StoreOrderService.QuoteOrder:input_type -> zcard.api.storefront.v1.CreateOrderRequest
-	13, // 10: zcard.api.storefront.v1.StoreOrderService.ShippingRegions:input_type -> zcard.api.storefront.v1.ShippingRegionsRequest
-	15, // 11: zcard.api.storefront.v1.StoreOrderService.ReceiveShipment:input_type -> zcard.api.storefront.v1.ReceiveShipmentRequest
-	0,  // 12: zcard.api.storefront.v1.StoreOrderService.CreateOrder:input_type -> zcard.api.storefront.v1.CreateOrderRequest
-	3,  // 13: zcard.api.storefront.v1.StoreOrderService.GetOrder:input_type -> zcard.api.storefront.v1.GetOrderRequest
-	9,  // 14: zcard.api.storefront.v1.StoreOrderService.ListMyOrders:input_type -> zcard.api.storefront.v1.ListMyOrdersRequest
-	6,  // 15: zcard.api.storefront.v1.StoreOrderService.ListGuestOrders:input_type -> zcard.api.storefront.v1.ListGuestOrdersRequest
-	12, // 16: zcard.api.storefront.v1.StoreOrderService.CancelMyOrder:input_type -> zcard.api.storefront.v1.CancelMyOrderRequest
-	16, // 17: zcard.api.storefront.v1.StoreSMSService.GetSMS:input_type -> zcard.api.storefront.v1.SMSOrderRequest
-	17, // 18: zcard.api.storefront.v1.StoreSMSService.ActSMS:input_type -> zcard.api.storefront.v1.SMSActionRequest
-	2,  // 19: zcard.api.storefront.v1.StoreOrderService.QuoteOrder:output_type -> zcard.api.storefront.v1.CreateOrderReply
-	14, // 20: zcard.api.storefront.v1.StoreOrderService.ShippingRegions:output_type -> zcard.api.storefront.v1.ShippingRegionsReply
-	24, // 21: zcard.api.storefront.v1.StoreOrderService.ReceiveShipment:output_type -> google.protobuf.Empty
-	2,  // 22: zcard.api.storefront.v1.StoreOrderService.CreateOrder:output_type -> zcard.api.storefront.v1.CreateOrderReply
-	4,  // 23: zcard.api.storefront.v1.StoreOrderService.GetOrder:output_type -> zcard.api.storefront.v1.GetOrderReply
-	10, // 24: zcard.api.storefront.v1.StoreOrderService.ListMyOrders:output_type -> zcard.api.storefront.v1.ListMyOrdersReply
-	7,  // 25: zcard.api.storefront.v1.StoreOrderService.ListGuestOrders:output_type -> zcard.api.storefront.v1.ListGuestOrdersReply
-	24, // 26: zcard.api.storefront.v1.StoreOrderService.CancelMyOrder:output_type -> google.protobuf.Empty
-	18, // 27: zcard.api.storefront.v1.StoreSMSService.GetSMS:output_type -> zcard.api.storefront.v1.SMSOrderReply
-	18, // 28: zcard.api.storefront.v1.StoreSMSService.ActSMS:output_type -> zcard.api.storefront.v1.SMSOrderReply
-	19, // [19:29] is the sub-list for method output_type
-	9,  // [9:19] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	18, // 9: zcard.api.storefront.v1.SMSRetailSession.sms:type_name -> zcard.api.storefront.v1.SMSOrderReply
+	20, // 10: zcard.api.storefront.v1.SMSProductHistoryReply.orders:type_name -> zcard.api.storefront.v1.SMSRetailSession
+	0,  // 11: zcard.api.storefront.v1.StoreOrderService.QuoteOrder:input_type -> zcard.api.storefront.v1.CreateOrderRequest
+	13, // 12: zcard.api.storefront.v1.StoreOrderService.ShippingRegions:input_type -> zcard.api.storefront.v1.ShippingRegionsRequest
+	15, // 13: zcard.api.storefront.v1.StoreOrderService.ReceiveShipment:input_type -> zcard.api.storefront.v1.ReceiveShipmentRequest
+	0,  // 14: zcard.api.storefront.v1.StoreOrderService.CreateOrder:input_type -> zcard.api.storefront.v1.CreateOrderRequest
+	3,  // 15: zcard.api.storefront.v1.StoreOrderService.GetOrder:input_type -> zcard.api.storefront.v1.GetOrderRequest
+	9,  // 16: zcard.api.storefront.v1.StoreOrderService.ListMyOrders:input_type -> zcard.api.storefront.v1.ListMyOrdersRequest
+	6,  // 17: zcard.api.storefront.v1.StoreOrderService.ListGuestOrders:input_type -> zcard.api.storefront.v1.ListGuestOrdersRequest
+	12, // 18: zcard.api.storefront.v1.StoreOrderService.CancelMyOrder:input_type -> zcard.api.storefront.v1.CancelMyOrderRequest
+	19, // 19: zcard.api.storefront.v1.StoreSMSService.ListSMSProduct:input_type -> zcard.api.storefront.v1.SMSProductHistoryRequest
+	16, // 20: zcard.api.storefront.v1.StoreSMSService.GetSMS:input_type -> zcard.api.storefront.v1.SMSOrderRequest
+	17, // 21: zcard.api.storefront.v1.StoreSMSService.ActSMS:input_type -> zcard.api.storefront.v1.SMSActionRequest
+	2,  // 22: zcard.api.storefront.v1.StoreOrderService.QuoteOrder:output_type -> zcard.api.storefront.v1.CreateOrderReply
+	14, // 23: zcard.api.storefront.v1.StoreOrderService.ShippingRegions:output_type -> zcard.api.storefront.v1.ShippingRegionsReply
+	27, // 24: zcard.api.storefront.v1.StoreOrderService.ReceiveShipment:output_type -> google.protobuf.Empty
+	2,  // 25: zcard.api.storefront.v1.StoreOrderService.CreateOrder:output_type -> zcard.api.storefront.v1.CreateOrderReply
+	4,  // 26: zcard.api.storefront.v1.StoreOrderService.GetOrder:output_type -> zcard.api.storefront.v1.GetOrderReply
+	10, // 27: zcard.api.storefront.v1.StoreOrderService.ListMyOrders:output_type -> zcard.api.storefront.v1.ListMyOrdersReply
+	7,  // 28: zcard.api.storefront.v1.StoreOrderService.ListGuestOrders:output_type -> zcard.api.storefront.v1.ListGuestOrdersReply
+	27, // 29: zcard.api.storefront.v1.StoreOrderService.CancelMyOrder:output_type -> google.protobuf.Empty
+	21, // 30: zcard.api.storefront.v1.StoreSMSService.ListSMSProduct:output_type -> zcard.api.storefront.v1.SMSProductHistoryReply
+	18, // 31: zcard.api.storefront.v1.StoreSMSService.GetSMS:output_type -> zcard.api.storefront.v1.SMSOrderReply
+	18, // 32: zcard.api.storefront.v1.StoreSMSService.ActSMS:output_type -> zcard.api.storefront.v1.SMSOrderReply
+	22, // [22:33] is the sub-list for method output_type
+	11, // [11:22] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_order_proto_init() }
@@ -1793,7 +1996,7 @@ func file_storefront_v1_order_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_order_proto_rawDesc), len(file_storefront_v1_order_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   24,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

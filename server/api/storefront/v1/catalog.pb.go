@@ -417,6 +417,7 @@ func (x *FlashOffer) GetPerUserLimit() int32 {
 
 type Product struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
+	ProductKind       string                 `protobuf:"bytes,70,opt,name=product_kind,json=productKind,proto3" json:"product_kind,omitempty"`
 	DeliveryKind      string                 `protobuf:"bytes,60,opt,name=delivery_kind,json=deliveryKind,proto3" json:"delivery_kind,omitempty"`
 	SmsProduct        map[string]string      `protobuf:"bytes,61,rep,name=sms_product,json=smsProduct,proto3" json:"sms_product,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	SmsSalesEnabled   bool                   `protobuf:"varint,62,opt,name=sms_sales_enabled,json=smsSalesEnabled,proto3" json:"sms_sales_enabled,omitempty"`
@@ -491,6 +492,13 @@ func (x *Product) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Product.ProtoReflect.Descriptor instead.
 func (*Product) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Product) GetProductKind() string {
+	if x != nil {
+		return x.ProductKind
+	}
+	return ""
 }
 
 func (x *Product) GetDeliveryKind() string {
@@ -1033,9 +1041,10 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"priceCents\x12\x15\n" +
 	"\x06end_at\x18\x02 \x01(\x03R\x05endAt\x12\x1c\n" +
 	"\tremaining\x18\x03 \x01(\x05R\tremaining\x12$\n" +
-	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\xc3\n" +
+	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\xe6\n" +
 	"\n" +
-	"\aProduct\x12#\n" +
+	"\aProduct\x12!\n" +
+	"\fproduct_kind\x18F \x01(\tR\vproductKind\x12#\n" +
 	"\rdelivery_kind\x18< \x01(\tR\fdeliveryKind\x12Q\n" +
 	"\vsms_product\x18= \x03(\v20.zcard.api.storefront.v1.Product.SmsProductEntryR\n" +
 	"smsProduct\x12*\n" +

@@ -79,6 +79,7 @@ func NewHTTPServer(
 	supplyAdminSvc *supply.AdminSupplyService,
 	procureAdminSvc *procurement.AdminProcurementService,
 	smsSvc *procurement.StoreSMSService,
+	smsChannelSvc *supply.StoreSMSChannelService,
 	supplyAPISvc *supplier.SupplyAPIService,
 	supplierAdminSvc *supplier.AdminSupplierService,
 	supplierStoreSvc *supplier.StoreSupplierService,
@@ -236,6 +237,7 @@ func NewHTTPServer(
 	adminv1.RegisterAdminSupplyServiceHTTPServer(srv, supplyAdminSvc)
 	adminv1.RegisterAdminProcurementServiceHTTPServer(srv, procureAdminSvc)
 	storefrontv1.RegisterStoreSMSServiceHTTPServer(srv, smsSvc)
+	storefrontv1.RegisterStoreSMSChannelServiceHTTPServer(srv, smsChannelSvc)
 	adminv1.RegisterAdminSupplierServiceHTTPServer(srv, supplierAdminSvc)
 	adminv1.RegisterAdminContentServiceHTTPServer(srv, contentAdminSvc)
 	storefrontv1.RegisterStoreContentServiceHTTPServer(srv, contentStoreSvc)

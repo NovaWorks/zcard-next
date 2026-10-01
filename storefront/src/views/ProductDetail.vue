@@ -1,7 +1,7 @@
 <template>
   <div v-if="p" class="pd-page">
     <!-- 面包屑 -->
-    <div class="pd-crumb">
+    <div v-if="p.product_kind !== 'sms_channel'" class="pd-crumb">
       <router-link to="/">首页</router-link>
       <span class="pd-crumb-sep">/</span>
       <router-link to="/products">全部商品</router-link>
@@ -9,7 +9,8 @@
       <span class="pd-crumb-current">{{ p.name }}</span>
     </div>
 
-    <div class="pd-main">
+    <SMSProduct v-if="p.product_kind === 'sms_channel'" :key="p.id" :product="p" />
+    <div v-else class="pd-main">
       <!-- 左栏：商品图 -->
       <div class="pd-gallery">
         <div class="pd-cover" :role="p.cover ? 'button' : undefined" :tabindex="p.cover ? 0 : undefined" aria-label="查看商品大图" @click="openCover" @keydown.enter="openCover" @keydown.space.prevent="openCover">
@@ -150,7 +151,7 @@
     </div>
 
     <!-- 描述区 -->
-    <div v-if="p.description" class="pd-section pd-details">
+    <div v-if="p.description && p.product_kind !== 'sms_channel'" class="pd-section pd-details">
       <h3 class="pd-section-title">商品详情</h3>
       <div ref="description" class="pd-desc" @click="openDescriptionImage" @keydown="descriptionKeydown" v-html="p.description"></div>
     </div>
@@ -192,6 +193,7 @@ import { useFlashOffers } from '@/composables/flash-offers';
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import SMSProduct from '@/components/SMSProduct.vue';
 import { getProduct, createOrder, rememberOrderPassword, fetchTradeConfig, contactRequiredLabel, contactValid, type Product, type TradeConfig } from '@/api';
 import { formatMoney, getToken } from '@/api/client';
 import { NO_IMAGE, onImgError } from '@/no-image';

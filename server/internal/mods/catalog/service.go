@@ -17,6 +17,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/go-kratos/kratos/v3/errors"
+	"github.com/go-kratos/kratos/v3/transport"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -169,6 +170,11 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 		}
 		return nil, errors.InternalServer("catalog.GET_FAILED", "读取商品失败")
 	}
+	if p.Status == 2 {
+		if tr, ok := transport.FromServerContext(ctx); ok {
+			tr.ReplyHeader().Set("Cache-Control", "no-store, private")
+		}
+	}
 	// ：分站单价（listing=checkout 同源；SKU 规则优先于商品规则由定价引擎裁定）
 	base := p.Price
 	if tc.SubsiteID != tenancy.MainSubsiteID && s.pricer != nil {
@@ -189,7 +195,7 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 		return nil, errors.InternalServer("catalog.FLASH_FAILED", "读取活动价格失败，请重试")
 	}
 	out.FlashSale = toFlashOffer(offers[couponport.FlashKey{ProductID: p.ID}])
-	if p.UpstreamSourceID != 0 && s.stockLookup != nil {
+	if p.ProductKind != "sms_channel" && p.UpstreamSourceID != 0 && s.stockLookup != nil {
 		n, err := s.stockLookup.DisplayStock(ctx, p.UpstreamSourceID, p.UpstreamProductCode)
 		if err != nil || n < -1 {
 			out.Stock = -2
@@ -263,7 +269,7 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 	}
 
 	return &storefrontv1.Product{
-		DeliveryKind: p.DeliveryKind, SmsProduct: p.SMSProduct, SmsSalesEnabled: data.SMSSalesEnabled(),
+		ProductKind: p.ProductKind, DeliveryKind: p.DeliveryKind, SmsProduct: p.SMSProduct, SmsSalesEnabled: data.SMSSalesEnabled(),
 		GoodsType: p.GoodsType, ShippingMode: p.ShippingMode, ShippingFeeCents: p.ShippingFee, ShippingCountries: p.ShippingCountries,
 		Id:              p.ID,
 		Name:            p.Name,

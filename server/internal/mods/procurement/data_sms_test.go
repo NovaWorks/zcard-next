@@ -213,12 +213,14 @@ type smsFault struct {
 func (f smsFault) Error() string                            { return "safe failure" }
 func (f smsFault) SMSFailure() (int, string, time.Duration) { return f.status, f.code, f.delay }
 func TestSMSRetryAfterAndConflictDisposition(t *testing.T) {
-	for _, kind := range []string{"rate_limit", "allocating", "identity_conflict", "action_pending"} {
+	for _, kind := range []string{"rate_limit", "allocating", "concurrent_update", "identity_conflict", "action_pending"} {
 		t.Run(kind, func(t *testing.T) {
 			s, d, row := smsEnv(t)
 			ctx := context.Background()
 			f := smsFault{status: 429, delay: 2 * time.Minute}
 			switch kind {
+			case "concurrent_update":
+				f = smsFault{status: 409, code: "order.CONCURRENT_UPDATE"}
 			case "allocating":
 				f = smsFault{status: 409, code: "supply.ALLOCATING"}
 			case "identity_conflict":

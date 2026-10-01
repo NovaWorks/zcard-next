@@ -1,4 +1,4 @@
-h1:/PNOUOYsgt0Fblhzj/kyOeA8dMG7rDod2MbgI1022Gk=
+h1:zuPNI0tWYJ6fNq9CDUA7SFBLdQsLuYts1gpoyedMl/c=
 20260815190720_init.sql h1:YQ1dapmjcvZ7lL1ftfCgd8Z/h8hqxnS6tCJpOhboLe4=
 20260815193738_add_failed_tasks.sql h1:ahRwWY2iyo38+hQ88AV8P3KYJrCt6AfoDNpKmDmjEXk=
 20260815201530_v1_full_schema.sql h1:oHn5bzaeNTXmlcaeCVn/rme4XxKu3P43XYAvOsQBwOs=
@@ -53,3 +53,4 @@ h1:/PNOUOYsgt0Fblhzj/kyOeA8dMG7rDod2MbgI1022Gk=
 20260930065556_fetch_failure_count.sql h1:MzRhy5cYC56RiL682kXQGU8qRqYXIxMIL6p5P3sWESs=
 20260930100308_sms_client.sql h1:04Vb2uBUJbjwBAM2Cmjtu0HXeR9i1joBSjD2z6GpQAE=
 20260930102300_sms_account_lease.sql h1:tmbX5+zTj6z/IYl40SU3rPWewx5h6pfLal3dHhm2RxA=
+20260930171729_sms_channel_product.sql h1:DFuEAfoI8jD2Q5eiZHaUwvtPr8VkuIE2r83mgQEAmeE=

@@ -52,7 +52,11 @@ func (s *StoreOrderService) ReceiveShipment(ctx context.Context, req *storefront
 }
 
 func orderRequestHash(in CreateOrderInput) string {
-	b, _ := json.Marshal([]any{in.SubsiteID, in.UserID, in.Items, in.ShippingAddress, in.Contact, in.GuestContact, in.CouponCode, in.UsePoints, in.QueryPassword, in.ControlAnswers, in.RefCode})
+	values := []any{in.SubsiteID, in.UserID, in.Items, in.ShippingAddress, in.Contact, in.GuestContact, in.CouponCode, in.UsePoints, in.QueryPassword, in.ControlAnswers, in.RefCode}
+	if in.SMSQuoteID != "" {
+		values = append(values, in.SMSQuoteID)
+	}
+	b, _ := json.Marshal(values)
 	return fmt.Sprintf("%x", sha256.Sum256(b))
 }
 func orderIdemHash(in CreateOrderInput) string {

@@ -219,6 +219,9 @@ func (g *Gateway) CheckItems(ctx context.Context, subsiteID uint64, items []orde
 		if e != nil {
 			return e
 		}
+		if p.ProductKind == "sms_channel" {
+			continue
+		}
 		sku, e := data.DeliverySKU(ctx, data.Client(ctx, g.repo.data), p, it.SkuID)
 		if e != nil {
 			return e

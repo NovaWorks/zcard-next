@@ -242,6 +242,11 @@ func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.
 	if err != nil {
 		return nil, err
 	}
+	if current.ProductKind == "sms_channel" {
+		if in.GoodsType != nil && *in.GoodsType != "virtual" || in.StockType != "" && in.StockType != "card" || in.FulfillmentMode != "" && in.FulfillmentMode != "auto" || in.Price > 0 || in.FactoryPrice > 0 || in.PointsRequired > 0 || len(in.DirectContent) > 0 {
+			return nil, fmt.Errorf("渠道接码商品请在货源导入/映射中设置加价，不能改为普通商品或本地发货")
+		}
+	}
 	if err := r.validatePhysicalProduct(ctx, current, &in); err != nil {
 		return nil, err
 	}
@@ -276,7 +281,7 @@ func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.
 	if in.GoodsType != nil || in.ShippingMode != nil {
 		q.SetShippingCountries(in.ShippingCountries)
 	}
-	if current.GoodsType == "physical" {
+	if current.GoodsType == "physical" || current.ProductKind == "sms_channel" {
 		q.AddLockVersion(1)
 	}
 	if in.PhysicalStock != nil && current.GoodsType == "physical" {
@@ -650,7 +655,7 @@ func (r *ProductRepoImpl) DeleteTag(ctx context.Context, id uint64) error {
 // ToAdminPB 转 admin 协议对象。
 func ToAdminPB(p *ent.Product) *adminv1.AdminProduct {
 	out := &adminv1.AdminProduct{
-		GoodsType: p.GoodsType, ShippingMode: p.ShippingMode, ShippingFeeCents: p.ShippingFee, ShippingCountries: p.ShippingCountries, PhysicalStock: p.PhysicalStock,
+		ProductKind: p.ProductKind, GoodsType: p.GoodsType, ShippingMode: p.ShippingMode, ShippingFeeCents: p.ShippingFee, ShippingCountries: p.ShippingCountries, PhysicalStock: p.PhysicalStock,
 		FulfillmentMode: p.FulfillmentMode, ManualStock: &p.ManualStock,
 		Id: p.ID, CategoryId: p.CategoryID, Name: p.Name, Slug: p.Slug,
 		Description: p.Description, Cover: p.Cover, Images: p.Images,
@@ -695,6 +700,15 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 }
 
 func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.UpstreamProductInput) (uint64, bool, error) {
+	if in.ProductKind == "" {
+		in.ProductKind = "standard"
+	}
+	if in.ProductKind != "standard" && in.ProductKind != "sms_channel" {
+		return 0, false, fmt.Errorf("商品类型无效")
+	}
+	if in.ProductKind == "sms_channel" && (in.DeliveryKind != "sms_activation" || len(in.SKUs) > 0) {
+		return 0, false, fmt.Errorf("渠道商品类型无效")
+	}
 	if in.DeliveryKind == "" {
 		in.DeliveryKind = "card"
 	}
@@ -795,7 +809,7 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 			SetSlug(slug).
 			SetPrice(price).
 			SetFactoryPrice(max(in.FactoryPrice, 0)).
-			SetDeliveryKind(in.DeliveryKind).SetSmsProduct(in.SMSProduct).
+			SetProductKind(in.ProductKind).SetDeliveryKind(in.DeliveryKind).SetSmsProduct(in.SMSProduct).
 			SetStockType(product.StockTypeCard).
 			SetStatus(status).
 			SetUpstreamSourceID(in.ConnectionID).
@@ -852,6 +866,9 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 	upd := data.Client(ctx, r.data).Product.UpdateOneID(existing.ID).Where(product.StatusGTE(0)).
 		SetName(in.Name).
 		SetUpstreamSyncedAt(in.UpstreamSyncedAt)
+	if existing.ProductKind != in.ProductKind {
+		return 0, false, fmt.Errorf("商品类型不能变化")
+	}
 	if existing.DeliveryKind != in.DeliveryKind {
 		return 0, false, fmt.Errorf("上游交付类型变化，请新建商品映射")
 	}
