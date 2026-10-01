@@ -349,10 +349,29 @@ func (s *AdminPaymentService) CapturePayment(ctx context.Context, req *adminv1.C
 	if !ok {
 		return nil, errors.BadRequest("payment.CAPTURE_UNSUPPORTED", "渠道不支持主动查单，请到网关核对到账")
 	}
-	if p.ChannelOrderNo == "" {
-		return nil, errors.BadRequest("payment.GATEWAY_ORDER_MISSING", "缺少网关单号，请到网关核对到账")
+	var f *port.CallbackFact
+	if orderCapturer, ok := provider.(port.OrderCapturer); ok {
+		ref := p.GatewayOrderRef
+		if ref == "" && p.ChannelOrderNo == "" {
+			if p.OrderID != 0 {
+				ref = s.getOrderNo(ctx, p.OrderID)
+			} else if p.RechargeOrderID != 0 {
+				ref = fmt.Sprintf("RCH%d", p.RechargeOrderID)
+			}
+		}
+		if ref != "" {
+			f, err = orderCapturer.QueryPaymentByOrderNo(ctx, ref, s.repo.DecryptConfig(ch))
+		} else if p.ChannelOrderNo != "" {
+			f, err = capr.QueryPayment(ctx, p.ChannelOrderNo, s.repo.DecryptConfig(ch))
+		} else {
+			return nil, errors.BadRequest("payment.GATEWAY_ORDER_MISSING", "缺少可查询订单号，请到网关核对到账")
+		}
+	} else {
+		if p.ChannelOrderNo == "" {
+			return nil, errors.BadRequest("payment.GATEWAY_ORDER_MISSING", "缺少网关单号，请到网关核对到账")
+		}
+		f, err = capr.QueryPayment(ctx, p.ChannelOrderNo, s.repo.DecryptConfig(ch))
 	}
-	f, err := capr.QueryPayment(ctx, p.ChannelOrderNo, s.repo.DecryptConfig(ch))
 	if err != nil {
 		return nil, errors.InternalServer("payment.CAPTURE_FAILED", "查单失败: "+err.Error())
 	}
@@ -734,7 +753,7 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 			}
 		}
 		if !f.Success && !isNativeCryptoDriver(ch.Driver) {
-			if ch.Driver == "xunhupay" {
+			if ch.Driver == "xunhupay" || ch.Driver == "alipay" {
 				return ctx.String(http.StatusOK, "success")
 			}
 			return ctx.JSON(http.StatusOK, map[string]string{"status": "ignored"})

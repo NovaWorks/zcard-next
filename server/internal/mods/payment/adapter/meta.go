@@ -11,15 +11,15 @@ import (
 
 // Meta 支付宝。
 func (a *AlipayAdapter) Meta() port.DriverMeta {
-	return port.DriverMeta{Name: "支付宝", Icon: "alipay", Description: "支付宝网页支付（需商户签约 RSA2 密钥）"}
+	return port.DriverMeta{Name: "支付宝", Icon: "alipay", Description: "支付宝电脑网站支付（RSA2，普通公钥模式）"}
 }
 
 // ConfigFields 支付宝配置字段。
 func (a *AlipayAdapter) ConfigFields() []port.ConfigField {
 	return []port.ConfigField{
 		{Key: "app_id", Label: "App ID", Type: "text", Required: true, Placeholder: "应用 APPID"},
-		{Key: "private_key", Label: "商户私钥", Type: "password", Required: true, Sensitive: true, Help: "应用私钥 PEM（RSA2），用于请求签名"},
-		{Key: "alipay_public_key", Label: "支付宝公钥", Type: "password", Required: true, Sensitive: true, Help: "支付宝公钥 PEM，用于回调验签"},
+		{Key: "private_key", Label: "应用私钥", Type: "textarea", Required: true, Sensitive: true, Help: "粘贴密钥工具生成的应用私钥，支持裸 Base64 或完整 PEM（PKCS1/PKCS8）。已配置时留空保持不变。"},
+		{Key: "alipay_public_key", Label: "支付宝公钥", Type: "textarea", Required: true, Sensitive: true, Help: "填写支付宝开放平台提供的支付宝公钥，支持裸 Base64 或完整 PEM；不要填写应用公钥或公钥证书。已配置时留空保持不变。"},
 		{Key: "gateway", Label: "网关地址", Type: "text", Default: "https://openapi.alipay.com/gateway.do", Placeholder: "留空使用官方网关"},
 	}
 }

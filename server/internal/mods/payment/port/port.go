@@ -101,6 +101,11 @@ type Capturer interface {
 	QueryPayment(ctx context.Context, gatewayOrderNo string, cfg json.RawMessage) (*CallbackFact, error)
 }
 
+// OrderCapturer 在未收到回调、尚无网关交易号时按商户订单号查单。
+type OrderCapturer interface {
+	QueryPaymentByOrderNo(ctx context.Context, orderNo string, cfg json.RawMessage) (*CallbackFact, error)
+}
+
 // Acker 回调成功应答体（渠道感知，可选能力位）：
 // 未实现则回调管线默认 JSON {"status":"ok"}；epusdt 类网关要求纯文本 "ok"。
 type Acker interface {

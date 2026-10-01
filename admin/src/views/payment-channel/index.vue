@@ -864,7 +864,11 @@ onMounted(() => {
               </div>
             </template>
             <template v-else-if="f.type === 'textarea'">
-              <NInput v-model:value="form.values[f.key]" type="textarea" :rows="4" :placeholder="fieldHint(f)" />
+              <div class="w-full">
+                <NInput v-model:value="form.values[f.key]" type="textarea" :rows="4" :placeholder="fieldHint(f)"
+                  :input-props="f.sensitive ? { autocomplete: 'off', spellcheck: false } : undefined" />
+                <div v-if="f.help" class="text-12px opacity-70 mt-4px">{{ f.help }}</div>
+              </div>
             </template>
             <template v-else-if="f.type === 'number'">
               <div class="w-full">
