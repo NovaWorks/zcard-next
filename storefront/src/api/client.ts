@@ -1,3 +1,6 @@
+import { shallowRef } from 'vue';
+import { apiError, languageHeaders } from '@/i18n';
+import { t as $t } from '@/i18n';
 import { displayPrecision, formatCents, fromCents, toCents } from '../../../packages/money/index';
 import { loadPublicConfig } from '../config';
 import { readJSON } from './read';
@@ -39,7 +42,7 @@ interface ApiResult<T> {
 async function request<T>(method: string, path: string, body?: unknown, params?: Record<string, string | number | boolean | undefined>, silent = false, headers: Record<string,string> = {}): Promise<ApiResult<T>> {
   if (method === 'GET' && path === '/config') {
     try { return { data: await loadPublicConfig(true) as T, error: null }; }
-    catch { return { data: null, error: '店铺配置加载失败，请稍后重试' }; }
+    catch { return { data: null, get error() { return $t("店铺配置加载失败，请稍后重试"); } }; }
   }
   let url = `${BASE}${path}`;
   if (params) {
@@ -54,13 +57,14 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
   const publicRead = method === 'GET' && ['/products', '/categories', '/banners', '/posts'].includes(path);
   const token = getToken();
   if (publicRead) {
-    try { return { data: await readJSON<T>(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} }), error: null }; }
-    catch { return { data: null, error: '加载失败，请检查网络后重试' }; }
+    try { return { data: await readJSON<T>(url, { headers: { ...languageHeaders(), ...(token ? { Authorization: `Bearer ${token}` } : {}) } }), error: null }; }
+    catch { return { data: null, get error() { return $t("加载失败，请检查网络后重试"); } }; }
   }
   try {
     const res = await fetch(url, {
       method,
       headers: {
+        ...languageHeaders(),
         ...(body ? { 'Content-Type': 'application/json' } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers
       },
@@ -83,11 +87,11 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
           location.href = `/login?redirect=${redirect}`;
         }
       }
-      return { data: null, status: res.status, error: json?.message || json?.error || `HTTP ${res.status}` };
+      return { data: null, status: res.status, error: apiError(json, res.status) };
     }
     return { data: json as T, error: null };
   } catch (e: any) {
-    return { data: null, error: e?.message || 'network error' };
+    return { data: null, error: $t('加载失败，请检查网络后重试') };
   }
 }
 
@@ -117,6 +121,8 @@ export interface CurrencyMeta {
 const DEFAULT_META: CurrencyMeta = { symbol: '¥', position: 'prefix', precision: 2, code: 'CNY', rate: '1' };
 
 let currencyMeta: CurrencyMeta = { ...DEFAULT_META };
+const baseCurrencyMeta = shallowRef<CurrencyMeta>({ ...DEFAULT_META });
+export function getBaseCurrency(): CurrencyMeta { return { ...baseCurrencyMeta.value }; }
 
 export function setCurrency(meta: Partial<CurrencyMeta>) {
   currencyMeta = { ...DEFAULT_META, ...meta };
@@ -125,6 +131,22 @@ export function setCurrency(meta: Partial<CurrencyMeta>) {
 
 export function getCurrency(): CurrencyMeta {
   return { ...currencyMeta };
+}
+
+export function formatBaseMoney(cents: number): string {
+  const meta = getBaseCurrency();
+  const amount = formatCents(cents, meta.precision);
+  return meta.position === 'suffix' ? `${amount}${meta.symbol}` : `${meta.symbol}${amount}`;
+}
+
+export function formatPaymentAmount(quote: { total_cents: number; charged_currency?: string; charged_units?: number; charged_precision?: number }): string {
+  if (!quote.charged_currency || quote.charged_currency === getBaseCurrency().code) return formatBaseMoney(quote.total_cents);
+  const units = String(quote.charged_units ?? 0);
+  const precision = Number(quote.charged_precision ?? 0);
+  if (!/^\d+$/.test(units) || !Number.isInteger(precision) || precision < 0 || precision > 8) return formatBaseMoney(quote.total_cents);
+  const padded = units.padStart(precision + 1, '0');
+  const amount = precision ? `${padded.slice(0, -precision)}.${padded.slice(-precision)}` : padded;
+  return `${quote.charged_currency} ${amount}`;
 }
 
 // fenToYuan 分 → 元字符串（不含符号；纯整数运算，禁止浮点参与）。
@@ -203,7 +225,10 @@ export function initCurrency(): Promise<void> {
           code: c.code, symbol: c.symbol, position: c.position,
           precision: displayPrecision(c.precision ?? 0), rate: String(c.rate_json ?? '1'),
         }));
-        const stored = localStorage.getItem(CURRENCY_KEY);
+        baseCurrencyMeta.value = { ...(currencyList.find(c => c.code === baseCode) || { ...DEFAULT_META, code: baseCode }), rate: '1' };
+        currencyList = currencyList.map(c => c.code === baseCode ? { ...c, rate: '1' } : c);
+        let stored: string | null = null;
+        try { stored = localStorage.getItem(CURRENCY_KEY); } catch { /* Keep the site default when storage is unavailable. */ }
         const picked =
           currencyList.find((c) => c.code === stored) ||
           currencyList.find((c) => c.code === displayCode) || // 站点默认展示货币（结算仍基准币）
@@ -229,20 +254,20 @@ export function formatTransactionRemark(remark?: string): string {
   const total = principal + gift;
   if (![principal, gift, total].every(Number.isSafeInteger)) return remark;
   const amount = gift > 0
-    ? `${formatMoney(total)}（本金 ${formatMoney(principal)}＋赠送 ${formatMoney(gift)}）`
+    ? $t("{0}（本金 {1}＋赠送 {2}）", [formatMoney(total), formatMoney(principal), formatMoney(gift)])
     : formatMoney(principal);
-  return `${match[1]} ${amount}${match[2] ? `（用户 #${match[2]}）` : ''}`;
+  return `${$t(match[1])} ${amount}${match[2] ? $t("（用户 #{0}）", [match[2]]) : ''}`;
 }
 
 export const TRANSACTION_TYPES: Record<string, string> = {
-  adjust: '人工调账', recharge: '余额充值', order_pay: '订单支付', payment: '订单支付',
-  order_refund: '订单退款', refund: '订单退款', ticket_urgent: '工单付费加急',
-  commission: '分销佣金入账', commission_debt: '佣金欠款扣回', commission_reversal: '佣金退回',
-  withdraw: '提现', freeze: '余额冻结', unfreeze: '余额解冻', giftcard: '礼品卡兑换',
-  earn_recharge: '充值赠送积分', redeem: '积分兑换',
+  get adjust() { return $t("人工调账"); }, get recharge() { return $t("余额充值"); }, get order_pay() { return $t("订单支付"); }, get payment() { return $t("订单支付"); },
+  get order_refund() { return $t("订单退款"); }, get refund() { return $t("订单退款"); }, get ticket_urgent() { return $t("工单付费加急"); },
+  get commission() { return $t("分销佣金入账"); }, get commission_debt() { return $t("佣金欠款扣回"); }, get commission_reversal() { return $t("佣金退回"); },
+  get withdraw() { return $t("提现"); }, get freeze() { return $t("余额冻结"); }, get unfreeze() { return $t("余额解冻"); }, get giftcard() { return $t("礼品卡兑换"); },
+  get earn_recharge() { return $t("充值赠送积分"); }, get redeem() { return $t("积分兑换"); },
 };
 export function transactionType(type?: string): string {
-  return TRANSACTION_TYPES[type || ''] || '其他收支';
+  return TRANSACTION_TYPES[type || ''] || $t("其他收支");
 }
 export function transactionAmount(row: { direction: string; amount_cents: number }): number {
   return (row.direction === 'out' ? -1 : 1) * Math.abs(row.amount_cents);
@@ -250,8 +275,8 @@ export function transactionAmount(row: { direction: string; amount_cents: number
 export function transactionReference(row: { id?: number; display_reference?: string; reference?: string }): string {
   if (row.display_reference) return row.display_reference;
   const [kind, id] = (row.reference || '').split(':');
-  const labels: Record<string, string> = { order_pay: '订单', order_refund: '退款记录', ticket_urgent: '工单', recharge: '充值支付记录', giftcard: '礼品卡', commission: '佣金记录', adjust: '调账记录' };
-  return labels[kind] && id ? `${labels[kind]} ${kind === 'ticket_urgent' ? '' : '#'}${id}` : `流水 #${row.id || '—'}`;
+  const labels: Record<string, string> = { get order_pay() { return $t("订单"); }, get order_refund() { return $t("退款记录"); }, get ticket_urgent() { return $t("工单"); }, get recharge() { return $t("充值支付记录"); }, get giftcard() { return $t("礼品卡"); }, get commission() { return $t("佣金记录"); }, get adjust() { return $t("调账记录"); } };
+  return labels[kind] && id ? `${labels[kind]} ${kind === 'ticket_urgent' ? '' : '#'}${id}` : $t("流水 #{0}", [row.id || '—']);
 }
 export function transactionRemark(row: { id?: number; type?: string; remark?: string; reference?: string; display_reference?: string }): string {
   const remark = row.remark?.trim();

@@ -5,7 +5,7 @@
       :value="code"
       type="text"
       inputmode="numeric"
-      placeholder="4 位数字"
+      :placeholder="$t('4 位数字')"
       maxlength="4"
       @input="onInput"
     />
@@ -13,15 +13,17 @@
       v-if="image"
       :src="image"
       class="captcha-img"
-      alt="验证码"
-      title="点击刷新"
+      :alt="$t('验证码')"
+      :title="$t('点击刷新')"
       @click="refresh"
     />
-    <div v-else class="captcha-loading">加载中…</div>
+    <div v-else class="captcha-loading">{{ $t('加载中…') }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { t as $t } from '@/i18n';
+
 /**
  * 图形验证码输入（4 位数字）：图片自动加载 + 点击刷新 + 提交 payload 同步。
  * 验证失败后父组件调 refresh() 自动换图。

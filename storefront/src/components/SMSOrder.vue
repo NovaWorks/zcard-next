@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { uiText, t as $t, localeTag } from '@/i18n';
+
 import { computed, ref, onMounted, onBeforeUnmount } from "vue";
 import { api } from "@/api/client";
 import { newRequestId } from "../../../packages/request-id";
@@ -34,28 +36,28 @@ let timer: ReturnType<typeof setTimeout> | undefined,
 const pending = ref<{ action: "cancel" | "finish"; id: string }>();
 const actionError = ref("");
 const titles: Record<string, string> = {
-  allocating: "获取号码中",
-  waiting_sms: "等待短信",
-  sms_received: "已收到短信",
-  completed: "接码已结束",
-  canceled: "已取消",
-  expired: "租期已结束",
-  rejected: "未能获取号码",
+  get allocating() { return $t("获取号码中"); },
+  get waiting_sms() { return $t("等待短信"); },
+  get sms_received() { return $t("已收到短信"); },
+  get completed() { return $t("接码已结束"); },
+  get canceled() { return $t("已取消"); },
+  get expired() { return $t("租期已结束"); },
+  get rejected() { return $t("未能获取号码"); },
 };
 const title = computed(() =>
   snapshot.value?.phase === "review"
-    ? "结果待核对"
-    : titles[snapshot.value?.state || ""] || "确认结果中",
+    ? $t("结果待核对")
+    : titles[snapshot.value?.state || ""] || $t("确认结果中"),
 );
 const remaining = computed(() => {
   const end = Date.parse(snapshot.value?.expires_at || "");
   if (!Number.isFinite(end)) return "";
   const n = Math.max(0, Math.floor((end - now.value) / 1000));
   return n
-    ? `${Math.floor(n / 60)} 分 ${n % 60} 秒`
+    ? $t("{0} 分 {1} 秒", [Math.floor(n / 60), n % 60])
     : snapshot.value?.active
-      ? "租期已到，正在确认最终结果"
-      : "租期已结束";
+      ? $t("租期已到，正在确认最终结果")
+      : $t("租期已结束");
 });
 const meta = computed(() =>
   ["country", "platform", "operator"]
@@ -82,9 +84,9 @@ function visibilityChanged() {
 async function copy(value: string, label: string) {
   try {
     await navigator.clipboard.writeText(value);
-    copied.value = `${label}已复制`;
+    copied.value = $t("{0}已复制", [label]);
   } catch {
-    copied.value = "复制失败，请手动选择复制";
+    copied.value = $t("复制失败，请手动选择复制");
   }
 }
 async function act(action: "cancel" | "finish") {
@@ -93,8 +95,8 @@ async function act(action: "cancel" | "finish") {
     !pending.value &&
     !window.confirm(
       action === "cancel"
-        ? "申请取消接码？供货确认退款后退还本次实付；请求受理不代表已退款。"
-        : "结束本次接码？完成后将停止继续接收短信，已收到的短信仍可查看。",
+        ? $t("申请取消接码？供货确认退款后退还本次实付；请求受理不代表已退款。")
+        : $t("结束本次接码？完成后将停止继续接收短信，已收到的短信仍可查看。"),
     )
   )
     return;
@@ -102,7 +104,7 @@ async function act(action: "cancel" | "finish") {
     try {
       pending.value = { action, id: newRequestId() };
     } catch (e) {
-      actionError.value = e instanceof Error ? e.message : "无法生成操作标识";
+      actionError.value = e instanceof Error ? e.message : $t("无法生成操作标识");
       return;
     }
   }
@@ -144,93 +146,76 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <section class="card sms-order" aria-labelledby="sms-title">
-    <h3 id="sms-title">短信接码 · {{ title }}</h3>
+    <h3 id="sms-title">{{ $t('短信接码 ·') }} {{ title }}</h3>
     <p v-if="meta" class="muted">{{ meta }}</p>
-    <p v-if="error" role="alert" class="error">{{ error }}</p>
-    <p v-if="actionError" role="alert" class="error">{{ actionError }}</p>
+    <p v-if="error" role="alert" class="error">{{ uiText(error) }}</p>
+    <p v-if="actionError" role="alert" class="error">{{ uiText(actionError) }}</p>
     <template v-if="snapshot">
       <div v-if="snapshot.phone_number" class="sms-field">
         <div>
-          <span class="muted">号码</span
+          <span class="muted">{{ $t('号码') }}</span
           ><strong>{{ snapshot.phone_number }}</strong>
         </div>
         <button
           class="btn secondary"
-          @click="copy(snapshot.phone_number, '号码')"
-        >
-          复制号码
-        </button>
+          @click="copy(snapshot.phone_number, $t('号码'))"
+        > {{ $t('复制号码') }} </button>
       </div>
       <p v-if="remaining" class="muted">{{ remaining }}</p>
       <div v-if="snapshot.otp_code" class="sms-field">
         <div>
-          <span class="muted">验证码</span
+          <span class="muted">{{ $t('验证码') }}</span
           ><strong>{{ snapshot.otp_code }}</strong>
         </div>
         <button
           class="btn secondary"
-          @click="copy(snapshot.otp_code, '验证码')"
-        >
-          复制验证码
-        </button>
+          @click="copy(snapshot.otp_code, $t('验证码'))"
+        > {{ $t('复制验证码') }} </button>
       </div>
       <div v-if="snapshot.otp_message">
-        <p>短信正文</p>
+        <p>{{ $t('短信正文') }}</p>
         <pre>{{ snapshot.otp_message }}</pre>
         <button
           class="btn secondary"
-          @click="copy(snapshot.otp_message, '正文')"
-        >
-          复制正文
-        </button>
+          @click="copy(snapshot.otp_message, $t('正文'))"
+        > {{ $t('复制正文') }} </button>
       </div>
       <p v-if="snapshot.message">{{ snapshot.message }}</p>
-      <p v-if="snapshot.refund_status === 'succeeded'">已退款至会员余额</p>
+      <p v-if="snapshot.refund_status === 'succeeded'">{{ $t('已退款至会员余额') }}</p>
       <p v-if="snapshot.operation_status === 'pending'">
         {{
-          snapshot.operation_action === "cancel" ? "取消" : "完成"
-        }}请求已提交，等待确认。
-      </p>
-      <p v-else-if="snapshot.operation_status === 'rejected'">
-        上一次操作未获允许，短信仍可查看。
-      </p>
+          snapshot.operation_action === "cancel" ? $t('取消') : $t('完成')
+        }}{{ $t('请求已提交，等待确认。') }} </p>
+      <p v-else-if="snapshot.operation_status === 'rejected'"> {{ $t('上一次操作未获允许，短信仍可查看。') }} </p>
       <p
         v-if="snapshot.cancel_available_at && !snapshot.can_cancel"
         class="muted"
-      >
-        预计可申请取消时间：{{
-          new Date(snapshot.cancel_available_at).toLocaleString()
-        }}，最终以供货确认能力为准。
-      </p>
+      > {{ $t('预计可申请取消时间：') }}{{
+          new Date(snapshot.cancel_available_at).toLocaleString(localeTag)
+        }}{{ $t('，最终以供货确认能力为准。') }} </p>
       <div class="sms-actions">
         <button
           v-if="pending"
           class="btn secondary"
           :disabled="busy"
           @click="act(pending.action)"
-        >
-          重试确认{{ pending.action === "cancel" ? "取消" : "完成" }}结果
-        </button>
+        > {{ pending.action === "cancel" ? $t('重试确认取消结果') : $t('重试确认完成结果') }} </button>
         <button
           v-if="snapshot.can_cancel"
           class="btn secondary"
           :disabled="busy || !!pending"
           @click="act('cancel')"
-        >
-          申请取消</button
+        > {{ $t('申请取消') }}</button
         ><button
           v-if="snapshot.can_finish"
           class="btn"
           :disabled="busy || !!pending"
           @click="act('finish')"
-        >
-          完成接码</button
-        ><button class="btn secondary" :disabled="busy" @click="load">
-          刷新状态
-        </button>
+        > {{ $t('完成接码') }}</button
+        ><button class="btn secondary" :disabled="busy" @click="load"> {{ $t('刷新状态') }} </button>
       </div>
     </template>
-    <p v-else class="muted">正在读取接码状态…</p>
+    <p v-else class="muted">{{ $t('正在读取接码状态…') }}</p>
     <p role="status" aria-live="polite">{{ copied }}</p>
   </section>
 </template>

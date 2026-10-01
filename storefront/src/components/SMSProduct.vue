@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { uiText, t as $t, localeTag } from '@/i18n';
+
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { api, formatMoney, getToken } from "@/api/client";
 import { getBalance, fetchPaymentChannels, createPayment, type Product } from "@/api";
@@ -76,14 +78,14 @@ const storageKey = computed(() => `zcard_sms_purchase:${authState.username}:${pr
 const loggedIn = computed(() => authState.loggedIn || !!getToken());
 const choice = computed(() => offers.value.find((o) => o.offer_id === selected.value));
 const titles: Record<string, string> = {
-  allocating: "获取号码中",
-  waiting_sms: "等待短信",
-  sms_received: "已收到短信",
-  completed: "已结束",
-  canceled: "已取消",
-  expired: "已过期",
-  rejected: "取号失败",
-  review: "结果待核对",
+  get allocating() { return $t("获取号码中"); },
+  get waiting_sms() { return $t("等待短信"); },
+  get sms_received() { return $t("已收到短信"); },
+  get completed() { return $t("已结束"); },
+  get canceled() { return $t("已取消"); },
+  get expired() { return $t("已过期"); },
+  get rejected() { return $t("取号失败"); },
+  get review() { return $t("结果待核对"); },
 };
 let closed = false,
   generation = 0,
@@ -260,7 +262,7 @@ async function confirmQuote() {
     quote.value = r.data;
     offer.price_cents = Number(r.data.amount_cents);
     if (Number(r.data.amount_cents) !== displayedPrice)
-      notice.value = "价格已更新，请确认最新金额后支付。";
+      notice.value = $t("价格已更新，请确认最新金额后支付。");
   }
 }
 async function buy() {
@@ -268,7 +270,7 @@ async function buy() {
   if (!pending.value) {
     if (!quote.value || quote.value.expires_at <= Date.now() / 1000) {
       quote.value = undefined;
-      error.value = "报价已过期，请重新确认价格。";
+      error.value = $t("报价已过期，请重新确认价格。");
       return;
     }
     try {
@@ -278,7 +280,7 @@ async function buy() {
         amount_cents: Number(quote.value.amount_cents),
       });
     } catch (e) {
-      error.value = e instanceof Error ? e.message : "无法生成购买标识";
+      error.value = e instanceof Error ? e.message : $t("无法生成购买标识");
       return;
     }
   }
@@ -300,13 +302,13 @@ async function buy() {
     if (!sameSession(member)) return;
     if (created.error || !created.data) {
       busy.value = false;
-      error.value = `${created.error || "建单失败"}。请确认原购买结果。`;
+      error.value = $t("{0}。请确认原购买结果。", [created.error || $t("建单失败")]);
       if (created.status === 400 || created.status === 404) savePending();
       return;
     }
     if (Number(created.data.total_cents) !== intent.amount_cents) {
       busy.value = false;
-      error.value = "订单金额与确认报价不一致，请联系客服核对。";
+      error.value = $t("订单金额与确认报价不一致，请联系客服核对。");
       return;
     }
     intent.order_no = created.data.order_no;
@@ -318,7 +320,7 @@ async function buy() {
   if (!sameSession(member)) return;
   if (current.error || !current.data) {
     busy.value = false;
-    error.value = `${current.error || "无法读取订单"}。请确认原购买结果。`;
+    error.value = $t("{0}。请确认原购买结果。", [current.error || $t("无法读取订单")]);
     return;
   }
   if (!["pending_payment", "pending"].includes(current.data.status)) {
@@ -326,7 +328,7 @@ async function buy() {
       savePending();
       quote.value = undefined;
       busy.value = false;
-      error.value = "原订单已取消或过期，请重新选价。";
+      error.value = $t("原订单已取消或过期，请重新选价。");
       return;
     }
     await purchaseAccepted();
@@ -340,7 +342,7 @@ async function buy() {
     );
     if (!wallet) {
       busy.value = false;
-      error.value = channels.error || "本站尚未启用免手续费会员余额支付，请联系商户。";
+      error.value = channels.error || $t("本站尚未启用免手续费会员余额支付，请联系商户。");
       return;
     }
     intent.channel = wallet.code;
@@ -351,7 +353,7 @@ async function buy() {
   busy.value = false;
   if (r.error) {
     // Includes insufficient balance and unknown results: retry this same order.
-    error.value = `${r.error}。可充值后确认原购买结果，或取消未付款订单后重选。`;
+    error.value = $t("{0}。可充值后确认原购买结果，或取消未付款订单后重选。", [r.error]);
     return;
   }
   if (r.data) await purchaseAccepted();
@@ -360,7 +362,7 @@ async function purchaseAccepted() {
   savePending();
   quote.value = undefined;
   busy.value = false;
-  notice.value = "余额付款已确认，号码和短信将在“我的号码”中显示。";
+  notice.value = $t("余额付款已确认，号码和短信将在“我的号码”中显示。");
   historyPage.value = 1;
   await loadHistory();
   await loadBalance();
@@ -373,13 +375,13 @@ async function cancelUnpaid() {
   if (!sameSession(member)) return;
   busy.value = false;
   if (r.error) {
-    error.value = `${r.error}。请确认原购买结果。`;
+    error.value = $t("{0}。请确认原购买结果。", [r.error]);
     return;
   }
   savePending();
   quote.value = undefined;
   error.value = "";
-  notice.value = "未付款订单已取消，可以重新选价。";
+  notice.value = $t("未付款订单已取消，可以重新选价。");
 }
 
 async function loadHistory() {
@@ -439,8 +441,8 @@ async function act(order: Order, action: "cancel" | "finish") {
     !existing &&
     !window.confirm(
       action === "cancel"
-        ? "申请取消？上游确认退款后退还本次实付，受理不代表退款完成。"
-        : "结束本次接码？结束后停止接收短信，已有短信仍可查看。",
+        ? $t("申请取消？上游确认退款后退还本次实付，受理不代表退款完成。")
+        : $t("结束本次接码？结束后停止接收短信，已有短信仍可查看。"),
     )
   )
     return;
@@ -448,7 +450,7 @@ async function act(order: Order, action: "cancel" | "finish") {
     try {
       pendingActions.value[order.supply_order_id] = { action, operation_id: newRequestId() };
     } catch (e) {
-      error.value = e instanceof Error ? e.message : "无法生成操作标识";
+      error.value = e instanceof Error ? e.message : $t("无法生成操作标识");
       return;
     }
   }
@@ -467,12 +469,12 @@ async function act(order: Order, action: "cancel" | "finish") {
   } else if (r.data) {
     notice.value =
       r.data.operation_status === "pending"
-        ? "操作已受理，正在等待服务确认。"
+        ? $t("操作已受理，正在等待服务确认。")
         : r.data.operation_status === "rejected"
-          ? "服务未接受操作，请查看号码当前状态。"
+          ? $t("服务未接受操作，请查看号码当前状态。")
           : r.data.operation_status === "review"
-            ? "操作结果待核对，请凭订单号联系客服。"
-            : "操作已完成";
+            ? $t("操作结果待核对，请凭订单号联系客服。")
+            : $t("操作已完成");
     if (
       r.data.operation_request_id === pendingActions.value[order.supply_order_id]?.operation_id &&
       r.data.operation_status !== "pending"
@@ -486,9 +488,9 @@ async function act(order: Order, action: "cancel" | "finish") {
 async function copy(value: string) {
   try {
     await navigator.clipboard.writeText(value);
-    copied.value = "已复制";
+    copied.value = $t("已复制");
   } catch {
-    copied.value = "请手动选择复制";
+    copied.value = $t("请手动选择复制");
   }
 }
 function visible() {
@@ -521,57 +523,50 @@ onBeforeUnmount(() => {
 <template>
   <div class="sms-product">
     <nav class="sms-crumb">
-      <router-link to="/">首页</router-link><span>/</span><span>{{ product.name }}</span>
+      <router-link to="/">{{ $t('首页') }}</router-link><span>/</span><span>{{ product.name }}</span>
     </nav>
     <header>
       <h1>{{ product.name }}</h1>
-      <p class="muted">选择国家与服务，确认价格后获取号码。购买、收码与取消都在这里完成。</p>
+      <p class="muted">{{ $t('选择国家与服务，确认价格后获取号码。购买、收码与取消都在这里完成。') }}</p>
     </header>
     <div class="sms-layout">
       <section class="sms-panel" aria-labelledby="sms-select-title">
-        <h2 id="sms-select-title">选择号码</h2>
-        <p v-if="!loggedIn" class="sms-empty">
-          可直接筛选国家、服务并查看价格，购买时需要登录。
-        </p>
-          <p v-if="loggedIn" class="sms-wallet">
-            可用余额：<strong>{{ balance === undefined ? "加载中" : formatMoney(balance) }}</strong
-            ><router-link to="/member">充值</router-link>
+        <h2 id="sms-select-title">{{ $t('选择号码') }}</h2>
+        <p v-if="!loggedIn" class="sms-empty"> {{ $t('可直接筛选国家、服务并查看价格，购买时需要登录。') }} </p>
+          <p v-if="loggedIn" class="sms-wallet"> {{ $t('可用余额：') }}<strong>{{ balance === undefined ? $t('加载中') : formatMoney(balance) }}</strong
+            ><router-link to="/member">{{ $t('充值') }}</router-link>
           </p>
-          <p v-if="!product.sms_sales_enabled" class="sms-message">
-            暂未开放新购，已购买号码仍可收码和查看。
-          </p>
+          <p v-if="!product.sms_sales_enabled" class="sms-message"> {{ $t('暂未开放新购，已购买号码仍可收码和查看。') }} </p>
           <fieldset :disabled="busy || !!pending">
-            <label for="sms-country">国家 / 地区</label>
+            <label for="sms-country">{{ $t('国家 / 地区') }}</label>
             <select id="sms-country" v-model="country">
-              <option value="">请选择国家或地区</option>
+              <option value="">{{ $t('请选择国家或地区') }}</option>
               <option v-for="c in countries" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>
-            <label for="sms-search">搜索平台 / 服务</label
+            <label for="sms-search">{{ $t('搜索平台 / 服务') }}</label
             ><input
               id="sms-search"
               v-model="keyword"
               type="search"
-              placeholder="平台名称或服务 ID"
+              :placeholder="$t('平台名称或服务 ID')"
             />
-            <label for="sms-platform">平台 / 服务</label
+            <label for="sms-platform">{{ $t('平台 / 服务') }}</label
             ><select id="sms-platform" v-model="platform" :disabled="!country">
-              <option value="">请选择平台 / 服务</option>
+              <option value="">{{ $t('请选择平台 / 服务') }}</option>
               <option v-for="p in platforms" :key="p.id" :value="p.id">{{ p.name }}</option>
             </select>
-            <p v-if="loading" class="muted" role="status">正在加载可用选项…</p>
+            <p v-if="loading" class="muted" role="status">{{ $t('正在加载可用选项…') }}</p>
             <button
               v-if="error && !loading"
               type="button"
               class="btn"
               @click="country && platform ? loadOffers() : loadOptions()"
-            >
-              重试加载
-            </button>
+            > {{ $t('重试加载') }} </button>
             <div
               v-if="offers.length"
               class="sms-offers"
               role="radiogroup"
-              aria-label="可用号码报价"
+              :aria-label="$t('可用号码报价')"
             >
               <label
                 v-for="o in offers"
@@ -588,46 +583,40 @@ onBeforeUnmount(() => {
                 /><span
                   >{{ o.name
                   }}<small>{{
-                    o.stock === -1 ? "可用数量不限" : `可用 ${o.stock} 个`
+                    o.stock === -1 ? $t('可用数量不限') : $t('可用 {0} 个', [o.stock])
                   }}</small></span
                 ><strong>{{ formatMoney(o.price_cents) }}</strong></label
               >
             </div>
-            <p v-else-if="country && platform && !loading && !error" class="sms-empty">
-              当前筛选暂无可用号码，可更换国家或服务。
-            </p>
+            <p v-else-if="country && platform && !loading && !error" class="sms-empty"> {{ $t('当前筛选暂无可用号码，可更换国家或服务。') }} </p>
             <div v-if="country && platform" class="sms-pagination">
               <button
                 type="button"
                 class="btn"
                 :disabled="page <= 1 || loading"
                 @click="changePage(page - 1)"
-              >
-                上一页</button
-              ><span>第 {{ page }} 页</span
+              > {{ $t('上一页') }}</button
+              ><span>{{ $t('第') }} {{ page }} {{ $t('页') }}</span
               ><button
                 type="button"
                 class="btn"
                 :disabled="!hasMore || loading"
                 @click="changePage(page + 1)"
-              >
-                下一页
-              </button>
+              > {{ $t('下一页') }} </button>
             </div>
-            <p class="muted">每次购买 1 个号码。可用时长及取消规则以购买后的服务说明为准。</p>
+            <p class="muted">{{ $t('每次购买 1 个号码。可用时长及取消规则以购买后的服务说明为准。') }}</p>
           </fieldset>
           <div v-if="quote || pending" class="sms-total">
-            <span>本次实付</span
+            <span>{{ $t('本次实付') }}</span
             ><strong>{{ formatMoney(pending?.amount_cents ?? quote?.amount_cents ?? 0) }}</strong>
           </div>
-          <p v-if="quote && !pending" class="muted">
-            报价有效至 {{ new Date(Number(quote.expires_at) * 1000).toLocaleTimeString() }}
+          <p v-if="quote && !pending" class="muted"> {{ $t('报价有效至') }} {{ new Date(Number(quote.expires_at) * 1000).toLocaleTimeString(localeTag) }}
           </p>
           <router-link
             v-if="!loggedIn"
             class="btn btn-primary sms-submit"
             :to="{ path: '/login', query: { redirect: `/product/${product.id}` } }"
-          >登录后购买</router-link>
+          >{{ $t('登录后购买') }}</router-link>
           <button
             v-else-if="pending"
             type="button"
@@ -635,7 +624,7 @@ onBeforeUnmount(() => {
             :disabled="busy"
             @click="buy"
           >
-            {{ busy ? "确认中…" : "确认原购买结果" }}
+            {{ busy ? $t('确认中…') : $t('确认原购买结果') }}
           </button>
           <button
             v-else-if="quote"
@@ -644,7 +633,7 @@ onBeforeUnmount(() => {
             :disabled="busy || !product.sms_sales_enabled"
             @click="buy"
           >
-            {{ busy ? "购买中…" : `余额支付 ${formatMoney(quote.amount_cents)}` }}
+            {{ busy ? $t('购买中…') : $t('余额支付 {0}', [formatMoney(quote.amount_cents)]) }}
           </button>
           <button
             v-else
@@ -653,66 +642,55 @@ onBeforeUnmount(() => {
             :disabled="busy || loading || !choice || !product.sms_sales_enabled"
             @click="confirmQuote"
           >
-            {{ busy ? "确认价格中…" : "确认价格" }}
+            {{ busy ? $t('确认价格中…') : $t('确认价格') }}
           </button>
-        <p v-if="error" role="alert" class="sms-error">{{ error }}</p>
+        <p v-if="error" role="alert" class="sms-error">{{ uiText(error) }}</p>
         <button
           v-if="pending?.order_no"
           class="btn secondary"
           :disabled="busy"
           @click="cancelUnpaid"
-        >
-          取消未付款订单后重选
-        </button>
+        > {{ $t('取消未付款订单后重选') }} </button>
         <p v-if="notice" role="status" class="sms-message">{{ notice }}</p>
       </section>
       <section class="sms-panel" aria-labelledby="sms-receive-title">
         <div class="sms-section-heading">
-          <h2 id="sms-receive-title">接收短信 / 我的号码</h2>
-          <button v-if="loggedIn" type="button" class="btn" @click="loadHistory">刷新</button>
+          <h2 id="sms-receive-title">{{ $t('接收短信 / 我的号码') }}</h2>
+          <button v-if="loggedIn" type="button" class="btn" @click="loadHistory">{{ $t('刷新') }}</button>
         </div>
-        <p v-if="historyError" role="alert" class="sms-error">{{ historyError }}</p>
+        <p v-if="historyError" role="alert" class="sms-error">{{ uiText(historyError) }}</p>
         <div v-if="!orders.length" class="sms-empty sms-receive-empty">
           <span class="sms-message-icon" aria-hidden="true">✉</span>
-          <p>购买成功后，号码与短信将显示在这里。</p>
-          <p>已购买的号码可在这里继续查看。</p>
+          <p>{{ $t('购买成功后，号码与短信将显示在这里。') }}</p>
+          <p>{{ $t('已购买的号码可在这里继续查看。') }}</p>
         </div>
         <article v-for="o in orders" :key="o.supply_order_id" class="sms-session">
           <div class="sms-section-heading">
-            <strong>{{ o.offer_name || `订单 ${o.supply_order_id}` }}</strong
+            <strong>{{ o.offer_name || $t('订单 {0}', [o.supply_order_id]) }}</strong
             ><span class="sms-state">{{
-              titles[o.fulfillment?.sms?.state || ""] || "确认结果中"
+              titles[o.fulfillment?.sms?.state || ""] || $t('确认结果中')
             }}</span>
           </div>
-          <p class="muted">实付 {{ formatMoney(o.amount) }} · 订单 {{ o.supply_order_id }}</p>
+          <p class="muted">{{ $t('实付') }} {{ formatMoney(o.amount) }} {{ $t('· 订单') }} {{ o.supply_order_id }}</p>
           <template v-if="o.fulfillment?.sms">
             <div v-if="o.fulfillment.sms.phone_number" class="sms-copy">
               <strong>{{ o.fulfillment.sms.phone_number }}</strong
-              ><button type="button" class="btn" @click="copy(o.fulfillment.sms.phone_number)">
-                复制号码
-              </button>
+              ><button type="button" class="btn" @click="copy(o.fulfillment.sms.phone_number)"> {{ $t('复制号码') }} </button>
             </div>
             <div v-if="o.fulfillment.sms.otp_code" class="sms-copy">
               <strong class="sms-code">{{ o.fulfillment.sms.otp_code }}</strong
-              ><button type="button" class="btn" @click="copy(o.fulfillment.sms.otp_code)">
-                复制验证码
-              </button>
+              ><button type="button" class="btn" @click="copy(o.fulfillment.sms.otp_code)"> {{ $t('复制验证码') }} </button>
             </div>
             <p v-if="o.fulfillment.sms.otp_message" class="sms-text">
               {{ o.fulfillment.sms.otp_message }}
             </p>
-            <p v-if="o.fulfillment.sms.expires_at" class="muted">
-              有效至 {{ new Date(o.fulfillment.sms.expires_at).toLocaleString() }}
+            <p v-if="o.fulfillment.sms.expires_at" class="muted"> {{ $t('有效至') }} {{ new Date(o.fulfillment.sms.expires_at).toLocaleString(localeTag) }}
             </p>
             <p v-if="o.fulfillment.sms.message" class="muted">{{ o.fulfillment.sms.message }}</p>
-            <p v-if="o.fulfillment.sms.refund_status === 'pending'" class="muted">
-              正在退还本次实付，请等待余额确认。
+            <p v-if="o.fulfillment.sms.refund_status === 'pending'" class="muted"> {{ $t('正在退还本次实付，请等待余额确认。') }} </p>
+            <p v-if="o.fulfillment.sms.settlement_state === 'refunded'" class="sms-refund"> {{ $t('已退还') }} {{ formatMoney(o.fulfillment.sms.refunded_amount_cents || 0) }}
             </p>
-            <p v-if="o.fulfillment.sms.settlement_state === 'refunded'" class="sms-refund">
-              已退还 {{ formatMoney(o.fulfillment.sms.refunded_amount_cents || 0) }}
-            </p>
-            <p v-else-if="o.fulfillment.sms.settlement_state !== 'paid'" class="muted">
-              结算状态：{{ o.fulfillment.sms.settlement_state }}
+            <p v-else-if="o.fulfillment.sms.settlement_state !== 'paid'" class="muted"> {{ $t('结算状态：') }}{{ o.fulfillment.sms.settlement_state }}
             </p>
             <div class="sms-actions">
               <button
@@ -721,11 +699,7 @@ onBeforeUnmount(() => {
                 class="btn"
                 :disabled="busy"
                 @click="act(o, pendingActions[o.supply_order_id].action)"
-              >
-                确认{{
-                  pendingActions[o.supply_order_id].action === "cancel" ? "取消" : "结束"
-                }}结果
-              </button>
+              > {{ pendingActions[o.supply_order_id].action === "cancel" ? $t('确认取消结果') : $t('确认结束结果') }} </button>
               <template v-else
                 ><button
                   v-if="o.fulfillment.sms.can_cancel"
@@ -733,17 +707,14 @@ onBeforeUnmount(() => {
                   class="btn"
                   :disabled="busy"
                   @click="act(o, 'cancel')"
-                >
-                  取消接码</button
+                > {{ $t('取消接码') }}</button
                 ><button
                   v-if="o.fulfillment.sms.can_finish"
                   type="button"
                   class="btn"
                   :disabled="busy"
                   @click="act(o, 'finish')"
-                >
-                  结束接码
-                </button></template
+                > {{ $t('结束接码') }} </button></template
               >
             </div>
           </template>
@@ -754,23 +725,20 @@ onBeforeUnmount(() => {
             class="btn"
             :disabled="historyPage <= 1"
             @click="changeHistory(historyPage - 1)"
-          >
-            较新号码</button
-          ><span>第 {{ historyPage }} 页</span
+          > {{ $t('较新号码') }}</button
+          ><span>{{ $t('第') }} {{ historyPage }} {{ $t('页') }}</span
           ><button
             type="button"
             class="btn"
             :disabled="orders.length < 20"
             @click="changeHistory(historyPage + 1)"
-          >
-            较早号码
-          </button>
+          > {{ $t('较早号码') }} </button>
         </div>
         <p v-if="copied" role="status" class="muted">{{ copied }}</p>
       </section>
     </div>
     <section v-if="product.description" class="sms-panel sms-description">
-      <h2>服务说明</h2>
+      <h2>{{ $t('服务说明') }}</h2>
       <div class="rich-content" v-html="product.description"></div>
     </section>
   </div>

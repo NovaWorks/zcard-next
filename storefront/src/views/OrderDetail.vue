@@ -2,14 +2,14 @@
   <div class="order-detail">
     <!-- 页头：返回 + 标题 -->
     <div class="od-head">
-      <router-link class="od-back" :to="isLoggedIn ? '/member?tab=orders' : '/fetch'">← {{ isLoggedIn ? '返回订单列表' : '取货查询' }}</router-link>
-      <h2 class="od-title">订单详情</h2>
+      <router-link class="od-back" :to="isLoggedIn ? '/member?tab=orders' : '/fetch'">← {{ isLoggedIn ? $t('返回订单列表') : $t('取货查询') }}</router-link>
+      <h2 class="od-title">{{ $t('订单详情') }}</h2>
     </div>
 
-    <div v-if="loading" class="card muted" style="padding: 48px; text-align: center;">加载中…</div>
+    <div v-if="loading" class="card muted" style="padding: 48px; text-align: center;">{{ $t('加载中…') }}</div>
     <div v-else-if="error" class="card" style="padding: 24px;">
-      <p class="error">{{ error }}</p>
-      <form @submit.prevent="loadOrder"><label>下单时的查询密码<input v-model="password" class="input" type="password" autocomplete="off" /></label><button class="btn" type="submit">查询订单</button></form>
+      <p class="error">{{ uiText(error) }}</p>
+      <form @submit.prevent="loadOrder"><label>{{ $t('下单时的查询密码') }}<input v-model="password" class="input" type="password" autocomplete="off" /></label><button class="btn" type="submit">{{ $t('查询订单') }}</button></form>
     </div>
 
     <template v-else-if="order">
@@ -17,34 +17,34 @@
       <div class="card od-status-bar">
         <span :class="statusBadge(order.status)" class="od-status-badge">{{ statusText(order.status) }}</span>
         <div class="od-status-meta">
-          <div class="od-order-no">订单号：{{ order.order_no }}</div>
-          <div class="muted">下单时间：{{ fmtTime(order.created_at) }}</div>
+          <div class="od-order-no">{{ $t('订单号：') }}{{ order.order_no }}</div>
+          <div class="muted">{{ $t('下单时间：') }}{{ fmtTime(order.created_at) }}</div>
         </div>
       </div>
 
       <div v-if="!order.items.some(i=>i.delivery_kind==='sms_activation') && ['paid', 'fulfilling', 'partially_delivered'].includes(order.status)" class="card">
-        <p>已付款，{{ order.status === 'partially_delivered' ? '部分商品已发货，其余商品' : '商品' }}正在安排发货。请勿重复付款；长时间未发货请凭订单号联系客服。</p>
-        <button class="btn secondary" @click="loadOrder">刷新订单状态</button>
+        <p>{{ order.status === 'partially_delivered' ? $t('已付款，部分商品已发货，其余商品正在安排发货。请勿重复付款；长时间未发货请凭订单号联系客服。') : $t('已付款，商品正在安排发货。请勿重复付款；长时间未发货请凭订单号联系客服。') }}</p>
+        <button class="btn secondary" @click="loadOrder">{{ $t('刷新订单状态') }}</button>
       </div>
       <SMSOrder v-if="order.items.some(i=>i.delivery_kind==='sms_activation') && !['pending_payment','canceled','expired'].includes(order.status)" :order-no="order.order_no" :metadata="order.items.find(i=>i.delivery_kind==='sms_activation')?.sms_product" />
       <ShippingDetails v-if="Number(order.commerce_version)===1" :order="order" :password="password" @refresh="loadOrder" />
       <div class="od-body">
         <!-- 左列：商品清单（grid 行式：PC 四列对齐表头；移动端每行两行块状——大厂订单详情同构） -->
         <div class="card od-items">
-          <div class="od-section-title">商品清单（{{ order.items.length }}）</div>
+          <div class="od-section-title">{{ $t('商品清单（{0}）', [order.items.length]) }}</div>
           <div class="od-item-list">
             <div class="od-item-head">
-              <span>商品</span><span class="od-ta-r">单价</span><span class="od-ta-c">数量</span><span class="od-ta-r">小计</span>
+              <span>{{ $t('商品') }}</span><span class="od-ta-r">{{ $t('单价') }}</span><span class="od-ta-c">{{ $t('数量') }}</span><span class="od-ta-r">{{ $t('小计') }}</span>
             </div>
             <div v-for="(it, i) in order.items" :key="i" class="od-item">
               <div class="od-item-name">{{ it.product_name }}
-                <p class="muted">{{it.goods_type === 'physical' ? '快递配送' : it.fulfillment_type === 'manual' ? '人工服务' : it.fulfillment_type === 'upstream' ? '上游交付' : '自动交付'}} · {{itemStatus(it.fulfillment_status)}}</p>
-                <p v-if="it.goods_type === 'physical'" class="muted">已发 {{ it.shipped_quantity || 0 }} 件 · 已收 {{ it.received_quantity || 0 }} 件<span v-if="it.canceled_quantity"> · 已取消 {{ it.canceled_quantity }} 件</span><span v-if="it.returned_quantity"> · 退回入库 {{ it.returned_quantity }} 件</span></p>
-                <p v-else-if="it.canceled_quantity" class="muted">已取消 {{ it.canceled_quantity }} 件</p>
+                <p class="muted">{{it.goods_type === 'physical' ? $t('快递配送') : it.fulfillment_type === 'manual' ? $t('人工服务') : it.fulfillment_type === 'upstream' ? $t('上游交付') : $t('自动交付')}} · {{itemStatus(it.fulfillment_status)}}</p>
+                <p v-if="it.goods_type === 'physical'" class="muted">{{ $t('已发') }} {{ it.shipped_quantity || 0 }} {{ $t('件 · 已收') }} {{ it.received_quantity || 0 }} {{ $t('件') }}<span v-if="it.canceled_quantity"> {{ $t('· 已取消') }} {{ it.canceled_quantity }} {{ $t('件') }}</span><span v-if="it.returned_quantity"> {{ $t('· 退回入库') }} {{ it.returned_quantity }} {{ $t('件') }}</span></p>
+                <p v-else-if="it.canceled_quantity" class="muted">{{ $t('已取消') }} {{ it.canceled_quantity }} {{ $t('件') }}</p>
                 <dl v-if="answers(it.form_answers_json).length" class="od-answers"><div v-for="(a,j) in answers(it.form_answers_json)" :key="j"><dt>{{a.name}}</dt><dd>{{a.value}}</dd></div></dl>
               </div>
               <div class="od-item-price">{{ formatMoney(it.unit_price_cents) }}</div>
-              <div class="od-item-qty">购买 ×{{ it.quantity }}</div>
+              <div class="od-item-qty">{{ $t('购买 ×') }}{{ it.quantity }}</div>
               <div class="od-item-sub">{{ formatMoney(Number(order.commerce_version)===1?it.paid_cents || 0:it.amount_cents ?? it.unit_price_cents * it.quantity) }}</div>
             </div>
           </div>
@@ -53,25 +53,25 @@
         <!-- 右列：订单摘要（金额 + 操作） -->
         <div class="od-side">
           <div class="card">
-            <div class="od-section-title">订单金额</div>
+            <div class="od-section-title">{{ $t('订单金额') }}</div>
             <div class="od-amount-row">
-              <span>{{order.status === 'pending_payment' ? '订单应付' : ['canceled','expired'].includes(order.status) ? '订单金额' : '实付合计'}}</span>
+              <span>{{order.status === 'pending_payment' ? $t('订单应付') : ['canceled','expired'].includes(order.status) ? $t('订单金额') : $t('实付合计')}}</span>
               <b class="od-amount">{{ formatMoney(order.paid_total_cents || order.total_cents) }}</b>
-              <span v-if="Number(order.paid_fee_cents) > 0" class="muted">含手续费 {{ formatMoney(order.paid_fee_cents || 0) }}</span>
+              <span v-if="Number(order.paid_fee_cents) > 0" class="muted">{{ $t('含手续费') }} {{ formatMoney(order.paid_fee_cents || 0) }}</span>
             </div>
-            <p v-if="Number(order.refunded_cents) > 0 || Number(order.refunded_fee_cents) > 0" class="muted">已退款 {{ formatMoney(Number(order.refunded_cents || 0) + Number(order.refunded_fee_cents || 0)) }}（含已退手续费 {{formatMoney(order.refunded_fee_cents || 0)}}）</p>
-            <p class="muted">商品小计为下单优惠后的金额；手续费与整单优惠以订单金额为准。</p>
+            <p v-if="Number(order.refunded_cents) > 0 || Number(order.refunded_fee_cents) > 0" class="muted">{{ $t('已退款') }} {{ formatMoney(Number(order.refunded_cents || 0) + Number(order.refunded_fee_cents || 0)) }}{{ $t('（含已退手续费') }} {{formatMoney(order.refunded_fee_cents || 0)}}）</p>
+            <p class="muted">{{ $t('商品小计为下单优惠后的金额；手续费与整单优惠以订单金额为准。') }}</p>
           </div>
           <div v-if="!order.items.some(i=>i.delivery_kind==='sms_activation') || order.status==='pending_payment'" class="card">
-            <div class="od-section-title">可用操作</div>
+            <div class="od-section-title">{{ $t('可用操作') }}</div>
             <div class="od-actions">
-              <router-link class="btn od-action-btn" :to="`/payment/${order.order_no}`" v-if="order.status === 'pending_payment'">去支付</router-link>
+              <router-link class="btn od-action-btn" :to="`/payment/${order.order_no}`" v-if="order.status === 'pending_payment'">{{ $t('去支付') }}</router-link>
               <router-link
                 class="btn secondary od-action-btn"
                 :to="`/fetch?order_no=${order.order_no}`"
                 v-if="order.items.some(it=>it.goods_type!=='physical' && it.delivery_kind!=='sms_activation') && ['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(order.status)"
-              >查看交付结果</router-link>
-              <button class="btn secondary od-action-btn" v-if="isLoggedIn && order.status === 'pending_payment'" @click="cancelOrder">取消订单</button>
+              >{{ $t('查看交付结果') }}</router-link>
+              <button class="btn secondary od-action-btn" v-if="isLoggedIn && order.status === 'pending_payment'" @click="cancelOrder">{{ $t('取消订单') }}</button>
             </div>
           </div>
         </div>
@@ -82,6 +82,8 @@
 </template>
 
 <script setup lang="ts">
+import { uiText, t as $t, localeTag } from '@/i18n';
+
 import SMSOrder from '@/components/SMSOrder.vue';
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
@@ -101,7 +103,7 @@ const order = ref<OrderDetail | null>(null);
 onMounted(loadOrder);
 async function loadOrder() {
   loading.value = true;
-  const { data, error: err } = await getOrder(orderNo, password.value || undefined).catch(() => ({ data: null, error: '订单不存在或无权查看' }));
+  const { data, error: err } = await getOrder(orderNo, password.value || undefined).catch(() => ({ data: null, get error() { return $t("订单不存在或无权查看"); } }));
   loading.value = false;
   if (err) { error.value = err; return; }
   order.value = data;
@@ -110,7 +112,7 @@ async function loadOrder() {
 }
 
 async function cancelOrder() {
-  if (!confirm(`确认取消订单 ${orderNo}？`)) return;
+  if (!confirm($t("确认取消订单 {0}？", [orderNo]))) return;
   const { error: err } = await cancelMyOrder(orderNo);
   if (err) { error.value = err; return; }
   // 重新加载：状态变 canceled 后按钮消失
@@ -119,12 +121,12 @@ async function cancelOrder() {
 }
 
 function answers(raw?:string):{name:string;value:string}[]{try{const x=JSON.parse(raw || '[]');return Array.isArray(x)?x:[]}catch{return []}}
-function itemStatus(s?:string){return ({shipped:'已发货',received:'已收货',pending:'待处理',delivering:'处理中',manual:'待人工核对',failed:'处理异常',delivered:'已完成交付',refunded:'已退款'} as Record<string,string>)[s || 'pending'] || s;}
+function itemStatus(s?:string){return ({get shipped() { return $t("已发货"); },get received() { return $t("已收货"); },get pending() { return $t("待处理"); },get delivering() { return $t("处理中"); },get manual() { return $t("待人工核对"); },get failed() { return $t("处理异常"); },get delivered() { return $t("已完成交付"); },get refunded() { return $t("已退款"); }} as Record<string,string>)[s || 'pending'] || s;}
 function statusText(s: string): string {
   return ({
-    pending_payment: '待支付', paid: '已支付', fulfilling: '履约中', partially_delivered: '部分发货',
-    delivered: '已发货', completed: '已完成', canceled: '已取消', expired: '已过期',
-    refund_pending: '退款中', refunded: '已退款', manual_pending: '待人工发货',
+    get pending_payment() { return $t("待支付"); }, get paid() { return $t("已支付"); }, get fulfilling() { return $t("履约中"); }, get partially_delivered() { return $t("部分发货"); },
+    get delivered() { return $t("已发货"); }, get completed() { return $t("已完成"); }, get canceled() { return $t("已取消"); }, get expired() { return $t("已过期"); },
+    get refund_pending() { return $t("退款中"); }, get refunded() { return $t("已退款"); }, get manual_pending() { return $t("待人工发货"); },
   } as Record<string, string>)[s] || s;
 }
 function statusBadge(s: string): string {
@@ -135,7 +137,7 @@ function statusBadge(s: string): string {
   } as Record<string, string>)[s] || 'badge gray';
 }
 function fmtTime(ts: number): string {
-  return ts ? new Date(ts * 1000).toLocaleString() : '';
+  return ts ? new Date(ts * 1000).toLocaleString(localeTag.value) : '';
 }
 </script>
 

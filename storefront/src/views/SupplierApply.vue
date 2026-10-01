@@ -3,21 +3,17 @@
     <!-- 说明 -->
     <div class="card" style="margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: center;">
-        <div>对接申请（供货）</div>
-        <span class="tag">审核通过后下发 app_id / app_key</span>
+        <div>{{ $t('对接申请（供货）') }}</div>
+        <span class="tag">{{ $t('审核通过后下发 app_id / app_key') }}</span>
       </div>
-      <div class="muted" style="margin-top: 6px; line-height: 1.7;">
-        申请通过后，你的第三方站点（acg-faka / dujiao-next / 另一套 ZCard）可把本站作为上游供货方，
-        填本站地址 + 下方凭据即可对接，无需改动对方代码。协议在申请时选定，一个账户对应一种面板。
-        下游下单从账户「供货余额」扣款，余额不足请先充值。
-      </div>
+      <div class="muted" style="margin-top: 6px; line-height: 1.7;"> {{ $t('申请通过后，你的第三方站点（acg-faka / dujiao-next / 另一套 ZCard）可把本站作为上游供货方， 填本站地址 + 下方凭据即可对接，无需改动对方代码。协议在申请时选定，一个账户对应一种面板。 下游下单从账户「供货余额」扣款，余额不足请先充值。') }} </div>
     </div>
 
     <!-- 申请表单 -->
     <div class="card apply-card">
-      <div class="apply-title">提交新申请</div>
-      <div class="muted" style="margin: -6px 0 16px;">选择对接协议并填写站点信息，审核通过后即可获得凭据</div>
-      <div class="field-label">对接协议</div>
+      <div class="apply-title">{{ $t('提交新申请') }}</div>
+      <div class="muted" style="margin: -6px 0 16px;">{{ $t('选择对接协议并填写站点信息，审核通过后即可获得凭据') }}</div>
+      <div class="field-label">{{ $t('对接协议') }}</div>
       <div class="protocol-grid">
         <label
           v-for="p in protocols"
@@ -35,34 +31,34 @@
       </div>
       <div class="apply-form-grid">
         <div class="field">
-          <label>站点 / 店铺名 <i class="req">*</i></label>
-          <input v-model="form.display_name" class="input" placeholder="如：星空卡商城" maxlength="100" />
+          <label>{{ $t('站点 / 店铺名') }} <i class="req">*</i></label>
+          <input v-model="form.display_name" class="input" :placeholder="$t('如：星空卡商城')" maxlength="100" />
         </div>
         <div class="field">
-          <label>联系方式</label>
-          <input v-model="form.contact" class="input" placeholder="QQ / 邮箱 / 手机" maxlength="255" />
+          <label>{{ $t('联系方式') }}</label>
+          <input v-model="form.contact" class="input" :placeholder="$t('QQ / 邮箱 / 手机')" maxlength="255" />
         </div>
       </div>
       <div class="field">
-        <label>交付回调地址（选填）</label>
-        <input v-model="form.notify_url" class="input" placeholder="直接填域名即可，支持 http/https" maxlength="500" />
-        <div class="muted field-hint">示例：shop.example.com/callback 或 http(s)://shop.example.com/callback（不填则无回调）</div>
+        <label>{{ $t('交付回调地址（选填）') }}</label>
+        <input v-model="form.notify_url" class="input" :placeholder="$t('直接填域名即可，支持 http/https')" maxlength="500" />
+        <div class="muted field-hint">{{ $t('示例：shop.example.com/callback 或 http(s)://shop.example.com/callback（不填则无回调）') }}</div>
       </div>
       <div class="field">
-        <label>申请理由（选填）</label>
-        <textarea v-model="form.apply_reason" class="input" style="min-height: 80px;" placeholder="审核时参考，可简述站点规模与主营类目" maxlength="500"></textarea>
+        <label>{{ $t('申请理由（选填）') }}</label>
+        <textarea v-model="form.apply_reason" class="input" style="min-height: 80px;" :placeholder="$t('审核时参考，可简述站点规模与主营类目')" maxlength="500"></textarea>
       </div>
       <div class="apply-footer">
-        <button class="btn apply-submit" :disabled="submitting" @click="submit">{{ submitting ? '提交中…' : '提交申请' }}</button>
-        <span v-if="formError" class="error">{{ formError }}</span>
+        <button class="btn apply-submit" :disabled="submitting" @click="submit">{{ submitting ? $t('提交中…') : $t('提交申请') }}</button>
+        <span v-if="formError" class="error">{{ uiText(formError) }}</span>
       </div>
     </div>
 
     <!-- 我的对接账户 -->
     <div class="card">
-      <div style="font-weight: 600; margin-bottom: 12px;">我的对接账户（{{ accounts.length }}）</div>
-      <div v-if="loading" class="muted">加载中…</div>
-      <div v-else-if="!accounts.length" class="muted">暂无申请，提交上方表单即可开始对接</div>
+      <div style="font-weight: 600; margin-bottom: 12px;">{{ $t('我的对接账户（{0}）', [accounts.length]) }}</div>
+      <div v-if="loading" class="muted">{{ $t('加载中…') }}</div>
+      <div v-else-if="!accounts.length" class="muted">{{ $t('暂无申请，提交上方表单即可开始对接') }}</div>
       <div v-else class="account-list" style="display: flex; flex-direction: column; gap: 10px;">
         <div v-for="a in accounts" :key="a.id" class="account-item" style="border: 1px solid #e5e6e8; border-radius: 10px; padding: 12px;">
           <div class="account-head">
@@ -72,53 +68,48 @@
               <span class="tag" :style="statusStyle(a.status)">{{ statusLabel(a.status) }}</span>
             </div>
             <div class="account-actions">
-              <span v-if="a.status === 'approved'" class="account-balance">
-                余额 <b style="color: var(--zc-primary); font-size: 16px;">{{ formatMoney(a.balance_cache || 0) }}</b>
+              <span v-if="a.status === 'approved'" class="account-balance"> {{ $t('余额') }} <b style="color: var(--zc-primary); font-size: 16px;">{{ formatMoney(a.balance_cache || 0) }}</b>
               </span>
-              <button v-if="a.status === 'approved'" class="btn" style="padding: 6px 14px; font-size: 13px;" @click="openRecharge(a)">充值</button>
-              <button v-if="a.status === 'applying'" class="btn secondary" @click="cancel(a)">撤销申请</button>
-              <button v-if="a.status === 'approved'" class="btn secondary" @click="showCredentials(a)">{{ credOpenId === a.id ? '收起凭据' : '查看凭据' }}</button>
-              <button v-if="a.status === 'approved'" class="btn secondary" @click="regenerate(a)">重置密钥</button>
+              <button v-if="a.status === 'approved'" class="btn" style="padding: 6px 14px; font-size: 13px;" @click="openRecharge(a)">{{ $t('充值') }}</button>
+              <button v-if="a.status === 'applying'" class="btn secondary" @click="cancel(a)">{{ $t('撤销申请') }}</button>
+              <button v-if="a.status === 'approved'" class="btn secondary" @click="showCredentials(a)">{{ credOpenId === a.id ? $t('收起凭据') : $t('查看凭据') }}</button>
+              <button v-if="a.status === 'approved'" class="btn secondary" @click="regenerate(a)">{{ $t('重置密钥') }}</button>
             </div>
           </div>
-          <div v-if="a.apply_reason" class="muted" style="margin-top: 6px;">申请理由：{{ a.apply_reason }}</div>
-          <div v-if="a.review_note" class="muted" style="margin-top: 4px; color: #b45309;">审核意见：{{ a.review_note }}</div>
-          <div class="muted" style="margin-top: 4px;">申请时间：{{ fmt(a.created_at) }}<template v-if="a.reviewed_at"> · 审核时间：{{ fmt(a.reviewed_at) }}</template></div>
+          <div v-if="a.apply_reason" class="muted" style="margin-top: 6px;">{{ $t('申请理由：') }}{{ a.apply_reason }}</div>
+          <div v-if="a.review_note" class="muted" style="margin-top: 4px; color: #b45309;">{{ $t('审核意见：') }}{{ a.review_note }}</div>
+          <div class="muted" style="margin-top: 4px;">{{ $t('申请时间：') }}{{ fmt(a.created_at) }}<template v-if="a.reviewed_at"> {{ $t('· 审核时间：') }}{{ fmt(a.reviewed_at) }}</template></div>
 
           <!-- 凭据 + 对接指引 -->
           <div v-if="a.status === 'approved' && credOpenId === a.id" class="account-credentials" style="margin-top: 12px; background: #f9fafb; border-radius: 8px; padding: 12px;">
-            <div v-if="credLoading" class="muted">加载凭据…</div>
+            <div v-if="credLoading" class="muted">{{ $t('加载凭据…') }}</div>
             <template v-else-if="credentials">
-              <div style="font-weight: 600; margin-bottom: 8px;">凭据（请妥善保存）</div>
+              <div style="font-weight: 600; margin-bottom: 8px;">{{ $t('凭据（请妥善保存）') }}</div>
               <div class="cred-row">
                 <span class="muted" style="width: 72px;">app_id</span>
                 <code style="flex: 1; background: #fff; border: 1px solid #e5e6e8; border-radius: 6px; padding: 6px 10px; font-size: 13px;">{{ credentials.api_key }}</code>
-                <button class="btn secondary" @click="copy(credentials.api_key)">{{ copied === 'key' ? '✓' : '复制' }}</button>
+                <button class="btn secondary" @click="copy(credentials.api_key)">{{ copied === 'key' ? '✓' : $t('复制') }}</button>
               </div>
               <div class="cred-row">
                 <span class="muted" style="width: 72px;">app_key</span>
                 <code style="flex: 1; background: #fff; border: 1px solid #e5e6e8; border-radius: 6px; padding: 6px 10px; font-size: 13px;">{{ credentials.api_secret }}</code>
-                <button class="btn secondary" @click="copy(credentials.api_secret)">{{ copied === 'secret' ? '✓' : '复制' }}</button>
+                <button class="btn secondary" @click="copy(credentials.api_secret)">{{ copied === 'secret' ? '✓' : $t('复制') }}</button>
               </div>
-              <div v-if="regeneratedSecret" style="margin-bottom: 8px; padding: 8px 10px; background: #fef3c7; border-radius: 6px; font-size: 13px;">
-                新密钥（旧密钥已失效）：<code>{{ regeneratedSecret }}</code>
+              <div v-if="regeneratedSecret" style="margin-bottom: 8px; padding: 8px 10px; background: #fef3c7; border-radius: 6px; font-size: 13px;"> {{ $t('新密钥（旧密钥已失效）：') }}<code>{{ regeneratedSecret }}</code>
               </div>
             </template>
 
             <!-- IP 白名单（审核通过后可配置；空 = 所有 IP 放行） -->
             <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e5e6e8;">
               <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-                <b style="font-size: 13px;">🔒 IP 白名单</b>
-                <span class="muted" style="font-size: 12px;">{{ (a.ip_whitelist?.length || 0) ? `已限制 ${a.ip_whitelist!.length} 条` : '未限制（所有 IP 可调用）' }}</span>
+                <b style="font-size: 13px;">{{ $t('🔒 IP 白名单') }}</b>
+                <span class="muted" style="font-size: 12px;">{{ (a.ip_whitelist?.length || 0) ? $t('已限制 {0} 条', [a.ip_whitelist!.length]) : $t('未限制（所有 IP 可调用）') }}</span>
               </div>
-              <div class="muted" style="margin: 6px 0 8px; line-height: 1.7; font-size: 12px;">
-                出于安全考虑，可限制只有指定 IP 的服务器才能调用本账户的对接接口。
-                <b>不填写 = 默认所有 IP 都可以请求</b>；填写后仅白名单内 IP 可用（支持精确 IP 如 1.2.3.4，或网段如 10.0.0.0/24，最多 20 条）。服务器出口 IP 变更后请及时更新，否则接口将被拒绝。
-              </div>
+              <div class="muted" style="margin: 6px 0 8px; line-height: 1.7; font-size: 12px;"> {{ $t('出于安全考虑，可限制只有指定 IP 的服务器才能调用本账户的对接接口。') }} <b>{{ $t('不填写 = 默认所有 IP 都可以请求') }}</b>{{ $t('；填写后仅白名单内 IP 可用（支持精确 IP 如 1.2.3.4，或网段如 10.0.0.0/24，最多 20 条）。服务器出口 IP 变更后请及时更新，否则接口将被拒绝。') }} </div>
               <div v-if="(a.ip_whitelist || []).length" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
                 <span v-for="ip in a.ip_whitelist" :key="ip" class="ip-chip">
                   <code>{{ ip }}</code>
-                  <button class="ip-chip-x" title="移除" @click="removeWhitelistIP(a, ip)">✕</button>
+                  <button class="ip-chip-x" :title="$t('移除')" @click="removeWhitelistIP(a, ip)">✕</button>
                 </span>
               </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -126,29 +117,18 @@
                   v-model="whitelistInput"
                   class="input"
                   style="flex: 1; min-width: 0; width: 100%;"
-                  placeholder="添加 IP 或网段，如 1.2.3.4 / 10.0.0.0/24"
+                  :placeholder="$t('添加 IP 或网段，如 1.2.3.4 / 10.0.0.0/24')"
                   @keyup.enter="addWhitelistIP(a)"
                 />
-                <button class="btn secondary" :disabled="whitelistSaving" @click="addWhitelistIP(a)">添加</button>
+                <button class="btn secondary" :disabled="whitelistSaving" @click="addWhitelistIP(a)">{{ $t('添加') }}</button>
               </div>
-              <div v-if="whitelistError" style="color: #dc2626; font-size: 12px; margin-top: 6px;">{{ whitelistError }}</div>
+              <div v-if="whitelistError" style="color: #dc2626; font-size: 12px; margin-top: 6px;">{{ uiText(whitelistError) }}</div>
             </div>
             <div class="muted" style="margin-top: 10px; line-height: 1.8;">
-              <b style="color: #1f2329;">对接方式</b><br />
-              <template v-if="a.protocol === 'acg_faka'">
-                ① 对方 acg-faka 后台 →「店铺共享 / 共享店铺」→ 新增店铺<br />
-                ② 类型选「异次元(原生)」，地址填本站地址（<code>{{ origin }}</code>）<br />
-                ③ 商户ID 填上面的 app_id，密钥填 app_key，保存前会自动连通测试
-              </template>
-              <template v-else-if="a.protocol === 'dujiao_next'">
-                ① 对方 dujiao-next 后台 →「站点连接」→ 新增连接<br />
-                ② 协议选 dujiao-next，地址填本站地址（<code>{{ origin }}</code>/api/v1/upstream）<br />
-                ③ API Key 填上面的 app_id，API Secret 填 app_key
-              </template>
-              <template v-else>
-                ① 对方 ZCard 后台 →「货源渠道」→ 新增连接（协议选 zcard）<br />
-                ② 地址填本站地址（<code>{{ origin }}</code>/api/supply），app_id 填上面的 api_key、密钥填 api_secret
-              </template>
+              <b style="color: #1f2329;">{{ $t('对接方式') }}</b><br />
+              <template v-if="a.protocol === 'acg_faka'"> {{ $t('① 对方 acg-faka 后台 →「店铺共享 / 共享店铺」→ 新增店铺') }}<br /> {{ $t('② 类型选「异次元(原生)」，地址填本站地址（') }}<code>{{ origin }}</code>）<br /> {{ $t('③ 商户ID 填上面的 app_id，密钥填 app_key，保存前会自动连通测试') }} </template>
+              <template v-else-if="a.protocol === 'dujiao_next'"> {{ $t('① 对方 dujiao-next 后台 →「站点连接」→ 新增连接') }}<br /> {{ $t('② 协议选 dujiao-next，地址填本站地址（') }}<code>{{ origin }}</code>/api/v1/upstream）<br /> {{ $t('③ API Key 填上面的 app_id，API Secret 填 app_key') }} </template>
+              <template v-else> {{ $t('① 对方 ZCard 后台 →「货源渠道」→ 新增连接（协议选 zcard）') }}<br /> {{ $t('② 地址填本站地址（') }}<code>{{ origin }}</code>{{ $t('/api/supply），app_id 填上面的 api_key、密钥填 api_secret') }} </template>
             </div>
           </div>
         </div>
@@ -159,13 +139,13 @@
     <div v-if="rechargeOpen" class="recharge-mask" @click.self="closeRecharge">
       <div class="recharge-modal">
         <div class="recharge-head">
-          <div style="font-weight: 700; font-size: 16px;">供货余额充值</div>
+          <div style="font-weight: 700; font-size: 16px;">{{ $t('供货余额充值') }}</div>
           <button class="recharge-close" @click="closeRecharge">✕</button>
         </div>
 
         <!-- 余额卡 -->
         <div class="balance-hero">
-          <div class="muted" style="color: rgba(255,255,255,0.75);">当前余额</div>
+          <div class="muted" style="color: rgba(255,255,255,0.75);">{{ $t('当前余额') }}</div>
           <div style="font-size: 28px; font-weight: 800; letter-spacing: 0.5px;">{{ formatMoney(rechargeTarget?.balance_cache || 0) }}</div>
           <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">{{ rechargeTarget?.display_name }} · {{ protocolLabel(rechargeTarget?.protocol || '') }}</div>
         </div>
@@ -174,15 +154,15 @@
           <!-- 成功反馈 -->
           <div v-if="rechargeDone" class="recharge-done">
             <div style="font-size: 42px;">✅</div>
-            <div style="font-weight: 700; margin-top: 8px;">充值成功</div>
-            <div class="muted" style="margin-top: 4px;">已到账 {{ formatMoney(rechargeDoneAmount) }}，支付完成后余额自动更新</div>
-            <button class="btn" style="margin-top: 16px; width: 100%;" @click="closeRecharge">完成</button>
+            <div style="font-weight: 700; margin-top: 8px;">{{ $t('充值成功') }}</div>
+            <div class="muted" style="margin-top: 4px;">{{ $t('已到账') }} {{ formatBaseMoney(rechargeDoneAmount) }}{{ $t('，支付完成后余额自动更新') }}</div>
+            <button class="btn" style="margin-top: 16px; width: 100%;" @click="closeRecharge">{{ $t('完成') }}</button>
           </div>
 
           <template v-else>
             <!-- 金额档位 -->
             <div v-if="!rechargeRedirect && !rechargeQrcode" class="recharge-section">
-              <div class="recharge-label">充值金额</div>
+              <div class="recharge-label">{{ $t('充值金额') }}</div>
               <div class="tier-grid">
                 <button
                   v-for="t in presetTiers"
@@ -191,39 +171,35 @@
                   :class="{ active: rechargeYuan === t }"
                   @click="rechargeYuan = t; focusCustom = false"
                 >
-                  <div>{{ formatMoney(t * 100) }}</div>
-                  <div v-if="supplierGiftOf(t)" style="font-size: 11px; margin-top: 2px; color: #16a34a;">送 {{ formatMoney(supplierGiftOf(t)) }}</div>
+                  <div>{{ formatBaseMoney(t * 100) }}</div>
+                  <div v-if="supplierGiftOf(t)" style="font-size: 11px; margin-top: 2px; color: #16a34a;">{{ $t('送') }} {{ formatBaseMoney(supplierGiftOf(t)) }}</div>
                 </button>
-                <button class="tier-card custom" :class="{ active: !presetTiers.includes(rechargeYuan as number) && rechargeYuan !== null }" @click="focusCustom = true">
-                  自定义
-                </button>
+                <button class="tier-card custom" :class="{ active: !presetTiers.includes(rechargeYuan as number) && rechargeYuan !== null }" @click="focusCustom = true"> {{ $t('自定义') }} </button>
               </div>
               <div v-if="focusCustom" class="custom-input">
-                <input class="input" v-model.number="rechargeYuan" type="number" min="1" step="0.01" placeholder="输入金额" autofocus />
+                <input class="input" v-model.number="rechargeYuan" type="number" min="1" step="0.01" :placeholder="$t('输入金额（{0}）', [getBaseCurrency().code])" autofocus />
               </div>
-              <div class="muted" style="margin-top: 6px;">限额 {{ formatMoney(rechargeMeta?.min_amount || 1000) }} ~ {{ formatMoney(rechargeMeta?.max_amount || 500000) }}</div>
-              <div v-if="supplierGiftOf(rechargeYuan) > 0" style="margin-top: 6px; font-size: 13px; color: #16a34a; font-weight: 600;">
-                本单到账 {{ formatMoney(Math.round((rechargeYuan || 0) * 100) + supplierGiftOf(rechargeYuan)) }}（本金 + 赠送）
-              </div>
+              <div class="muted" style="margin-top: 6px;">{{ $t('限额') }} {{ formatBaseMoney(rechargeMeta?.min_amount || 1000) }} ~ {{ formatBaseMoney(rechargeMeta?.max_amount || 500000) }}</div>
+              <div v-if="supplierGiftOf(rechargeYuan) > 0" style="margin-top: 6px; font-size: 13px; color: #16a34a; font-weight: 600;"> {{ $t('本单到账') }} {{ formatBaseMoney(Math.round((rechargeYuan || 0) * 100) + supplierGiftOf(rechargeYuan)) }}{{ $t('（本金 + 赠送）') }} </div>
             </div>
 
             <!-- 支付方式 -->
             <div v-if="!rechargeRedirect && !rechargeQrcode" class="recharge-section">
-              <div class="recharge-label">支付方式</div>
-              <PayChannelGrid :options="supplierPayOptions" :channel="rechargeChannel" :method="rechargeMethod" @select="(channel, method) => { rechargeChannel = channel; rechargeMethod = method; }"><template #empty>暂无可用的供货充值方式，请联系管理员</template></PayChannelGrid>
+              <div class="recharge-label">{{ $t('支付方式') }}</div>
+              <PayChannelGrid :options="supplierPayOptions" :channel="rechargeChannel" :method="rechargeMethod" @select="(channel, method) => { rechargeChannel = channel; rechargeMethod = method; }"><template #empty>{{ $t('暂无可用的供货充值方式，请联系管理员') }}</template></PayChannelGrid>
             </div>
 
-            <div v-if="rechargeError" style="color: #dc2626; font-size: 13px; margin: 8px 0;">{{ rechargeError }}</div>
+            <div v-if="rechargeError" style="color: #dc2626; font-size: 13px; margin: 8px 0;">{{ uiText(rechargeError) }}</div>
 
             <PaymentBreakdown :quote="(rechargeRedirect || rechargeQrcode) ? paidQuote : quote" :loading="!rechargeRedirect && !rechargeQrcode && quoteLoading" :error="quoteError" recharge @retry="refreshQuote" />
             <!-- 支付跳转 -->
             <div v-if="rechargeRedirect" style="margin-top: 12px;">
-              <button class="btn" style="width:100%" @click="openRechargeCheckout">去支付（跳转收银台）</button>
-              <div class="muted" style="text-align: center; margin-top: 6px;">支付完成后余额自动到账</div>
+              <button class="btn" style="width:100%" @click="openRechargeCheckout">{{ $t('去支付（跳转收银台）') }}</button>
+              <div class="muted" style="text-align: center; margin-top: 6px;">{{ $t('支付完成后余额自动到账') }}</div>
             </div>
             <div v-else-if="rechargeQrcode" style="margin-top: 12px; text-align: center;">
-              <img :src="rechargeQrcode" alt="支付二维码" style="width: 180px; border-radius: 10px;" />
-              <div class="muted" style="margin-top: 6px;">请使用对应 App 扫码支付，完成后余额自动到账</div>
+              <img :src="rechargeQrcode" :alt="$t('支付二维码')" style="width: 180px; border-radius: 10px;" />
+              <div class="muted" style="margin-top: 6px;">{{ $t('请使用对应 App 扫码支付，完成后余额自动到账') }}</div>
             </div>
 
             <!-- 主按钮 -->
@@ -233,7 +209,7 @@
               :disabled="recharging || !rechargeYuan || rechargeYuan <= 0 || !rechargeChannel || !quote || quoteLoading"
               @click="doRecharge"
             >
-              {{ recharging ? '创建支付单…' : quote ? `立即支付 ${formatMoney(quote.total_cents)}` : '等待计算金额' }}
+              {{ recharging ? $t('创建支付单…') : quote ? $t('立即支付 {0}', [formatPaymentAmount(quote)]) : $t('等待计算金额') }}
             </button>
           </template>
         </div>
@@ -243,6 +219,8 @@
 </template>
 
 <script setup lang="ts">
+import { uiText, t as $t, localeTag } from '@/i18n';
+
 import QRCode from 'qrcode';
 import { submitPaymentForm } from "@/utils/payment-form";
 import PayChannelGrid from '@/components/PayChannelGrid.vue';
@@ -257,12 +235,12 @@ import {
   setSupplierIPWhitelist, fetchPaymentChannels, type ChannelItem,
   type SupplierAccount, type SupplierCredentials,
 } from '@/api';
-import { api, formatMoney } from '@/api/client';
+import { api, formatMoney, getBaseCurrency, formatBaseMoney, formatPaymentAmount } from '@/api/client';
 
 const protocols = [
-  { value: 'zcard', label: 'ZCard', desc: '另一套 ZCard 系统对接（X-Supply 四头签名）' },
-  { value: 'dujiao_next', label: 'dujiao-next', desc: '对方 dujiao-next 站对接（Dujiao-Next 三头签名）' },
-  { value: 'acg_faka', label: 'acg-faka', desc: '对方 acg-faka 站对接（共享店铺原生协议）' },
+  { value: 'zcard', label: 'ZCard', get desc() { return $t("另一套 ZCard 系统对接（X-Supply 四头签名）"); } },
+  { value: 'dujiao_next', label: 'dujiao-next', get desc() { return $t("对方 dujiao-next 站对接（Dujiao-Next 三头签名）"); } },
+  { value: 'acg_faka', label: 'acg-faka', get desc() { return $t("对方 acg-faka 站对接（共享店铺原生协议）"); } },
 ];
 
 const accounts = ref<SupplierAccount[]>([]);
@@ -317,23 +295,23 @@ async function addWhitelistIP(a: SupplierAccount) {
   const ip = whitelistInput.value.trim();
   if (!ip) return;
   if (!validIPOrCIDR(ip)) {
-    whitelistError.value = '格式不正确：请填精确 IP（1.2.3.4）或网段（10.0.0.0/24）';
+    whitelistError.value = $t("格式不正确：请填精确 IP（1.2.3.4）或网段（10.0.0.0/24）");
     return;
   }
   const next = [...(a.ip_whitelist || [])];
   if (next.includes(ip)) {
-    whitelistError.value = '该 IP 已在白名单中';
+    whitelistError.value = $t("该 IP 已在白名单中");
     return;
   }
   if (next.length >= 20) {
-    whitelistError.value = '白名单最多 20 条';
+    whitelistError.value = $t("白名单最多 20 条");
     return;
   }
   await saveWhitelist(a, [...next, ip]);
 }
 
 async function removeWhitelistIP(a: SupplierAccount, ip: string) {
-  if (!confirm(`确认从白名单移除 ${ip}？`)) return;
+  if (!confirm($t("确认从白名单移除 {0}？", [ip]))) return;
   await saveWhitelist(a, (a.ip_whitelist || []).filter((x) => x !== ip));
 }
 
@@ -365,7 +343,7 @@ function openRechargeCheckout() {
     if (rechargeParams.value) submitPaymentForm(rechargeRedirect.value, rechargeParams.value);
     else window.open(rechargeRedirect.value, '_blank', 'noopener');
   } catch {
-    rechargeError.value = '支付参数异常，请重新选择支付方式';
+    rechargeError.value = $t("支付参数异常，请重新选择支付方式");
   }
 }
 const rechargeQrcode = ref('');
@@ -429,11 +407,11 @@ async function doRecharge() {
   if (recharging.value || !quote.value || quoteLoading.value) return;
   if (!rechargeTarget.value) return;
   if (!rechargeYuan.value || rechargeYuan.value <= 0) {
-    rechargeError.value = '请输入充值金额';
+    rechargeError.value = $t("请输入充值金额");
     return;
   }
   if (!rechargeChannel.value) {
-    rechargeError.value = '请选择支付方式';
+    rechargeError.value = $t("请选择支付方式");
     return;
   }
   recharging.value = true;
@@ -449,7 +427,7 @@ async function doRecharge() {
   });
   recharging.value = false;
   if (error || !data) {
-    rechargeError.value = error || '创建失败';
+    rechargeError.value = error || $t("创建失败");
     await refreshQuote();
     return;
   }
@@ -466,15 +444,15 @@ async function doRecharge() {
       rechargeQrcode.value = content.startsWith('https://') || content.startsWith('http://') || content.startsWith('data:image')
         ? content
         : await QRCode.toDataURL(content, { width: 220, margin: 1, errorCorrectionLevel: 'M' });
-    } catch { rechargeError.value = '无法生成支付二维码，请重新发起支付'; }
+    } catch { rechargeError.value = $t("无法生成支付二维码，请重新发起支付"); }
   } else if (data.type === 'params') {
     try {
       const p = JSON.parse(data.payload);
       rechargeRedirect.value = p.url || '';
       rechargeParams.value = p.params || {};
-      rechargeError.value = p.url ? '' : '支付参数异常';
+      rechargeError.value = p.url ? '' : $t("支付参数异常");
     } catch {
-      rechargeError.value = '支付参数异常';
+      rechargeError.value = $t("支付参数异常");
     }
   }
   // 轮询账户余额（支付完成后刷新）
@@ -509,7 +487,7 @@ function protocolLabel(p: string) {
   return ({ zcard: 'ZCard', dujiao_next: 'dujiao-next', acg_faka: 'acg-faka' } as any)[p] || p;
 }
 function statusLabel(s: string) {
-  return ({ applying: '待审核', approved: '已通过', rejected: '已驳回', disabled: '已禁用' } as any)[s] || s;
+  return ({ get applying() { return $t("待审核"); }, get approved() { return $t("已通过"); }, get rejected() { return $t("已驳回"); }, get disabled() { return $t("已禁用"); } } as any)[s] || s;
 }
 function statusStyle(s: string) {
   return ({
@@ -520,7 +498,7 @@ function statusStyle(s: string) {
   } as any)[s] || '';
 }
 function fmt(ts: number) {
-  return ts ? new Date(ts * 1000).toLocaleString() : '-';
+  return ts ? new Date(ts * 1000).toLocaleString(localeTag.value) : '-';
 }
 async function copy(text: string) {
   try {
@@ -543,14 +521,14 @@ async function load() {
 async function submit() {
   formError.value = '';
   if (!form.value.display_name.trim()) {
-    formError.value = '请填写站点/店铺名';
+    formError.value = $t("请填写站点/店铺名");
     return;
   }
   // 回调地址归一：裸域名自动补 https://；http/https 均支持
   let notifyURL = form.value.notify_url.trim();
   if (notifyURL && !notifyURL.includes('://')) notifyURL = `https://${notifyURL}`;
   if (notifyURL && !/^https?:\/\//.test(notifyURL)) {
-    formError.value = '回调地址仅支持 http/https（或直接填域名）';
+    formError.value = $t("回调地址仅支持 http/https（或直接填域名）");
     return;
   }
   submitting.value = true;
@@ -599,7 +577,7 @@ async function showCredentials(a: SupplierAccount) {
 }
 
 async function regenerate(a: SupplierAccount) {
-  if (!confirm(`确认重置「${a.display_name}」的密钥？重置后旧密钥立即失效。`)) return;
+  if (!confirm($t("确认重置「{0}」的密钥？重置后旧密钥立即失效。", [a.display_name]))) return;
   const { data, error } = await regenerateSupplierSecret(a.id);
   if (error) {
     alert(error);
@@ -610,7 +588,7 @@ async function regenerate(a: SupplierAccount) {
 }
 
 async function cancel(a: SupplierAccount) {
-  if (!confirm(`确认撤销「${a.display_name}」的申请？`)) return;
+  if (!confirm($t("确认撤销「{0}」的申请？", [a.display_name]))) return;
   const { error } = await cancelSupplierApplication(a.id);
   if (error) {
     alert(error);

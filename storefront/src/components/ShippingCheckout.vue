@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { uiText, t as $t } from '@/i18n';
+
 import { computed, nextTick, reactive, ref, watch } from "vue";
 import { api, formatMoney } from "@/api/client";
 import { createOrder, quoteOrder, type CreateOrderInput, type CreateOrderReply } from "@/api";
@@ -57,10 +59,10 @@ async function open(
       try {
         regions.value = JSON.parse(r.data?.data_json || "{}");
       } catch {
-        error.value = "地址数据加载失败，请关闭后重试";
+        error.value = $t("地址数据加载失败，请关闭后重试");
       }
   }
-  if (!allowed.value.length) error.value = "所选商品没有共同的可配送国家，请分开下单";
+  if (!allowed.value.length) error.value = $t("所选商品没有共同的可配送国家，请分开下单");
   return result;
 }
 function close(result: CreateOrderReply | null = null) {
@@ -118,7 +120,7 @@ async function submit() {
     retryKey.value = "";
     close(r.data);
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : "提交失败，请重试";
+    error.value = cause instanceof Error ? cause.message : $t("提交失败，请重试");
   } finally {
     busy.value = false;
   }
@@ -136,34 +138,32 @@ defineExpose({ open });
   >
     <form @submit.prevent="submit">
       <div class="shipping-head">
-        <h2 id="shipping-title">填写收货地址</h2>
-        <button type="button" class="btn secondary" :disabled="busy" @click="close()">关闭</button>
+        <h2 id="shipping-title">{{ $t('填写收货地址') }}</h2>
+        <button type="button" class="btn secondary" :disabled="busy" @click="close()">{{ $t('关闭') }}</button>
       </div>
-      <p class="muted">实体商品将寄送至以下地址。确认金额后再创建订单。</p>
+      <p class="muted">{{ $t('实体商品将寄送至以下地址。确认金额后再创建订单。') }}</p>
       <fieldset :disabled="busy" class="shipping-fields">
         <label
-          >国家或地区
-          <select
+          >{{ $t('国家或地区') }} <select
             v-model="address.country"
             required
             class="input"
             autocomplete="country"
             @change="changeCountry"
           >
-            <option value="" disabled>请选择</option>
+            <option value="" disabled>{{ $t('请选择') }}</option>
             <option v-for="c in countries" :key="c.value" :value="c.value">{{ c.label }}</option>
           </select></label
         >
         <label
-          >省 / 州 / 地区
-          <select
+          >{{ $t('省 / 州 / 地区') }} <select
             v-if="states.length"
             v-model="address.region"
             required
             class="input"
             autocomplete="address-level1"
           >
-            <option value="" disabled>请选择地区</option>
+            <option value="" disabled>{{ $t('请选择地区') }}</option>
             <option v-for="s in states" :key="s.value" :value="s.value">
               {{ s.label }}
             </option></select
@@ -176,8 +176,7 @@ defineExpose({ open });
             autocomplete="address-level1"
         /></label>
         <label
-          >城市
-          <input
+          >{{ $t('城市') }} <input
             v-model="address.city"
             class="input"
             :required="required.includes('C')"
@@ -185,39 +184,36 @@ defineExpose({ open });
             autocomplete="address-level2"
         /></label>
         <label
-          >区 / 县（选填）<input
+          >{{ $t('区 / 县（选填）') }}<input
             v-model="address.district"
             class="input"
             maxlength="100"
             autocomplete="address-level3"
         /></label>
         <label class="shipping-wide"
-          >详细地址
-          <input
+          >{{ $t('详细地址') }} <input
             v-model="address.address"
             required
             maxlength="300"
             class="input"
             autocomplete="street-address"
-            placeholder="街道、门牌号、楼层及房号"
+            :placeholder="$t('街道、门牌号、楼层及房号')"
         /></label>
         <label
-          >收货人姓名
-          <input v-model="address.name" required maxlength="100" class="input" autocomplete="name"
+          >{{ $t('收货人姓名') }} <input v-model="address.name" required maxlength="100" class="input" autocomplete="name"
         /></label>
         <label
-          >电话号码
-          <input
+          >{{ $t('电话号码') }} <input
             v-model="address.phone"
             type="tel"
             required
             maxlength="30"
             class="input"
             autocomplete="tel"
-            placeholder="如 +86 13800138000"
+            :placeholder="$t('如 +86 13800138000')"
         /></label>
         <label
-          >邮编{{ required.includes("Z") ? "" : "（选填）" }}
+          >{{ $t('邮编') }}{{ required.includes("Z") ? "" : $t('（选填）') }}
           <input
             v-model="address.postal_code"
             :required="required.includes('Z')"
@@ -226,16 +222,15 @@ defineExpose({ open });
             autocomplete="postal-code"
         /></label>
       </fieldset>
-      <p v-if="error" role="alert" class="error">{{ error }}</p>
+      <p v-if="error" role="alert" class="error">{{ uiText(error) }}</p>
       <div v-if="quote" class="shipping-quote" aria-live="polite">
         <span
-          >优惠后商品金额
-          {{
+          >{{ $t('优惠后商品金额') }} {{
             formatMoney(Number(quote.total_cents || 0) - Number(quote.shipping_cents || 0))
           }}</span
-        ><span>运费 {{ formatMoney(quote.shipping_cents || 0) }}</span
-        ><strong>合计 {{ formatMoney(quote.total_cents || 0) }}</strong
-        ><small class="muted">支付渠道手续费将在支付前单独显示。</small>
+        ><span>{{ $t('运费') }} {{ formatMoney(quote.shipping_cents || 0) }}</span
+        ><strong>{{ $t('合计') }} {{ formatMoney(quote.total_cents || 0) }}</strong
+        ><small class="muted">{{ $t('支付渠道手续费将在支付前单独显示。') }}</small>
       </div>
       <button
         v-if="quote"
@@ -243,11 +238,9 @@ defineExpose({ open });
         class="btn secondary"
         :disabled="busy"
         @click="quote = undefined"
-      >
-        重新核算金额
-      </button>
+      > {{ $t('重新核算金额') }} </button>
       <button class="btn btn-primary shipping-submit" :disabled="busy || !countries.length">
-        {{ busy ? "正在处理…" : quote ? "确认地址及金额，创建订单" : "核算商品金额及运费" }}
+        {{ busy ? $t('正在处理…') : quote ? $t('确认地址及金额，创建订单') : $t('核算商品金额及运费') }}
       </button>
     </form>
   </dialog>

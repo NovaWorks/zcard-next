@@ -67,7 +67,11 @@ func (s *SupplyAPIService) Ping(ctx context.Context, _ *emptypb.Empty) (*supplyv
 			return nil, err
 		}
 		reply.Balance = balance
-		reply.Currency = "CNY"
+		code, err := data.BaseCurrency(ctx, s.repo.data)
+		if err != nil {
+			return nil, err
+		}
+		reply.Currency = code
 	}
 	return reply, nil
 }

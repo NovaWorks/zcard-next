@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { uiText, t as $t } from '@/i18n';
+
 import { computed, ref } from "vue";
 import { api, formatMoney } from "@/api/client";
 import { shippingStatus, shipments } from "../../../packages/shipping";
@@ -8,7 +10,7 @@ const busy = ref(false);
 const error = ref("");
 const packages = computed(() => shipments(props.order.shipments_json));
 async function receive(id: number) {
-  if (busy.value || !confirm("确认已收到此包裹中的商品？")) return;
+  if (busy.value || !confirm($t("确认已收到此包裹中的商品？"))) return;
   busy.value = true;
   const r = await api.post(`/orders/${props.order.order_no}/receive`, {
     shipment_id: id,
@@ -24,39 +26,37 @@ async function receive(id: number) {
 }
 </script>
 <template>
-  <section class="card shipping-details" aria-label="收货及配送信息">
-    <h3>实体配送 · {{ shippingStatus(order.shipping_status) }}</h3>
+  <section class="card shipping-details" :aria-label="$t('收货及配送信息')">
+    <h3>{{ $t('实体配送 ·') }} {{ shippingStatus(order.shipping_status) }}</h3>
     <p>{{ order.shipping_address?.name }} · {{ order.shipping_address?.phone }}</p>
     <p>
       {{ order.shipping_address?.country }} {{ order.shipping_address?.region }}
       {{ order.shipping_address?.city }} {{ order.shipping_address?.district }}
       {{ order.shipping_address?.address }}
     </p>
-    <p>
-      邮编：{{ order.shipping_address?.postal_code || "无需填写" }} · 运费
-      {{ formatMoney(order.shipping_cents || 0) }}
+    <p> {{ $t('邮编：') }}{{ order.shipping_address?.postal_code || $t('无需填写') }} {{ $t('· 运费') }} {{ formatMoney(order.shipping_cents || 0) }}
     </p>
     <p v-for="it in (order.items || []).filter((i: any) => i.goods_type === 'physical')" :key="it.id" class="muted">
-      {{ it.product_name }}：购买 {{ it.quantity }} 件 · 已发 {{ it.shipped_quantity || 0 }} 件 · 已收 {{ it.received_quantity || 0 }} 件<span v-if="it.canceled_quantity"> · 已取消 {{ it.canceled_quantity }} 件</span><span v-if="it.returned_quantity"> · 退回入库 {{ it.returned_quantity }} 件</span>
+      {{ it.product_name }}{{ $t('：购买') }} {{ it.quantity }} {{ $t('件 · 已发') }} {{ it.shipped_quantity || 0 }} {{ $t('件 · 已收') }} {{ it.received_quantity || 0 }} {{ $t('件') }}<span v-if="it.canceled_quantity"> {{ $t('· 已取消') }} {{ it.canceled_quantity }} {{ $t('件') }}</span><span v-if="it.returned_quantity"> {{ $t('· 退回入库') }} {{ it.returned_quantity }} {{ $t('件') }}</span>
     </p>
     <p v-if="!packages.length" class="muted">
       {{
         order.status === "pending_payment"
-          ? "付款后安排发货"
+          ? $t('付款后安排发货')
           : order.shipping_status === "canceled"
-            ? "实体商品配送已取消"
-            : "等待商家寄出，发货后将在此显示快递信息。"
+            ? $t('实体商品配送已取消')
+            : $t('等待商家寄出，发货后将在此显示快递信息。')
       }}
     </p>
     <div v-for="p in packages" :key="p.id" class="shipment">
-      <b>包裹 #{{ p.id }} · {{ p.status === "received" ? "已收货" : "已寄出" }}</b>
+      <b>{{ $t('包裹 #') }}{{ p.id }} · {{ p.status === "received" ? $t('已收货') : $t('已寄出') }}</b>
       <p>
         {{ p.carrier }} · <span class="tracking">{{ p.tracking_no }}</span>
       </p>
       <p v-for="(qty, id) in p.items" :key="id">
         {{
           (order.items || []).find((i: any) => String(i.id) === String(id))?.product_name ||
-          `商品项 #${id}`
+          $t('商品项 #{0}', [id])
         }}
         × {{ qty }}
       </p>
@@ -65,11 +65,9 @@ async function receive(id: number) {
         class="btn secondary"
         :disabled="busy"
         @click="receive(p.id)"
-      >
-        确认收到此包裹
-      </button>
+      > {{ $t('确认收到此包裹') }} </button>
     </div>
-    <p v-if="error" class="error" role="alert">{{ error }}</p>
+    <p v-if="error" class="error" role="alert">{{ uiText(error) }}</p>
   </section>
 </template>
 <style scoped>

@@ -1,57 +1,57 @@
 <template>
   <div class="card" style="max-width: 420px; margin: 40px auto;">
-    <h2 style="margin-bottom: 16px;">找回密码</h2>
+    <h2 style="margin-bottom: 16px;">{{ $t('找回密码') }}</h2>
 
     <!-- 步骤一：输入邮箱发码 -->
     <template v-if="step === 1">
       <div class="field">
-        <label>注册邮箱 *</label>
+        <label>{{ $t('注册邮箱 *') }}</label>
         <input class="input" v-model="email" type="email" placeholder="you@example.com" @keyup.enter="sendCode" />
-        <div class="muted">若该邮箱已注册，验证码将发送至邮箱（15 分钟内有效）</div>
+        <div class="muted">{{ $t('若该邮箱已注册，验证码将发送至邮箱（15 分钟内有效）') }}</div>
       </div>
       <div v-if="captchaCfg.reset" class="field">
-        <label>图形验证码 *</label>
+        <label>{{ $t('图形验证码 *') }}</label>
         <CaptchaInput ref="captchaRef" @update:code="captchaCode = $event" @update:captcha-id="captchaId = $event" />
       </div>
-      <div v-if="error" class="error" style="margin-bottom: 8px;">{{ error }}</div>
+      <div v-if="error" class="error" style="margin-bottom: 8px;">{{ uiText(error) }}</div>
       <button class="btn" style="width: 100%; margin-top: 8px;" :disabled="sending" @click="sendCode">
-        {{ sending ? '发送中…' : '发送验证码' }}
+        {{ sending ? $t('发送中…') : $t('发送验证码') }}
       </button>
     </template>
 
     <!-- 步骤二：验证码 + 新密码 -->
     <template v-else>
-      <div class="muted" style="margin-bottom: 12px;">
-        验证码已发送至 <b>{{ email }}</b>
+      <div class="muted" style="margin-bottom: 12px;"> {{ $t('验证码已发送至') }} <b>{{ email }}</b>
         <button class="btn secondary" style="margin-left: 8px; padding: 2px 10px;" :disabled="cooldown > 0 || sending" @click="sendCode">
-          {{ cooldown > 0 ? `${cooldown}s 后可重发` : '重新发送' }}
+          {{ cooldown > 0 ? $t('{0}s 后可重发', [cooldown]) : $t('重新发送') }}
         </button>
       </div>
       <div class="field">
-        <label>验证码 *</label>
-        <input class="input" v-model="code" type="text" maxlength="6" placeholder="6 位数字" />
+        <label>{{ $t('验证码 *') }}</label>
+        <input class="input" v-model="code" type="text" maxlength="6" :placeholder="$t('6 位数字')" />
       </div>
       <div class="field">
-        <label>新密码 *</label>
-        <input class="input" v-model="newPassword" type="password" placeholder="至少 6 位" />
+        <label>{{ $t('新密码 *') }}</label>
+        <input class="input" v-model="newPassword" type="password" :placeholder="$t('至少 6 位')" />
       </div>
       <div class="field">
-        <label>确认新密码 *</label>
-        <input class="input" v-model="confirmPassword" type="password" placeholder="再输入一次" />
+        <label>{{ $t('确认新密码 *') }}</label>
+        <input class="input" v-model="confirmPassword" type="password" :placeholder="$t('再输入一次')" />
       </div>
-      <div v-if="error" class="error" style="margin-bottom: 8px;">{{ error }}</div>
+      <div v-if="error" class="error" style="margin-bottom: 8px;">{{ uiText(error) }}</div>
       <button class="btn" style="width: 100%; margin-top: 8px;" :disabled="resetting" @click="doReset">
-        {{ resetting ? '重置中…' : '重置密码' }}
+        {{ resetting ? $t('重置中…') : $t('重置密码') }}
       </button>
     </template>
 
-    <div class="muted" style="margin-top: 12px; text-align: center;">
-      想起密码了？<router-link to="/login">返回登录</router-link>
+    <div class="muted" style="margin-top: 12px; text-align: center;"> {{ $t('想起密码了？') }}<router-link to="/login">{{ $t('返回登录') }}</router-link>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { uiText, t as $t } from '@/i18n';
+
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import CaptchaInput from '@/components/CaptchaInput.vue';
@@ -91,7 +91,7 @@ function startCooldown() {
 
 async function sendCode() {
   if (!email.value.includes('@')) {
-    error.value = '请输入有效邮箱';
+    error.value = $t("请输入有效邮箱");
     return;
   }
   sending.value = true;
@@ -109,15 +109,15 @@ async function sendCode() {
 
 async function doReset() {
   if (code.value.length !== 6) {
-    error.value = '请输入 6 位验证码';
+    error.value = $t("请输入 6 位验证码");
     return;
   }
   if (newPassword.value.length < 6) {
-    error.value = '新密码至少 6 位';
+    error.value = $t("新密码至少 6 位");
     return;
   }
   if (newPassword.value !== confirmPassword.value) {
-    error.value = '两次输入的密码不一致';
+    error.value = $t("两次输入的密码不一致");
     return;
   }
   resetting.value = true;
@@ -129,7 +129,7 @@ async function doReset() {
   });
   resetting.value = false;
   if (err || !data) {
-    error.value = err || '重置失败（验证码错误或已过期）';
+    error.value = err || $t("重置失败（验证码错误或已过期）");
     return;
   }
   setToken(data.token); // 重置即登录

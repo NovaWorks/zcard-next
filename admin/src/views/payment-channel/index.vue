@@ -34,6 +34,7 @@ import { fetchChannels, fetchDrivers, fetchFieldOptions, createChannel, updateCh
 import PaymentsTab from "./components/payments-tab.vue";
 import MediaField from "@/components/common/media-picker/media-field.vue";
 import { checkAuth } from "@/directives";
+import { currencyUnit } from "@/utils/money";
 
 defineOptions({ name: "PaymentChannelManagement" });
 const route = useRoute();
@@ -390,7 +391,7 @@ async function handleAdd() {
 }
 
 // ── 配置弹窗：schema 驱动表单 ──
-const feeLabel = computed(() => (form.fee_type === "percent" ? "比例（%）" : "固定金额（元）"));
+const feeLabel = computed(() => (form.fee_type === "percent" ? "比例（%）" : `固定金额（${currencyUnit()}）`));
 
 function openConfig(ch: ChannelRow) {
   resetAssetOptions();
@@ -624,7 +625,7 @@ onMounted(() => {
               {{ ch.driver === "wallet" ? "无需凭据" : isConfigured(ch) ? "已配置" : "待配置" }}
             </NTag>
             <NTag v-if="(ch.fee || 0) > 0" size="small" type="info" :bordered="false">
-              {{ ch.fee_type === "percent" ? `费率 ${((ch.fee || 0) / 100).toFixed(2)}%` : `手续费 ${((ch.fee || 0) / 100).toFixed(2)} 元` }} · {{ ch.fee_bearer === 'user' ? '用户承担' : '商家承担' }}
+              {{ ch.fee_type === "percent" ? `费率 ${((ch.fee || 0) / 100).toFixed(2)}%` : `手续费 ${((ch.fee || 0) / 100).toFixed(2)} ${currencyUnit()}` }} · {{ ch.fee_bearer === 'user' ? '用户承担' : '商家承担' }}
             </NTag>
           </div>
 
@@ -824,7 +825,7 @@ onMounted(() => {
             :precision="2"
             style="width: 200px"
           />
-          <span class="ml-8px text-12px opacity-50">{{ form.fee_type === "percent" ? "%" : "元" }}</span>
+          <span class="ml-8px text-12px opacity-50">{{ form.fee_type === "percent" ? "%" : currencyUnit() }}</span>
         </NFormItem>
 
         <!-- 渠道参数（schema 驱动） -->

@@ -747,7 +747,7 @@ func nilOrZero(v uint64) *uint64 {
 // 判据：subsite_id + upstream_source_id + upstream_product_code 幂等。
 // Price=-1 保持现有价（价格保护由 supply 侧决策后传入）。
 func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.UpstreamProductInput) (id uint64, created bool, err error) {
-	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+	err = data.CurrencyTx(ctx, r.data, func(ctx context.Context) error {
 		var e error
 		id, created, e = r.upsertUpstreamProduct(ctx, in)
 		if e == nil && in.ProductKind == "sms_channel" {
@@ -1281,7 +1281,7 @@ func toSupplierProduct(row *ent.Product) port.SupplierProduct {
 }
 
 func (r *ProductRepoImpl) CreateProduct(ctx context.Context, in port.ProductInput) (out *ent.Product, err error) {
-	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+	err = data.CurrencyTx(ctx, r.data, func(ctx context.Context) error {
 		var e error
 		out, e = r.createProduct(ctx, in)
 		if e != nil {

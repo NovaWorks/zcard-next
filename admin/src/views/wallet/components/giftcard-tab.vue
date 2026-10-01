@@ -5,7 +5,7 @@ import { NButton, NDataTable, NInput, NModal, NForm, NFormItem, NInputNumber } f
 import type { DataTableColumns } from "naive-ui";
 import { fetchGiftcardBatches, createGiftcardBatch, deleteGiftcardBatch } from "@/service/api";
 import { checkAuth } from "@/directives";
-import { formatMoney } from "@/utils/money";
+import { currencyUnit, formatMoney } from "@/utils/money";
 
 defineOptions({ name: "GiftcardTab" });
 
@@ -131,9 +131,9 @@ onMounted(load);
           <NInput v-model:value="form.batch_no" placeholder="如 GC-2026-001" />
         </NFormItem>
         <NFormItem label="名称" required>
-          <NInput v-model:value="form.name" placeholder="如 50 元礼品卡" />
+          <NInput v-model:value="form.name" :placeholder="`如 50 ${currencyUnit()} 礼品卡`" />
         </NFormItem>
-        <NFormItem label="面值(元)" required>
+        <NFormItem :label="`面值(${currencyUnit()})`" required>
           <NInputNumber v-model:value="form.amountYuan" :min="0.01" :precision="2" class="w-full" />
         </NFormItem>
         <NFormItem label="数量" required>

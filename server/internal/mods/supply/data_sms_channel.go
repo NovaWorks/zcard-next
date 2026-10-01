@@ -50,6 +50,13 @@ func (s *StoreSMSChannelService) channel(ctx context.Context, id uint64, require
 	if tenancy.FromContext(ctx).SubsiteID != 0 {
 		return nil, errors.BadRequest("sms.MAIN_SITE_ONLY", "接码商品仅支持主站")
 	}
+	base, err := data.BaseCurrency(ctx, s.gw.repo.data)
+	if err != nil {
+		return nil, err
+	}
+	if base != "CNY" {
+		return nil, errors.BadRequest("sms.CURRENCY_UNSUPPORTED", "接码仅支持人民币基础币种")
+	}
 	p, e := data.ProductForDelivery(ctx, data.Client(ctx, s.gw.repo.data), 0, id)
 	if e != nil || p.ProductKind != supplyport.SMSProductKind || p.DeliveryKind != supplyport.SMSDelivery || (p.Status != 1 && !(member && p.Status == 2)) || p.UpstreamSourceID == 0 {
 		return nil, errors.NotFound("sms.PRODUCT_UNAVAILABLE", "接码商品不可售")

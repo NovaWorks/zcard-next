@@ -2,14 +2,14 @@
   <div class="posts-page">
     <div class="card" style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
       <div style="display: flex; gap: 8px;">
-        <button :class="['btn', type === '' ? '' : 'secondary']" @click="switchType('')">全部</button>
-        <button :class="['btn', type === 'notice' ? '' : 'secondary']" @click="switchType('notice')">公告</button>
-        <button :class="['btn', type === 'blog' ? '' : 'secondary']" @click="switchType('blog')">博客</button>
+        <button :class="['btn', type === '' ? '' : 'secondary']" @click="switchType('')">{{ $t('全部') }}</button>
+        <button :class="['btn', type === 'notice' ? '' : 'secondary']" @click="switchType('notice')">{{ $t('公告') }}</button>
+        <button :class="['btn', type === 'blog' ? '' : 'secondary']" @click="switchType('blog')">{{ $t('博客') }}</button>
       </div>
     </div>
     <!-- 栏目筛选：横向滚动胶囊（选中高亮） -->
-    <div v-if="categories.length" ref="categoryNav" class="cat-nav" aria-label="文章栏目" style="margin-bottom: 16px;">
-      <button :class="['cat-chip', { active: !categoryId }]" @click="pickCategory(0)">全部</button>
+    <div v-if="categories.length" ref="categoryNav" class="cat-nav" :aria-label="$t('文章栏目')" style="margin-bottom: 16px;">
+      <button :class="['cat-chip', { active: !categoryId }]" @click="pickCategory(0)">{{ $t('全部') }}</button>
       <button
         v-for="c in categories"
         :key="c.id"
@@ -18,7 +18,7 @@
         @click="pickCategory(c.id)"
       >{{ c.name }}</button>
     </div>
-    <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
+    <div v-if="error" class="error" style="margin-bottom: 12px;">{{ uiText(error) }}</div>
     <div class="post-list">
       <router-link v-for="p in posts" :key="p.id" class="card post-item" :to="`/posts/${p.slug}`">
         <div class="tag">{{ typeLabel(p.type) }}</div>
@@ -27,16 +27,18 @@
         <div class="muted post-date">{{ formatDate(p.published_at) }}</div>
       </router-link>
     </div>
-    <div v-if="posts.length === 0 && !loading" class="card post-empty" role="status">暂无内容</div>
+    <div v-if="posts.length === 0 && !loading" class="card post-empty" role="status">{{ $t('暂无内容') }}</div>
     <div v-if="total > pageSize" style="display: flex; gap: 8px; justify-content: center; margin-top: 16px;">
-      <button class="btn secondary" :disabled="page <= 1" @click="load(page - 1)">上一页</button>
+      <button class="btn secondary" :disabled="page <= 1" @click="load(page - 1)">{{ $t('上一页') }}</button>
       <span class="muted" style="align-self: center;">{{ page }} / {{ Math.ceil(total / pageSize) }}</span>
-      <button class="btn secondary" :disabled="page * pageSize >= total" @click="load(page + 1)">下一页</button>
+      <button class="btn secondary" :disabled="page * pageSize >= total" @click="load(page + 1)">{{ $t('下一页') }}</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { uiText, t as $t, localeTag, locale } from '@/i18n';
+
 import { ref, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { listPosts, listPostCategories, type StorePost, type PostCategory } from '@/api';
@@ -55,7 +57,7 @@ const loading = ref(false);
 const error = ref('');
 
 function typeLabel(t: string) {
-  return ({ notice: '公告', blog: '博客' } as Record<string, string>)[t] || t;
+  return ({ get notice() { return $t("公告"); }, get blog() { return $t("博客"); } } as Record<string, string>)[t] || t;
 }
 
 function categoryName(id: number): string {
@@ -64,7 +66,7 @@ function categoryName(id: number): string {
 
 function formatDate(unix?: number): string {
   if (!unix) return '';
-  return new Date(unix * 1000).toLocaleDateString('zh-CN');
+  return new Date(unix * 1000).toLocaleDateString(localeTag.value);
 }
 
 const categoryNav = ref<HTMLElement | null>(null);
@@ -104,6 +106,11 @@ watch(() => [route.query.type, route.query.category], () => {
 });
 watch(categoryNav, revealCategory);
 let requestID = 0;
+watch(locale, () => {
+  if (route.path !== '/posts') return;
+  void load(page.value);
+  void applyListSeo();
+});
 
 async function load(p = 1) {
   const currentRequest = ++requestID;
@@ -131,7 +138,7 @@ async function load(p = 1) {
 async function applyListSeo() {
   const site = await fetchSiteSeo();
   const origin = typeof window !== "undefined" ? window.location.origin : site.url;
-  applySeo({ title: `文章公告 - ${site.name}`, canonical: `${origin}/posts`, ogType: 'website' }, site);
+  applySeo({ title: $t("文章公告 - {0}", [site.name]), canonical: `${origin}/posts`, ogType: 'website' }, site);
 }
 </script>
 

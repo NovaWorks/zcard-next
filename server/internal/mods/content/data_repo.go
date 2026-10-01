@@ -18,7 +18,9 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/post"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/postcategory"
 	mediaport "github.com/NovaWorks/zcard-next/server/internal/mods/media/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/i18n"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 )
 
 // 哨兵错误。
@@ -175,7 +177,7 @@ func (r *ContentRepo) ListBanners(ctx context.Context, position string, page, pa
 func (r *ContentRepo) ListActiveBanners(ctx context.Context, position string) ([]*ent.Banner, error) {
 	now := time.Now().UTC()
 	q := data.Client(ctx, r.data).Banner.Query().
-		Where(banner.IsActive(true)).
+		Where(banner.IsActive(true), banner.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
 		Order(ent.Asc(banner.FieldSort), ent.Desc(banner.FieldID))
 	if position != "" {
 		q = q.Where(banner.PositionEQ(banner.Position(position)))
@@ -342,7 +344,7 @@ func (r *ContentRepo) ListPosts(ctx context.Context, typ string, page, pageSize 
 // ListPublishedPosts 已发布文章分页（type + 栏目过滤；0 栏目 = 全部）。
 func (r *ContentRepo) ListPublishedPosts(ctx context.Context, typ string, categoryID uint64, page, pageSize int) ([]*ent.Post, int, error) {
 	q := data.Client(ctx, r.data).Post.Query().
-		Where(post.IsPublished(true)).
+		Where(post.IsPublished(true), post.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
 		Order(ent.Asc(post.FieldSort), ent.Desc(post.FieldPublishedAt), ent.Desc(post.FieldID))
 	if typ != "" {
 		q = q.Where(post.TypeEQ(post.Type(typ)))
@@ -361,7 +363,7 @@ func (r *ContentRepo) ListPublishedPosts(ctx context.Context, typ string, catego
 // GetPublishedBySlug 按 slug 取已发布文章。
 func (r *ContentRepo) GetPublishedBySlug(ctx context.Context, slug string) (*ent.Post, error) {
 	p, err := data.Client(ctx, r.data).Post.Query().
-		Where(post.Slug(slug), post.IsPublished(true)).
+		Where(post.Slug(slug), post.IsPublished(true), post.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
 		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -467,18 +469,7 @@ func sanitizeLangContent(s string) (string, error) {
 
 // LangValue 多语言回落取值（locale → zh_CN → 首个非空）。
 func LangValue(m map[string]string, locale string) string {
-	if v, ok := m[locale]; ok && v != "" {
-		return v
-	}
-	if v, ok := m["zh_CN"]; ok && v != "" {
-		return v
-	}
-	for _, v := range m {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
+	return i18n.Value(m, locale)
 }
 
 // LangContent 多语言内容回落（content_json 是 Text 存 JSON 字符串）。

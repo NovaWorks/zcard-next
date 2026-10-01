@@ -5,10 +5,12 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"path"
 	"strings"
 
+	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/settings/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/i18n"
 
 	"github.com/go-kratos/kratos/v3/middleware"
@@ -128,24 +130,25 @@ func isStaticAsset(p string) bool {
 	return false
 }
 
-// i18nMiddleware Accept-Language → locale（前缀匹配 zh/en；回落默认 zh_CN；DB 覆盖层 ）。
-func i18nMiddleware(defaultLocale string) middleware.Middleware {
+// i18nMiddleware reads the current site language policy on every API request.
+func i18nMiddleware(cfg settingsport.Provider) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req any) (any, error) {
-			locale := i18n.Locale(defaultLocale)
-			if tr, ok := transport.FromServerContext(ctx); ok {
-				if al := tr.RequestHeader().Get("Accept-Language"); al != "" {
-					tag := strings.ToLower(strings.TrimSpace(strings.Split(al, ",")[0]))
-					tag = strings.SplitN(tag, "-", 2)[0]
-					switch tag {
-					case "zh":
-						locale = i18n.ZhCN
-					case "en":
-						locale = i18n.En
-					}
+			defaultLocale, enabledLocales := "zh_CN", []string{"zh_CN"}
+			if cfg != nil {
+				if raw, err := cfg.GetDefault(ctx, "i18n", "default_locale", nil); err == nil && len(raw) != 0 {
+					_ = json.Unmarshal(raw, &defaultLocale)
+				}
+				if raw, err := cfg.GetDefault(ctx, "i18n", "enabled_locales", nil); err == nil && len(raw) != 0 {
+					_ = json.Unmarshal(raw, &enabledLocales)
 				}
 			}
-			return handler(i18n.WithLocale(ctx, locale), req)
+			policy := i18n.NewPolicy(defaultLocale, enabledLocales)
+			locale := policy.Default
+			if tr, ok := transport.FromServerContext(ctx); ok {
+				locale = policy.AcceptLanguage(tr.RequestHeader().Get("Accept-Language"))
+			}
+			return handler(i18n.WithLocale(i18n.WithPolicy(ctx, policy), locale), req)
 		}
 	}
 }

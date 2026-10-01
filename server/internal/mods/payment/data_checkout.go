@@ -29,14 +29,15 @@ import (
 // Fee is a customer surcharge, not the provider's settlement cost.
 // Amount on a payment remains the exact gross amount requested from the gateway.
 type paymentPricing struct {
-	Base   int64          `json:"base"`
-	Fee    int64          `json:"fee"`
-	Total  int64          `json:"total"`
-	Rate   int64          `json:"rate"`
-	Type   string         `json:"type"`
-	Bearer string         `json:"bearer"`
-	Method string         `json:"method"`
-	Charge ChargeSnapshot `json:"charge"`
+	BaseCurrency string         `json:"base_currency,omitempty"`
+	Base         int64          `json:"base"`
+	Fee          int64          `json:"fee"`
+	Total        int64          `json:"total"`
+	Rate         int64          `json:"rate"`
+	Type         string         `json:"type"`
+	Bearer       string         `json:"bearer"`
+	Method       string         `json:"method"`
+	Charge       ChargeSnapshot `json:"charge"`
 }
 
 func validateFee(fee int64, kind, bearer string) error {
@@ -62,7 +63,14 @@ func (r *PaymentRepoImpl) price(ctx context.Context, ch *ent.PaymentChannel, bas
 			return paymentPricing{}, err
 		}
 	}
-	p := paymentPricing{Base: base, Total: base, Rate: ch.Fee, Type: string(ch.FeeType), Bearer: string(ch.FeeBearer), Method: method}
+	baseCurrency, err := data.BaseCurrency(ctx, r.data)
+	if err != nil {
+		return paymentPricing{}, err
+	}
+	if _, err := chargeCurrency(ch.Driver, r.DecryptConfig(ch), baseCurrency); err != nil {
+		return paymentPricing{}, err
+	}
+	p := paymentPricing{BaseCurrency: baseCurrency, Base: base, Total: base, Rate: ch.Fee, Type: string(ch.FeeType), Bearer: string(ch.FeeBearer), Method: method}
 	if err := validateFee(p.Rate, p.Type, p.Bearer); err != nil {
 		return p, err
 	}
@@ -163,6 +171,9 @@ func (s *StorePaymentService) QuotePayment(ctx context.Context, req *storefrontv
 		o, err := s.paymentOrder(ctx, req.GetOrderNo(), req.GetQueryPassword())
 		if err != nil {
 			return nil, err
+		}
+		if err := s.repo.validateOrderCurrency(ctx, o); err != nil {
+			return nil, errors.BadRequest("payment.CURRENCY_MISMATCH", err.Error())
 		}
 		if o.Status != order.StatusPendingPayment || o.ExpiryReview || !time.Now().Before(o.ExpiredAt) {
 			return nil, errors.BadRequest("payment.ORDER_NOT_PENDING", "订单不在待支付状态")

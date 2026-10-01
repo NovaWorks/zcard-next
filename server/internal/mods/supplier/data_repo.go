@@ -47,7 +47,7 @@ func NewSupplierRepoImpl(d *data.Data, box *crypto.Box) *SupplierRepoImpl {
 // ── 账户 ──────────────────────────────────────────────────
 
 // CreateAccount 下游申请（secret 加密入库；只显示一次的语义由 service 层处理）。
-func (r *SupplierRepoImpl) CreateAccount(ctx context.Context, name, apiKey, apiSecret, contact, protocol, displayName string) (*ent.SupplierAccount, error) {
+func (r *SupplierRepoImpl) createAccount(ctx context.Context, name, apiKey, apiSecret, contact, protocol, displayName string) (*ent.SupplierAccount, error) {
 	enc, err := r.box.Seal([]byte(apiSecret), secretAAD(apiKey))
 	if err != nil {
 		return nil, fmt.Errorf("supplier: secret 加密失败: %w", err)
@@ -67,7 +67,7 @@ func (r *SupplierRepoImpl) CreateAccount(ctx context.Context, name, apiKey, apiS
 }
 
 // CreateApplication 前台对接申请（owner=用户 id；凭据由 service 生成后传入）。
-func (r *SupplierRepoImpl) CreateApplication(ctx context.Context, ownerUserID uint64, protocol, displayName, contact, applyReason, notifyURL, apiKey, apiSecret string) (*ent.SupplierAccount, error) {
+func (r *SupplierRepoImpl) createApplication(ctx context.Context, ownerUserID uint64, protocol, displayName, contact, applyReason, notifyURL, apiKey, apiSecret string) (*ent.SupplierAccount, error) {
 	enc, err := r.box.Seal([]byte(apiSecret), secretAAD(apiKey))
 	if err != nil {
 		return nil, fmt.Errorf("supplier: secret 加密失败: %w", err)
@@ -145,7 +145,7 @@ func (r *SupplierRepoImpl) SetIPWhitelist(ctx context.Context, id uint64, ips []
 
 // CreateSupplyRechargeOrder 落供货充值单（pending；target=supply）。
 // 入账只发生在支付回调成功后（铁律 16）；供货预存无赠送。
-func (r *SupplierRepoImpl) CreateSupplyRechargeOrder(ctx context.Context, userID, accountID uint64, amount, giftAmount int64) (*ent.RechargeOrder, error) {
+func (r *SupplierRepoImpl) createSupplyRechargeOrder(ctx context.Context, userID, accountID uint64, amount, giftAmount int64) (*ent.RechargeOrder, error) {
 	return data.Client(ctx, r.data).RechargeOrder.Create().
 		SetUserID(userID).
 		SetAmount(amount).
@@ -714,4 +714,45 @@ func (r *SupplierRepoImpl) DeletePrice(ctx context.Context, id uint64) error {
 		return fmt.Errorf("supplier: 专属价不存在")
 	}
 	return err
+}
+
+func (r *SupplierRepoImpl) CreateAccount(ctx context.Context, name, apiKey, apiSecret, contact, protocol, displayName string) (out *ent.SupplierAccount, err error) {
+	err = data.CurrencyTx(ctx, r.data, func(ctx context.Context) error {
+		currency, e := data.BaseCurrency(ctx, r.data)
+		if e != nil {
+			return e
+		}
+		if currency != "CNY" && protocol != "zcard" {
+			return fmt.Errorf("supplier.CURRENCY_UNSUPPORTED: 此对接协议仅支持人民币计价，请使用 ZCard 原生协议")
+		}
+		var err error
+		out, err = r.createAccount(ctx, name, apiKey, apiSecret, contact, protocol, displayName)
+		return err
+	})
+	return out, err
+}
+
+func (r *SupplierRepoImpl) CreateApplication(ctx context.Context, ownerUserID uint64, protocol, displayName, contact, applyReason, notifyURL, apiKey, apiSecret string) (out *ent.SupplierAccount, err error) {
+	err = data.CurrencyTx(ctx, r.data, func(ctx context.Context) error {
+		currency, e := data.BaseCurrency(ctx, r.data)
+		if e != nil {
+			return e
+		}
+		if currency != "CNY" && protocol != "zcard" {
+			return fmt.Errorf("supplier.CURRENCY_UNSUPPORTED: 此对接协议仅支持人民币计价，请使用 ZCard 原生协议")
+		}
+		var err error
+		out, err = r.createApplication(ctx, ownerUserID, protocol, displayName, contact, applyReason, notifyURL, apiKey, apiSecret)
+		return err
+	})
+	return out, err
+}
+
+func (r *SupplierRepoImpl) CreateSupplyRechargeOrder(ctx context.Context, userID, accountID uint64, amount, giftAmount int64) (out *ent.RechargeOrder, err error) {
+	err = data.CurrencyTx(ctx, r.data, func(ctx context.Context) error {
+		var e error
+		out, e = r.createSupplyRechargeOrder(ctx, userID, accountID, amount, giftAmount)
+		return e
+	})
+	return out, err
 }

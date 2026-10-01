@@ -2,7 +2,7 @@
 import { computed, h, ref, watch, onUnmounted } from 'vue';
 import { NModal, NAlert, NButton, NForm, NFormItem, NSelect, NInputNumber, NDataTable, NPopconfirm, NTag } from 'naive-ui';
 import { fetchSupplierPrices, upsertSupplierPrice, deleteSupplierPrice, fetchCategories, fetchProducts, fetchSkus } from '@/service/api';
-import { formatMoney, yuanToFen } from '@/utils/money';
+import { currencyUnit, formatMoney, yuanToFen } from '@/utils/money';
 import { checkAuth } from '@/directives';
 const props = defineProps<{ show: boolean; account: any }>();
 const emit = defineEmits<{ 'update:show': [boolean] }>();
@@ -117,12 +117,12 @@ const columns = computed(() => [
         <NFormItem v-if="scope === 'category'" label="选择分类（包含全部子分类）" required><NSelect v-model:value="categoryId" :options="categoryOptions" filterable clearable :disabled="!!editing" placeholder="搜索分类名称，支持查看完整层级" /></NFormItem>
         <NFormItem v-if="scope === 'product'" label="选择商品" required><NSelect v-model:value="productId" :options="productOptions" filterable remote clearable :disabled="!!editing" :loading="searching" placeholder="输入商品名称搜索" @search="onSearch" /></NFormItem>
         <NFormItem v-if="scope === 'product'" label="适用规格"><NSelect v-model:value="skuId" :options="skuOptions" :loading="skuLoading" :disabled="!productId || !!editing" /></NFormItem>
-        <NFormItem v-if="scope === 'product'" label="专属供货价（元）" required><NInputNumber v-model:value="price" :min="0.01" :precision="2" class="w-full" /></NFormItem>
+        <NFormItem v-if="scope === 'product'" :label="`专属供货价（${currencyUnit()}）`" required><NInputNumber v-model:value="price" :min="0.01" :precision="2" class="w-full" /></NFormItem>
         <NFormItem v-else label="供货折扣（折）" required><NInputNumber v-model:value="discount" :min="0.01" :max="10" :precision="2" :step="0.1" class="w-full" placeholder="例如 9 表示九折" /></NFormItem>
         <NAlert v-if="error" type="error" class="mb-12px">{{ error }}</NAlert>
         <div class="rule-actions"><NButton v-if="canWrite()" type="primary" :loading="saving" :disabled="loading || skuLoading" @click="save">{{ editing ? '保存修改' : '保存规则' }}</NButton><NButton :disabled="saving" @click="resetForm">{{ editing ? '取消编辑' : '清空' }}</NButton></div>
       </NForm>
-      <aside class="pricing-preview"><strong>{{ editing ? '编辑已有规则' : '计价说明' }}</strong><p>{{ summary }}</p><p v-if="scope !== 'product'">基础供货价取商品设置中的售价，不按成本价计算，也不叠加会员折扣或促销。</p><p v-if="scope === 'category'">选中分类及子分类均生效。子分类另有规则时，优先使用更具体的分类折扣。</p><p v-if="scope === 'global'">适用于未设置商品专属价或分类折扣的商品。</p><p>相同范围再次保存会更新原规则；删除后恢复下一优先级定价。金额四舍五入到分，折后最低为 0.01 元。</p></aside>
+      <aside class="pricing-preview"><strong>{{ editing ? '编辑已有规则' : '计价说明' }}</strong><p>{{ summary }}</p><p v-if="scope !== 'product'">基础供货价取商品设置中的售价，不按成本价计算，也不叠加会员折扣或促销。</p><p v-if="scope === 'category'">选中分类及子分类均生效。子分类另有规则时，优先使用更具体的分类折扣。</p><p v-if="scope === 'global'">适用于未设置商品专属价或分类折扣的商品。</p><p>相同范围再次保存会更新原规则；删除后恢复下一优先级定价。金额四舍五入到分，折后最低为 0.01 {{ currencyUnit() }}。</p></aside>
     </div>
     <div class="pricing-list-head"><strong>已生效规则（{{ rows.length }}）</strong><NButton text :disabled="loading" @click="load">刷新</NButton></div>
     <NDataTable :columns="columns" :data="rows" :loading="loading" :scroll-x="600" :max-height="280" size="small" />

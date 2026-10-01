@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { uiText, t as $t, localeTag } from '@/i18n';
+
 import { newRequestId } from "../../../packages/request-id";
 import { ref, computed, watch, onMounted, nextTick } from "vue";
 import { useRoute } from "vue-router";
@@ -27,7 +29,7 @@ const loading = ref(false),
   page = ref(1),
   result = ref<LotteryDraw | null>(null),
   dialog = ref<HTMLDialogElement | null>(null),
-  copyText = ref("复制内容"),
+  copyText = ref($t("复制内容")),
   pendingKey = ref("");
 const mine = computed(() => route.query.tab === "prizes");
 const loginURL = computed(() => ({
@@ -42,7 +44,7 @@ const missed = computed(
       10000 - safePrizes.value.reduce((n, p) => n + (p.probability || 0), 0),
     ) / 100,
 );
-const time = (n?: number) => (n ? new Date(n * 1000).toLocaleString() : "—");
+const time = (n?: number) => (n ? new Date(n * 1000).toLocaleString(localeTag.value) : "—");
 const keyName = () =>
   `lottery-pending:${activity.value?.id}:${authState.username}`;
 function readPending() {
@@ -89,7 +91,7 @@ async function load() {
     if (route.params.id) {
       const id = Number(route.params.id);
       if (!Number.isSafeInteger(id) || id <= 0) {
-        error.value = "活动不存在";
+        error.value = $t("活动不存在");
         return;
       }
       const r = await getLotteryActivity(id);
@@ -118,7 +120,7 @@ async function load() {
 }
 async function showResult(d: LotteryDraw) {
   result.value = d;
-  copyText.value = "复制内容";
+  copyText.value = $t("复制内容");
   await nextTick();
   dialog.value?.showModal();
 }
@@ -134,8 +136,8 @@ async function draw() {
     const r = await drawLottery(id, key);
     if (r.error || !r.data) {
       error.value =
-        (r.error || "抽奖结果暂时无法读取") +
-        "；请重试上次抽奖或查看我的奖品。";
+        (r.error || $t("抽奖结果暂时无法读取")) +
+        $t("；请重试上次抽奖或查看我的奖品。");
       return;
     }
     pendingKey.value = "";
@@ -162,9 +164,9 @@ async function view(no: string) {
 async function copy() {
   try {
     await navigator.clipboard.writeText(result.value?.content || "");
-    copyText.value = "已复制";
+    copyText.value = $t("已复制");
   } catch {
-    copyText.value = "请长按或选中内容复制";
+    copyText.value = $t("请长按或选中内容复制");
   }
 }
 function close() {
@@ -185,28 +187,26 @@ onMounted(load);
   <div class="lottery-page">
     <div class="lottery-heading">
       <div>
-        <p class="lottery-eyebrow">会员活动</p>
-        <h1>{{ mine ? "我的奖品" : activity?.name || "幸运抽奖" }}</h1>
+        <p class="lottery-eyebrow">{{ $t('会员活动') }}</p>
+        <h1>{{ mine ? $t('我的奖品') : activity?.name || $t('幸运抽奖') }}</h1>
       </div>
       <router-link
         :to="mine ? '/lottery' : '/lottery?tab=prizes'"
         class="lottery-secondary"
-        >{{ mine ? "查看抽奖活动" : "我的奖品" }}</router-link
+        >{{ mine ? $t('查看抽奖活动') : $t('我的奖品') }}</router-link
       >
     </div>
-    <p v-if="error" class="lottery-message error" role="alert">{{ error }}</p>
-    <p v-if="loading" class="lottery-surface" role="status">正在加载…</p>
+    <p v-if="error" class="lottery-message error" role="alert">{{ uiText(error) }}</p>
+    <p v-if="loading" class="lottery-surface" role="status">{{ $t('正在加载…') }}</p>
     <template v-else-if="mine">
       <div v-if="!getToken()" class="lottery-surface">
-        <p>登录后查看你的中奖记录和领取内容。</p>
+        <p>{{ $t('登录后查看你的中奖记录和领取内容。') }}</p>
         <router-link :to="loginURL" class="lottery-primary"
-          >登录后查看</router-link
+          >{{ $t('登录后查看') }}</router-link
         >
       </div>
       <template v-else
-        ><div v-if="!records.length" class="lottery-surface">
-          暂无抽奖记录，先去看看正在进行的活动吧。
-        </div>
+        ><div v-if="!records.length" class="lottery-surface"> {{ $t('暂无抽奖记录，先去看看正在进行的活动吧。') }} </div>
         <article
           v-for="d in records"
           :key="d.draw_no"
@@ -214,14 +214,14 @@ onMounted(load);
         >
           <div>
             <span class="lottery-badge">{{
-              lotteryStates[d.status] || "处理中"
+              lotteryStates[d.status] || $t('处理中')
             }}</span>
-            <h2>{{ d.prize_name || "谢谢参与" }}</h2>
+            <h2>{{ d.prize_name || $t('谢谢参与') }}</h2>
             <p>{{ d.activity_name }} · {{ time(d.created_at) }}</p>
             <p class="lottery-no">{{ d.draw_no }}</p>
           </div>
           <button class="lottery-secondary" @click="view(d.draw_no)">
-            {{ d.status === "pending" ? "查看领取说明" : "查看详情" }}
+            {{ d.status === "pending" ? $t('查看领取说明') : $t('查看详情') }}
           </button>
         </article>
         <div v-if="total > 20" class="lottery-pager">
@@ -231,8 +231,7 @@ onMounted(load);
               page--;
               load();
             "
-          >
-            上一页</button
+          > {{ $t('上一页') }}</button
           ><span>{{ page }} / {{ Math.ceil(total / 20) }}</span
           ><button
             :disabled="page * 20 >= total"
@@ -240,60 +239,53 @@ onMounted(load);
               page++;
               load();
             "
-          >
-            下一页
-          </button>
+          > {{ $t('下一页') }} </button>
         </div></template
       >
     </template>
     <template v-else-if="activity">
       <div class="lottery-surface lottery-banner">
-        <img v-if="activity.image" :src="activity.image" alt="活动图片" />
+        <img v-if="activity.image" :src="activity.image" :alt="$t('活动图片')" />
         <p>{{ time(activity.start_at) }} — {{ time(activity.end_at) }}</p>
-        <p>{{ lotteryStates[activity.status] || "活动未开放" }}</p>
+        <p>{{ lotteryStates[activity.status] || $t('活动未开放') }}</p>
         <p v-if="activity.description" class="lottery-description">
           {{ activity.description }}
         </p>
       </div>
       <section class="lottery-surface">
-        <h2>活动奖品</h2>
+        <h2>{{ $t('活动奖品') }}</h2>
         <div class="lottery-prizes">
           <article v-for="p in safePrizes" :key="p.id" class="lottery-prize">
             <img v-if="p.image" :src="p.image" alt="" /><span
               v-else
               class="lottery-gift"
               aria-hidden="true"
-              >礼</span
+              >{{ $t('礼') }}</span
             >
             <h3>{{ p.name }}</h3>
-            <p>中奖概率 {{ ((p.probability || 0) / 100).toFixed(2) }}%</p>
+            <p>{{ $t('中奖概率') }} {{ ((p.probability || 0) / 100).toFixed(2) }}%</p>
             <small
-              >{{ p.mode === "manual" ? "平台人工领取" : "系统自动发放" }} ·
-              活动剩余 {{ p.remaining || 0 }} 份</small
+              >{{ p.mode === "manual" ? $t('平台人工领取') : $t('系统自动发放') }} {{ $t('· 活动剩余') }} {{ p.remaining || 0 }} {{ $t('份') }}</small
             >
           </article>
         </div>
-        <p class="lottery-muted">
-          谢谢参与概率 {{ missed.toFixed(2) }}%。每次独立抽奖，可重复中奖。
-        </p>
+        <p class="lottery-muted"> {{ $t('谢谢参与概率') }} {{ missed.toFixed(2) }}{{ $t('%。每次独立抽奖，可重复中奖。') }} </p>
       </section>
       <section class="lottery-surface lottery-action" aria-live="polite">
         <template v-if="!getToken()"
-          ><p>登录后参与，次数按账号记录。</p>
+          ><p>{{ $t('登录后参与，次数按账号记录。') }}</p>
           <router-link :to="loginURL" class="lottery-primary"
-            >登录后参与</router-link
+            >{{ $t('登录后参与') }}</router-link
           ></template
         ><template v-else
-          ><p v-if="remaining !== null">
-            剩余 <strong>{{ remaining }}</strong> 次
-          </p>
+          ><p v-if="remaining !== null"> {{ $t('剩余') }} <strong>{{ remaining }}</strong> {{ $t('次') }} </p>
           <p>
             {{
               activity.chance_mode === "daily"
-                ? `每日赠送 ${activity.chance_count} 次，当日有效（${activity.timezone}）。`
+                ? $t('每日赠送 {0} 次，当日有效（{1}）。', [activity.chance_count, activity.timezone])
                 : activity.chance_mode === "manual"
-                  ? "本活动由平台发放抽奖次数。"
-                  : `活动期间每个账号赠送 ${activity.chance_count} 次。`
+                  ? $t('本活动由平台发放抽奖次数。')
+                  : $t('活动期间每个账号赠送 {0} 次。', [activity.chance_count])
             }}
           </p>
           <button
@@ -306,29 +298,25 @@ onMounted(load);
           >
             {{
               drawing
-                ? "正在确认结果…"
+                ? $t('正在确认结果…')
                 : pendingKey
-                  ? "重试上次抽奖"
+                  ? $t('重试上次抽奖')
                   : activity.status !== "live"
-                    ? lotteryStates[activity.status] || "暂不可抽奖"
+                    ? lotteryStates[activity.status] || $t('暂不可抽奖')
                     : remaining === 0
-                      ? "抽奖次数已用完"
-                      : "立即抽奖"
+                      ? $t('抽奖次数已用完')
+                      : $t('立即抽奖')
             }}
           </button>
-          <p class="lottery-muted">
-            奖品不足时暂停抽奖；未生成结果不扣次数。
-          </p></template
+          <p class="lottery-muted"> {{ $t('奖品不足时暂停抽奖；未生成结果不扣次数。') }} </p></template
         >
       </section>
       <router-link to="/lottery" class="lottery-secondary"
-        >返回活动列表</router-link
+        >{{ $t('返回活动列表') }}</router-link
       >
     </template>
     <template v-else-if="!error"
-      ><div v-if="!activities.length" class="lottery-surface">
-        暂时没有开放的抽奖活动，已有奖品仍可在“我的奖品”中查看。
-      </div>
+      ><div v-if="!activities.length" class="lottery-surface"> {{ $t('暂时没有开放的抽奖活动，已有奖品仍可在“我的奖品”中查看。') }} </div>
       <div class="lottery-activities">
         <router-link
           v-for="a in activities"
@@ -337,44 +325,40 @@ onMounted(load);
           class="lottery-surface lottery-activity-card"
           ><img v-if="a.image" :src="a.image" alt="" /><span
             class="lottery-badge"
-            >{{ lotteryStates[a.status] || "活动未开放" }}</span
+            >{{ lotteryStates[a.status] || $t('活动未开放') }}</span
           >
           <h2>{{ a.name }}</h2>
           <p>
             {{
               a.chance_mode === "daily"
-                ? "每日赠送"
+                ? $t('每日赠送')
                 : a.chance_mode === "manual"
-                  ? "平台发放次数"
-                  : "登录参与赠送"
-            }}{{ a.chance_mode === "manual" ? "" : ` ${a.chance_count} 次` }}
+                  ? $t('平台发放次数')
+                  : $t('登录参与赠送')
+            }}{{ a.chance_mode === "manual" ? "" : $t('{0} 次', [a.chance_count]) }}
           </p>
-          <span>查看活动 →</span></router-link
+          <span>{{ $t('查看活动 →') }}</span></router-link
         >
       </div></template
     >
     <dialog ref="dialog" class="lottery-result" @cancel="result = null">
       <template v-if="result"
         ><div class="lottery-result-heading">
-          <h2>{{ result.status === "missed" ? "谢谢参与" : "恭喜中奖" }}</h2>
-          <button aria-label="关闭中奖详情" @click="close">×</button>
+          <h2>{{ result.status === "missed" ? $t('谢谢参与') : $t('恭喜中奖') }}</h2>
+          <button :aria-label="$t('关闭中奖详情')" @click="close">×</button>
         </div>
         <h3>{{ result.prize_name }}</h3>
         <p>{{ lotteryStates[result.status] }}</p>
-        <p class="lottery-no">中奖编号：{{ result.draw_no }}</p>
-        <p v-if="result.status === 'pending'">
-          请按以下说明联系平台领取，提供中奖编号即可核对。
-        </p>
+        <p class="lottery-no">{{ $t('中奖编号：') }}{{ result.draw_no }}</p>
+        <p v-if="result.status === 'pending'"> {{ $t('请按以下说明联系平台领取，提供中奖编号即可核对。') }} </p>
         <pre v-if="result.content" class="lottery-content">{{
           result.content
         }}</pre>
         <button v-if="result.content" class="lottery-secondary" @click="copy">
-          {{ copyText }}
+          {{ uiText(copyText) }}
         </button>
-        <p class="lottery-muted">记录已保存，可随时从“我的奖品”查看。</p>
-        <button class="lottery-primary" @click="close">
-          我知道了
-        </button></template
+        <p class="lottery-muted">{{ $t('记录已保存，可随时从“我的奖品”查看。') }}</p>
+        <button class="lottery-primary" @click="close"> {{ $t('我知道了') }} </button></template
       >
     </dialog>
   </div>

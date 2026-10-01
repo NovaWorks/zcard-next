@@ -156,7 +156,7 @@ func (r *RepoImpl) Currencies(ctx context.Context) ([]CurrencyView, error) {
 
 // CurrencyByCode 按 code 取（ exchange 的取数端；port.CurrencyReader）。
 func (r *RepoImpl) CurrencyByCode(ctx context.Context, code string) (string, int32, error) {
-	row, err := data.Client(ctx, r.data).Currency.Query().Where(currency.Code(code)).Only(ctx)
+	row, err := data.Client(ctx, r.data).Currency.Query().Where(currency.Code(code), currency.Enabled(true)).Only(ctx)
 	if ent.IsNotFound(err) {
 		return "", 2, errors.NotFound("settings.CURRENCY_NOT_FOUND", "货币不存在")
 	}

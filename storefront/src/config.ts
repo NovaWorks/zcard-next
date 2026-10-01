@@ -1,3 +1,5 @@
+import { applyLocaleConfig } from './i18n';
+import { t as $t } from '@/i18n';
 import { shallowRef } from 'vue';
 import { mergeThemeConfig, readThemeRuntime, type ConfigEntry } from '../../packages/theme-sdk/src/index';
 import { readJSON } from './api/read';
@@ -12,6 +14,7 @@ function validConfig(value: unknown): value is PublicConfig {
 }
 const seed = readThemeRuntime()?.public_config;
 export const publicConfig = shallowRef<PublicConfig | null>(validConfig(seed) ? { entries: mergeThemeConfig(seed.entries) } : null);
+if (publicConfig.value) applyLocaleConfig(publicConfig.value.entries);
 let loadedAt = publicConfig.value ? Date.now() : 0;
 let pending: Promise<PublicConfig> | undefined;
 
@@ -23,8 +26,9 @@ export async function loadPublicConfig(force = false): Promise<PublicConfig> {
   const base = import.meta.env.SSR ? (import.meta.env.VITE_SSG_API || 'http://127.0.0.1:8000') : '';
   pending = (async () => {
     const result = await readJSON<PublicConfig>(`${base}/api/v1/storefront/config`);
-    if (!validConfig(result)) throw new Error('店铺配置格式异常，请稍后重试');
+    if (!validConfig(result)) throw new Error($t("店铺配置格式异常，请稍后重试"));
     const next = { entries: mergeThemeConfig(result.entries) };
+    applyLocaleConfig(next.entries);
     if (JSON.stringify(publicConfig.value?.entries) !== JSON.stringify(next.entries)) publicConfig.value = next;
     loadedAt = Date.now();
     return next;

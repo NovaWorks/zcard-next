@@ -171,7 +171,7 @@ func NewHTTPServer(
 				}
 				return nil
 			}),
-			i18nMiddleware("zh_CN"),
+			i18nMiddleware(settings.NewRepoImpl(d)),
 			// ：storefront user realm JWT（解析失败放行——游客端点不受影响；
 			// 需登录端点由业务侧 claims==nil 自行 401）
 			userAuthMiddleware(signer),

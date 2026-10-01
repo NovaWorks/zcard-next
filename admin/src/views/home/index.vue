@@ -5,7 +5,7 @@ import { NRadioButton, NRadioGroup, NSpin, NButton } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { useEcharts } from "@/hooks/common/echarts";
 import { fetchDashboard, fetchTraffic } from "@/service/api";
-import { formatMoney, centsToYuan } from "@/utils/money";
+import { currencyUnit, formatMoney, centsToYuan } from "@/utils/money";
 import type {
   DashboardData,
   DashboardStat,
@@ -152,16 +152,16 @@ function setSparkDom(el: unknown) {
 // 销售趋势主图（营收面积 + 订单柱，双轴）
 const { domRef: mainRef, updateOptions: updateMain } = useEcharts(() => ({
   tooltip: { trigger: "axis" },
-  legend: { data: ["支付金额(元)", "支付订单数"], top: "0" },
+  legend: { data: [`支付金额(${currencyUnit()})`, "支付订单数"], top: "0" },
   grid: { left: "3%", right: "4%", bottom: "3%", top: "18%", containLabel: true },
   xAxis: { type: "category", boundaryGap: false, data: [] as string[] },
   yAxis: [
-    { type: "value", name: "支付金额(元)", splitLine: { lineStyle: { type: "dashed" } } },
+    { type: "value", name: `支付金额(${currencyUnit()})`, splitLine: { lineStyle: { type: "dashed" } } },
     { type: "value", name: "支付订单数", splitLine: { show: false } },
   ],
   series: [
     {
-      name: "支付金额(元)",
+      name: `支付金额(${currencyUnit()})`,
       type: "line",
       smooth: true,
       showSymbol: true,
@@ -181,6 +181,16 @@ const { domRef: mainRef, updateOptions: updateMain } = useEcharts(() => ({
     },
   ],
 }));
+
+watch(currencyUnit, (code) => {
+  updateMain((opts) => {
+    const label = `支付金额(${code})`;
+    opts.legend.data[0] = label;
+    opts.yAxis[0].name = label;
+    opts.series[0].name = label;
+    return opts;
+  });
+});
 
 function renderCharts(d: DashboardData) {
   updateMain((opts) => {

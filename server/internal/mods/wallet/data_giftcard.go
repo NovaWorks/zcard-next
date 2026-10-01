@@ -54,7 +54,7 @@ func (r *GiftcardRepo) CreateBatch(ctx context.Context, in BatchInput) (*ent.Gif
 	}
 	var batch *ent.GiftcardBatch
 	codes := make([]string, 0, in.Quantity)
-	err := data.Tx(ctx, r.data, func(txCtx context.Context) error {
+	err := data.CurrencyTx(ctx, r.data, func(txCtx context.Context) error {
 		client := data.Client(txCtx, r.data)
 		created, err := client.GiftcardBatch.Create().
 			SetBatchNo(in.BatchNo).

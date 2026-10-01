@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { t as $t } from '@/i18n';
+
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const props = defineProps<{ images: { src: string; alt: string }[]; initialIndex?: number }>();
@@ -123,30 +125,30 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <dialog ref="dialog" class="image-viewer" role="dialog" aria-modal="true" aria-label="图片预览" @cancel.prevent="emit('close')" @keydown="keydown">
+    <dialog ref="dialog" class="image-viewer" role="dialog" aria-modal="true" :aria-label="$t('图片预览')" @cancel.prevent="emit('close')" @keydown="keydown">
       <header class="iv-header">
-        <span class="iv-title">{{ current?.alt || '图片' }}</span>
+        <span class="iv-title">{{ current?.alt || $t('图片') }}</span>
         <span aria-live="polite">{{ index + 1 }} / {{ images.length }}</span>
-        <button type="button" class="iv-close" aria-label="关闭图片预览" autofocus @click="emit('close')">关闭 ✕</button>
+        <button type="button" class="iv-close" :aria-label="$t('关闭图片预览')" autofocus @click="emit('close')">{{ $t('关闭 ✕') }}</button>
       </header>
       <div ref="stage" class="iv-stage" @wheel.prevent="wheel" @pointerdown="pointerDown" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp" @lostpointercapture="pointerUp" @dblclick="setZoom(zoom === 1 ? 2 : 1)">
-        <span v-if="failed" class="iv-status" role="status">图片加载失败，请关闭后重试</span>
-        <span v-else-if="!loaded" class="iv-status" role="status">正在加载图片…</span>
+        <span v-if="failed" class="iv-status" role="status">{{ $t('图片加载失败，请关闭后重试') }}</span>
+        <span v-else-if="!loaded" class="iv-status" role="status">{{ $t('正在加载图片…') }}</span>
         <img v-if="current" :key="index" :src="current.src" :alt="current.alt" :style="imageStyle" :class="{ 'iv-hidden': !loaded }" draggable="false" @load="onLoad" @error="failed = true" />
       </div>
       <footer class="iv-footer">
-        <div class="iv-toolbar" role="group" aria-label="图片操作">
-          <button v-if="images.length > 1" type="button" aria-label="上一张图片" @click="changeImage(-1)">上一张</button>
-          <button type="button" aria-label="缩小图片" :disabled="!loaded || zoom <= 0.25" @click="setZoom(zoom / 1.25)">−</button>
+        <div class="iv-toolbar" role="group" :aria-label="$t('图片操作')">
+          <button v-if="images.length > 1" type="button" :aria-label="$t('上一张图片')" @click="changeImage(-1)">{{ $t('上一张') }}</button>
+          <button type="button" :aria-label="$t('缩小图片')" :disabled="!loaded || zoom <= 0.25" @click="setZoom(zoom / 1.25)">−</button>
           <span class="iv-zoom">{{ Math.round(zoom * 100) }}%</span>
-          <button type="button" aria-label="放大图片" :disabled="!loaded || zoom >= 32" @click="setZoom(zoom * 1.25)">＋</button>
-          <button type="button" aria-label="向左旋转图片" :disabled="!loaded" @click="rotate(-90)">↶ 左转</button>
-          <button type="button" aria-label="向右旋转图片" :disabled="!loaded" @click="rotate(90)">↷ 右转</button>
-          <button type="button" :disabled="!loaded" @click="reset">适应窗口</button>
-          <button type="button" :disabled="!loaded" @click="setZoom(1 / fit); x = 0; y = 0">原始大小</button>
-          <button v-if="images.length > 1" type="button" aria-label="下一张图片" @click="changeImage(1)">下一张</button>
+          <button type="button" :aria-label="$t('放大图片')" :disabled="!loaded || zoom >= 32" @click="setZoom(zoom * 1.25)">＋</button>
+          <button type="button" :aria-label="$t('向左旋转图片')" :disabled="!loaded" @click="rotate(-90)">{{ $t('↶ 左转') }}</button>
+          <button type="button" :aria-label="$t('向右旋转图片')" :disabled="!loaded" @click="rotate(90)">{{ $t('↷ 右转') }}</button>
+          <button type="button" :disabled="!loaded" @click="reset">{{ $t('适应窗口') }}</button>
+          <button type="button" :disabled="!loaded" @click="setZoom(1 / fit); x = 0; y = 0">{{ $t('原始大小') }}</button>
+          <button v-if="images.length > 1" type="button" :aria-label="$t('下一张图片')" @click="changeImage(1)">{{ $t('下一张') }}</button>
         </div>
-        <p class="iv-hint">拖动查看 · 滚轮或双指缩放 · 双击放大</p>
+        <p class="iv-hint">{{ $t('拖动查看 · 滚轮或双指缩放 · 双击放大') }}</p>
       </footer>
     </dialog>
   </Teleport>

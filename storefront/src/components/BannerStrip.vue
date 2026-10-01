@@ -3,7 +3,7 @@
     <component :is="banner.link_type === 'notice' || banner.link_value ? 'button' : 'div'"
       v-for="banner in banners" :key="banner.id" class="banner-item"
       :type="banner.link_type === 'notice' || banner.link_value ? 'button' : undefined"
-      :aria-label="banner.title || '查看横幅内容'" @click="$emit('open', banner)">
+      :aria-label="banner.title || $t('查看横幅内容')" @click="$emit('open', banner)">
       <picture>
         <source v-if="banner.mobile_image" media="(max-width: 639px)" :srcset="banner.mobile_image" />
         <img :src="banner.image" :alt="banner.title || ''" loading="lazy" />
@@ -12,6 +12,8 @@
   </section>
 </template>
 <script setup lang="ts">
+import { t as $t } from '@/i18n';
+
 import type { Banner } from '@/api';
 defineProps<{ banners: Banner[]; label: string; catalog?: boolean }>();
 defineEmits<{ open: [banner: Banner] }>();

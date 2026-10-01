@@ -5,78 +5,78 @@
       <!-- 左列：推广码 + 推广链接（纵向分区） -->
       <div class="promo-left">
         <div class="promo-block">
-          <div class="promo-block-title">我的推广码</div>
+          <div class="promo-block-title">{{ $t('我的推广码') }}</div>
           <div class="promo-code-row">
             <div class="promo-code">{{ my.promo_code || my.user_id }}</div>
-            <button class="btn secondary" @click="copyCode">{{ copiedCode ? '✓ 已复制' : '复制推广码' }}</button>
+            <button class="btn secondary" @click="copyCode">{{ copiedCode ? $t('✓ 已复制') : $t('复制推广码') }}</button>
           </div>
         </div>
         <div class="promo-block">
-          <div class="promo-block-title">推广链接</div>
+          <div class="promo-block-title">{{ $t('推广链接') }}</div>
           <div class="actions">
             <input class="input" :value="my.invite_url" readonly style="flex: 1;" />
-            <button class="btn secondary" @click="copyLink">{{ copied ? '✓ 已复制' : '复制链接' }}</button>
+            <button class="btn secondary" @click="copyLink">{{ copied ? $t('✓ 已复制') : $t('复制链接') }}</button>
           </div>
-          <div class="muted" style="margin-top: 8px;">{{ affiliateConfig?.enabled ? '好友通过链接注册/下单，符合推广规则的订单可获得佣金' : '推广规则以站点当前配置为准' }}</div>
+          <div class="muted" style="margin-top: 8px;">{{ affiliateConfig?.enabled ? $t('好友通过链接注册/下单，符合推广规则的订单可获得佣金') : $t('推广规则以站点当前配置为准') }}</div>
         </div>
       </div>
       <!-- 右列：二维码（垂直居中） -->
       <div class="promo-qr">
         <canvas ref="qrCanvas" width="200" height="200"></canvas>
-        <div class="muted" style="text-align: center; margin-top: 6px;">扫码进入推广页</div>
-        <button class="btn secondary" style="width: 100%; margin-top: 6px;" @click="downloadQr">下载二维码</button>
+        <div class="muted" style="text-align: center; margin-top: 6px;">{{ $t('扫码进入推广页') }}</div>
+        <button class="btn secondary" style="width: 100%; margin-top: 6px;" @click="downloadQr">{{ $t('下载二维码') }}</button>
       </div>
     </div>
 
     <div v-if="inviteBenefit?.has_benefit" class="card" style="margin-bottom: 16px;">
-      <b>邀请注册专享</b>
-      <p>新客户通过你的推荐链接注册，即可获得{{ inviteBenefit.level?.name || '专属会员' }}待遇{{ inviteBenefit.level?.display_mode === 'public' ? `，会员价享 ${levelDiscount(inviteBenefit.level.discount)}` : '' }}。</p>
+      <b>{{ $t('邀请注册专享') }}</b>
+      <p>{{ $t('新客户通过你的推荐链接注册，即可获得 {0} 待遇', [inviteBenefit.level?.name || $t('专属会员')]) }}{{ inviteBenefit.level?.display_mode === 'public' ? $t('，会员价享 {0}', [levelDiscount(inviteBenefit.level.discount)]) : '' }}。</p>
     </div>
     <!-- 收益统计 -->
     <div class="stat-grid" v-if="my">
-      <div class="card"><div class="muted">冻结中佣金</div><div class="stat-num">{{ formatMoney(my.pending_cents) }}</div></div>
-      <div class="card"><div class="muted">可提现</div><div class="stat-num" style="color: #16a34a;">{{ formatMoney(my.available_cents) }}</div></div>
-      <div class="card"><div class="muted">累计佣金</div><div class="stat-num">{{ formatMoney(my.total_cents) }}</div></div>
-      <div class="card"><div class="muted">已提现</div><div class="stat-num">{{ formatMoney(my.withdrawn_cents) }}</div></div>
-      <div class="card" v-if="my.debt_cents > 0"><div class="muted">负债（退款扣回）</div><div class="stat-num" style="color: #dc2626;">{{ formatMoney(my.debt_cents) }}</div></div>
+      <div class="card"><div class="muted">{{ $t('冻结中佣金') }}</div><div class="stat-num">{{ formatMoney(my.pending_cents) }}</div></div>
+      <div class="card"><div class="muted">{{ $t('可提现') }}</div><div class="stat-num" style="color: #16a34a;">{{ formatMoney(my.available_cents) }}</div></div>
+      <div class="card"><div class="muted">{{ $t('累计佣金') }}</div><div class="stat-num">{{ formatMoney(my.total_cents) }}</div></div>
+      <div class="card"><div class="muted">{{ $t('已提现') }}</div><div class="stat-num">{{ formatMoney(my.withdrawn_cents) }}</div></div>
+      <div class="card" v-if="my.debt_cents > 0"><div class="muted">{{ $t('负债（退款扣回）') }}</div><div class="stat-num" style="color: #dc2626;">{{ formatMoney(my.debt_cents) }}</div></div>
     </div>
 
     <!-- 团队概览 + 规则说明 -->
     <div class="card" style="margin-bottom: 16px;" v-if="my && affiliateConfig">
       <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: center;">
-        <div>团队：直推 {{ my.team_l1 }} 人<span v-if="affiliateConfig.levels >= 2"> · 二级 {{ my.team_l2 }} 人</span><span v-if="affiliateConfig.levels >= 3"> · 三级 {{ my.team_l3 }} 人</span></div>
-        <span class="badge blue">{{ affiliateConfig.enabled ? `${levelNames[affiliateConfig.levels]}级分销` : '分销已关闭' }}</span>
+        <div>{{ $t('团队：直推') }} {{ my.team_l1 }} {{ $t('人') }}<span v-if="affiliateConfig.levels >= 2"> {{ $t('· 二级') }} {{ my.team_l2 }} {{ $t('人') }}</span><span v-if="affiliateConfig.levels >= 3"> {{ $t('· 三级') }} {{ my.team_l3 }} {{ $t('人') }}</span></div>
+        <span class="badge blue">{{ affiliateConfig.enabled ? $t('{0}级分销', [levelNames[affiliateConfig.levels]]) : $t('分销已关闭') }}</span>
       </div>
       <div class="muted" style="margin-top: 6px;">
-        <template v-if="affiliateConfig.enabled">佣金按{{ affiliateConfig.base === 'profit' ? '利润' : '订单金额' }}计算，最多 {{ affiliateConfig.levels }} 层，比例由站长配置，冻结期后可提现。</template>
-        <template v-else>当前已关闭分销，历史佣金可在佣金流水中查看。</template>
+        <template v-if="affiliateConfig.enabled">{{ $t('佣金按 {0} 计算，最多 {1} 层，比例由站长配置，冻结期后可提现。', [affiliateConfig.base === 'profit' ? $t('利润') : $t('订单金额'), affiliateConfig.levels]) }}</template>
+        <template v-else>{{ $t('当前已关闭分销，历史佣金可在佣金流水中查看。') }}</template>
       </div>
     </div>
 
-    <div v-if="configError" class="card error" role="alert">{{ configError }} <button class="btn secondary" @click="loadAffiliateConfig">重试</button></div>
+    <div v-if="configError" class="card error" role="alert">{{ uiText(configError) }} <button class="btn secondary" @click="loadAffiliateConfig">{{ $t('重试') }}</button></div>
 
     <div class="tabs">
-      <button :class="{ active: tab === 'team' }" @click="switchTab('team')">我的团队</button>
-      <button :class="{ active: tab === 'commissions' }" @click="switchTab('commissions')">佣金流水</button>
+      <button :class="{ active: tab === 'team' }" @click="switchTab('team')">{{ $t('我的团队') }}</button>
+      <button :class="{ active: tab === 'commissions' }" @click="switchTab('commissions')">{{ $t('佣金流水') }}</button>
     </div>
 
     <!-- 团队 -->
     <div v-if="tab === 'team' && affiliateConfig" class="card">
       <div class="actions" style="margin-bottom: 8px;">
         <select v-model="teamTier" @change="loadTeam(1)" style="padding: 6px;">
-          <option :value="0">全部层级</option>
-          <option v-for="level in affiliateConfig.levels" :key="level" :value="level">{{ level === 1 ? '直推（一级）' : `${levelNames[level]}级` }}</option>
+          <option :value="0">{{ $t('全部层级') }}</option>
+          <option v-for="level in affiliateConfig.levels" :key="level" :value="level">{{ level === 1 ? $t('直推（一级）') : $t('{0}级', [levelNames[level]]) }}</option>
         </select>
       </div>
       <table class="list">
-        <thead><tr><th>用户</th><th>层级</th><th>加入时间</th></tr></thead>
+        <thead><tr><th>{{ $t('用户') }}</th><th>{{ $t('层级') }}</th><th>{{ $t('加入时间') }}</th></tr></thead>
         <tbody>
           <tr v-for="m in team" :key="m.user_id">
             <td>{{ m.username_masked }}</td>
             <td><span class="badge blue">L{{ m.tier }}</span></td>
             <td class="muted">{{ fmtTime(m.joined_at) }}</td>
           </tr>
-          <tr v-if="!team.length"><td colspan="3" class="muted" style="text-align: center;">暂无团队成员</td></tr>
+          <tr v-if="!team.length"><td colspan="3" class="muted" style="text-align: center;">{{ $t('暂无团队成员') }}</td></tr>
         </tbody>
       </table>
     </div>
@@ -84,7 +84,7 @@
     <!-- 佣金流水 -->
     <div v-if="tab === 'commissions'" class="card">
       <table class="list table-desktop">
-        <thead><tr><th>时间</th><th>订单</th><th>层级</th><th>基数</th><th>佣金</th><th>状态</th></tr></thead>
+        <thead><tr><th>{{ $t('时间') }}</th><th>{{ $t('订单') }}</th><th>{{ $t('层级') }}</th><th>{{ $t('基数') }}</th><th>{{ $t('佣金') }}</th><th>{{ $t('状态') }}</th></tr></thead>
         <tbody>
           <tr v-for="c in commissions" :key="c.id">
             <td class="muted">{{ fmtTime(c.created_at) }}</td>
@@ -94,7 +94,7 @@
             <td :class="c.amount >= 0 ? 'success' : 'error'">{{ formatSignedMoney(c.amount) }}</td>
             <td><span :class="commissionBadge(c.status)">{{ commissionText(c.status) }}</span></td>
           </tr>
-          <tr v-if="!commissions.length"><td colspan="6" class="muted" style="text-align: center;">暂无佣金记录</td></tr>
+          <tr v-if="!commissions.length"><td colspan="6" class="muted" style="text-align: center;">{{ $t('暂无佣金记录') }}</td></tr>
         </tbody>
       </table>
       <!-- 移动端佣金卡片 -->
@@ -105,34 +105,36 @@
             <span :class="commissionBadge(c.status)">{{ commissionText(c.status) }}</span>
           </div>
           <div class="mcard-row">
-            <span class="muted">{{ fmtTime(c.created_at) }} · 基数 {{ formatMoney(c.base_amount) }}</span>
+            <span class="muted">{{ fmtTime(c.created_at) }} {{ $t('· 基数') }} {{ formatMoney(c.base_amount) }}</span>
             <span :class="c.amount >= 0 ? 'success' : 'error'" style="font-weight: 700;">{{ formatSignedMoney(c.amount) }}</span>
           </div>
         </div>
-        <div v-if="!commissions.length" class="muted" style="text-align: center; padding: 16px 0;">暂无佣金记录</div>
+        <div v-if="!commissions.length" class="muted" style="text-align: center; padding: 16px 0;">{{ $t('暂无佣金记录') }}</div>
       </div>
       <div class="actions" style="margin-top: 12px;" v-if="commissionsTotal > pageSize">
-        <button class="btn secondary" :disabled="commissionsPage <= 1" @click="loadCommissions(commissionsPage - 1)">上一页</button>
+        <button class="btn secondary" :disabled="commissionsPage <= 1" @click="loadCommissions(commissionsPage - 1)">{{ $t('上一页') }}</button>
         <span class="muted">{{ commissionsPage }} / {{ Math.ceil(commissionsTotal / pageSize) }}</span>
-        <button class="btn secondary" :disabled="commissionsPage >= Math.ceil(commissionsTotal / pageSize)" @click="loadCommissions(commissionsPage + 1)">下一页</button>
+        <button class="btn secondary" :disabled="commissionsPage >= Math.ceil(commissionsTotal / pageSize)" @click="loadCommissions(commissionsPage + 1)">{{ $t('下一页') }}</button>
       </div>
     </div>
 
     <!-- 提现（独立页入口） -->
     <div v-if="tab === 'withdraw'" class="card" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
       <div>
-        <b>佣金提现</b>
-        <div class="muted" style="margin-top: 4px;">支付宝 / 微信收款码 / USDT TRC20 · 提现记录 · 工单支持</div>
+        <b>{{ $t('佣金提现') }}</b>
+        <div class="muted" style="margin-top: 4px;">{{ $t('支付宝 / 微信收款码 / USDT TRC20 · 提现记录 · 工单支持') }}</div>
       </div>
-      <router-link class="btn btn-primary" to="/withdraw">去提现</router-link>
+      <router-link class="btn btn-primary" to="/withdraw">{{ $t('去提现') }}</router-link>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { uiText, t as $t, localeTag } from '@/i18n';
+
 import { getInviteBenefit, type InviteBenefit } from '@/api';
 import { levelDiscount } from '@/composables/member-level';
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import QRCode from 'qrcode';
 import {
   myAffiliate, listTeam, listCommissions, createWithdrawal, fetchAffiliateConfig,
@@ -143,7 +145,7 @@ import { formatMoney, formatSignedMoney } from '@/api/client';
 
 const affiliateConfig = ref<AffiliateConfig | null>(null);
 const configError = ref('');
-const levelNames = ['', '一', '二', '三'];
+const levelNames = computed(() => ['', $t("一"), $t("二"), $t("三")]);
 
 const tab = ref<'team' | 'commissions' | 'withdraw'>('team');
 const my = ref<MyAffiliateReply | null>(null);
@@ -193,7 +195,7 @@ async function loadAffiliateConfig() {
   configError.value = '';
   affiliateConfig.value = await fetchAffiliateConfig();
   if (!affiliateConfig.value) {
-    configError.value = '分销设置加载失败，请重试。';
+    configError.value = $t("分销设置加载失败，请重试。");
     return;
   }
   if (teamTier.value > affiliateConfig.value.levels) teamTier.value = 0;
@@ -248,11 +250,11 @@ function downloadQr() {
 
 async function doWithdraw() {
   if (!withdrawYuan.value || withdrawYuan.value <= 0) {
-    withdrawError.value = '请输入提现金额';
+    withdrawError.value = $t("请输入提现金额");
     return;
   }
   if (!withdrawAccount.value.trim()) {
-    withdrawError.value = '请填写收款账号';
+    withdrawError.value = $t("请填写收款账号");
     return;
   }
   withdrawing.value = true;
@@ -265,7 +267,7 @@ async function doWithdraw() {
   });
   withdrawing.value = false;
   if (error || !data) {
-    withdrawError.value = error || '申请失败（可提余额不足？）';
+    withdrawError.value = error || $t("申请失败（可提余额不足？）");
     return;
   }
   withdrawOk.value = data;
@@ -276,13 +278,13 @@ async function doWithdraw() {
 }
 
 function commissionText(s: string): string {
-  return ({ pending_confirm: '冻结中', available: '可提现', withdrawn: '已提现', reversed: '已回冲' } as Record<string, string>)[s] || s;
+  return ({ get pending_confirm() { return $t("冻结中"); }, get available() { return $t("可提现"); }, get withdrawn() { return $t("已提现"); }, get reversed() { return $t("已回冲"); } } as Record<string, string>)[s] || s;
 }
 function commissionBadge(s: string): string {
   return ({ pending_confirm: 'badge orange', available: 'badge green', withdrawn: 'badge blue', reversed: 'badge red' } as Record<string, string>)[s] || 'badge gray';
 }
 function fmtTime(ts: number): string {
-  return ts ? new Date(ts * 1000).toLocaleString() : '';
+  return ts ? new Date(ts * 1000).toLocaleString(localeTag.value) : '';
 }
 </script>
 

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { t as $t } from '@/i18n';
+
 import { ref, watch } from 'vue';
 
 const props = defineProps<{ type: string; icon?: string }>();
@@ -11,7 +13,7 @@ watch(() => props.icon, () => { imageFailed.value = false; });
     <img v-if="icon && !imageFailed" :src="icon" alt="" @error="imageFailed = true" />
     <svg v-else-if="type === 'alipay'" viewBox="0 0 32 32">
       <rect width="32" height="32" rx="7" fill="#1677ff" />
-      <text x="16" y="24" text-anchor="middle" fill="white" font-size="24" font-family="Arial, sans-serif">支</text>
+      <text x="16" y="24" text-anchor="middle" fill="white" font-size="24" font-family="Arial, sans-serif">{{ $t('支') }}</text>
     </svg>
     <svg v-else-if="type === 'wechat' || type === 'wxpay'" viewBox="0 0 32 32">
       <rect width="32" height="32" rx="7" fill="#07c160" />

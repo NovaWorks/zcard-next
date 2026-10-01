@@ -505,7 +505,7 @@ const local: App.I18n.Schema = {
     i18n: {
       default_locale: "默认语言",
       enabled_locales: "启用语言列表",
-      base_currency: "基础货币",
+      base_currency: "基础货币 / 默认结算货币",
     },
   },
   procurement: {

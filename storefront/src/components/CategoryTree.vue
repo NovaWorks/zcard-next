@@ -4,9 +4,9 @@
       <!-- 标题栏：品牌竖条 + 标题 + 分类数（与右侧「全部商品」区标题同一设计语言） -->
       <button class="cat-tree-head" type="button" :aria-expanded="allExpanded" :disabled="!branchIds.length" @click="toggleAll">
         <span class="head-bar"></span>
-        <span class="cat-tree-title">全部分类</span>
-        <span v-if="categories.length" class="cat-tree-count">{{ categories.length }} 类</span>
-        <span v-if="branchIds.length" class="cat-tree-toggle-label">{{ allExpanded ? '折叠下级' : '展开下级' }}</span>
+        <span class="cat-tree-title">{{ $t('全部分类') }}</span>
+        <span v-if="categories.length" class="cat-tree-count">{{ categories.length }} {{ $t('类') }}</span>
+        <span v-if="branchIds.length" class="cat-tree-toggle-label">{{ allExpanded ? $t('折叠下级') : $t('展开下级') }}</span>
       </button>
       <div class="cat-tree-body">
         <!-- 全部商品入口 -->
@@ -16,11 +16,11 @@
           @click="select(0)"
         >
           <ThemeIcon name="grid" />
-          <span class="flex-1 text-left">全部商品</span>
+          <span class="flex-1 text-left">{{ $t('全部商品') }}</span>
         </button>
         <button v-if="showRecommended" type="button" class="tree-all tree-recommended" :class="{ active: modelValue === -1 }" @click="select(-1)">
           <ThemeIcon name="folder" />
-          <span>推荐商品</span>
+          <span>{{ $t('推荐商品') }}</span>
         </button>
         <!-- 分类树：递归渲染任意层级（三级/四级均可展开） -->
         <CategoryTreeNode
@@ -33,15 +33,17 @@
           @select="select"
           @toggle="toggle"
         />
-        <div v-if="loading && !tree.length" class="tree-empty muted" role="status">正在加载分类…</div>
-        <div v-else-if="error" class="tree-empty" role="alert">分类加载失败 <button class="btn secondary" type="button" :disabled="loading" @click="$emit('retry')">重试</button></div>
-        <div v-else-if="!tree.length" class="tree-empty muted">暂无分类</div>
+        <div v-if="loading && !tree.length" class="tree-empty muted" role="status">{{ $t('正在加载分类…') }}</div>
+        <div v-else-if="error" class="tree-empty" role="alert">{{ $t('分类加载失败') }} <button class="btn secondary" type="button" :disabled="loading" @click="$emit('retry')">{{ $t('重试') }}</button></div>
+        <div v-else-if="!tree.length" class="tree-empty muted">{{ $t('暂无分类') }}</div>
       </div>
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
+import { t as $t } from '@/i18n';
+
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import CategoryTreeNode from './CategoryTreeNode.vue';

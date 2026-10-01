@@ -9,12 +9,13 @@ import { fetchSettings, fetchCurrencies } from "@/service/api";
 import { localStg } from "@/utils/storage";
 
 export interface CurrencyMeta {
+  code: string;
   symbol: string; // 货币符号（¥/$）
   position: string; // prefix | suffix
   precision: number; // 小数位（CNY=2、JPY=0）
 }
 
-const DEFAULT_META: CurrencyMeta = { symbol: "¥", position: "prefix", precision: 2 };
+const DEFAULT_META: CurrencyMeta = { code: "CNY", symbol: "¥", position: "prefix", precision: 2 };
 
 const current = reactive<CurrencyMeta>({ ...DEFAULT_META });
 
@@ -25,6 +26,10 @@ export function setCurrency(meta: Partial<CurrencyMeta>) {
 
 export function getCurrency(): CurrencyMeta {
   return { ...current };
+}
+
+export function currencyUnit(): string {
+  return current.code;
 }
 
 // fenToYuan 分 → 元字符串（不含符号；纯整数运算，禁止浮点参与）。
@@ -86,8 +91,9 @@ export function initCurrency(force = false): Promise<void> {
         }
         const list: any[] = ((currencyRes as any)?.data as any)?.currencies || [];
         const cur = list.find((c: any) => c.code === baseCode);
+        current.code = baseCode;
         if (cur) {
-          setCurrency({ symbol: cur.symbol, position: cur.position, precision: cur.precision ?? 0 });
+          setCurrency({ code: baseCode, symbol: cur.symbol, position: cur.position, precision: cur.precision ?? 0 });
         }
       } catch {
         /* 加载失败回退默认 ¥/2 */

@@ -353,7 +353,7 @@ func promoScopeHit(scope map[string]any, productID, categoryID uint64) bool {
 // ── admin CRUD（秒杀/促销）────────────────────────────────
 
 // CreateFlash 创建秒杀。
-func (r *CouponRepoImpl) CreateFlash(ctx context.Context, productID, skuID uint64, flashPrice int64, startAt, endAt time.Time, limitQty, perUserLimit int32) (*ent.FlashSale, error) {
+func (r *CouponRepoImpl) createFlash(ctx context.Context, productID, skuID uint64, flashPrice int64, startAt, endAt time.Time, limitQty, perUserLimit int32) (*ent.FlashSale, error) {
 	return data.Client(ctx, r.data).FlashSale.Create().
 		SetProductID(productID).
 		SetSkuID(skuID).
@@ -389,7 +389,7 @@ func (r *CouponRepoImpl) DeleteFlash(ctx context.Context, id uint64) error {
 }
 
 // UpsertPromotion 创建/更新促销。
-func (r *CouponRepoImpl) UpsertPromotion(ctx context.Context, id uint64, name string, scope map[string]any, typ string, threshold, discount, specialPrice int64, startAt, endAt time.Time, enabled bool) (*ent.Promotion, error) {
+func (r *CouponRepoImpl) upsertPromotion(ctx context.Context, id uint64, name string, scope map[string]any, typ string, threshold, discount, specialPrice int64, startAt, endAt time.Time, enabled bool) (*ent.Promotion, error) {
 	if typ == "percent" && (discount <= 0 || discount > 10000) {
 		return nil, fmt.Errorf("coupon.PROMO_RATE_INVALID")
 	}
@@ -473,4 +473,22 @@ func (r *CouponRepoImpl) EligibleItems(ctx context.Context, id, level uint64, it
 		return nil, e
 	}
 	return scopeItems(c.Scope, items, level), nil
+}
+
+func (r *CouponRepoImpl) CreateFlash(ctx context.Context, productID, skuID uint64, flashPrice int64, startAt, endAt time.Time, limitQty, perUserLimit int32) (out *ent.FlashSale, err error) {
+	err = data.CurrencyTx(ctx, r.data, func(ctx context.Context) error {
+		var e error
+		out, e = r.createFlash(ctx, productID, skuID, flashPrice, startAt, endAt, limitQty, perUserLimit)
+		return e
+	})
+	return out, err
+}
+
+func (r *CouponRepoImpl) UpsertPromotion(ctx context.Context, id uint64, name string, scope map[string]any, typ string, threshold, discount, specialPrice int64, startAt, endAt time.Time, enabled bool) (out *ent.Promotion, err error) {
+	err = data.CurrencyTx(ctx, r.data, func(ctx context.Context) error {
+		var e error
+		out, e = r.upsertPromotion(ctx, id, name, scope, typ, threshold, discount, specialPrice, startAt, endAt, enabled)
+		return e
+	})
+	return out, err
 }

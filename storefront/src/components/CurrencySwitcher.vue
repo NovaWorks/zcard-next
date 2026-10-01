@@ -1,7 +1,7 @@
 <template>
   <!-- 顶部货币切换器（多币种才显示；展示层换算——结算仍以站点基准货币） -->
   <div v-if="options.length > 1" ref="rootEl" class="currency-switch">
-    <button class="cs-btn" type="button" title="切换展示货币（结算以基准货币）" @click="open = !open">
+    <button class="cs-btn" type="button" :title="$t('切换展示货币（结算以基准货币）')" @click="open = !open">
       <span class="cs-symbol">{{ current.symbol }}</span>
       <span class="cs-code">{{ current.code }}</span>
       <span class="cs-caret">▾</span>
@@ -24,6 +24,8 @@
 </template>
 
 <script setup lang="ts">
+import { t as $t } from '@/i18n';
+
 import { onMounted, onUnmounted, ref } from 'vue';
 import { getCurrency, initCurrency, listCurrencies, selectCurrency, type CurrencyMeta } from '@/api/client';
 

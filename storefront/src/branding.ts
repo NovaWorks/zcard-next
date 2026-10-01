@@ -1,3 +1,4 @@
+import { t as $t } from '@/i18n';
 import { computed, onMounted, reactive, watch } from 'vue';
 import { readThemeRuntime } from '../../packages/theme-sdk/src/index';
 import { publicConfig } from './config';
@@ -11,7 +12,7 @@ watch(publicConfig, config => {
   const read = (key: string) => { try { return JSON.parse(config.entries.find(e => e.key === key)?.value_json || 'null'); } catch { return null; } };
   const name = read('site.name'), logo = read('site.logo');
   if (typeof name === 'string' && typeof logo === 'string') {
-    branding.name = name || '商店'; branding.logo = logo; branding.ready = true;
+    branding.name = name; branding.logo = logo; branding.ready = true;
   }
 }, { immediate: true });
 let pending: Promise<void> | undefined;
@@ -21,7 +22,7 @@ async function loadBranding() {
   const site = initial && typeof initial.name === 'string' && typeof initial.logo === 'string'
     ? initial
     : await fetchSiteSeo();
-  branding.name = site.name || '商店';
+  branding.name = site.name || '';
   branding.logo = site.logo || '';
   branding.ready = true;
 }
@@ -29,7 +30,7 @@ async function loadBranding() {
 export function useBranding() {
   onMounted(() => { if (!branding.ready) pending ??= loadBranding(); });
   return {
-    siteName: computed(() => branding.name),
+    siteName: computed(() => branding.name || $t("商店")),
     siteLogo: computed(() => branding.logo),
     brandReady: computed(() => branding.ready),
   };

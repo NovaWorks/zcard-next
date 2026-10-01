@@ -79,7 +79,7 @@ func (s *AdminService) SaveLotteryActivity(ctx context.Context, v *adminv1.Lotte
 		return nil, e
 	}
 	var id uint64
-	e := data.Tx(ctx, s.repo.Data, func(ctx context.Context) error {
+	e := data.CurrencyTx(ctx, s.repo.Data, func(ctx context.Context) error {
 		c := data.Client(ctx, s.repo.Data)
 		var a *ent.LotteryActivity
 		var e error

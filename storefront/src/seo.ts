@@ -1,3 +1,4 @@
+import { t as $t, localeTag } from '@/i18n';
 import { loadPublicConfig } from '@/config';
 /**
  * SEO 工具：站点级配置消费（/api/v1/storefront/config 公开下发）+ 页面级 head 声明。
@@ -18,7 +19,7 @@ export function setActiveHead(head: { push: (entry: HeadEntry) => unknown } | un
 
 function headPush(entry: HeadEntry) {
   if (!activeHead) {
-    console.warn("[seo] head 未注入（setActiveHead 未调用）");
+    console.warn($t("[seo] head 未注入（setActiveHead 未调用）"));
     return;
   }
   activeHead.push(entry);
@@ -50,7 +51,7 @@ function parseStr(raw: string | undefined, dflt = ""): string {
 /** 站点 SEO 配置（失败回退默认值；SSR 构建期经 VITE_SSG_API 访问，客户端同源） */
 export async function fetchSiteSeo(): Promise<SiteSeoConfig> {
 
-  const def: SiteSeoConfig = { name: "商店", url: "", logo: "", seoTitle: "", seoKeywords: "", seoDesc: "", verificationGoogle: "", verificationBing: "" };
+  const def: SiteSeoConfig = { get name() { return $t("商店"); }, url: "", logo: "", seoTitle: "", seoKeywords: "", seoDesc: "", verificationGoogle: "", verificationBing: "" };
   try {
     const json = await loadPublicConfig();
     const find = (k: string) => json?.entries?.find((e: any) => e.key === k)?.value_json;
@@ -103,6 +104,7 @@ export function applySeo(meta: SeoMeta, site: SiteSeoConfig) {
   const canonicalUrl = meta.canonical || base;
   headPush({
     title: meta.title || "",
+    htmlAttrs: { lang: localeTag.value },
     meta: [
       { name: "description", content: meta.description ?? "", key: "description" },
       { name: "keywords", content: meta.keywords ?? "", key: "keywords" },
@@ -122,7 +124,7 @@ export function applyDefaultSeo(site: SiteSeoConfig) {
   const base = siteBase(site);
   applySeo(
     {
-      title: site.seoTitle || `${site.name} - 自动发卡商城`,
+      title: site.seoTitle || $t("{0} - 自动发卡商城", [site.name]),
       description: site.seoDesc,
       keywords: site.seoKeywords,
       ogType: "website",

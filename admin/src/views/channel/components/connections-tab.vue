@@ -14,7 +14,7 @@ import {
   pingSupplyConnection, createSupplySyncTask, fetchSupplySyncTasks, cancelSupplySyncTask,
 } from "@/service/api";
 import { checkAuth } from "@/directives";
-import { formatMoney, yuanToFen } from "@/utils/money";
+import { currencyUnit, formatMoney, yuanToFen } from "@/utils/money";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 import TablePager from "@/components/common/table-pager.vue";
 const ImportTaskProgress = defineAsyncComponent(() => import("./import-task-progress.vue"));
@@ -816,7 +816,7 @@ onMounted(load);
               <span class="text-12px text-gray-400">＋</span>
               <span class="w-64px shrink-0 text-13px">固定加价</span>
               <NInputNumber v-model:value="form.markupAmountYuan" :min="0" :precision="2" size="small" class="w-120px" placeholder="0.00">
-                <template #suffix>元</template>
+                <template #suffix>{{ currencyUnit() }}</template>
               </NInputNumber>
             </div>
             <div class="mt-4px text-11px text-gray-400">
@@ -841,8 +841,8 @@ onMounted(load);
             v-model:value="form.price_rounding_mode"
             :options="[
               { label: '不取整（两位小数）', value: 'none' },
-              { label: '向上取整到元', value: 'ceil_int' },
-              { label: '向上取整到角', value: 'ceil_tenth' },
+              { label: `向上取整到整数 ${currencyUnit()}`, value: 'ceil_int' },
+              { label: `向上取整到 0.1 ${currencyUnit()}`, value: 'ceil_tenth' },
             ]"
           />
         </NFormItem>

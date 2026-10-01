@@ -181,18 +181,9 @@ func (s *AdminSettingsService) validateSettingValue(ctx context.Context, group, 
 	if group == "template" && key == activeThemeKey {
 		return errors.BadRequest("settings.INVALID_KEY", "请通过主题选择器切换默认主题")
 	}
-	// 基础货币必须指向货币表中已存在的货币（防孤儿配置——前台按 code 取符号）。
-	if group == "i18n" && key == "base_currency" {
-		var code string
-		if err := json.Unmarshal(value, &code); err != nil || code == "" {
-			return errors.BadRequest("settings.INVALID_VALUE", "base_currency 必须是非空货币代码字符串")
-		}
-		ok, err := s.uc.CurrencyExists(ctx, code)
-		if err != nil {
-			return errors.InternalServer("settings.CURRENCY_CHECK_FAILED", "校验货币失败")
-		}
-		if !ok {
-			return errors.BadRequest("settings.CURRENCY_NOT_FOUND", "货币不存在，请先在「货币」页创建")
+	if group == "i18n" {
+		if err := validateI18nValue(key, value); err != nil {
+			return err
 		}
 	}
 	// 模板键必须存在于可用模板清单（防写不存在的模板 key）。
@@ -241,7 +232,7 @@ func (s *AdminSettingsService) UpdateSetting(ctx context.Context, req *adminv1.U
 		return nil, err
 	}
 	if err := s.uc.PutMany(ctx, items); err != nil {
-		return nil, errors.BadRequest("settings.INVALID_VALUE", "设置值必须是合法 JSON")
+		return nil, settingWriteError(err, "设置值必须是合法 JSON")
 	}
 	if IsSecret(req.GetGroup(), req.GetKey()) {
 		value = json.RawMessage(`"****"`)
@@ -266,7 +257,7 @@ func (s *AdminSettingsService) UpdateSettings(ctx context.Context, req *adminv1.
 		return nil, err
 	}
 	if err := s.uc.PutMany(ctx, items); err != nil {
-		return nil, errors.BadRequest("settings.INVALID_VALUE", "设置值必须是合法 JSON 或键不在目录内")
+		return nil, settingWriteError(err, "设置值必须是合法 JSON 或键不在目录内")
 	}
 	reply := &adminv1.UpdateSettingsReply{Updated: int32(len(items))}
 	for _, it := range items {
@@ -287,4 +278,12 @@ func (s *AdminSettingsService) UpdateSettings(ctx context.Context, req *adminv1.
 		}
 	}
 	return reply, nil
+}
+
+// Preserve actionable validation failures from transactional configuration writes.
+func settingWriteError(err error, fallback string) error {
+	if e := errors.FromError(err); e.Code == 400 || e.Code == 409 {
+		return err
+	}
+	return errors.BadRequest("settings.INVALID_VALUE", fallback)
 }

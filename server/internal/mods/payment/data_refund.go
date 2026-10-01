@@ -157,7 +157,7 @@ func (r *PaymentRepoImpl) RefundToWallet(ctx context.Context, orderID uint64, am
 			return err
 		}
 		reference := fmt.Sprintf("order_refund:%d", result.ID)
-		if err = r.wallet.CreditInTx(ctx, walletport.Entry{UserID: o.UserID, Direction: "in", Type: "refund", Amount: money.Cents(amount + feeAmount), Reference: reference, Remark: "订单 " + o.OrderNo + " 退款"}); err != nil {
+		if err = r.wallet.CreditInTx(ctx, walletport.Entry{UserID: o.UserID, Direction: "in", Type: "refund", Amount: money.Cents(amount + feeAmount), Reference: reference, OrderID: o.ID, Remark: "订单 " + o.OrderNo + " 退款"}); err != nil {
 			return err
 		}
 		// Old wallet rows were intents only; supersede them after an actual credit.

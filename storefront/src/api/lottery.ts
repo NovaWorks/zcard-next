@@ -1,3 +1,4 @@
+import { t as $t } from '@/i18n';
 import { api } from "./client";
 export interface LotteryPrize {
   id: number;
@@ -33,14 +34,14 @@ export interface LotteryDraw {
   content?: string;
 }
 export const lotteryStates: Record<string, string> = {
-  scheduled: "活动未开始",
-  live: "进行中",
-  paused: "活动已暂停",
-  ended: "活动已结束",
-  unavailable: "奖品暂不可用，等待平台补充",
-  pending: "待平台发放",
-  delivered: "已发放",
-  missed: "谢谢参与",
+  get scheduled() { return $t("活动未开始"); },
+  get live() { return $t("进行中"); },
+  get paused() { return $t("活动已暂停"); },
+  get ended() { return $t("活动已结束"); },
+  get unavailable() { return $t("奖品暂不可用，等待平台补充"); },
+  get pending() { return $t("待平台发放"); },
+  get delivered() { return $t("已发放"); },
+  get missed() { return $t("谢谢参与"); },
 };
 export const listLotteryActivities = () =>
   api.get<{ items: LotteryActivity[] }>("/lottery/activities");

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { uiText, t as $t } from '@/i18n';
+
 import { ref, onMounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { api } from '@/api/client';
@@ -34,20 +36,20 @@ onMounted(load);
 </script>
 <template>
   <section v-if="loading || error || state?.enabled" id="order-review" ref="section" class="card order-review">
-    <h3>订单评价</h3>
-    <p v-if="loading" class="muted">正在读取评价…</p>
-    <p v-if="error" role="alert" class="error">{{ error }} <button v-if="!state" class="btn secondary" @click="load">重试</button></p>
+    <h3>{{ $t('订单评价') }}</h3>
+    <p v-if="loading" class="muted">{{ $t('正在读取评价…') }}</p>
+    <p v-if="error" role="alert" class="error">{{ uiText(error) }} <button v-if="!state" class="btn secondary" @click="load">{{ $t('重试') }}</button></p>
     <template v-if="state?.enabled">
       <p class="muted" role="status">{{ state.message }}</p>
       <form v-if="state.status === 'available'" @submit.prevent="submit">
-        <label for="review-product">评价商品</label>
+        <label for="review-product">{{ $t('评价商品') }}</label>
         <select id="review-product" v-model="product" class="input" :disabled="saving" required><option v-for="item in state.products" :key="item.product_id" :value="item.product_id">{{ item.name }}</option></select>
-        <fieldset :disabled="saving"><legend>评分</legend><label v-for="star in 5" :key="star" class="review-star"><input v-model="rating" type="radio" :value="star" name="review-rating" />{{ star }} 星</label></fieldset>
-        <label for="review-content">使用体验</label>
-        <textarea id="review-content" v-model="content" class="input" maxlength="1000" rows="4" required :disabled="saving" placeholder="分享商品的使用体验，勿填写卡密或个人信息" />
-        <div class="review-footer"><span class="muted">{{ content.length }}/1000</span><button class="btn" :disabled="saving || !content.trim()">{{ saving ? '正在提交…' : '提交评价' }}</button></div>
+        <fieldset :disabled="saving"><legend>{{ $t('评分') }}</legend><label v-for="star in 5" :key="star" class="review-star"><input v-model="rating" type="radio" :value="star" name="review-rating" />{{ star }} {{ $t('星') }}</label></fieldset>
+        <label for="review-content">{{ $t('使用体验') }}</label>
+        <textarea id="review-content" v-model="content" class="input" maxlength="1000" rows="4" required :disabled="saving" :placeholder="$t('分享商品的使用体验，勿填写卡密或个人信息')" />
+        <div class="review-footer"><span class="muted">{{ content.length }}/1000</span><button class="btn" :disabled="saving || !content.trim()">{{ saving ? $t('正在提交…') : $t('提交评价') }}</button></div>
       </form>
-      <div v-else-if="state.content"><p>{{ state.rating }} 星</p><p class="review-content">{{ state.content }}</p></div>
+      <div v-else-if="state.content"><p>{{ state.rating }} {{ $t('星') }}</p><p class="review-content">{{ state.content }}</p></div>
     </template>
   </section>
 </template>

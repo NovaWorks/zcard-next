@@ -37,9 +37,15 @@ func TestCurrencyPrecisionPatch(t *testing.T) {
 			t.Fatalf("patch%d: %+v %v", prec, got, err)
 		}
 	}
-	got, err := s.UpdateCurrency(ctx, &adminv1.UpdateCurrencyRequest{Code: "CNY", Enabled: proto.Bool(false)})
-	if err != nil || got.Precision != 8 || got.Enabled {
-		t.Fatalf("toggle: %+v %v", got, err)
+	if _, err := s.UpdateCurrency(ctx, &adminv1.UpdateCurrencyRequest{Code: "CNY", Enabled: proto.Bool(false)}); err == nil {
+		t.Fatal("base currency must remain enabled")
+	}
+	if _, err := s.CreateCurrency(ctx, &adminv1.CreateCurrencyRequest{Code: "USD", Symbol: "$", Precision: 2, RateJson: "0.14"}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.UpdateCurrency(ctx, &adminv1.UpdateCurrencyRequest{Code: "USD", Enabled: proto.Bool(false)})
+	if err != nil || got.Enabled {
+		t.Fatalf("non-base toggle: %+v %v", got, err)
 	}
 	for _, prec := range []int32{-1, 9} {
 		if _, err := s.UpdateCurrency(ctx, &adminv1.UpdateCurrencyRequest{Code: "CNY", Precision: proto.Int32(prec)}); err == nil {

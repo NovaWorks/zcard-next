@@ -1,6 +1,6 @@
 <template>
   <!-- 大厂个人中心分段式导航：白卡容器 + 胶囊选中态（与首页卡片视觉同语言） -->
-  <nav ref="navEl" class="member-tabs" aria-label="会员中心导航">
+  <nav ref="navEl" class="member-tabs" :aria-label="$t('会员中心导航')">
     <button
       v-for="t in tabs"
       :key="t.key"
@@ -13,6 +13,8 @@
 </template>
 
 <script setup lang="ts">
+import { t as $t } from '@/i18n';
+
 // 个人中心共用导航（Member 与 Withdraw 两页共享）：
 // 提现是独立路由页（/withdraw），其余为 /member 页内 tab（?tab= 查询参数驱动）。
 
@@ -45,18 +47,18 @@ onBeforeUnmount(() => { remember(); navEl.value?.removeEventListener("scroll", r
 const router = useRouter();
 
 const tabs = [
-  { key: 'overview', label: '总览' },
-  { key: 'orders', label: '我的订单' },
-  { key: 'transactions', label: '余额流水' },
-  { key: 'recharge', label: '充值' },
-  { key: 'giftcard', label: '礼品卡' },
-  { key: 'points', label: '积分商城' },
-  { key: 'promo', label: '推广营销' },
-  { key: 'supplier', label: '对接申请' },
-  { key: 'withdraw', label: '提现' },
-  { key: 'security', label: '账户安全' },
-  { key: 'tickets', label: '提交工单' },
-  { key: 'prizes', label: '我的奖品' },
+  { key: 'overview', get label() { return $t("总览"); } },
+  { key: 'orders', get label() { return $t("我的订单"); } },
+  { key: 'transactions', get label() { return $t("余额流水"); } },
+  { key: 'recharge', get label() { return $t("充值"); } },
+  { key: 'giftcard', get label() { return $t("礼品卡"); } },
+  { key: 'points', get label() { return $t("积分商城"); } },
+  { key: 'promo', get label() { return $t("推广营销"); } },
+  { key: 'supplier', get label() { return $t("对接申请"); } },
+  { key: 'withdraw', get label() { return $t("提现"); } },
+  { key: 'security', get label() { return $t("账户安全"); } },
+  { key: 'tickets', get label() { return $t("提交工单"); } },
+  { key: 'prizes', get label() { return $t("我的奖品"); } },
 ];
 
 function go(key: string) {

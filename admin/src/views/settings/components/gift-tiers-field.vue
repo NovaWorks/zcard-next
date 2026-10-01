@@ -4,6 +4,7 @@
 // 供货档位（supplier）无积分列；买家端档位按钮与支付到账均按此展示/入账。
 import { ref, watch } from "vue";
 import { NButton, NInputNumber } from "naive-ui";
+import { currencyUnit } from "@/utils/money";
 
 interface Tier {
   amountYuan: number | null;
@@ -72,11 +73,11 @@ function removeRow(i: number) {
         <span class="w-40px" />
       </div>
       <div v-for="(t, i) in tiers" :key="i" class="gift-tier-grid" :class="{ supplier }">
-        <NInputNumber v-model:value="t.amountYuan" :show-button="false" size="medium" :min="0.01" :precision="2" class="tier-input" placeholder="元" @update:value="push">
-          <template #suffix>元</template>
+        <NInputNumber v-model:value="t.amountYuan" :show-button="false" size="medium" :min="0.01" :precision="2" class="tier-input" :placeholder="currencyUnit()" @update:value="push">
+          <template #suffix>{{ currencyUnit() }}</template>
         </NInputNumber>
         <NInputNumber v-model:value="t.giftYuan" :show-button="false" size="medium" :min="0" :precision="2" class="tier-input" placeholder="0.00" @update:value="push">
-          <template #suffix>元</template>
+          <template #suffix>{{ currencyUnit() }}</template>
         </NInputNumber>
         <NInputNumber v-if="!supplier" v-model:value="t.giftPoints" :show-button="false" size="medium" :min="0" class="tier-input" placeholder="0" @update:value="push">
           <template #suffix>分</template>

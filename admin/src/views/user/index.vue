@@ -12,7 +12,7 @@ import TablePager from "@/components/common/table-pager.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 import { couponStatusText, supplierStatusText } from "@/utils/business-status";
 import { orderStatusText, orderStatusType } from "@/utils/order-status";
-import { formatMoney, fenToYuan, yuanToFen } from "@/utils/money";
+import { currencyUnit, formatMoney, fenToYuan, yuanToFen } from "@/utils/money";
 
 defineOptions({ name: "UserManagement" });
 
@@ -524,7 +524,7 @@ onMounted(load);
               :min="-9999999"
               :max="9999999"
               :precision="2"
-              placeholder="单位：元（正=入账 负=扣减）"
+              :placeholder="`单位：${currencyUnit()}（正=入账 负=扣减）`"
             />
           </NFormItem>
           <NFormItem label="调整原因" required>

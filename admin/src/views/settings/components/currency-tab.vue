@@ -3,13 +3,14 @@
 import { onMounted, ref, h, computed, watch } from "vue";
 import { NButton, NDataTable, NInput, NInputNumber, NModal, NForm, NFormItem, NPopconfirm, NRadio, NRadioGroup, NTag } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
-import { listCurrencies, createCurrency, updateCurrency, deleteCurrency, fetchSettings } from "@/service/api";
+import { listCurrencies, createCurrency, updateCurrency, deleteCurrency, fetchSettings, updateSetting } from "@/service/api";
 import { checkAuth } from "@/directives";
-import { getCurrency, initCurrency } from "@/utils/money";
+import { currencyUnit, getCurrency, initCurrency } from "@/utils/money";
 import { formatCents } from "../../../../../packages/money/index";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 
 defineOptions({ name: "CurrencyTab" });
+const emit = defineEmits<{ updated: [] }>();
 
 const loading = ref(false);
 const currencies = ref<any[]>([]);
@@ -35,15 +36,17 @@ const filteredCurrencies = computed(() =>
   enabledFilter.value === "" ? currencies.value : currencies.value.filter((c) => (enabledFilter.value === "on" ? c.enabled : !c.enabled)),
 );
 
-// 当前基础货币（i18n.base_currency；读取失败回落默认 CNY）。
-const baseCurrency = ref("CNY");
+// 基础货币就是默认结算货币；读取失败保持未知并提供重试。
+const baseCurrency = ref("");
+const baseLoadError = ref(false);
+const settingDefault = ref("");
 const isBaseCurrency = computed(() => form.value.code !== "" && form.value.code === baseCurrency.value);
 const rateHint = computed(() =>
   isBaseCurrency.value
     ? form.value.code === "CNY"
       ? "全站统一按人民币（CNY）结算，基础货币汇率固定为 1"
       : `全站统一按基础货币 ${form.value.code} 结算，汇率固定为 1`
-    : "汇率 = 1 基础货币可兑换的本币数量，如 1 CNY = 0.14 USD",
+    : `汇率 = 1 ${baseCurrency.value || "基础货币"} 可兑换的本币数量`,
 );
 
 // 展示效果预览（符号 + 位置 + 小数位实时联动，以 10 元为例）
@@ -64,20 +67,33 @@ watch(
 );
 
 async function loadBaseCurrency() {
+  baseLoadError.value = false;
   try {
     const { data, error } = await fetchSettings("i18n");
-    if (!error && (data as any)?.items) {
-      const it = ((data as any).items as any[]).find((x: any) => x.key === "base_currency");
-      if (it) {
-        try {
-          baseCurrency.value = JSON.parse(it.value_json);
-        } catch {
-          // 保持默认 CNY
-        }
-      }
-    }
+    const it = ((data as any)?.items || []).find((x: any) => x.key === "base_currency");
+    if (error || !it) throw new Error("读取基础货币失败");
+    const code = JSON.parse(it.value_json);
+    if (typeof code !== "string" || !code) throw new Error("基础货币配置无效");
+    baseCurrency.value = code;
   } catch {
-    // 无权限/接口异常：保持默认 CNY
+    baseCurrency.value = "";
+    baseLoadError.value = true;
+  }
+}
+
+async function setDefaultCurrency(row: any) {
+  if (!row.enabled || !baseCurrency.value || settingDefault.value) return;
+  settingDefault.value = row.code;
+  try {
+    const { error } = await updateSetting("i18n", "base_currency", JSON.stringify(row.code));
+    if (!error) {
+      await Promise.all([loadBaseCurrency(), initCurrency(true)]);
+      await load();
+      window.$message?.success(`默认结算货币已设为 ${row.code}`);
+      emit("updated");
+    }
+  } finally {
+    settingDefault.value = "";
   }
 }
 
@@ -100,7 +116,10 @@ function openEdit(row: any) {
 }
 
 const columns: DataTableColumns<any> = [
-  { title: "代码", key: "code", width: 80 },
+  { title: "代码", key: "code", width: 175, render: (row) => h("div", { class: "flex flex-wrap items-center gap-6px" }, [
+    h("span", row.code),
+    row.code === baseCurrency.value ? h(NTag, { size: "small", type: "info" }, { default: () => "默认结算" }) : null,
+  ]) },
   { title: "符号", key: "symbol", width: 70 },
   { title: "符号位置", key: "position", width: 84 },
   { title: "小数位", key: "precision", width: 70, render: (row) => row.precision ?? 0 },
@@ -115,17 +134,20 @@ const columns: DataTableColumns<any> = [
   {
     title: "操作",
     key: "actions",
-    width: 190,
+    width: 285,
     render: (row) =>
-      h("div", { class: "flex gap-4px" }, [
+      h("div", { class: "flex flex-wrap gap-4px" }, [
+        checkAuth("settings:update") && row.code !== baseCurrency.value
+          ? h(NButton, { size: "tiny", disabled: !row.enabled || !baseCurrency.value || !!settingDefault.value, loading: settingDefault.value === row.code, onClick: () => setDefaultCurrency(row) }, { default: () => "设为默认结算" })
+          : null,
         canWrite()
           ? h(NButton, { size: "tiny", onClick: () => openEdit(row) }, { default: () => "编辑" })
           : null,
         canWrite()
-          ? h(NButton, { size: "tiny", onClick: () => handleToggle(row) }, { default: () => (row.enabled ? "停用" : "启用") })
+          ? h(NButton, { size: "tiny", disabled: !baseCurrency.value || row.code === baseCurrency.value, onClick: () => handleToggle(row) }, { default: () => (row.enabled ? "停用" : "启用") })
           : null,
         checkAuth("settings:currency_delete")
-          ? h(NPopconfirm, { onPositiveClick: () => handleDelete(row.code) }, { trigger: () => h(NButton, { size: "tiny", type: "error", quaternary: true }, { default: () => "删除" }), default: () => "无引用时才可删除，确定？" })
+          ? h(NPopconfirm, { onPositiveClick: () => handleDelete(row.code) }, { trigger: () => h(NButton, { size: "tiny", type: "error", quaternary: true, disabled: !baseCurrency.value || row.code === baseCurrency.value }, { default: () => "删除" }), default: () => "无引用时才可删除，确定？" })
           : null,
       ]),
   },
@@ -146,6 +168,7 @@ async function handleToggle(row: any) {
   if (!error) {
     window.$message?.success(!row.enabled ? "已启用" : "已停用");
     load();
+    emit("updated");
   }
 }
 
@@ -154,6 +177,7 @@ async function handleDelete(code: string) {
   if (!error) {
     window.$message?.success("已删除");
     load();
+    emit("updated");
   } else {
     window.$message?.error("删除失败（可能仍被引用）");
   }
@@ -170,6 +194,7 @@ async function handleSave() {
         window.$message?.success("货币已更新");
         showModal.value = false;
         load();
+        emit("updated");
       }
     } else {
       const { error } = await createCurrency({ ...form.value });
@@ -177,6 +202,7 @@ async function handleSave() {
         window.$message?.success("货币已创建");
         showModal.value = false;
         load();
+        emit("updated");
       }
     }
   } finally {
@@ -197,7 +223,9 @@ onMounted(() => {
       <NButton v-if="canWrite()" size="small" type="primary" @click="openCreate">新增货币</NButton>
     </div>
     <div class="mb-8px rounded-4px bg-gray-50 px-10px py-6px text-12px text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-      全站统一按基础货币 <b>{{ baseCurrency }}</b> 结算（汇率恒为 1）；其他货币填「1 基础货币可兑换的本币数量」，下单时按当时汇率快照换算
+      <template v-if="baseCurrency">默认结算货币：<b>{{ baseCurrency }}</b>（基础汇率为 1）。其他货币的汇率表示「1 {{ baseCurrency }} 可兑换的本币数量」。已有商品或资金记录时不能直接切换基础货币。</template>
+      <div v-else-if="baseLoadError" role="alert" class="flex items-center gap-8px text-red-600">默认结算货币读取失败<NButton size="tiny" @click="loadBaseCurrency">重试</NButton></div>
+      <span v-else>正在读取默认结算货币…</span>
     </div>
     <NDataTable :columns="columns" :data="filteredCurrencies" :loading="loading" size="small"  :max-height="540" />
 
@@ -209,8 +237,8 @@ onMounted(() => {
             <NInput
               :value="form.code"
               :disabled="!!editing"
-              :maxlength="8"
-              placeholder="如 USD"
+              :maxlength="3"
+              placeholder="如 AUD"
               @update:value="(v: string) => (form.code = v.toUpperCase())"
             />
           </NFormItem>
@@ -229,14 +257,14 @@ onMounted(() => {
             <NInputNumber v-model:value="form.precision" :min="0" :max="8" :precision="0" class="w-full" />
           </NFormItem>
         </div>
-        <p class="mb-12px text-12px text-gray-500">小数位为显示上限：设置 3～8 位时，自动省略两位之后多余的末尾零，例如 2.000000 显示为 2.00、2.123400 显示为 2.1234；设置 0 或 1 位时按所设位数显示。此设置不改变价格、余额或支付渠道单位；金额输入仍以基础货币元为单位，最多精确到分。</p>
+        <p class="mb-12px text-12px text-gray-500">小数位为显示上限：设置 3～8 位时，自动省略两位之后多余的末尾零，例如 2.000000 显示为 2.00、2.123400 显示为 2.1234；设置 0 或 1 位时按所设位数显示。此设置不改变价格、余额或支付渠道单位；金额输入以基础货币 {{ currencyUnit() }} 为单位，最多精确到 0.01 {{ currencyUnit() }}。</p>
         <NFormItem label="汇率" required>
           <NInput v-model:value="form.rate_json" :disabled="isBaseCurrency" :placeholder="isBaseCurrency ? '基础货币，固定为 1' : '如 0.14（1 基础货币 = 0.14 本币）'" />
         </NFormItem>
         <!-- 提示区：上下两行（展示效果 / 汇率说明），避免左右两块基线错乱 -->
         <div class="mb-4px rounded-4px bg-gray-50 px-10px py-8px text-12px text-gray-500 dark:bg-gray-800 dark:text-gray-400">
           <div class="flex items-center gap-8px">
-            <span>展示效果（以 10 元为例）</span>
+            <span>展示效果（10 {{ form.code || "本币" }}）</span>
             <b class="text-13px text-gray-900 dark:text-gray-100">{{ moneyPreview }}</b>
           </div>
           <div class="mt-2px leading-16px">{{ rateHint }}</div>

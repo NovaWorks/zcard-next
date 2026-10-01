@@ -39,8 +39,7 @@ func (r *MemberLevelRepoImpl) ListLevels(ctx context.Context) ([]*ent.MemberLeve
 		All(ctx)
 }
 
-// CreateLevel 创建等级（points_rule JSON 透传：{"spend_cents":X,"points":Y}）。
-func (r *MemberLevelRepoImpl) CreateLevel(ctx context.Context, name string, thresholdType string, thresholdRecharge, thresholdConsume int64, discount int32, sort int32, enabled bool, pointsRule map[string]any, settings ...LevelSettings) (*ent.MemberLevel, error) {
+func (r *MemberLevelRepoImpl) createLevel(ctx context.Context, name string, thresholdType string, thresholdRecharge, thresholdConsume int64, discount int32, sort int32, enabled bool, pointsRule map[string]any, settings ...LevelSettings) (*ent.MemberLevel, error) {
 	v := LevelSettings{}
 	if len(settings) > 0 {
 		v = settings[0]
@@ -71,6 +70,16 @@ func (r *MemberLevelRepoImpl) CreateLevel(ctx context.Context, name string, thre
 	return create.Save(ctx)
 }
 
+// CreateLevel 创建等级（points_rule JSON 透传：{"spend_cents":X,"points":Y}）。
+func (r *MemberLevelRepoImpl) CreateLevel(ctx context.Context, name string, thresholdType string, thresholdRecharge, thresholdConsume int64, discount int32, sort int32, enabled bool, pointsRule map[string]any, settings ...LevelSettings) (out *ent.MemberLevel, err error) {
+	err = data.CurrencyTx(ctx, r.data, func(ctx context.Context) error {
+		var e error
+		out, e = r.createLevel(ctx, name, thresholdType, thresholdRecharge, thresholdConsume, discount, sort, enabled, pointsRule, settings...)
+		return e
+	})
+	return out, err
+}
+
 // UpdateLevel 更新等级。
 func (r *MemberLevelRepoImpl) UpdateLevel(ctx context.Context, id uint64, name string, discount int32, sort int32, enabled bool, pointsRule map[string]any, settings ...LevelSettings) (*ent.MemberLevel, error) {
 	v := LevelSettings{}
@@ -84,7 +93,7 @@ func (r *MemberLevelRepoImpl) UpdateLevel(ctx context.Context, id uint64, name s
 		return nil, fmt.Errorf("折扣应为0至10000")
 	}
 	var result *ent.MemberLevel
-	err := data.Tx(ctx, r.data, func(ctx context.Context) error {
+	err := data.CurrencyTx(ctx, r.data, func(ctx context.Context) error {
 		if err := r.lockLevel(ctx, id); err != nil {
 			return err
 		}

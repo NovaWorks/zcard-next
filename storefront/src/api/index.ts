@@ -1,3 +1,5 @@
+import { locale as activeLocale } from '@/i18n';
+import { t as $t } from '@/i18n';
 import { loadPublicConfig } from '@/config';
 import { api } from './client';
 
@@ -477,7 +479,7 @@ export async function fetchTradeConfig(): Promise<TradeConfig> {
 
 /** 联系方式要求显示名 */
 export function contactRequiredLabel(mode: string): string {
-  return ({ phone: '手机号', email: '邮箱', qq: 'QQ 号' } as Record<string, string>)[mode] || '邮箱 / 手机号 / QQ';
+  return ({ get phone() { return $t("手机号"); }, get email() { return $t("邮箱"); }, get qq() { return $t("QQ 号"); } } as Record<string, string>)[mode] || $t("邮箱 / 手机号 / QQ");
 }
 
 /** 联系方式格式校验（与后端 contactMatchesMode 同口径） */
@@ -794,7 +796,7 @@ export interface PostCategory {
 }
 
 export function listBanners(position?: string, locale?: string) {
-  return api.get<{ banners: Banner[] }>('/banners', { position, locale });
+  return api.get<{ banners: Banner[] }>('/banners', { position, locale: locale || activeLocale.value });
 }
 
 export function listPosts(type?: string, page = 1, pageSize = 20, locale?: string, categoryId = 0) {
@@ -802,17 +804,17 @@ export function listPosts(type?: string, page = 1, pageSize = 20, locale?: strin
     type,
     page,
     page_size: pageSize,
-    locale,
+    locale: locale || activeLocale.value,
     category_id: categoryId || undefined,
   });
 }
 
 export function getPost(slug: string, locale?: string) {
-  return api.get<{ post: StorePost; content: string }>(`/posts/${slug}`, { locale });
+  return api.get<{ post: StorePost; content: string }>(`/posts/${slug}`, { locale: locale || activeLocale.value });
 }
 
 export function listPostCategories(locale?: string) {
-  return api.get<{ categories: PostCategory[] }>('/post-categories', { locale });
+  return api.get<{ categories: PostCategory[] }>('/post-categories', { locale: locale || activeLocale.value });
 }
 
 /** 公告设置（config 公开下发：ops.announcement_type + ops.announcement） */

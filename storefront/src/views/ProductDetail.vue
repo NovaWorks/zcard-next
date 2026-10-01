@@ -2,9 +2,9 @@
   <div v-if="p" class="pd-page">
     <!-- 面包屑 -->
     <div v-if="p.product_kind !== 'sms_channel'" class="pd-crumb">
-      <router-link to="/">首页</router-link>
+      <router-link to="/">{{ $t('首页') }}</router-link>
       <span class="pd-crumb-sep">/</span>
-      <router-link to="/products">全部商品</router-link>
+      <router-link to="/products">{{ $t('全部商品') }}</router-link>
       <span class="pd-crumb-sep">/</span>
       <span class="pd-crumb-current">{{ p.name }}</span>
     </div>
@@ -13,20 +13,20 @@
     <div v-else class="pd-main">
       <!-- 左栏：商品图 -->
       <div class="pd-gallery">
-        <div class="pd-cover" :role="p.cover ? 'button' : undefined" :tabindex="p.cover ? 0 : undefined" aria-label="查看商品大图" @click="openCover" @keydown.enter="openCover" @keydown.space.prevent="openCover">
+        <div class="pd-cover" :role="p.cover ? 'button' : undefined" :tabindex="p.cover ? 0 : undefined" :aria-label="$t('查看商品大图')" @click="openCover" @keydown.enter="openCover" @keydown.space.prevent="openCover">
           <img v-if="p.cover" :src="p.cover" :alt="p.name" @error="onImgError" />
           <img v-else :src="NO_IMAGE" :alt="p.name" class="pd-noimg" />
-          <span v-if="p.cover" class="pd-zoom-hint">🔍 点击查看大图</span>
+          <span v-if="p.cover" class="pd-zoom-hint">{{ $t('🔍 点击查看大图') }}</span>
         </div>
       </div>
 
       <!-- 右栏：购买区 -->
       <div class="pd-buy">
-<p v-if="p.goods_type==='physical'" class="muted">实体商品 · {{p.shipping_mode==='fixed'?`运费 ${formatMoney(p.shipping_fee_cents || 0)} / 商品 / 订单`:'包邮'}}</p>
+<p v-if="p.goods_type==='physical'" class="muted">{{ $t('实体商品 ·') }} {{p.shipping_mode==='fixed'?$t('运费 {0} / 商品 / 订单', [formatMoney(p.shipping_fee_cents || 0)]):$t('包邮')}}</p>
         <h1 class="pd-name">{{ p.name }}</h1>
         <div class="pd-sub">
-          <span class="tag">{{ p.goods_type==='physical' ? '实体商品' : manualDelivery ? '人工服务' : stockTypeLabel(p.stock_type) }}</span>
-          <span v-if="!smsProduct && p.points_required && p.points_required > 0" class="tag pd-points-tag">{{ p.points_required }} 积分</span>
+          <span class="tag">{{ p.goods_type==='physical' ? $t('实体商品') : manualDelivery ? $t('人工服务') : stockTypeLabel(p.stock_type) }}</span>
+          <span v-if="!smsProduct && p.points_required && p.points_required > 0" class="tag pd-points-tag">{{ p.points_required }} {{ $t('积分') }}</span>
         </div>
 
         <!-- 促销价格区 -->
@@ -34,27 +34,27 @@
           <div class="pd-price-row">
             <span class="pd-price">{{ formatMoney(displayPrice) }}</span>
             <del v-if="selectedFlash && displayPrice < basePrice" class="muted">{{ formatMoney(basePrice) }}</del>
-            <span v-if="!smsProduct && p.points_required && p.points_required > 0" class="pd-price-points">或 {{ p.points_required }} 积分兑换</span>
+            <span v-if="!smsProduct && p.points_required && p.points_required > 0" class="pd-price-points">{{ $t('或') }} {{ p.points_required }} {{ $t('积分兑换') }}</span>
           </div>
-          <p v-if="selectedFlash" class="pd-flash-info">{{ flashSoldOut ? '本场秒杀已抢完' : '限时秒杀' }} · {{ new Date(selectedFlash.end_at * 1000).toLocaleString() }} 结束<span v-if="!flashSoldOut"> · 剩余 {{ selectedFlash.remaining }} 件<span v-if="selectedFlash.per_user_limit > 0"> · 每人限购 {{ selectedFlash.per_user_limit }} 件</span></span></p>
+          <p v-if="selectedFlash" class="pd-flash-info">{{ flashSoldOut ? $t('本场秒杀已抢完') : $t('限时秒杀') }} · {{ new Date(selectedFlash.end_at * 1000).toLocaleString(localeTag) }} {{ $t('结束') }}<span v-if="!flashSoldOut"> {{ $t('· 剩余') }} {{ selectedFlash.remaining }} {{ $t('件') }}<span v-if="selectedFlash.per_user_limit > 0"> {{ $t('· 每人限购') }} {{ selectedFlash.per_user_limit }} {{ $t('件') }}</span></span></p>
         </div>
 
         <!-- 汇总条：销量/库存（template.show_sales/show_stock 后台开关可关） -->
         <div v-if="showSales || showStock" class="pd-stats">
-          <div v-if="showSales" class="pd-stat"><b>{{ p.sales_count || 0 }}</b><span>销量</span></div>
-          <div v-if="showStock" class="pd-stat"><b>{{ stockDisplay }}</b><span>库存</span></div>
+          <div v-if="showSales" class="pd-stat"><b>{{ p.sales_count || 0 }}</b><span>{{ $t('销量') }}</span></div>
+          <div v-if="showStock" class="pd-stat"><b>{{ stockDisplay }}</b><span>{{ $t('库存') }}</span></div>
         </div>
 
         <!-- 服务保障 -->
         <div class="pd-assure">
-          <span>{{ p.goods_type==='physical' ? '📦 快递配送' : manualDelivery ? '👤 人工处理' : '⚡ 自动发货' }}</span>
-          <span>🛡️ 正品保障</span>
-          <span>💬 售后无忧</span>
+          <span>{{ p.goods_type==='physical' ? $t('📦 快递配送') : manualDelivery ? $t('👤 人工处理') : $t('⚡ 自动发货') }}</span>
+          <span>{{ $t('🛡️ 正品保障') }}</span>
+          <span>{{ $t('💬 售后无忧') }}</span>
         </div>
 
         <!-- SKU 选择（卡片式） -->
         <div v-if="p.skus?.length" class="pd-field">
-          <label class="pd-label">选择规格 <span class="pd-req">*</span></label>
+          <label class="pd-label">{{ $t('选择规格') }} <span class="pd-req">*</span></label>
           <div class="pd-skus">
             <button
               v-for="s in p.skus"
@@ -71,7 +71,7 @@
 
         <!-- 数量步进器 -->
         <div class="pd-field">
-          <label class="pd-label">购买数量</label>
+          <label class="pd-label">{{ $t('购买数量') }}</label>
           <div class="pd-qty">
             <button class="pd-qty-btn" @click="quantity = Math.max(1, quantity - 1)">−</button>
             <input v-model.number="quantity" type="number" min="1" :max="reusableDelivery||smsProduct?1:99" :disabled="reusableDelivery||smsProduct" class="pd-qty-input" />
@@ -86,65 +86,65 @@
 
         <!-- 评价入口（锚点；大厂电商：评分摘要卡 → 点击滚动到评价区） -->
         <button v-if="showReviews" class="pd-review-entry" @click="scrollToReviews">
-          <span class="pd-review-entry-score">{{ p.reviews?.length ? `★ ${reviewAvg}` : '暂无评分' }}</span>
-          <span class="pd-review-entry-count">{{ (p.reviews?.length || 0) }} 条评价</span>
-          <span class="pd-review-entry-go">查看 ›</span>
+          <span class="pd-review-entry-score">{{ p.reviews?.length ? `★ ${reviewAvg}` : $t('暂无评分') }}</span>
+          <span class="pd-review-entry-count">{{ (p.reviews?.length || 0) }} {{ $t('条评价') }}</span>
+          <span class="pd-review-entry-go">{{ $t('查看 ›') }}</span>
         </button>
 
         <!-- 自定义控件（下单收集） -->
         <OrderFields :controls="p.controls || []" v-model="controlAnswers" />
-        <p v-if="reusableDelivery" class="muted">此规格每次购买一份即可。</p>
-        <p v-if="manualDelivery" class="muted">人工处理：付款后请在订单详情查看处理进度与交付结果。</p>
+        <p v-if="reusableDelivery" class="muted">{{ $t('此规格每次购买一份即可。') }}</p>
+        <p v-if="manualDelivery" class="muted">{{ $t('人工处理：付款后请在订单详情查看处理进度与交付结果。') }}</p>
 
         <div class="pd-field">
-          <label class="pd-label">查询密码（取货用，至少 4 位）<span v-if="trade.queryPasswordRequired" class="pd-req">*</span></label>
-          <input v-model="queryPassword" type="text" class="pd-input" placeholder="用于取货验证（忘记将无法取货）" />
+          <label class="pd-label">{{ $t('查询密码（取货用，至少 4 位）') }}<span v-if="trade.queryPasswordRequired" class="pd-req">*</span></label>
+          <input v-model="queryPassword" type="text" class="pd-input" :placeholder="$t('用于取货验证（忘记将无法取货）')" />
         </div>
         <div v-if="isGuest || trade.contactScope === 'all'" class="pd-field">
-          <label class="pd-label">联系方式 {{ trade.contactRequired !== 'none' ? ' *' : '（选填）' }}</label>
-          <input v-model="contact" type="text" class="pd-input" :placeholder="`用于订单查询与售后（${contactRequiredLabel(trade.contactRequired)}）`" />
+          <label class="pd-label">{{ $t('联系方式') }} {{ trade.contactRequired !== 'none' ? ' *' : $t('（选填）') }}</label>
+          <input v-model="contact" type="text" class="pd-input" :placeholder="$t('用于订单查询与售后（{0}）', [contactRequiredLabel(trade.contactRequired)])" />
         </div>
         <div v-if="isGuest && captchaCfg.order" class="pd-field">
-          <label class="pd-label">图形验证码 <span class="pd-req">*</span></label>
+          <label class="pd-label">{{ $t('图形验证码') }} <span class="pd-req">*</span></label>
           <CaptchaInput ref="captchaRef" @update:code="captchaCode = $event" @update:captcha-id="captchaId = $event" />
         </div>
         <div class="pd-field">
-          <label class="pd-label">优惠券码（选填）</label>
-          <input v-if="!smsProduct" v-model="couponCode" type="text" class="pd-input" placeholder="输入优惠券码" />
+          <label class="pd-label">{{ $t('优惠券码（选填）') }}</label>
+          <input v-if="!smsProduct" v-model="couponCode" type="text" class="pd-input" :placeholder="$t('输入优惠券码')" />
         </div>
 
-        <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
+        <div v-if="error" class="error" style="margin-bottom: 12px;">{{ uiText(error) }}</div>
 
         <div v-if="stockUnknown" class="pd-stock-notice" role="status">
           <div>
-            <strong>暂时无法确认库存</strong>
-            <p>{{ stockRefreshMessage || '尚未获取到有效库存，这不代表已售罄。请稍后重新查询，或联系客服确认。' }}</p>
+            <strong>{{ $t('暂时无法确认库存') }}</strong>
+            <p>{{ stockRefreshMessage || $t('尚未获取到有效库存，这不代表已售罄。请稍后重新查询，或联系客服确认。') }}</p>
           </div>
           <button type="button" :disabled="stockRefreshing || stockRetrySeconds > 0" :aria-busy="stockRefreshing" @click="refreshStock">
-            {{ stockRefreshing ? '查询中…' : stockRetrySeconds > 0 ? `${stockRetrySeconds} 秒后重试` : '重新查询库存' }}
+            {{ stockRefreshing ? $t('查询中…') : stockRetrySeconds > 0 ? $t('{0} 秒后重试', [stockRetrySeconds]) : $t('重新查询库存') }}
           </button>
         </div>
 
         <!-- 缺货和未知库存禁购；不限库存仍由后端按货源验证。 -->
-        <p v-if="smsProduct" class="muted">单次短信接码，仅限会员余额单件购买。付款后在本站订单页查看号码与短信；取消须经供货确认后退款。{{p.sms_sales_enabled ? '' : '接码新购暂未开放。'}}</p>
+        <p v-if="smsProduct" class="muted">{{ $t('单次短信接码，仅限会员余额单件购买。付款后在本站订单页查看号码与短信；取消须经供货确认后退款。') }}{{p.sms_sales_enabled ? '' : $t('接码新购暂未开放。')}}</p>
         <div class="pd-actions">
           <button class="pd-btn-buy" :disabled="submitting || soldOut || stockUnknown || flashSoldOut || (smsProduct && !p.sms_sales_enabled)" @click="buy">
-            {{ submitting ? '提交中…' : stockUnknown ? '库存待确认' : soldOut ? '暂时缺货' : '立即购买' }}
+            {{ submitting ? $t('提交中…') : stockUnknown ? $t('库存待确认') : soldOut ? $t('暂时缺货') : $t('立即购买') }}
           </button>
           <button
             v-if="canCart"
             class="pd-btn-cart"
             :class="{ 'is-in': inCartNow }"
             :disabled="submitting || cartBusy || soldOut || stockUnknown || flashSoldOut"
-            :title="inCartNow ? '从购物车移除' : '加入购物车'"
+            :title="inCartNow ? $t('从购物车移除') : $t('加入购物车')"
             @click="inCartNow ? removeFromCart() : addToCart()"
           >
-            <template v-if="cartBusy">{{ addingCart ? '加入中…' : '处理中…' }}</template>
-            <template v-else-if="inCartNow"><ThemeIcon name="trash" />移除购物车</template>
-            <template v-else><ThemeIcon name="cart" />加入购物车</template>
+            <template v-if="cartBusy">{{ addingCart ? $t('加入中…') : $t('处理中…') }}</template>
+            <template v-else-if="inCartNow"><ThemeIcon name="trash" />{{ $t('移除购物车') }}</template>
+            <template v-else><ThemeIcon name="cart" />{{ $t('加入购物车') }}</template>
           </button>
           <button v-if="!smsProduct && p.points_required && p.points_required > 0" class="pd-btn-points" :disabled="submitting || soldOut || stockUnknown || flashSoldOut" @click="exchangePoints">
-            {{ stockUnknown ? '库存待确认' : soldOut ? '已兑完' : `积分兑换（${p.points_required} 分）` }}
+            {{ stockUnknown ? $t('库存待确认') : soldOut ? $t('已兑完') : $t('积分兑换（{0} 分）', [p.points_required]) }}
           </button>
         </div>
       </div>
@@ -152,38 +152,40 @@
 
     <!-- 描述区 -->
     <div v-if="p.description && p.product_kind !== 'sms_channel'" class="pd-section pd-details">
-      <h3 class="pd-section-title">商品详情</h3>
+      <h3 class="pd-section-title">{{ $t('商品详情') }}</h3>
       <div ref="description" class="pd-desc" @click="openDescriptionImage" @keydown="descriptionKeydown" v-html="p.description"></div>
     </div>
 
     <!-- 评价区（template.show_reviews 开关控制；默认展示 3 条可展开） -->
     <div v-if="showReviews" id="pd-reviews" class="pd-section">
-      <h3 class="pd-section-title">用户评价（{{ (p.reviews?.length || 0) }}）</h3>
-      <p v-if="!p.reviews?.length" class="muted">暂无评价，欢迎购买后分享使用体验。</p>
-      <p class="muted"><router-link to="/member?tab=orders">前往我的订单评价</router-link> · 发货完成后可提交，审核通过后展示。</p>
+      <h3 class="pd-section-title">{{ $t('用户评价（{0}）', [p.reviews?.length || 0]) }}</h3>
+      <p v-if="!p.reviews?.length" class="muted">{{ $t('暂无评价，欢迎购买后分享使用体验。') }}</p>
+      <p class="muted"><router-link to="/member?tab=orders">{{ $t('前往我的订单评价') }}</router-link> {{ $t('· 发货完成后可提交，审核通过后展示。') }}</p>
       <div v-for="r in visibleReviews" :key="`${r.is_virtual}-${r.id}`" class="pd-review">
-        <span class="pd-avatar">{{ (r.nickname || '匿')[0] }}</span>
+        <span class="pd-avatar">{{ (r.nickname || $t('匿'))[0] }}</span>
         <div class="pd-review-body">
           <div class="pd-review-head">
-            <b>{{ r.nickname || '匿名用户' }}</b>
+            <b>{{ r.nickname || $t('匿名用户') }}</b>
             <span class="pd-stars">{{ '★'.repeat(Math.min(5, r.rating)) }}</span>
           </div>
           <div class="pd-review-content">{{ r.content }}</div>
         </div>
       </div>
       <button v-if="(p.reviews?.length || 0) > reviewCollapsed" class="pd-review-more" @click="reviewsExpanded = !reviewsExpanded">
-        {{ reviewsExpanded ? '收起评价 ↑' : `查看全部 ${(p.reviews?.length || 0)} 条评价 ↓` }}
+        {{ reviewsExpanded ? $t('收起评价 ↑') : $t('查看全部 {0} 条评价 ↓', [(p.reviews?.length || 0)]) }}
       </button>
     </div>
 
     <ImageViewer v-if="previewImages.length" :images="previewImages" :initial-index="previewIndex" @close="previewImages = []" />
   </div>
-  <div v-else-if="error" class="error">{{ error }}</div>
-  <div v-else class="muted" style="text-align: center; padding: 40px;">加载中…</div>
+  <div v-else-if="error" class="error">{{ uiText(error) }}</div>
+  <div v-else class="muted" style="text-align: center; padding: 40px;">{{ $t('加载中…') }}</div>
  <ShippingCheckout ref="shippingCheckout" />
 </template>
 
 <script setup lang="ts">
+import { uiText, t as $t, localeTag, locale } from '@/i18n';
+
 import ShippingCheckout from "@/components/ShippingCheckout.vue";
 const shippingCheckout=ref<InstanceType<typeof ShippingCheckout>>();
 import { loadPublicConfig } from '@/config';
@@ -195,7 +197,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import SMSProduct from '@/components/SMSProduct.vue';
 import { getProduct, createOrder, rememberOrderPassword, fetchTradeConfig, contactRequiredLabel, contactValid, type Product, type TradeConfig } from '@/api';
-import { formatMoney, getToken } from '@/api/client';
+import { formatMoney, getToken, getBaseCurrency, initCurrency } from '@/api/client';
 import { NO_IMAGE, onImgError } from '@/no-image';
 import { authState } from '@/auth';
 import { addToCart as addToCartStore, removeCartItem, cartItemOf, cartEnabled } from '@/cart';
@@ -241,7 +243,7 @@ function openDescriptionImage(event: Event) {
   event.preventDefault(); // 图片包在链接内时，预览优先，避免跳离教程。
   event.target.focus({ preventScroll: true });
   previewIndex.value = index;
-  previewImages.value = images.map(img => ({ src: img.currentSrc || img.src, alt: img.alt || p.value?.name || '商品详情图片' }));
+  previewImages.value = images.map(img => ({ src: img.currentSrc || img.src, alt: img.alt || p.value?.name || $t("商品详情图片") }));
 }
 function descriptionKeydown(event: KeyboardEvent) {
   if (event.key === 'Enter' || event.key === ' ') openDescriptionImage(event);
@@ -250,7 +252,7 @@ watch([description, () => p.value?.description], () => {
   description.value?.querySelectorAll('img').forEach(img => {
     img.tabIndex = 0;
     img.setAttribute('role', 'button');
-    img.setAttribute('aria-label', `放大查看${img.alt || '商品详情图片'}`);
+    img.setAttribute('aria-label', $t("放大查看{0}", [img.alt || $t('商品详情图片')]));
   });
 }, { flush: 'post' });
 watch(() => route.params, () => { previewImages.value = []; });
@@ -281,8 +283,8 @@ const displayPrice = computed(() => flash.price(basePrice.value, selectedFlash.v
 const stockDisplay = computed(() => {
   if (!p.value) return '-';
   const s = effectiveStock.value;
-  if (s < -1) return p.value.stock_status === 'stale' && (p.value.stock_reference ?? -2) >= -1 ? `上次：${p.value.stock_reference === -1 ? '不限' : p.value.stock_reference}（待确认）` : '待确认';
-  if (s === -1) return '不限';
+  if (s < -1) return p.value.stock_status === 'stale' && (p.value.stock_reference ?? -2) >= -1 ? $t("上次：{0}（待确认）", [p.value.stock_reference === -1 ? $t('不限') : p.value.stock_reference]) : $t("待确认");
+  if (s === -1) return $t("不限");
   return String(s);
 });
 // 自营/对接均使用各自库存；proto3 省略零值时仍按缺货处理。
@@ -317,7 +319,7 @@ async function refreshStock() {
       p.value.stock_checked_at = fresh.data.stock_checked_at;
     }
     if (fresh.error || stockUnknown.value) {
-      stockRefreshMessage.value = '仍未获取到有效库存，请稍后重试，或联系客服确认。';
+      stockRefreshMessage.value = $t("仍未获取到有效库存，请稍后重试，或联系客服确认。");
       startStockCooldown();
     }
   } finally {
@@ -381,7 +383,7 @@ async function removeFromCart() {
 }
 
 function stockTypeLabel(t: string) {
-  return ({ card: '卡密', url: '链接', code: '兑换码' } as Record<string, string>)[t] || t;
+  return ({ get card() { return $t("卡密"); }, get url() { return $t("链接"); }, get code() { return $t("兑换码"); } } as Record<string, string>)[t] || t;
 }
 
 // 手机端吸底操作栏点击后，表单校验失败要能看到错误提示：滚动到购买卡内的 error
@@ -439,7 +441,9 @@ onMounted(async () => {
 });
 
 /** 商品页 SEO：title/description/keywords/canonical/og + Product/Breadcrumb JSON-LD */
+watch(locale, () => { if (p.value) void applyProductSeo(p.value); });
 async function applyProductSeo(product: Product) {
+  await initCurrency();
   const site = await fetchSiteSeo();
   const base = site.url || (typeof window !== "undefined" ? window.location.origin : "");
   const desc = truncate(stripHtml(product.description || ''));
@@ -464,7 +468,7 @@ async function applyProductSeo(product: Product) {
                 offers: {
                   '@type': 'Offer',
                   price: (product.price_cents / 100).toFixed(2),
-                  priceCurrency: 'CNY',
+                  priceCurrency: getBaseCurrency().code,
                   availability: 'https://schema.org/InStock',
                 },
               }
@@ -475,7 +479,7 @@ async function applyProductSeo(product: Product) {
           '@type': 'BreadcrumbList',
           itemListElement: [
             { '@type': 'ListItem', position: 1, name: site.name, item: base + '/' },
-            { '@type': 'ListItem', position: 2, name: '全部商品', item: base + '/products' },
+            { '@type': 'ListItem', position: 2, get name() { return $t("全部商品"); }, item: base + '/products' },
             { '@type': 'ListItem', position: 3, name: product.name, item: `${base}/product/${product.id}` },
           ],
         },
@@ -488,16 +492,16 @@ async function applyProductSeo(product: Product) {
 /** 下单前校验（与后端 validateTradeRequirements 同口径） */
 function validateTradeFields(requireContact = true): boolean {
   if ((trade.value.queryPasswordRequired || (isGuest.value && p.value?.goods_type==='physical')) && queryPassword.value.trim().length < 4) {
-    error.value = '请设置查询密码（至少 4 位，取货时使用）';
+    error.value = $t("请设置查询密码（至少 4 位，取货时使用）");
     return false;
   }
   if (requireContact && (isGuest.value || trade.value.contactScope === 'all') && trade.value.contactRequired !== 'none') {
     if (!contact.value.trim()) {
-      error.value = `请填写联系方式（${contactRequiredLabel(trade.value.contactRequired)}），用于订单查询与售后`;
+      error.value = $t("请填写联系方式（{0}），用于订单查询与售后", [contactRequiredLabel(trade.value.contactRequired)]);
       return false;
     }
     if (!contactValid(contact.value, trade.value.contactRequired)) {
-      error.value = `联系方式格式不符（需要${contactRequiredLabel(trade.value.contactRequired)}）`;
+      error.value = $t("联系方式格式不符（需要{0}）", [contactRequiredLabel(trade.value.contactRequired)]);
       return false;
     }
   }
@@ -511,7 +515,7 @@ async function buy() {
   // 必填控件校验（proto3 空数组省略 → undefined 兜底空数组）
   for (const c of p.value.controls || []) {
     if (c.required && !controlAnswers.value[String(c.id)]?.trim()) {
-      error.value = `请填写「${c.name}」`;
+      error.value = $t("请填写「{0}」", [c.name]);
       scrollToFormError();
       return;
     }
@@ -546,10 +550,10 @@ async function exchangePoints() {
   }
   if (!validateTradeFields(false)) return;
   if (!queryPassword.value || queryPassword.value.length < 4) {
-    error.value = '积分兑换同样需要设置查询密码（取货用，至少 4 位）';
+    error.value = $t("积分兑换同样需要设置查询密码（取货用，至少 4 位）");
     return;
   }
-  if (!confirm(`确认用 ${p.value.points_required} 积分兑换本商品？`)) return;
+  if (!confirm($t("确认用 {0} 积分兑换本商品？", [p.value.points_required]))) return;
   submitting.value = true;
   error.value = '';
   const { data, error: err } = await createOrder({
@@ -559,7 +563,7 @@ async function exchangePoints() {
   });
   submitting.value = false;
   if (err) { error.value = err; return; }
-  alert('兑换成功，订单已支付，请前往取货页领取');
+  alert($t("兑换成功，订单已支付，请前往取货页领取"));
   router.push('/fetch');
 }
 </script>

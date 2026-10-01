@@ -10,7 +10,9 @@
     "build": "vite-ssg build",
     "build:theme": "vite build --base=./ --outDir=dist-theme",
     "preview": "vite preview",
-    "type-check": "vue-tsc --noEmit"
+    "type-check": "vue-tsc --noEmit",
+    "test:i18n": "node scripts/test-i18n.cjs",
+    "test:i18n-browser": "node scripts/test-i18n-browser.cjs"
   },
   "dependencies": {
     "@unhead/vue": "^2.1.17",

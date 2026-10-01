@@ -45,6 +45,8 @@ const server = http.createServer(async (req,res) => {
    page.on('pageerror',e=>errors.push(e.message));
    await page.goto(`http://127.0.0.1:${server.address().port}/payment/checkout-test?pwd=test-password`);
    const submit=page.locator('.pay-submit');await submit.waitFor();
+   // Choose the no-fee method explicitly; the default is the first available option.
+   await page.locator('.pay-channel').filter({hasText:'USDT · TRC20'}).click();
    await page.waitForFunction(()=>document.querySelector('.pay-submit')?.textContent.includes('100.00')&&!document.querySelector('.pay-submit').disabled);
    assert.equal(await page.locator('.pay-recommend').textContent(),'推荐使用');
    const alipay=page.locator('.pay-channel').filter({hasText:'支付宝'}),wx=page.locator('.pay-channel').filter({hasText:'微信支付'});

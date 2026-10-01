@@ -5,6 +5,7 @@ package seo
 import (
 	"context"
 	"encoding/json"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/i18n"
 	htmlnode "golang.org/x/net/html"
 	"html/template"
 	"net/url"
@@ -24,6 +25,33 @@ type siteInfo struct {
 	SeoKeywords  string
 	VerifyGoogle string
 	VerifyBing   string
+	Locale       i18n.Locale
+}
+
+func (s siteInfo) HTMLLanguage() string { return i18n.HTMLLanguage(s.Locale) }
+
+func (s siteInfo) text(chinese, english string) string {
+	if s.Locale == i18n.En {
+		return english
+	}
+	return chinese
+}
+
+func (s siteInfo) translate(value string) string {
+	if s.Locale != i18n.En {
+		return value
+	}
+	if translated := map[string]string{
+		"幸运抽奖": "Lucky Draw", "个人中心": "My Account", "订单详情": "Order Details",
+		"订单支付": "Payment", "订单查询": "Find Order", "售后工单": "Support Tickets",
+		"申请提现": "Withdraw", "推广中心": "Affiliates", "购物车": "Cart", "优惠券": "Coupons",
+		"安装向导": "Setup", "登录": "Sign In", "注册": "Sign Up", "找回密码": "Reset Password",
+		"我的奖品": "My Prizes", "全部商品": "All Products", "文章公告": "News & Guides",
+		"积分商城": "Points Store", "页面不存在": "Page Not Found", "页面暂时无法加载": "Page Temporarily Unavailable",
+	}[value]; translated != "" {
+		return translated
+	}
+	return value
 }
 
 // base 站点 URL 基准（site.url 优先，空则 https://请求 Host）。
@@ -45,7 +73,7 @@ func (s *SeoService) loadSite(ctx context.Context) siteInfo {
 			return ""
 		}
 		group := "site"
-		if key == "base_currency" {
+		if key == "base_currency" || key == "default_locale" {
 			group = "i18n"
 		}
 		raw, err := s.cfg.GetDefault(ctx, group, key, nil)
@@ -58,8 +86,14 @@ func (s *SeoService) loadSite(ctx context.Context) siteInfo {
 		}
 		return ""
 	}
-	return siteInfo{
-		Name:         orDefaultStr(str("name"), "ZCard 商店"),
+	enabled := []string{"zh_CN"}
+	if s.cfg != nil {
+		if raw, err := s.cfg.GetDefault(ctx, "i18n", "enabled_locales", nil); err == nil && len(raw) != 0 {
+			_ = json.Unmarshal(raw, &enabled)
+		}
+	}
+	site := siteInfo{
+		Name:         str("name"),
 		SeoTitle:     str("seo_title"),
 		SeoDesc:      str("seo_desc"),
 		Currency:     orDefaultStr(str("base_currency"), "CNY"),
@@ -68,7 +102,10 @@ func (s *SeoService) loadSite(ctx context.Context) siteInfo {
 		SeoKeywords:  str("seo_keywords"),
 		VerifyGoogle: str("verification_google"),
 		VerifyBing:   str("verification_bing"),
+		Locale:       i18n.NewPolicy(str("default_locale"), enabled).Default,
 	}
+	site.Name = orDefaultStr(site.Name, site.text("ZCard 商店", "ZCard Store"))
+	return site
 }
 
 // ── 纯文本工具（与前端 stripHtml/truncate 同口径）──────────
@@ -135,7 +172,7 @@ type seoPageData struct {
 }
 
 var pageTmpl = template.Must(template.New("page").Parse(`<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="{{.Site.HTMLLanguage}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -260,12 +297,12 @@ func productPageData(site siteInfo, host string, p *ProductSEO) seoPageData {
 				"@context": "https://schema.org", "@type": "BreadcrumbList",
 				"itemListElement": []any{
 					map[string]any{"@type": "ListItem", "position": 1, "name": siteName, "item": base + "/"},
-					map[string]any{"@type": "ListItem", "position": 2, "name": "全部商品", "item": base + "/products"},
+					map[string]any{"@type": "ListItem", "position": 2, "name": site.translate("全部商品"), "item": base + "/products"},
 					map[string]any{"@type": "ListItem", "position": 3, "name": p.Name, "item": canonical},
 				},
 			},
 		}),
-		Crumbs: []crumb{{Name: siteName, URL: base + "/"}, {Name: "全部商品", URL: base + "/products"}, {Name: p.Name}},
+		Crumbs: []crumb{{Name: siteName, URL: base + "/"}, {Name: site.translate("全部商品"), URL: base + "/products"}, {Name: p.Name}},
 		Body:   template.HTML(body),
 	}
 }
@@ -319,12 +356,12 @@ func postPageData(site siteInfo, host string, p *PostSEO) seoPageData {
 				"@context": "https://schema.org", "@type": "BreadcrumbList",
 				"itemListElement": []any{
 					map[string]any{"@type": "ListItem", "position": 1, "name": siteName, "item": base + "/"},
-					map[string]any{"@type": "ListItem", "position": 2, "name": "文章公告", "item": base + "/posts"},
+					map[string]any{"@type": "ListItem", "position": 2, "name": site.translate("文章公告"), "item": base + "/posts"},
 					map[string]any{"@type": "ListItem", "position": 3, "name": p.Title, "item": canonical},
 				},
 			},
 		}),
-		Crumbs: []crumb{{Name: siteName, URL: base + "/"}, {Name: "文章公告", URL: base + "/posts"}, {Name: p.Title}},
+		Crumbs: []crumb{{Name: siteName, URL: base + "/"}, {Name: site.translate("文章公告"), URL: base + "/posts"}, {Name: p.Title}},
 		Body:   template.HTML(body),
 	}
 }

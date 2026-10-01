@@ -512,7 +512,7 @@ const local: App.I18n.Schema = {
     i18n: {
       default_locale: "Default Locale",
       enabled_locales: "Enabled Locales",
-      base_currency: "Base Currency",
+      base_currency: "Base / Settlement Currency",
     },
   },
   procurement: {

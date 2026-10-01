@@ -21,6 +21,46 @@ const showPost = ref(false);
 const postSaving = ref(false);
 const postForm = ref({ slug: "", type: "notice", title: "", summary: "", content: "", category_id: 0, is_published: true, sort: 0 });
 const editingPost = ref<any>(null);
+const postLocale = ref<"zh_CN" | "en">("zh_CN");
+let postTranslations = { title: {} as Record<string, string>, summary: {} as Record<string, string>, content: {} as Record<string, string> };
+
+function languageValues(json: string): Record<string, string> {
+  if (!json || json === "-") return {};
+  try {
+    const value = JSON.parse(json);
+    if (value && typeof value === "object" && !Array.isArray(value)) return value;
+  } catch {}
+  return { zh_CN: json };
+}
+
+function isLanguageKey(key: string, locale: "zh_CN" | "en") {
+  const tag = key.toLowerCase().replaceAll("_", "-");
+  return locale === "en" ? tag === "en" || tag.startsWith("en-") : ["zh", "zh-cn", "zh-hans", "zh-hans-cn"].includes(tag);
+}
+
+function translationValue(values: Record<string, string>, locale: "zh_CN" | "en") {
+  if (values[locale]) return values[locale];
+  const alias = Object.keys(values).sort().find((key) => isLanguageKey(key, locale) && values[key]);
+  return alias ? values[alias] : "";
+}
+
+function saveLanguageDraft() {
+  for (const field of ["title", "summary", "content"] as const) {
+    for (const key of Object.keys(postTranslations[field])) {
+      if (isLanguageKey(key, postLocale.value) && key !== postLocale.value) delete postTranslations[field][key];
+    }
+    postTranslations[field][postLocale.value] = postForm.value[field];
+  }
+}
+
+function selectPostLocale(locale: "zh_CN" | "en") {
+  saveLanguageDraft();
+  postLocale.value = locale;
+  for (const field of ["title", "summary", "content"] as const) {
+    const values = postTranslations[field];
+    postForm.value[field] = translationValue(values, locale);
+  }
+}
 
 // 筛选：发布状态（带计数）+ 栏目（下拉，全部栏目=空）
 const postFilter = ref<"" | "published" | "draft">("");
@@ -48,7 +88,7 @@ function zhValue(json: string): string {
   if (!json || json === "-") return "-";
   try {
     const v = JSON.parse(json);
-    return typeof v === "object" && v ? v.zh_CN || v.en_US || Object.values(v)[0] || "-" : String(v);
+    return typeof v === "object" && v ? v.zh_CN || v.en || v.en_US || Object.values(v)[0] || "-" : String(v);
   } catch {
     return json;
   }
@@ -140,18 +180,22 @@ async function loadCategories() {
 
 function openCreatePost() {
   editingPost.value = null;
+  postLocale.value = "zh_CN";
+  postTranslations = { title: {}, summary: {}, content: {} };
   postForm.value = { slug: "", type: "notice", title: "", summary: "", content: "", category_id: categoryFilter.value || 0, is_published: true, sort: 0 };
   showPost.value = true;
 }
 
 function openEditPost(row: any) {
   editingPost.value = row;
+  postTranslations = { title: languageValues(row.title_json), summary: languageValues(row.summary_json), content: languageValues(row.content_json) };
+  postLocale.value = translationValue(postTranslations.title, "zh_CN") ? "zh_CN" : "en";
   postForm.value = {
     slug: row.slug,
     type: row.type,
-    title: String(zhValue(row.title_json) === "-" ? "" : zhValue(row.title_json)),
-    summary: String(zhValue(row.summary_json) === "-" ? "" : zhValue(row.summary_json)),
-    content: String(zhValue(row.content_json) === "-" ? "" : zhValue(row.content_json)),
+    title: translationValue(postTranslations.title, postLocale.value),
+    summary: translationValue(postTranslations.summary, postLocale.value),
+    content: translationValue(postTranslations.content, postLocale.value),
     category_id: row.category_id || 0,
     is_published: row.is_published,
     sort: row.sort ?? 0,
@@ -160,14 +204,18 @@ function openEditPost(row: any) {
 }
 
 async function handlePost() {
-  if (!postForm.value.slug || !postForm.value.title || !postForm.value.content) return;
+  saveLanguageDraft();
+  if (!postForm.value.slug || !(["zh_CN", "en"] as const).some((locale) => translationValue(postTranslations.title, locale).trim() && translationValue(postTranslations.content, locale).trim())) {
+    window.$message?.warning("请填写 slug，并至少完整填写一种语言的标题和正文");
+    return;
+  }
   postSaving.value = true;
   try {
     if (editingPost.value) {
       const { error } = await updatePost(editingPost.value.id, {
-        title_json: JSON.stringify({ zh_CN: postForm.value.title }),
-        summary_json: postForm.value.summary ? JSON.stringify({ zh_CN: postForm.value.summary }) : undefined,
-        content_json: JSON.stringify({ zh_CN: postForm.value.content }),
+        title_json: JSON.stringify(postTranslations.title),
+        summary_json: JSON.stringify(postTranslations.summary),
+        content_json: JSON.stringify(postTranslations.content),
         category_id: postForm.value.category_id || undefined,
         sort: postForm.value.sort ?? 0,
       });
@@ -180,9 +228,9 @@ async function handlePost() {
       const { error } = await createPost({
         slug: postForm.value.slug,
         type: postForm.value.type,
-        title_json: JSON.stringify({ zh_CN: postForm.value.title }),
-        summary_json: postForm.value.summary ? JSON.stringify({ zh_CN: postForm.value.summary }) : undefined,
-        content_json: JSON.stringify({ zh_CN: postForm.value.content }),
+        title_json: JSON.stringify(postTranslations.title),
+        summary_json: JSON.stringify(postTranslations.summary),
+        content_json: JSON.stringify(postTranslations.content),
         category_id: postForm.value.category_id || undefined,
         is_published: postForm.value.is_published,
         sort: postForm.value.sort ?? 0,
@@ -363,6 +411,9 @@ onMounted(() => {
       display-directive="show"
     >
       <NForm :model="postForm" label-placement="left" label-width="72">
+        <NFormItem label="内容语言">
+          <NSelect :value="postLocale" :options="[{ label: '简体中文', value: 'zh_CN' }, { label: 'English', value: 'en' }]" @update:value="selectPostLocale" />
+        </NFormItem>
         <NFormItem label="slug" required>
           <NInput v-model:value="postForm.slug" placeholder="如 notice-0818" :disabled="!!editingPost" />
         </NFormItem>

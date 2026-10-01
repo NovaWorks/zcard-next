@@ -10,6 +10,7 @@ import (
 	"time"
 
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/i18n"
 	kerrors "github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -64,7 +65,7 @@ func basicPage(site siteInfo, host, path, title string) seoPageData {
 	base := site.base(host)
 	d := seoPageData{Site: site, Base: base, Canonical: base + path, OGType: "website", OGImage: absoluteURL(site.Logo, base),
 		Keywords: strings.Join(nonEmpty(site.SeoKeywords, site.Name), ","), Robots: "index,follow",
-		Description: truncateStr(stripTags(orDefaultStr(site.SeoDesc, site.Name+"数字商品商店。浏览商品、查看使用说明与交付信息。")), 150),
+		Description: truncateStr(stripTags(orDefaultStr(site.SeoDesc, site.Name+site.text("数字商品商店。浏览商品、查看使用说明与交付信息。", " digital goods store. Browse products, guides, and delivery details."))), 150),
 	}
 	d.Title = title + " - " + site.Name
 	if title == "" {
@@ -86,7 +87,7 @@ func basicPage(site siteInfo, host, path, title string) seoPageData {
 }
 
 func noindexPage(site siteInfo, host, path, title string) seoPageData {
-	d := basicPage(site, host, path, title)
+	d := basicPage(site, host, path, site.translate(title))
 	d.Robots = "noindex,nofollow"
 	d.JSONLD = ""
 	return d
@@ -95,6 +96,7 @@ func noindexPage(site siteInfo, host, path, title string) seoPageData {
 // pageData covers theme business routes, never API/assets. Unknown pages are real 404s.
 func (s *SeoService) pageData(r *http.Request) (seoPageData, int, error) {
 	site := s.loadSite(r.Context())
+	r = r.WithContext(i18n.WithLocale(r.Context(), site.Locale))
 	path := strings.TrimRight(r.URL.Path, "/")
 	if path == "" || path == "/index.html" {
 		path = "/"
@@ -161,7 +163,7 @@ func (s *SeoService) pageData(r *http.Request) (seoPageData, int, error) {
 			}
 		}
 	}
-	d := basicPage(site, r.Host, path, title)
+	d := basicPage(site, r.Host, path, site.translate(title))
 	if q.Get("keyword") != "" {
 		d.Robots = "noindex,nofollow"
 		d.JSONLD = ""
@@ -191,7 +193,7 @@ func (s *SeoService) listBody(r *http.Request, path string, site siteInfo) (stri
 	size := positiveInt(q.Get("page_size"), 20, 60)
 	base := site.base(r.Host)
 	var body strings.Builder
-	body.WriteString(`<nav><a href="` + base + `/products">全部商品</a> · <a href="` + base + `/posts">文章公告</a> · <a href="` + base + `/points">积分商城</a></nav><ul>`)
+	body.WriteString(`<nav><a href="` + base + `/products">` + site.translate("全部商品") + `</a> · <a href="` + base + `/posts">` + site.translate("文章公告") + `</a> · <a href="` + base + `/points">` + site.translate("积分商城") + `</a></nav><ul>`)
 	var total int64
 	if path == "/posts" {
 		category, _ := strconv.ParseUint(q.Get("category_id"), 10, 64)
@@ -213,7 +215,7 @@ func (s *SeoService) listBody(r *http.Request, path string, site siteInfo) (stri
 		for _, p := range rows.Items {
 			price := orDefaultStr(site.Currency, "CNY") + " " + priceYuan(storefrontProductSEO(p, time.Now().Unix()).PriceCents)
 			if path == "/points" {
-				price = strconv.FormatInt(p.PointsRequired, 10) + " 积分"
+				price = strconv.FormatInt(p.PointsRequired, 10) + site.text(" 积分", " points")
 			}
 			body.WriteString(`<li><a href="` + base + "/product/" + u64str(p.Id) + `">` + template.HTMLEscapeString(p.Name) + `</a> ` + template.HTMLEscapeString(price) + `</li>`)
 		}
@@ -221,7 +223,7 @@ func (s *SeoService) listBody(r *http.Request, path string, site siteInfo) (stri
 	body.WriteString("</ul>")
 	if int64(page*size) < total {
 		q.Set("page", strconv.Itoa(page+1))
-		body.WriteString(`<a href="` + template.HTMLEscapeString(path+"?"+q.Encode()) + `">下一页</a>`)
+		body.WriteString(`<a href="` + template.HTMLEscapeString(path+"?"+q.Encode()) + `">` + site.text("下一页", "Next Page") + `</a>`)
 	}
 	return body.String(), nil
 }

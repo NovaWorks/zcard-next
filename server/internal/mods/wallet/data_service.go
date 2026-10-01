@@ -52,6 +52,9 @@ func (s *StoreWalletService) GetBalance(ctx context.Context, _ *emptypb.Empty) (
 	}
 	avail, locked, err := s.repo.GetBalance(ctx, claims.Subject)
 	if err != nil {
+		if errors.FromError(err).Reason == "wallet.CURRENCY_MISMATCH" {
+			return nil, err
+		}
 		return nil, errors.InternalServer("wallet.BALANCE_FAILED", "查询余额失败")
 	}
 	points, _ := s.repo.GetPoints(ctx, claims.Subject)
@@ -77,6 +80,9 @@ func (s *StoreWalletService) ListTransactions(ctx context.Context, req *storefro
 	}
 	rows, total, err := s.repo.ListTransactions(ctx, claims.Subject, page, size)
 	if err != nil {
+		if errors.FromError(err).Reason == "wallet.CURRENCY_MISMATCH" {
+			return nil, err
+		}
 		return nil, errors.InternalServer("wallet.TX_FAILED", "查询流水失败")
 	}
 	references, err := s.repo.DisplayReferences(ctx, rows)
@@ -238,6 +244,9 @@ func NewAdminWalletService(repo *WalletRepoImpl, d *data.Data, giftcards *Giftca
 func (s *AdminWalletService) GetBalance(ctx context.Context, req *adminv1.GetBalanceRequest) (*adminv1.Balance, error) {
 	avail, locked, err := s.repo.GetBalance(ctx, req.GetUserId())
 	if err != nil {
+		if errors.FromError(err).Reason == "wallet.CURRENCY_MISMATCH" {
+			return nil, err
+		}
 		return nil, errors.InternalServer("wallet.BALANCE_FAILED", "查询失败")
 	}
 	return &adminv1.Balance{
@@ -333,6 +342,9 @@ func (s *AdminWalletService) ListTransactions(ctx context.Context, req *adminv1.
 	}
 	rows, total, err := s.repo.ListTransactions(ctx, req.GetUserId(), page, size)
 	if err != nil {
+		if errors.FromError(err).Reason == "wallet.CURRENCY_MISMATCH" {
+			return nil, err
+		}
 		return nil, errors.InternalServer("wallet.TX_FAILED", "查询流水失败")
 	}
 	// 全站流水（user_id=0）：批量回填归属用户名

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { t as $t } from '@/i18n';
+
 // 收银台支付方式网格（Payment.vue 订单支付 / Member.vue 余额充值 共用）：
 // 方式级选项卡片（自定义图标 → emoji 回落）：图标居左、名称+描述上下两行、
 // 勾选标右侧居中；列数按容器实际宽度自适应（充值右栏窄 → 整行列表，订单页宽 → 两列）。
@@ -39,7 +41,7 @@ defineEmits<{ select: [channel: string, method: string] }>();
     </div>
   </div>
   <div v-else class="pay-no-channel">
-    <slot name="empty">暂无可用的支付渠道，请联系客服</slot>
+    <slot name="empty">{{ $t('暂无可用的支付渠道，请联系客服') }}</slot>
   </div>
 </template>
 

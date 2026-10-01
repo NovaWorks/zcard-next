@@ -1,3 +1,4 @@
+import { t as $t } from '@/i18n';
 import { mergeThemeConfig } from '../../packages/theme-sdk/src/index';
 // Seed all modules before Vue mounts.
 import { publicConfig } from './config';
@@ -45,7 +46,7 @@ export async function includedRoutes(paths: string[], _routes: unknown[]) {
     const posts = await postResp.json();
     (posts?.posts || []).forEach((p: { slug: string }) => out.push(`/posts/${p.slug}`));
   } catch (e) {
-    console.warn('[ssg] 静态化数据拉取失败（跳过动态页）', e);
+    console.warn($t("[ssg] 静态化数据拉取失败（跳过动态页）"), e);
   }
   return out;
 }

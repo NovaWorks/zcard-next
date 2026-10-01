@@ -4,43 +4,41 @@
     <template v-if="!isInstall && shellReady">
     <!-- 顶部品牌条：主题自定义可独立关闭，不影响首页轮播。 -->
     <div v-if="brandBarEnabled" class="brand-bar">
-      <span class="brand-slogan">🎁 {{ siteName }} · 在线下单 按商品交付</span>
+      <span class="brand-slogan">🎁 {{ siteName }} {{ $t('· 在线下单 按商品交付') }}</span>
       <span class="brand-trust">
-        <span>✓ 安全支付</span>
-        <span>✓ 隐私保障</span>
-        <span>✓ 售后无忧</span>
+        <span>{{ $t('✓ 安全支付') }}</span>
+        <span>{{ $t('✓ 隐私保障') }}</span>
+        <span>{{ $t('✓ 售后无忧') }}</span>
       </span>
     </div>
 
     <!-- 维护模式：横幅样式（ops.maintenance_style=banner） -->
-    <div v-if="maintenance && maintenanceStyle === 'banner'" class="maint-banner">
-      🔧 站点维护中，下单与支付可能间歇性不可用，请稍后再试
-    </div>
+    <div v-if="maintenance && maintenanceStyle === 'banner'" class="maint-banner"> {{ $t('🔧 站点维护中，下单与支付可能间歇性不可用，请稍后再试') }} </div>
 
     <!-- 维护模式：弹窗样式（ops.maintenance_style=modal；ops.maintenance_modal_freq 控制频率
          every=每次进入都弹 / daily=24 小时内只弹一次，关闭后本次会话不再打扰） -->
     <div v-if="maintenance && maintenanceStyle === 'modal' && maintModalVisible" class="maint-overlay">
       <div class="maint-card">
         <div class="maint-icon">🔧</div>
-        <h2>站点维护中</h2>
-        <p>我们正在升级系统，下单与支付可能间歇性不可用。<br />给您带来不便敬请谅解，请稍后再试。</p>
-        <button class="maint-btn" @click="closeMaintModal">我知道了，继续浏览</button>
+        <h2>{{ $t('站点维护中') }}</h2>
+        <p>{{ $t('我们正在升级系统，下单与支付可能间歇性不可用。') }}<br />{{ $t('给您带来不便敬请谅解，请稍后再试。') }}</p>
+        <button class="maint-btn" @click="closeMaintModal">{{ $t('我知道了，继续浏览') }}</button>
       </div>
     </div>
 
     <!-- 主导航（sticky） -->
     <header class="topbar">
-      <router-link to="/" class="logo" :aria-busy="!brandReady" aria-label="店铺首页">
+      <router-link to="/" class="logo" :aria-busy="!brandReady" :aria-label="$t('店铺首页')">
         <img v-if="siteLogo" :src="siteLogo" alt="logo" class="logo-mark logo-img" />
         <span v-else-if="brandReady" class="logo-mark">ZC</span>
         <span v-else class="logo-mark brand-placeholder" aria-hidden="true"></span>
         <span class="logo-name" :class="{ 'brand-name-placeholder': !brandReady }" :title="siteName">{{ siteName }}</span>
       </router-link>
       <nav class="nav-links">
-        <router-link v-if="lotteryVisible" to="/lottery">幸运抽奖</router-link>
-        <router-link to="/" exact>首页</router-link>
-        <button class="nav-horn" @click="openNotice" title="系统公告"><ThemeIcon name="announcement" />公告</button>
-        <router-link to="/fetch">取货查询</router-link>
+        <router-link v-if="lotteryVisible" to="/lottery">{{ $t('幸运抽奖') }}</router-link>
+        <router-link to="/" exact>{{ $t('首页') }}</router-link>
+        <button class="nav-horn" @click="openNotice" :title="$t('系统公告')"><ThemeIcon name="announcement" />{{ $t('公告') }}</button>
+        <router-link to="/fetch">{{ $t('取货查询') }}</router-link>
         <!-- 顶部自定义按钮：外部链接新窗口；文章/公告站内路由（site.top_button {text,type,url|slug}） -->
         <router-link
           v-if="topButton && topButton.type !== 'link' && topButton.slug"
@@ -61,20 +59,21 @@
         </template>
       </nav>
       <div class="nav-right">
+        <LanguageSwitcher />
         <CurrencySwitcher />
-        <router-link v-if="cartEnabled" to="/cart" class="cart-link" title="查看购物车" aria-label="查看购物车">
+        <router-link v-if="cartEnabled" to="/cart" class="cart-link" :title="$t('查看购物车')" :aria-label="$t('查看购物车')">
           <ThemeIcon name="cart" class="cart-icon" />
-          <span class="cart-label">购物车</span>
+          <span class="cart-label">{{ $t('购物车') }}</span>
           <span v-if="cartCount > 0" :key="cartCount" class="cart-badge">{{ cartCount > 99 ? '99+' : cartCount }}</span>
         </router-link>
         <template v-if="authState.loggedIn">
-          <router-link to="/member" class="member-link" title="个人中心">👤 个人中心</router-link>
+          <router-link to="/member" class="member-link" :title="$t('个人中心')">{{ $t('👤 个人中心') }}</router-link>
           <router-link to="/member" class="user-link">{{ authState.username }}</router-link>
-          <button class="logout-btn" @click="onLogout">退出</button>
+          <button class="logout-btn" @click="onLogout">{{ $t('退出') }}</button>
         </template>
         <template v-else>
-          <router-link to="/login" class="login-link">登录</router-link>
-          <router-link to="/register" class="btn btn-primary">注册</router-link>
+          <router-link to="/login" class="login-link">{{ $t('登录') }}</router-link>
+          <router-link to="/register" class="btn btn-primary">{{ $t('注册') }}</router-link>
         </template>
       </div>
     </header>
@@ -86,16 +85,16 @@
         <!-- 保留目录浏览状态；会员页内切换复用表单，其余详情和支付页按导航重新创建。 -->
         <KeepAlive include="Home" :max="8">
           <Suspense>
-            <template #fallback><div class="store-loading" role="status">正在加载页面…</div></template>
+            <template #fallback><div class="store-loading" role="status">{{ $t('正在加载页面…') }}</div></template>
             <component :is="Component" :key="['/', '/member', '/posts'].includes(viewRoute.path) ? viewRoute.path : viewRoute.fullPath" />
           </Suspense>
         </KeepAlive>
       </router-view>
       <div v-if="!shellReady && !isInstall" class="store-loading" :role="shellError ? 'alert' : 'status'" :aria-busy="shellLoading">
-        <p>{{ shellError || '正在加载店铺…' }}</p>
-        <a v-if="!shellError" href="" class="muted">加载时间较长？重新加载</a>
-        <noscript>请启用 JavaScript 后重新加载店铺。</noscript>
-        <button v-if="shellError" class="btn btn-primary" :disabled="shellLoading" @click="refreshShell">重新加载</button>
+        <p>{{ shellError || $t('正在加载店铺…') }}</p>
+        <a v-if="!shellError" href="" class="muted">{{ $t('加载时间较长？重新加载') }}</a>
+        <noscript>{{ $t('请启用 JavaScript 后重新加载店铺。') }}</noscript>
+        <button v-if="shellError" class="btn btn-primary" :disabled="shellLoading" @click="refreshShell">{{ $t('重新加载') }}</button>
       </div>
     </main>
 
@@ -111,22 +110,22 @@
           <div class="trust-copy"><b>{{ item.title }}</b><span class="muted">{{ item.description }}</span></div>
         </div>
       </div>
-      <nav class="footer-mobile-actions" aria-label="常用服务">
+      <nav class="footer-mobile-actions" :aria-label="$t('常用服务')">
         <router-link to="/fetch">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4v10l-9 4-9-4Z"/><path d="m3 7 9 4 9-4M12 11v10M7.5 5l9 4"/></svg>
-          <span>订单取货</span>
+          <span>{{ $t('订单取货') }}</span>
         </router-link>
         <router-link to="/posts?type=blog">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6a3 3 0 0 1 3 3v14a4 4 0 0 0-4-2H4ZM20 4h-4a3 3 0 0 0-3 3v14a4 4 0 0 1 4-2h3Z"/></svg>
-          <span>使用帮助</span>
+          <span>{{ $t('使用帮助') }}</span>
         </router-link>
         <router-link to="/tickets">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13v-2a8 8 0 0 1 16 0v2M4 12H3v6h4v-6ZM20 12h1v6h-4v-6ZM19 18v1a2 2 0 0 1-2 2h-5"/></svg>
-          <span>售后工单</span>
+          <span>{{ $t('售后工单') }}</span>
         </router-link>
       </nav>
       <button class="footer-mobile-toggle" type="button" :aria-expanded="footerExpanded" aria-controls="footer-information" @click="footerExpanded = !footerExpanded">
-        <span>{{ footerExpanded ? '收起服务与店铺信息' : '更多服务与店铺信息' }}</span>
+        <span>{{ footerExpanded ? $t('收起服务与店铺信息') : $t('更多服务与店铺信息') }}</span>
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" :class="{ expanded: footerExpanded }" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg>
       </button>
       <div id="footer-information" class="footer-cols" :class="{ 'is-expanded': footerExpanded }">
@@ -136,52 +135,52 @@
             <span v-else-if="brandReady" class="logo-mark">ZC</span>
             <span v-else class="logo-mark brand-placeholder" aria-hidden="true"></span>
           </div>
-          <p class="muted">{{ footerAbout || '在线选购商品，查看虚拟交付结果或实体配送进度。' }}</p>
+          <p class="muted">{{ footerAbout || $t('在线选购商品，查看虚拟交付结果或实体配送进度。') }}</p>
           <!-- 社交链接（footer.social = [{icon,url}]，配置后显示） -->
           <div v-if="footerSocial.length" class="footer-social">
             <a v-for="(s, i) in footerSocial" :key="i" :href="s.url || '#'" target="_blank" rel="noopener noreferrer" class="footer-social-link" :title="s.url">{{ s.icon }}</a>
           </div>
         </div>
         <div class="footer-col">
-          <h4>快速导航</h4>
+          <h4>{{ $t('快速导航') }}</h4>
           <template v-if="footerNav.length">
             <a v-for="(n, i) in footerNav" :key="i" :href="n.url || '#'">{{ n.text }}</a>
           </template>
           <template v-else>
-            <router-link to="/#catalog">选购商品</router-link>
-            <router-link to="/points">积分商城</router-link>
-            <router-link to="/coupons">优惠券</router-link>
-            <router-link to="/affiliate">推广中心</router-link>
+            <router-link to="/#catalog">{{ $t('选购商品') }}</router-link>
+            <router-link to="/points">{{ $t('积分商城') }}</router-link>
+            <router-link to="/coupons">{{ $t('优惠券') }}</router-link>
+            <router-link to="/affiliate">{{ $t('推广中心') }}</router-link>
           </template>
         </div>
         <div class="footer-col">
-          <h4>帮助中心</h4>
-          <router-link to="/posts?type=notice">系统公告</router-link>
-          <router-link to="/posts?type=blog">使用帮助</router-link>
-          <router-link to="/tickets">提交工单</router-link>
-          <router-link to="/fetch">订单取货</router-link>
+          <h4>{{ $t('帮助中心') }}</h4>
+          <router-link to="/posts?type=notice">{{ $t('系统公告') }}</router-link>
+          <router-link to="/posts?type=blog">{{ $t('使用帮助') }}</router-link>
+          <router-link to="/tickets">{{ $t('提交工单') }}</router-link>
+          <router-link to="/fetch">{{ $t('订单取货') }}</router-link>
         </div>
         <div class="footer-col">
-          <h4>会员服务</h4>
-          <router-link to="/member">会员中心</router-link>
-          <router-link to="/member?tab=orders">我的订单</router-link>
-          <router-link to="/member?tab=recharge">余额充值</router-link>
-          <router-link to="/member?tab=giftcard">礼品卡兑换</router-link>
+          <h4>{{ $t('会员服务') }}</h4>
+          <router-link to="/member">{{ $t('会员中心') }}</router-link>
+          <router-link to="/member?tab=orders">{{ $t('我的订单') }}</router-link>
+          <router-link to="/member?tab=recharge">{{ $t('余额充值') }}</router-link>
+          <router-link to="/member?tab=giftcard">{{ $t('礼品卡兑换') }}</router-link>
         </div>
         <div v-if="footerContact" class="footer-col">
-          <h4>联系我们</h4>
+          <h4>{{ $t('联系我们') }}</h4>
           <p class="muted" style="white-space: pre-line;">{{ footerContact }}</p>
         </div>
       </div>
       <div class="footer-copy">
-        <span class="footer-copyright">© {{ year }} {{ siteName }}<span class="footer-rights"> · 保留所有权利</span></span>
-        <a v-if="agreementHref" :href="agreementHref" :target="agreementHref.startsWith('http') ? '_blank' : undefined" rel="noopener noreferrer" class="footer-copy-link">用户协议</a>
+        <span class="footer-copyright">© {{ year }} {{ siteName }}<span class="footer-rights"> {{ $t('· 保留所有权利') }}</span></span>
+        <a v-if="agreementHref" :href="agreementHref" :target="agreementHref.startsWith('http') ? '_blank' : undefined" rel="noopener noreferrer" class="footer-copy-link">{{ $t('用户协议') }}</a>
         <a v-if="footerIcp" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" class="footer-copy-link">{{ footerIcp }}</a>
       </div>
     </footer>
 
     <!-- 回到顶部悬浮球 -->
-    <button v-if="showTop" class="back-top" @click="scrollTop" title="回到顶部">↑</button>
+    <button v-if="showTop" class="back-top" @click="scrollTop" :title="$t('回到顶部')">↑</button>
 
     <!-- 右下角客服（第三方脚本原生气泡 / 本站链接浮窗） -->
     <ServiceWidget />
@@ -193,6 +192,8 @@
 </template>
 
 <script setup lang="ts">
+import { t as $t } from '@/i18n';
+
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import { loadPublicConfig, publicConfig, type PublicConfig } from './config';
 import { ref, computed, watch, onMounted, onUnmounted, provide } from 'vue';
@@ -207,6 +208,8 @@ import { listLotteryActivities } from '@/api/lottery';
 import { themeValue } from '../../packages/theme-sdk/src/index';
 import NoticeModal from '@/components/NoticeModal.vue';
 import ServiceWidget from '@/components/ServiceWidget.vue';
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
+import { locale } from '@/i18n';
 import CurrencySwitcher from '@/components/CurrencySwitcher.vue';
 
 const lotteryVisible = ref(false);
@@ -302,10 +305,10 @@ const appBgStyle = computed(() => {
 const footerExpanded = ref(false);
 watch(() => route.fullPath, () => { footerExpanded.value = false; });
 const footerTrustDefaults = [
-  { icon: '⚡', image: '', title: '按商品履约', description: '虚拟交付或快递配送' },
-  { icon: '🛡️', image: '', title: '正品保障', description: '渠道直供货源' },
-  { icon: '💬', image: '', title: '在线客服', description: '7×24 小时响应' },
-  { icon: '↩️', image: '', title: '售后无忧', description: '问题订单快速处理' },
+  { icon: '⚡', image: '', get title() { return $t("按商品履约"); }, get description() { return $t("虚拟交付或快递配送"); } },
+  { icon: '🛡️', image: '', get title() { return $t("正品保障"); }, get description() { return $t("渠道直供货源"); } },
+  { icon: '💬', image: '', get title() { return $t("在线客服"); }, get description() { return $t("7×24 小时响应"); } },
+  { icon: '↩️', image: '', get title() { return $t("售后无忧"); }, get description() { return $t("问题订单快速处理"); } },
 ];
 const footerTrust = ref(footerTrustDefaults.map(item => ({ ...item })));
 function applyFooterTrustSettings(read: (key: string, fallback: string) => string) {
@@ -314,8 +317,8 @@ function applyFooterTrustSettings(read: (key: string, fallback: string) => strin
     return {
       icon: read(`${prefix}_icon`, item.icon),
       image: read(`${prefix}_image`, item.image),
-      title: read(`${prefix}_title`, item.title),
-      description: read(`${prefix}_description`, item.description),
+      title: (() => { const value = read(`${prefix}_title`, item.title); const source = ['按商品履约', '正品保障', '在线客服', '售后无忧'][index]; return value === source ? $t(source) : value; })(),
+      description: (() => { const value = read(`${prefix}_description`, item.description); const source = ['虚拟交付或快递配送', '渠道直供货源', '7×24 小时响应', '问题订单快速处理'][index]; return value === source ? $t(source) : value; })(),
     };
   });
 }
@@ -359,9 +362,13 @@ const noticePost = ref<StorePost | null>(null);
 const noticeContent = ref('');
 const noticeAnnouncement = ref<AnnouncementConfig | null>(null);
 
+let noticeRequest = 0;
 async function loadNotice() {
+  const currentRequest = ++noticeRequest;
+  const requestedLocale = locale.value;
   // 设置公告（ops.announcement）：text/image/carousel 任一配置生效即优先
   const ann = await fetchAnnouncement();
+  if (currentRequest !== noticeRequest || requestedLocale !== locale.value) return;
   if ((ann.type === 'text' && ann.text) || ann.images.length) {
     noticeAnnouncement.value = ann;
     noticePost.value = null;
@@ -370,10 +377,12 @@ async function loadNotice() {
   }
   noticeAnnouncement.value = null;
   const { data } = await listPosts('notice', 1, 1);
+  if (currentRequest !== noticeRequest || requestedLocale !== locale.value) return;
   const post = data?.posts?.[0];
   if (!post) return;
   noticePost.value = post;
   const { data: detail } = await getPost(post.slug).catch(() => ({ data: null }));
+  if (currentRequest !== noticeRequest || requestedLocale !== locale.value) return;
   noticeContent.value = detail?.content || '';
 }
 
@@ -484,6 +493,10 @@ function applyShellConfig(json: PublicConfig) {
     }
 
 }
+watch(locale, () => {
+  if (publicConfig.value) applyShellConfig(publicConfig.value);
+  if (!isInstall.value) void loadNotice();
+});
 watch(publicConfig, (config) => {
   if (!config || import.meta.env.SSR) return;
   applyShellConfig(config);
@@ -494,7 +507,7 @@ async function refreshShell() {
   if (shellLoading.value) return;
   shellLoading.value = true;
   try { await loadPublicConfig(); }
-  catch { if (!shellReady.value) shellError.value = '店铺暂时无法加载，请检查网络后重试'; }
+  catch { if (!shellReady.value) shellError.value = $t("店铺暂时无法加载，请检查网络后重试"); }
   finally { shellLoading.value = false; }
 }
 function resumeShell() {

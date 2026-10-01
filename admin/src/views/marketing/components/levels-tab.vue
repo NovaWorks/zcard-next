@@ -5,7 +5,7 @@ import { NButton, NDataTable, NInput, NInputNumber, NModal, NForm, NFormItem, NP
 import type { DataTableColumns } from "naive-ui";
 import { fetchMemberLevels, createMemberLevel, updateMemberLevel, deleteMemberLevel } from "@/service/api";
 import { checkAuth } from "@/directives";
-import { formatMoney } from "@/utils/money";
+import { currencyUnit, formatMoney } from "@/utils/money";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 
 defineOptions({ name: "LevelsTab" });
@@ -72,7 +72,7 @@ function pointsRuleText(json?: string) {
     const spendYuan = Number(rule.spend_cents) / 100;
     const points = Number(rule.points);
     if (!spendYuan || !points) return "-";
-    return `消费${spendYuan}元得${points}积分`;
+    return `消费 ${spendYuan} ${currencyUnit()} 得 ${points} 积分`;
   } catch {
     return json;
   }
@@ -257,10 +257,10 @@ onMounted(load);
             ]"
           />
         </NFormItem>
-        <NFormItem v-if="!editing" label="充值阈值(元)">
+        <NFormItem v-if="!editing" :label="`充值阈值(${currencyUnit()})`">
           <NInputNumber v-model:value="form.threshold_recharge" :min="0" class="w-full" />
         </NFormItem>
-        <NFormItem v-if="!editing" label="消费阈值(元)">
+        <NFormItem v-if="!editing" :label="`消费阈值(${currencyUnit()})`">
           <NInputNumber v-model:value="form.threshold_consume" :min="0" class="w-full" />
         </NFormItem>
         <NFormItem label="折扣(%)" required>
@@ -280,7 +280,7 @@ onMounted(load);
               <div class="mt-8px flex items-center gap-8px">
                 <span class="w-64px text-right text-13px">每消费</span>
                 <NInputNumber v-model:value="form.points_spend_yuan" :min="0.01" :precision="2" class="w-140px" />
-                <span class="text-13px">元</span>
+                <span class="text-13px">{{ currencyUnit() }}</span>
               </div>
               <div class="mt-8px flex items-center gap-8px">
                 <span class="w-64px text-right text-13px">可得</span>

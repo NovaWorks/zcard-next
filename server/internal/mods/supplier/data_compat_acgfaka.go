@@ -33,6 +33,7 @@ import (
 
 	khttp "github.com/go-kratos/kratos/v3/transport/http"
 
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 )
@@ -106,6 +107,11 @@ func (h *acgCompat) wrap(fn func(w http.ResponseWriter, r *http.Request, account
 		}
 		if !acgFakaSignVerify(form, secret, sign) {
 			writeAcgErr(w, "密钥错误")
+			return
+		}
+		currency, err := data.BaseCurrency(r.Context(), h.svc.repo.data)
+		if err != nil || currency != "CNY" {
+			writeAcgErr(w, "此协议仅支持人民币计价")
 			return
 		}
 		fn(w, r, account, form)

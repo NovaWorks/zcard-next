@@ -68,6 +68,14 @@ func injectThemeHTML(shell []byte, d seoPageData) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	root := findElement(doc, "html")
+	for i := range root.Attr {
+		if root.Attr[i].Key == "lang" {
+			root.Attr = append(root.Attr[:i], root.Attr[i+1:]...)
+			break
+		}
+	}
+	root.Attr = append(root.Attr, html.Attribute{Key: "lang", Val: d.Site.HTMLLanguage()})
 	head := findElement(doc, "head")
 	sourceHead := findElement(source, "head")
 	for c := head.FirstChild; c != nil; {

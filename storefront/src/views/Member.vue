@@ -5,52 +5,50 @@
     <!-- 总览：余额四数 + 等级进度 + 快捷入口 -->
     <div v-if="tab === 'overview'">
       <div class="stat-grid">
-        <div class="card"><div class="muted">可用余额</div><div class="stat-num">{{ formatMoney(balance?.available_cents ?? 0) }}</div></div>
-        <div class="card"><div class="muted">冻结中</div><div class="stat-num">{{ formatMoney(balance?.locked_cents ?? 0) }}</div></div>
-        <div class="card"><div class="muted">积分</div><div class="stat-num">{{ level?.points ?? balance?.points ?? 0 }}</div><p v-if="Number(level?.points ?? balance?.points ?? 0)<0" class="muted">退款撤回已使用积分，后续获得的积分将先抵扣欠额。</p></div>
-        <div class="card"><div class="muted">累计消费</div><div class="stat-num">{{ formatMoney(level?.consumed_cents ?? 0) }}</div></div>
+        <div class="card"><div class="muted">{{ $t('可用余额') }}</div><div class="stat-num">{{ formatMoney(balance?.available_cents ?? 0) }}</div></div>
+        <div class="card"><div class="muted">{{ $t('冻结中') }}</div><div class="stat-num">{{ formatMoney(balance?.locked_cents ?? 0) }}</div></div>
+        <div class="card"><div class="muted">{{ $t('积分') }}</div><div class="stat-num">{{ level?.points ?? balance?.points ?? 0 }}</div><p v-if="Number(level?.points ?? balance?.points ?? 0)<0" class="muted">{{ $t('退款撤回已使用积分，后续获得的积分将先抵扣欠额。') }}</p></div>
+        <div class="card"><div class="muted">{{ $t('累计消费') }}</div><div class="stat-num">{{ formatMoney(level?.consumed_cents ?? 0) }}</div></div>
       </div>
       <div class="card lv-card" v-if="level">
         <div class="lv-head">
           <div class="lv-cur">
-            <div class="muted lv-label">当前等级</div>
+            <div class="muted lv-label">{{ $t('当前等级') }}</div>
             <div class="lv-name-row">
-              <span class="lv-name">{{ level.current?.name || (level.private_level ? '专属会员' : '普通会员') }}</span>
-              <span v-if="level.private_level || level.current?.display_mode === 'contact'" class="tag">联系客服</span><span v-if="level.current?.discount" class="tag">{{ levelDiscount(level.current.discount) }}</span>
+              <span class="lv-name">{{ level.current?.name || (level.private_level ? $t('专属会员') : $t('普通会员')) }}</span>
+              <span v-if="level.private_level || level.current?.display_mode === 'contact'" class="tag">{{ $t('联系客服') }}</span><span v-if="level.current?.discount" class="tag">{{ levelDiscount(level.current.discount) }}</span>
             </div>
           </div>
-          <span v-if="level.next" class="lv-next">距 {{ level.next.name }} <span class="lv-arrow">›</span></span>
-          <span v-else-if="level.source === 'manual'" class="muted">后台指定</span><span v-else class="muted">当前权益已生效</span>
+          <span v-if="level.next" class="lv-next">{{ $t('距') }} {{ level.next.name }} <span class="lv-arrow">›</span></span>
+          <span v-else-if="level.source === 'manual'" class="muted">{{ $t('后台指定') }}</span><span v-else class="muted">{{ $t('当前权益已生效') }}</span>
         </div>
-        <p v-if="level.source === 'referral'" class="muted">已通过推荐注册获得会员等级，无需先满足充值或消费门槛。</p>
-        <p v-else-if="level.source === 'manual'" class="muted">当前等级由后台指定。</p>
-        <p v-else-if="level.has_referral_level" class="muted">已保留推荐注册资格，当前自动等级的会员折扣优先适用。</p>
+        <p v-if="level.source === 'referral'" class="muted">{{ $t('已通过推荐注册获得会员等级，无需先满足充值或消费门槛。') }}</p>
+        <p v-else-if="level.source === 'manual'" class="muted">{{ $t('当前等级由后台指定。') }}</p>
+        <p v-else-if="level.has_referral_level" class="muted">{{ $t('已保留推荐注册资格，当前自动等级的会员折扣优先适用。') }}</p>
         <div v-if="level.progress" class="lv-bar">
           <div class="progress"><div :style="{ width: `${levelPercent}%` }"></div></div>
           <span class="lv-percent">{{ levelPercent }}%</span>
         </div>
         <div class="lv-gaps" v-if="rechargeGapCents > 0 || consumeGapCents > 0">
-          <span v-if="rechargeGapCents > 0" class="lv-gap">还需充值 <b>{{ formatMoney(rechargeGapCents) }}</b></span>
-          <span v-if="consumeGapCents > 0" class="lv-gap">还需消费 <b>{{ formatMoney(consumeGapCents) }}</b></span>
+          <span v-if="rechargeGapCents > 0" class="lv-gap">{{ $t('还需充值') }} <b>{{ formatMoney(rechargeGapCents) }}</b></span>
+          <span v-if="consumeGapCents > 0" class="lv-gap">{{ $t('还需消费') }} <b>{{ formatMoney(consumeGapCents) }}</b></span>
         </div>
         <div class="actions ov-actions" style="margin-top: 16px;">
-          <button class="btn" @click="switchTab('recharge')">去充值</button>
-          <router-link class="btn secondary" to="/points">积分商城</router-link>
-          <router-link class="btn secondary" to="/fetch">去取货</router-link>
-          <router-link class="btn secondary" to="/coupons">我的优惠券</router-link>
+          <button class="btn" @click="switchTab('recharge')">{{ $t('去充值') }}</button>
+          <router-link class="btn secondary" to="/points">{{ $t('积分商城') }}</router-link>
+          <router-link class="btn secondary" to="/fetch">{{ $t('去取货') }}</router-link>
+          <router-link class="btn secondary" to="/coupons">{{ $t('我的优惠券') }}</router-link>
         </div>
       </div>
-      <div v-else class="card muted">加载中…</div>
+      <div v-else class="card muted">{{ $t('加载中…') }}</div>
 
       <!-- 我的推广码（分销入口；点击切到推广营销 tab） -->
       <div class="card" style="margin-top: 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; cursor: pointer;" @click="switchTab('promo')">
         <div>
-          <div class="muted">我的推广码</div>
-          <div style="font-family: ui-monospace, Menlo, monospace; font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--zc-primary); margin-top: 2px;">{{ myPromoCode || '点击开通' }}</div>
+          <div class="muted">{{ $t('我的推广码') }}</div>
+          <div style="font-family: ui-monospace, Menlo, monospace; font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--zc-primary); margin-top: 2px;">{{ myPromoCode || $t('点击开通') }}</div>
         </div>
-        <div style="flex: 1; min-width: 200px;" class="muted">
-          分享推广链接给好友，符合推广规则的订单可获得佣金 →
-        </div>
+        <div style="flex: 1; min-width: 200px;" class="muted"> {{ $t('分享推广链接给好友，符合推广规则的订单可获得佣金 →') }} </div>
         <span style="font-size: 22px;">🔗</span>
       </div>
     </div>
@@ -58,27 +56,27 @@
     <!-- 我的订单 -->
     <div v-if="tab === 'orders'" class="card">
       <table class="list table-desktop">
-        <thead><tr><th>订单号</th><th>状态</th><th>金额</th><th>件数</th><th>时间</th><th>操作</th></tr></thead>
+        <thead><tr><th>{{ $t('订单号') }}</th><th>{{ $t('状态') }}</th><th>{{ $t('金额') }}</th><th>{{ $t('件数') }}</th><th>{{ $t('时间') }}</th><th>{{ $t('操作') }}</th></tr></thead>
         <tbody>
           <tr v-for="o in orders" :key="o.order_no">
             <td>{{ o.order_no }}</td>
             <td><span :class="statusBadge(o.status)">{{ statusText(o.status) }}</span><span v-if="o.shipping_status && o.shipping_status!=='none'" class="badge">{{shippingStatus(o.shipping_status)}}</span></td>
             <td class="price">{{ formatMoney(o.total_cents) }}</td>
-            <td><div>{{ o.item_count }} 件</div><small>{{ o.product_summary }}</small><div v-if="o.manual_pending_count && ['paid', 'fulfilling', 'partially_delivered'].includes(o.status)" class="muted">{{ o.manual_pending_count }} 项待人工完成</div></td>
+            <td><div>{{ o.item_count }} {{ $t('件') }}</div><small>{{ o.product_summary }}</small><div v-if="o.manual_pending_count && ['paid', 'fulfilling', 'partially_delivered'].includes(o.status)" class="muted">{{ o.manual_pending_count }} {{ $t('项待人工完成') }}</div></td>
             <td class="muted">{{ fmtTime(o.created_at) }}</td>
             <td class="actions">
-              <router-link class="btn secondary" :to="`/payment/${o.order_no}`" v-if="o.status === 'pending_payment'">去支付</router-link>
+              <router-link class="btn secondary" :to="`/payment/${o.order_no}`" v-if="o.status === 'pending_payment'">{{ $t('去支付') }}</router-link>
               <router-link
                 class="btn secondary"
                 :to="`/fetch?order_no=${o.order_no}`"
                 v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(o.status)"
-              >查看交付</router-link>
-              <router-link class="btn secondary" :to="`/order/${o.order_no}`">详情</router-link>
-              <router-link v-if="showReviews && ['delivered', 'completed'].includes(o.status)" class="btn secondary" :to="`/order/${o.order_no}#order-review`">评价</router-link>
-              <button class="btn secondary" v-if="o.status === 'pending_payment'" @click="cancel(o.order_no)">取消</button>
+              >{{ $t('查看交付') }}</router-link>
+              <router-link class="btn secondary" :to="`/order/${o.order_no}`">{{ $t('详情') }}</router-link>
+              <router-link v-if="showReviews && ['delivered', 'completed'].includes(o.status)" class="btn secondary" :to="`/order/${o.order_no}#order-review`">{{ $t('评价') }}</router-link>
+              <button class="btn secondary" v-if="o.status === 'pending_payment'" @click="cancel(o.order_no)">{{ $t('取消') }}</button>
             </td>
           </tr>
-          <tr v-if="!orders.length"><td colspan="6" class="muted" style="text-align: center;">暂无订单</td></tr>
+          <tr v-if="!orders.length"><td colspan="6" class="muted" style="text-align: center;">{{ $t('暂无订单') }}</td></tr>
         </tbody>
       </table>
       <!-- 移动端订单卡片（大厂「我的订单」样式） -->
@@ -89,73 +87,73 @@
             <span :class="statusBadge(o.status)">{{ statusText(o.status) }}</span><span v-if="o.shipping_status && o.shipping_status!=='none'" class="badge">{{shippingStatus(o.shipping_status)}}</span>
           </div>
           <div class="mcard-row">
-            <span class="muted">{{ fmtTime(o.created_at) }} · {{ o.item_count }} 件</span>
+            <span class="muted">{{ fmtTime(o.created_at) }} · {{ o.item_count }} {{ $t('件') }}</span>
             <span class="price">{{ formatMoney(o.total_cents) }}</span>
           </div>
           <p style="overflow-wrap:anywhere">{{ o.product_summary }}</p>
-          <p v-if="o.manual_pending_count && ['paid', 'fulfilling', 'partially_delivered'].includes(o.status)" class="muted">{{ o.manual_pending_count }} 项待人工完成</p>
+          <p v-if="o.manual_pending_count && ['paid', 'fulfilling', 'partially_delivered'].includes(o.status)" class="muted">{{ o.manual_pending_count }} {{ $t('项待人工完成') }}</p>
           <div class="mcard-row">
             <span></span>
             <span class="actions">
-              <router-link class="btn secondary" :to="`/payment/${o.order_no}`" v-if="o.status === 'pending_payment'">去支付</router-link>
+              <router-link class="btn secondary" :to="`/payment/${o.order_no}`" v-if="o.status === 'pending_payment'">{{ $t('去支付') }}</router-link>
               <router-link
                 class="btn secondary"
                 :to="`/fetch?order_no=${o.order_no}`"
                 v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(o.status)"
-              >查看交付</router-link>
-              <router-link class="btn secondary" :to="`/order/${o.order_no}`">详情</router-link>
-              <router-link v-if="showReviews && ['delivered', 'completed'].includes(o.status)" class="btn secondary" :to="`/order/${o.order_no}#order-review`">评价</router-link>
-              <button class="btn secondary" v-if="o.status === 'pending_payment'" @click="cancel(o.order_no)">取消</button>
+              >{{ $t('查看交付') }}</router-link>
+              <router-link class="btn secondary" :to="`/order/${o.order_no}`">{{ $t('详情') }}</router-link>
+              <router-link v-if="showReviews && ['delivered', 'completed'].includes(o.status)" class="btn secondary" :to="`/order/${o.order_no}#order-review`">{{ $t('评价') }}</router-link>
+              <button class="btn secondary" v-if="o.status === 'pending_payment'" @click="cancel(o.order_no)">{{ $t('取消') }}</button>
             </span>
           </div>
         </div>
-        <div v-if="!orders.length" class="muted" style="text-align: center; padding: 16px 0;">暂无订单</div>
+        <div v-if="!orders.length" class="muted" style="text-align: center; padding: 16px 0;">{{ $t('暂无订单') }}</div>
       </div>
       <div class="actions" style="margin-top: 12px;" v-if="ordersTotal > ordersPageSize">
-        <button class="btn secondary" :disabled="ordersPage <= 1" @click="loadOrders(ordersPage - 1)">上一页</button>
+        <button class="btn secondary" :disabled="ordersPage <= 1" @click="loadOrders(ordersPage - 1)">{{ $t('上一页') }}</button>
         <span class="muted">{{ ordersPage }} / {{ Math.ceil(ordersTotal / ordersPageSize) }}</span>
-        <button class="btn secondary" :disabled="ordersPage >= Math.ceil(ordersTotal / ordersPageSize)" @click="loadOrders(ordersPage + 1)">下一页</button>
+        <button class="btn secondary" :disabled="ordersPage >= Math.ceil(ordersTotal / ordersPageSize)" @click="loadOrders(ordersPage + 1)">{{ $t('下一页') }}</button>
       </div>
     </div>
 
     <!-- 余额流水 -->
     <div v-if="tab === 'transactions'" class="card">
       <table class="list table-desktop">
-        <thead><tr><th>时间</th><th>类型</th><th>方向</th><th>金额</th><th>余额</th><th>关联单号 / 备注</th></tr></thead>
+        <thead><tr><th>{{ $t('时间') }}</th><th>{{ $t('类型') }}</th><th>{{ $t('方向') }}</th><th>{{ $t('金额') }}</th><th>{{ $t('余额') }}</th><th>{{ $t('关联单号 / 备注') }}</th></tr></thead>
         <tbody>
           <tr v-for="t in transactions" :key="t.id">
             <td class="muted">{{ fmtTime(t.created_at) }}</td>
             <td>{{ transactionType(t.type) }}</td>
-            <td>{{ t.direction === "in" ? "入账" : "出账" }}</td>
+            <td>{{ t.direction === "in" ? $t('入账') : $t('出账') }}</td>
             <td :class="t.direction === 'in' ? 'success' : 'error'">{{ formatSignedMoney(transactionAmount(t)) }}</td>
             <td>{{ formatMoney(t.balance_after_cents) }}</td>
             <td class="muted"><div>{{ transactionReference(t) }}</div>{{ transactionRemark(t) }}</td>
           </tr>
-          <tr v-if="!transactions.length"><td colspan="6" class="muted" style="text-align: center;">暂无流水</td></tr>
+          <tr v-if="!transactions.length"><td colspan="6" class="muted" style="text-align: center;">{{ $t('暂无流水') }}</td></tr>
         </tbody>
       </table>
       <!-- 移动端流水卡片 -->
       <div class="table-cards">
         <div v-for="t in transactions" :key="t.id" class="mcard">
           <div class="mcard-row">
-            <span class="mcard-title">{{ transactionType(t.type) }} · {{ t.direction === "in" ? "入账" : "出账" }}</span>
+            <span class="mcard-title">{{ transactionType(t.type) }} · {{ t.direction === "in" ? $t('入账') : $t('出账') }}</span>
             <span :class="t.direction === 'in' ? 'success' : 'error'" style="font-weight: 700;">{{ formatSignedMoney(transactionAmount(t)) }}</span>
           </div>
           <div class="mcard-row">
             <span class="muted">{{ fmtTime(t.created_at) }}</span>
-            <span class="muted">余额 {{ formatMoney(t.balance_after_cents) }}</span>
+            <span class="muted">{{ $t('余额') }} {{ formatMoney(t.balance_after_cents) }}</span>
           </div>
           <div class="mcard-row"><span class="muted" style="overflow-wrap: anywhere;">{{ transactionReference(t) }}</span></div>
           <div class="mcard-row" v-if="transactionRemark(t)">
             <span class="muted" style="word-break: break-all;">{{ transactionRemark(t) }}</span>
           </div>
         </div>
-        <div v-if="!transactions.length" class="muted" style="text-align: center; padding: 16px 0;">暂无流水</div>
+        <div v-if="!transactions.length" class="muted" style="text-align: center; padding: 16px 0;">{{ $t('暂无流水') }}</div>
       </div>
       <div class="actions" style="margin-top: 12px;" v-if="txTotal > txPageSize">
-        <button class="btn secondary" :disabled="txPage <= 1" @click="loadTx(txPage - 1)">上一页</button>
+        <button class="btn secondary" :disabled="txPage <= 1" @click="loadTx(txPage - 1)">{{ $t('上一页') }}</button>
         <span class="muted">{{ txPage }} / {{ Math.ceil(txTotal / txPageSize) }}</span>
-        <button class="btn secondary" :disabled="txPage >= Math.ceil(txTotal / txPageSize)" @click="loadTx(txPage + 1)">下一页</button>
+        <button class="btn secondary" :disabled="txPage >= Math.ceil(txTotal / txPageSize)" @click="loadTx(txPage + 1)">{{ $t('下一页') }}</button>
       </div>
     </div>
 
@@ -164,12 +162,12 @@
       <!-- 余额概览条 -->
       <div class="card rc-balance">
         <div>
-          <div class="muted rc-label">当前可用余额</div>
+          <div class="muted rc-label">{{ $t('当前可用余额') }}</div>
           <div class="rc-balance-num">{{ formatMoney(balance?.available_cents ?? 0) }}</div>
         </div>
         <div class="rc-balance-side muted">
-          <span>冻结中 {{ formatMoney(balance?.locked_cents ?? 0) }}</span>
-          <span>积分 {{ level?.points ?? balance?.points ?? 0 }}</span>
+          <span>{{ $t('冻结中') }} {{ formatMoney(balance?.locked_cents ?? 0) }}</span>
+          <span>{{ $t('积分') }} {{ level?.points ?? balance?.points ?? 0 }}</span>
         </div>
       </div>
 
@@ -178,43 +176,43 @@
       <div v-if="rechargePhase === 'form'" class="rc-layout">
         <!-- 左：充值金额 -->
         <div class="card rc-panel">
-          <div class="rc-title">充值金额</div>
+          <div class="rc-title">{{ $t('充值金额') }}</div>
           <div v-if="giftTiers.length" class="rc-tiers">
             <button v-for="tier in giftTiers" :key="tier.amount" type="button" class="rc-tier"
                     :class="{ active: pickedTier === tier.amount }" @click="pickTier(tier)">
-              <span class="rc-tier-amount">{{ formatMoney(tier.amount) }}</span>
+              <span class="rc-tier-amount">{{ formatBaseMoney(tier.amount) }}</span>
               <!-- 余额/积分赠送并列展示（此前 v-else-if 两者都配时积分被吞） -->
-              <span v-if="tier.gift_balance" class="rc-tier-gift">送 {{ formatMoney(tier.gift_balance) }}</span>
-              <span v-if="tier.gift_points" class="rc-tier-gift">送 {{ tier.gift_points }} 积分</span>
+              <span v-if="tier.gift_balance" class="rc-tier-gift">{{ $t('送') }} {{ formatBaseMoney(tier.gift_balance) }}</span>
+              <span v-if="tier.gift_points" class="rc-tier-gift">{{ $t('送') }} {{ tier.gift_points }} {{ $t('积分') }}</span>
             </button>
           </div>
           <div class="rc-custom">
-            <input v-model.number="rechargeYuan" type="number" min="0.01" step="0.01" placeholder="输入充值金额（基础货币元）" @input="pickedTier = 0; rechargeError = ''" />
-            <span class="rc-yen">元</span>
-            <button v-if="rechargeYuan" type="button" class="rc-clear" title="清空" @click="clearAmount">×</button>
+            <input v-model.number="rechargeYuan" type="number" min="0.01" step="0.01" :placeholder="$t('输入充值金额（{0}）', [getBaseCurrency().code])" @input="pickedTier = 0; rechargeError = ''" />
+            <span class="rc-yen">{{ getBaseCurrency().code }}</span>
+            <button v-if="rechargeYuan" type="button" class="rc-clear" :title="$t('清空')" @click="clearAmount">×</button>
           </div>
-          <div v-if="rechargeMeta" class="muted rc-limit">单笔限额 {{ formatMoney(rechargeMeta.min_amount) }} ~ {{ formatMoney(rechargeMeta.max_amount) }}<template v-if="giftTiers.length && !giftTiers.some((t) => t.gift_balance || t.gift_points)">；充值赠送见支付结果</template></div>
+          <div v-if="rechargeMeta" class="muted rc-limit">{{ $t('单笔限额') }} {{ formatBaseMoney(rechargeMeta.min_amount) }} ~ {{ formatBaseMoney(rechargeMeta.max_amount) }}<template v-if="giftTiers.length && !giftTiers.some((t) => t.gift_balance || t.gift_points)">{{ $t('；充值赠送见支付结果') }}</template></div>
           <!-- 到账预览（命中赠送档位时） -->
           <div v-if="giftPreview" class="rc-gift-preview">
-            <span>🧧 到账</span><b>{{ formatMoney(giftPreview.total) }}</b>
-            <span v-if="giftPreview.gift_balance">含赠送 {{ formatMoney(giftPreview.gift_balance) }}</span>
-            <span v-if="giftPreview.gift_points">含赠送 {{ giftPreview.gift_points }} 积分</span>
+            <span>{{ $t('🧧 到账') }}</span><b>{{ formatBaseMoney(giftPreview.total) }}</b>
+            <span v-if="giftPreview.gift_balance">{{ $t('含赠送') }} {{ formatBaseMoney(giftPreview.gift_balance) }}</span>
+            <span v-if="giftPreview.gift_points">{{ $t('含赠送') }} {{ giftPreview.gift_points }} {{ $t('积分') }}</span>
           </div>
         </div>
 
         <!-- 右：支付方式 + 提交 -->
         <div class="card rc-panel">
-          <div class="rc-title">支付方式</div>
+          <div class="rc-title">{{ $t('支付方式') }}</div>
           <PayChannelGrid :options="payOptions" :channel="rechargeChannel" :method="rechargeMethod"
                           @select="(ch, m) => { rechargeChannel = ch; rechargeMethod = m; }">
-            <template #empty>暂无可用的充值渠道，请联系客服</template>
+            <template #empty>{{ $t('暂无可用的充值渠道，请联系客服') }}</template>
           </PayChannelGrid>
-          <div v-if="rechargeError" class="error" style="margin-top: 12px;">{{ rechargeError }}</div>
+          <div v-if="rechargeError" class="error" style="margin-top: 12px;">{{ uiText(rechargeError) }}</div>
           <PaymentBreakdown :quote="quote" :loading="quoteLoading" :error="quoteError" recharge @retry="refreshQuote" />
           <button class="rc-submit" :disabled="!rechargeChannel || !rechargeYuan || recharging || !quote || quoteLoading" @click="doRecharge">
-            {{ recharging ? '创建充值单…' : rechargeCents === null ? '请检查金额精度' : rechargeCents > 0 ? quote ? `立即支付 ${formatMoney(quote.total_cents)}` : '等待计算金额' : '请输入充值金额' }}
+            {{ recharging ? $t('创建充值单…') : rechargeCents === null ? $t('请检查金额精度') : rechargeCents > 0 ? quote ? $t('立即支付 {0}', [formatPaymentAmount(quote)]) : $t('等待计算金额') : $t('请输入充值金额') }}
           </button>
-          <div class="rc-assure">🔒 支付过程安全加密 · 支付成功后余额与赠送自动到账</div>
+          <div class="rc-assure">{{ $t('🔒 支付过程安全加密 · 支付成功后余额与赠送自动到账') }}</div>
         </div>
       </div>
 
@@ -223,29 +221,29 @@
         <div class="rc-qr-head">
           <span class="rc-qr-icon">{{ selectedOption?.emoji || '💳' }}</span>
           <div>
-            <div class="rc-qr-title">{{ selectedOption?.name || '扫码支付' }}</div>
-            <div class="muted">请使用手机扫一扫完成支付</div>
+            <div class="rc-qr-title">{{ selectedOption?.name || $t('扫码支付') }}</div>
+            <div class="muted">{{ $t('请使用手机扫一扫完成支付') }}</div>
           </div>
         </div>
         <div class="rc-qr-box">
-          <img v-if="rechargeQrcode" :src="rechargeQrcode" alt="支付二维码" />
-          <div v-else class="muted" style="padding: 60px 0;">生成二维码中…</div>
+          <img v-if="rechargeQrcode" :src="rechargeQrcode" :alt="$t('支付二维码')" />
+          <div v-else class="muted" style="padding: 60px 0;">{{ $t('生成二维码中…') }}</div>
         </div>
         <PaymentBreakdown :quote="paidQuote" recharge />
-        <div class="muted rc-qr-hint">支付完成后余额与赠送自动到账（如未到账请刷新本页）</div>
-        <button class="rc-change" @click="backToForm">← 更换支付方式</button>
+        <div class="muted rc-qr-hint">{{ $t('支付完成后余额与赠送自动到账（如未到账请刷新本页）') }}</div>
+        <button class="rc-change" @click="backToForm">{{ $t('← 更换支付方式') }}</button>
       </div>
 
       <!-- 跳转收银台态 -->
       <div v-else class="card rc-result">
         <div class="rc-redirect-icon">🚀</div>
-        <div class="rc-qr-title">正在前往收银台</div>
+        <div class="rc-qr-title">{{ $t('正在前往收银台') }}</div>
         <PaymentBreakdown :quote="paidQuote" recharge />
-        <div class="muted">使用{{ selectedOption?.name || '所选渠道' }}完成支付；充值单金额 {{ formatMoney(pendingAmountCents) }}</div>
+        <div class="muted">{{ $t('使用 {0} 完成支付；充值单金额 {1}', [selectedOption?.name || $t('所选渠道'), formatBaseMoney(pendingAmountCents)]) }}</div>
         <div class="rc-btn-row">
-          <button class="btn" @click="openRedirect">重新打开收银台</button>
-          <button v-if="!rechargeParams" class="btn secondary" @click="copyLink">复制支付链接</button>
-          <button class="btn secondary" @click="backToForm">更换支付方式</button>
+          <button class="btn" @click="openRedirect">{{ $t('重新打开收银台') }}</button>
+          <button v-if="!rechargeParams" class="btn secondary" @click="copyLink">{{ $t('复制支付链接') }}</button>
+          <button class="btn secondary" @click="backToForm">{{ $t('更换支付方式') }}</button>
         </div>
       </div>
     </div>
@@ -254,32 +252,32 @@
     <div v-if="tab === 'giftcard'" class="recharge-page">
       <div class="card rc-balance">
         <div>
-          <div class="muted rc-label">当前可用余额</div>
+          <div class="muted rc-label">{{ $t('当前可用余额') }}</div>
           <div class="rc-balance-num">{{ formatMoney(balance?.available_cents ?? 0) }}</div>
         </div>
         <div class="rc-balance-side muted">
-          <span>冻结中 {{ formatMoney(balance?.locked_cents ?? 0) }}</span>
-          <span>积分 {{ level?.points ?? balance?.points ?? 0 }}</span>
+          <span>{{ $t('冻结中') }} {{ formatMoney(balance?.locked_cents ?? 0) }}</span>
+          <span>{{ $t('积分') }} {{ level?.points ?? balance?.points ?? 0 }}</span>
         </div>
       </div>
       <div class="gc-layout">
         <div class="card gc-card">
-          <div class="gc-title">礼品卡兑换</div>
+          <div class="gc-title">{{ $t('礼品卡兑换') }}</div>
           <div class="field">
-            <label>礼品卡兑换码</label>
-            <input class="input gc-input" v-model="giftCode" type="text" placeholder="输入卡密兑换码" @keyup.enter="doRedeem" />
-            <div class="muted">兑换后余额即时到账；连续失败将临时锁定（防爆破）</div>
+            <label>{{ $t('礼品卡兑换码') }}</label>
+            <input class="input gc-input" v-model="giftCode" type="text" :placeholder="$t('输入卡密兑换码')" @keyup.enter="doRedeem" />
+            <div class="muted">{{ $t('兑换后余额即时到账；连续失败将临时锁定（防爆破）') }}</div>
           </div>
-          <div v-if="giftError" class="error" style="margin-bottom: 8px;">{{ giftError }}</div>
-          <div v-if="giftOk" class="success" style="margin-bottom: 8px;">兑换成功：到账 {{ formatMoney(giftOk.amount_cents) }}，当前余额 {{ formatMoney(giftOk.balance_after_cents) }}</div>
-          <button class="btn gc-submit" :disabled="redeeming" @click="doRedeem">{{ redeeming ? '兑换中…' : '立即兑换' }}</button>
+          <div v-if="giftError" class="error" style="margin-bottom: 8px;">{{ uiText(giftError) }}</div>
+          <div v-if="giftOk" class="success" style="margin-bottom: 8px;">{{ $t('兑换成功：到账') }} {{ formatMoney(giftOk.amount_cents) }}{{ $t('，当前余额') }} {{ formatMoney(giftOk.balance_after_cents) }}</div>
+          <button class="btn gc-submit" :disabled="redeeming" @click="doRedeem">{{ redeeming ? $t('兑换中…') : $t('立即兑换') }}</button>
         </div>
         <div class="card gc-tips">
-          <div class="rc-title">兑换说明</div>
+          <div class="rc-title">{{ $t('兑换说明') }}</div>
           <ul class="gc-tips-list">
-            <li>在「礼品卡/卡密」渠道购买后获得兑换码，粘贴到上方输入框即可兑换</li>
-            <li>兑换金额即时进入账户余额，可用于下单与充值</li>
-            <li>兑换码连续输错将临时锁定；遇到问题请联系在线客服处理</li>
+            <li>{{ $t('在「礼品卡/卡密」渠道购买后获得兑换码，粘贴到上方输入框即可兑换') }}</li>
+            <li>{{ $t('兑换金额即时进入账户余额，可用于下单与充值') }}</li>
+            <li>{{ $t('兑换码连续输错将临时锁定；遇到问题请联系在线客服处理') }}</li>
           </ul>
         </div>
       </div>
@@ -298,39 +296,41 @@
     <!-- 账户安全（：改密吊销全部会话、新 token 保当前；改邮箱唯一校验） -->
     <div v-if="tab === 'security'" class="security-layout">
       <div class="card">
-        <h3 style="margin-bottom: 12px;">修改密码</h3>
+        <h3 style="margin-bottom: 12px;">{{ $t('修改密码') }}</h3>
         <div class="field">
-          <label>当前密码</label>
-          <input class="input" v-model="oldPwd" type="password" placeholder="当前密码" />
+          <label>{{ $t('当前密码') }}</label>
+          <input class="input" v-model="oldPwd" type="password" :placeholder="$t('当前密码')" />
         </div>
         <div class="field">
-          <label>新密码</label>
-          <input class="input" v-model="newPwd" type="password" placeholder="至少 6 位" />
+          <label>{{ $t('新密码') }}</label>
+          <input class="input" v-model="newPwd" type="password" :placeholder="$t('至少 6 位')" />
         </div>
         <div class="field">
-          <label>确认新密码</label>
-          <input class="input" v-model="newPwd2" type="password" placeholder="再输入一次" />
+          <label>{{ $t('确认新密码') }}</label>
+          <input class="input" v-model="newPwd2" type="password" :placeholder="$t('再输入一次')" />
         </div>
-        <div v-if="pwdError" class="error" style="margin-bottom: 8px;">{{ pwdError }}</div>
-        <div v-if="pwdOk" class="success" style="margin-bottom: 8px;">已修改（其他设备将退出登录）</div>
-        <button class="btn" :disabled="changingPwd" @click="doChangePwd">{{ changingPwd ? '提交中…' : '修改密码' }}</button>
+        <div v-if="pwdError" class="error" style="margin-bottom: 8px;">{{ uiText(pwdError) }}</div>
+        <div v-if="pwdOk" class="success" style="margin-bottom: 8px;">{{ $t('已修改（其他设备将退出登录）') }}</div>
+        <button class="btn" :disabled="changingPwd" @click="doChangePwd">{{ changingPwd ? $t('提交中…') : $t('修改密码') }}</button>
       </div>
       <div class="card">
-        <h3 style="margin-bottom: 12px;">修改邮箱</h3>
-        <div class="muted" style="margin-bottom: 8px;">当前：{{ meEmail || '未设置' }}</div>
+        <h3 style="margin-bottom: 12px;">{{ $t('修改邮箱') }}</h3>
+        <div class="muted" style="margin-bottom: 8px;">{{ $t('当前：') }}{{ meEmail || $t('未设置') }}</div>
         <div class="field">
-          <label>新邮箱</label>
+          <label>{{ $t('新邮箱') }}</label>
           <input class="input" v-model="newEmail" type="email" placeholder="you@example.com" />
         </div>
-        <div v-if="emailError" class="error" style="margin-bottom: 8px;">{{ emailError }}</div>
-        <div v-if="emailOk" class="success" style="margin-bottom: 8px;">邮箱已更新（找回密码将发往新邮箱）</div>
-        <button class="btn secondary" :disabled="changingEmail" @click="doChangeEmail">{{ changingEmail ? '提交中…' : '更新邮箱' }}</button>
+        <div v-if="emailError" class="error" style="margin-bottom: 8px;">{{ uiText(emailError) }}</div>
+        <div v-if="emailOk" class="success" style="margin-bottom: 8px;">{{ $t('邮箱已更新（找回密码将发往新邮箱）') }}</div>
+        <button class="btn secondary" :disabled="changingEmail" @click="doChangeEmail">{{ changingEmail ? $t('提交中…') : $t('更新邮箱') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { uiText, t as $t, localeTag } from '@/i18n';
+
 import {shippingStatus} from "../../../packages/shipping";
 import { submitPaymentForm as submitForm } from "@/utils/payment-form";
 import { ref, computed, watch, onMounted } from 'vue';
@@ -342,7 +342,7 @@ import {
   fetchPaymentChannels, type ChannelItem,
   type BalanceReply, type MyLevelReply, type MyOrderItem, type WalletTransaction
 } from '@/api';
-import { api, formatMoney, formatSignedMoney, transactionType, transactionAmount, transactionReference, transactionRemark, setToken, centsToYuan, yuanToFen } from '@/api/client';
+import { api, formatMoney, formatBaseMoney, formatPaymentAmount, getBaseCurrency, formatSignedMoney, transactionType, transactionAmount, transactionReference, transactionRemark, setToken, centsToYuan, yuanToFen } from '@/api/client';
 import { flattenPayOptions } from '@/composables/pay-options';
 import PayChannelGrid from '@/components/PayChannelGrid.vue';
 import PaymentBreakdown from '@/components/PaymentBreakdown.vue';
@@ -493,7 +493,7 @@ async function loadTx(page: number) {
 }
 
 async function cancel(orderNo: string) {
-  if (!confirm(`确认取消订单 ${orderNo}？`)) return;
+  if (!confirm($t("确认取消订单 {0}？", [orderNo]))) return;
   const { error } = await cancelMyOrder(orderNo);
   if (error) {
     alert(error);
@@ -534,19 +534,19 @@ async function doRecharge() {
   if (recharging.value || !quote.value || quoteLoading.value) return;
   const cents = rechargeCents.value;
   if (cents === null) {
-    rechargeError.value = "金额最多精确到分（小数点后两位），请检查输入";
+    rechargeError.value = $t("金额最多精确到分（小数点后两位），请检查输入");
     return;
   }
   if (!cents || cents <= 0) {
-    rechargeError.value = '请输入充值金额';
+    rechargeError.value = $t("请输入充值金额");
     return;
   }
   if (rechargeMeta.value && (cents < rechargeMeta.value.min_amount || cents > rechargeMeta.value.max_amount)) {
-    rechargeError.value = `充值金额需在 ${formatMoney(rechargeMeta.value.min_amount)} ~ ${formatMoney(rechargeMeta.value.max_amount)} 之间`;
+    rechargeError.value = $t("充值金额需在 {0} ~ {1} 之间", [formatBaseMoney(rechargeMeta.value.min_amount), formatBaseMoney(rechargeMeta.value.max_amount)]);
     return;
   }
   if (!rechargeChannel.value) {
-    rechargeError.value = '请选择支付方式';
+    rechargeError.value = $t("请选择支付方式");
     return;
   }
   recharging.value = true;
@@ -556,7 +556,7 @@ async function doRecharge() {
   const { data, error: err } = await createRecharge(cents, rechargeChannel.value, rechargeMethod.value, quote.value.quote_key);
   recharging.value = false;
   if (err || !data) {
-    rechargeError.value = err || '创建失败';
+    rechargeError.value = err || $t("创建失败");
     await refreshQuote();
     return;
   }
@@ -577,10 +577,10 @@ async function doRecharge() {
         rechargeRedirect.value = p.url;
         rechargePhase.value = 'redirect';
       } else {
-        rechargeError.value = '支付参数异常';
+        rechargeError.value = $t("支付参数异常");
       }
     } catch {
-      rechargeError.value = '支付参数异常';
+      rechargeError.value = $t("支付参数异常");
     }
   } else {
     let url = payload;
@@ -611,13 +611,13 @@ async function copyLink() {
   if (!rechargeRedirect.value) return;
   try {
     await navigator.clipboard.writeText(rechargeRedirect.value);
-    window.alert('支付链接已复制');
+    window.alert($t("支付链接已复制"));
   } catch { /* 忽略 */ }
 }
 
 async function doRedeem() {
   if (!giftCode.value.trim()) {
-    giftError.value = '请输入兑换码';
+    giftError.value = $t("请输入兑换码");
     return;
   }
   redeeming.value = true;
@@ -626,7 +626,7 @@ async function doRedeem() {
   const { data, error } = await redeemGiftcard(giftCode.value.trim());
   redeeming.value = false;
   if (error || !data) {
-    giftError.value = error || '卡密无效';
+    giftError.value = error || $t("卡密无效");
     return;
   }
   giftOk.value = data;
@@ -659,12 +659,12 @@ loadMe();
 async function doChangePwd() {
   pwdError.value = '';
   pwdOk.value = false;
-  if (newPwd.value.length < 6) { pwdError.value = '新密码至少 6 位'; return; }
-  if (newPwd.value !== newPwd2.value) { pwdError.value = '两次输入不一致'; return; }
+  if (newPwd.value.length < 6) { pwdError.value = $t("新密码至少 6 位"); return; }
+  if (newPwd.value !== newPwd2.value) { pwdError.value = $t("两次输入不一致"); return; }
   changingPwd.value = true;
   const { data, error } = await changePassword({ old_password: oldPwd.value, new_password: newPwd.value });
   changingPwd.value = false;
-  if (error || !data) { pwdError.value = error || '当前密码错误'; return; }
+  if (error || !data) { pwdError.value = error || $t("当前密码错误"); return; }
   setToken(data.token); // 新 token 保当前会话（其他设备已被吊销）
   pwdOk.value = true;
   oldPwd.value = ''; newPwd.value = ''; newPwd2.value = '';
@@ -673,11 +673,11 @@ async function doChangePwd() {
 async function doChangeEmail() {
   emailError.value = '';
   emailOk.value = false;
-  if (!newEmail.value.includes('@')) { emailError.value = '请输入有效邮箱'; return; }
+  if (!newEmail.value.includes('@')) { emailError.value = $t("请输入有效邮箱"); return; }
   changingEmail.value = true;
   const { data, error } = await updateProfile({ email: newEmail.value.trim() });
   changingEmail.value = false;
-  if (error || !data) { emailError.value = error || '邮箱可能已被占用'; return; }
+  if (error || !data) { emailError.value = error || $t("邮箱可能已被占用"); return; }
   meEmail.value = data.email;
   newEmail.value = '';
   emailOk.value = true;
@@ -685,9 +685,9 @@ async function doChangeEmail() {
 
 function statusText(s: string): string {
   return ({
-    pending_payment: '待支付', paid: '已支付', fulfilling: '履约中', partially_delivered: '部分发货',
-    delivered: '已发货', completed: '已完成', canceled: '已取消', expired: '已过期',
-    refund_pending: '退款中', refunded: '已退款', manual_pending: '待人工发货',
+    get pending_payment() { return $t("待支付"); }, get paid() { return $t("已支付"); }, get fulfilling() { return $t("履约中"); }, get partially_delivered() { return $t("部分发货"); },
+    get delivered() { return $t("已发货"); }, get completed() { return $t("已完成"); }, get canceled() { return $t("已取消"); }, get expired() { return $t("已过期"); },
+    get refund_pending() { return $t("退款中"); }, get refunded() { return $t("已退款"); }, get manual_pending() { return $t("待人工发货"); },
   } as Record<string, string>)[s] || s;
 }
 function statusBadge(s: string): string {
@@ -698,7 +698,7 @@ function statusBadge(s: string): string {
   } as Record<string, string>)[s] || 'badge gray';
 }
 function fmtTime(ts: number): string {
-  return ts ? new Date(ts * 1000).toLocaleString() : '';
+  return ts ? new Date(ts * 1000).toLocaleString(localeTag.value) : '';
 }
 </script>
 

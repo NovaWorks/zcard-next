@@ -4,14 +4,12 @@ package settings
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/currency"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"github.com/shopspring/decimal"
@@ -50,20 +48,13 @@ func EnsureDefaultCurrencies(ctx context.Context, d *data.Data) error {
 	return nil
 }
 
-// baseCurrencyCode 当前基础货币 code（i18n.base_currency 设置；未设置回落默认）。
-func baseCurrencyCode(ctx context.Context, d *data.Data) string {
-	code := baseCurrencyDefault
-	row, err := data.Client(ctx, d).Setting.Query().
-		Where(setting.Group("i18n"), setting.Key("base_currency")).Only(ctx)
-	if err == nil {
-		_ = json.Unmarshal(row.Value, &code)
-	}
-	return code
-}
-
 // ensureBaseRateOne 基础货币汇率恒为 1（rate 语义：1 基础货币 = rate 目标币）。
 func ensureBaseRateOne(ctx context.Context, d *data.Data, code string, rate float64) error {
-	if code == baseCurrencyCode(ctx, d) && rate != 1 {
+	base, err := data.BaseCurrency(ctx, d)
+	if err != nil {
+		return err
+	}
+	if code == base && rate != 1 {
 		return errors.BadRequest("settings.CURRENCY_BASE_RATE", "基础货币汇率必须为 1（记账恒为基础货币）")
 	}
 	return nil
@@ -94,7 +85,10 @@ func (s *AdminCurrencyService) ListCurrencies(ctx context.Context, _ *emptypb.Em
 }
 
 // CreateCurrency 新增（code 唯一）。
-func (s *AdminCurrencyService) CreateCurrency(ctx context.Context, req *adminv1.CreateCurrencyRequest) (*adminv1.Currency, error) {
+func (s *AdminCurrencyService) createCurrency(ctx context.Context, req *adminv1.CreateCurrencyRequest) (*adminv1.Currency, error) {
+	if !currencyCodePattern.MatchString(req.GetCode()) {
+		return nil, errors.BadRequest("settings.CURRENCY_BAD_CODE", "货币代码须为三位大写字母，如 AUD")
+	}
 	rate, err := parseRate(req.GetRateJson())
 	if err != nil {
 		return nil, err
@@ -124,7 +118,7 @@ func (s *AdminCurrencyService) CreateCurrency(ctx context.Context, req *adminv1.
 }
 
 // UpdateCurrency 修改。
-func (s *AdminCurrencyService) UpdateCurrency(ctx context.Context, req *adminv1.UpdateCurrencyRequest) (*adminv1.Currency, error) {
+func (s *AdminCurrencyService) updateCurrency(ctx context.Context, req *adminv1.UpdateCurrencyRequest) (*adminv1.Currency, error) {
 	var rate float64
 	if req.GetRateJson() != "" {
 		var err error
@@ -134,6 +128,15 @@ func (s *AdminCurrencyService) UpdateCurrency(ctx context.Context, req *adminv1.
 		}
 		if err := ensureBaseRateOne(ctx, s.data, req.GetCode(), rate); err != nil {
 			return nil, err
+		}
+	}
+	if req.Enabled != nil && !req.GetEnabled() {
+		referenced, err := currencyIsReferenced(ctx, s.data, req.GetCode())
+		if err != nil {
+			return nil, err
+		}
+		if referenced {
+			return nil, errors.Conflict("settings.CURRENCY_IN_USE", "基础货币或默认显示货币不能停用，请先修改相应设置")
 		}
 	}
 	q := data.Client(ctx, s.data).Currency.Update().Where(currency.Code(req.GetCode()))
@@ -167,7 +170,14 @@ func (s *AdminCurrencyService) UpdateCurrency(ctx context.Context, req *adminv1.
 }
 
 // DeleteCurrency 删除。
-func (s *AdminCurrencyService) DeleteCurrency(ctx context.Context, req *adminv1.DeleteCurrencyRequest) (*emptypb.Empty, error) {
+func (s *AdminCurrencyService) deleteCurrency(ctx context.Context, req *adminv1.DeleteCurrencyRequest) (*emptypb.Empty, error) {
+	referenced, err := currencyIsReferenced(ctx, s.data, req.GetCode())
+	if err != nil {
+		return nil, err
+	}
+	if referenced {
+		return nil, errors.Conflict("settings.CURRENCY_IN_USE", "基础货币或默认显示货币不能删除，请先修改相应设置")
+	}
 	n, err := data.Client(ctx, s.data).Currency.Delete().Where(currency.Code(req.GetCode())).Exec(ctx)
 	if err != nil {
 		return nil, errors.InternalServer("settings.CURRENCY_DELETE_FAILED", "删除失败")
@@ -180,9 +190,10 @@ func (s *AdminCurrencyService) DeleteCurrency(ctx context.Context, req *adminv1.
 
 func parseRate(s string) (float64, error) {
 	d, err := decimal.NewFromString(s)
-	if err != nil || d.IsNegative() {
-		return 0, errors.BadRequest("settings.CURRENCY_BAD_RATE", "汇率必须为非负 decimal 字符串")
+	if err != nil || !d.IsPositive() || !d.Round(8).IsPositive() || d.GreaterThan(decimal.RequireFromString("999999999999.99999999")) {
+		return 0, errors.BadRequest("settings.CURRENCY_BAD_RATE", "汇率须为大于零的 decimal 字符串，最多 8 位小数且不超出支持范围")
 	}
+	d = d.Round(8)
 	f, _ := d.Float64()
 	return f, nil
 }
@@ -193,4 +204,41 @@ func toPBCurrency(r *ent.Currency) *adminv1.Currency {
 		Precision: r.Precision, RateJson: strconv.FormatFloat(r.Rate, 'f', -1, 64),
 		Enabled: r.Enabled, Sort: r.Sort,
 	}
+}
+
+// Currency writes and base-currency switching share the same database lock.
+func (s *AdminCurrencyService) CreateCurrency(ctx context.Context, req *adminv1.CreateCurrencyRequest) (out *adminv1.Currency, err error) {
+	err = data.Tx(ctx, s.data, func(ctx context.Context) error {
+		if _, e := data.LockCurrencyConfiguration(ctx, s.data); e != nil {
+			return e
+		}
+		var e error
+		out, e = s.createCurrency(ctx, req)
+		return e
+	})
+	return
+}
+
+func (s *AdminCurrencyService) UpdateCurrency(ctx context.Context, req *adminv1.UpdateCurrencyRequest) (out *adminv1.Currency, err error) {
+	err = data.Tx(ctx, s.data, func(ctx context.Context) error {
+		if _, e := data.LockCurrencyConfiguration(ctx, s.data); e != nil {
+			return e
+		}
+		var e error
+		out, e = s.updateCurrency(ctx, req)
+		return e
+	})
+	return
+}
+
+func (s *AdminCurrencyService) DeleteCurrency(ctx context.Context, req *adminv1.DeleteCurrencyRequest) (out *emptypb.Empty, err error) {
+	err = data.Tx(ctx, s.data, func(ctx context.Context) error {
+		if _, e := data.LockCurrencyConfiguration(ctx, s.data); e != nil {
+			return e
+		}
+		var e error
+		out, e = s.deleteCurrency(ctx, req)
+		return e
+	})
+	return
 }

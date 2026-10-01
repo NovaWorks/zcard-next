@@ -4,7 +4,7 @@
       <div class="notice-head">
         <span class="notice-horn"><ThemeIcon name="announcement" /></span>
         <span class="notice-head-title">{{ headTitle }}</span>
-        <button class="notice-close" aria-label="关闭公告" @click="close">✕</button>
+        <button class="notice-close" :aria-label="$t('关闭公告')" @click="close">✕</button>
       </div>
       <div class="notice-body">
         <!-- 设置公告：文本 -->
@@ -16,7 +16,7 @@
         <div v-else-if="announcement && announcement.images.length" class="ann-slider" @mouseenter="stopAuto" @mouseleave="startAuto">
           <div class="ann-track" :style="{ transform: `translateX(-${idx * 100}%)` }">
             <div v-for="(img, i) in announcement.images" :key="i" class="ann-slide">
-              <img :src="img" alt="公告图片" />
+              <img :src="img" :alt="$t('公告图片')" />
             </div>
           </div>
           <div v-if="announcement.images.length > 1" class="ann-dots">
@@ -31,19 +31,21 @@
         </div>
         <!-- 文章公告（内容为后端 sanitize 后的富文本，与文章详情页同口径） -->
         <template v-else>
-          <div class="notice-date muted" v-if="post?.published_at">发布于 {{ formatDate(post.published_at) }}</div>
+          <div class="notice-date muted" v-if="post?.published_at">{{ $t('发布于') }} {{ formatDate(post.published_at) }}</div>
           <div class="notice-content" v-html="content"></div>
         </template>
       </div>
       <div class="notice-foot">
-        <router-link class="btn secondary" :to="'/posts?type=notice'" @click="close">查看全部公告</router-link>
-        <button class="btn btn-primary" @click="close">知道了</button>
+        <router-link class="btn secondary" :to="'/posts?type=notice'" @click="close">{{ $t('查看全部公告') }}</router-link>
+        <button class="btn btn-primary" @click="close">{{ $t('知道了') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { t as $t, localeTag } from '@/i18n';
+
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import { ref, computed, watch, onUnmounted } from 'vue';
 import type { StorePost, AnnouncementConfig } from '@/api';
@@ -56,7 +58,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ (e: 'update:show', v: boolean): void }>();
 
-const headTitle = computed(() => (props.announcement ? '系统公告' : props.post?.title || '系统公告'));
+const headTitle = computed(() => (props.announcement ? $t("系统公告") : props.post?.title || $t("系统公告")));
 
 // 设置公告图片轮播：自动播放 4s，指示点切换，hover 暂停
 const idx = ref(0);
@@ -85,7 +87,7 @@ function close() {
 }
 function formatDate(unix?: number): string {
   if (!unix) return '';
-  return new Date(unix * 1000).toLocaleDateString('zh-CN');
+  return new Date(unix * 1000).toLocaleDateString(localeTag.value);
 }
 </script>
 

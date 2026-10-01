@@ -32,7 +32,7 @@ type OwnProductInput struct {
 
 // CreateOwnProduct 分站自营商品创建（subsite_id 显式传入——分站主自服务面，
 // 不经租户上下文；slug 在分站内唯一，分站间同 slug 不冲突）。
-func (r *ResellerRepo) CreateOwnProduct(ctx context.Context, subsiteID uint64, in OwnProductInput) (*ent.Product, error) {
+func (r *ResellerRepo) createOwnProduct(ctx context.Context, subsiteID uint64, in OwnProductInput) (*ent.Product, error) {
 	client := data.Client(ctx, r.data)
 	slug, err := r.ownProductSlug(ctx, subsiteID, in.Name)
 	if err != nil {
@@ -100,4 +100,13 @@ func slugifyOwn(s string) string {
 		out = out[:100]
 	}
 	return strings.ToLower(string(out))
+}
+
+func (r *ResellerRepo) CreateOwnProduct(ctx context.Context, subsiteID uint64, in OwnProductInput) (out *ent.Product, err error) {
+	err = data.CurrencyTx(ctx, r.data, func(ctx context.Context) error {
+		var e error
+		out, e = r.createOwnProduct(ctx, subsiteID, in)
+		return e
+	})
+	return out, err
 }

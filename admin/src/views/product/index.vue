@@ -35,7 +35,7 @@ import {
   fetchCategories,
   fetchSupplyConnectionOptions,
 } from "@/service/api";
-import { formatMoney, centsToYuan, yuanToFen } from "@/utils/money";
+import { formatMoney, centsToYuan, currencyUnit, yuanToFen } from "@/utils/money";
 import { checkAuth } from "@/directives";
 import MediaField from "@/components/common/media-picker/media-field.vue";
 import RichEditor from "@/components/common/rich-editor/index.vue";
@@ -469,7 +469,7 @@ function priceLine(row: any, field: "price" | "cost") {
               ),
             default: () =>
               h("div", { class: "flex items-center gap-8px" }, [
-                h("span", { class: "text-13px whitespace-nowrap" }, `${label}(元)`),
+                h("span", { class: "text-13px whitespace-nowrap" }, `${label}(${currencyUnit()})`),
                 h(NInputNumber, {
                   value: cellDraft[key] ?? 0,
                   size: "small",
@@ -1818,7 +1818,7 @@ onMounted(() => {
                     { label: '固定运费', value: 'fixed' },
                   ]"
               /></NFormItem>
-              <NFormItem v-if="formData.shipping_mode === 'fixed'" label="运费（元）"
+              <NFormItem v-if="formData.shipping_mode === 'fixed'" :label="`运费（${currencyUnit()}）`"
                 ><NInputNumber
                   v-model:value="formData.shipping_fee_yuan"
                   :min="0.01"
@@ -1924,7 +1924,7 @@ onMounted(() => {
             label-width="100"
           >
             <NAlert v-if="formData.product_kind==='sms_channel'" type="info" class="mb-12px">接码渠道商品按用户选择实时定价。加价沿用货源导入/映射中保存的比例或固定加价规则；修改规则后立即用于新报价。</NAlert>
-            <NFormItem v-if="formData.product_kind!=='sms_channel'" label="售价（元）" path="price_yuan" :rule="{ required: true }">
+            <NFormItem v-if="formData.product_kind!=='sms_channel'" :label="`售价（${currencyUnit()}）`" path="price_yuan" :rule="{ required: true }">
               <NInputNumber
                 v-model:value="formData.price_yuan"
                 :min="0.01"
@@ -1933,7 +1933,7 @@ onMounted(() => {
                 class="w-full"
               />
             </NFormItem>
-            <NFormItem v-if="formData.product_kind!=='sms_channel'" label="成本价（元）">
+            <NFormItem v-if="formData.product_kind!=='sms_channel'" :label="`成本价（${currencyUnit()}）`">
               <NInputNumber
                 v-model:value="formData.factory_price_yuan"
                 :min="0"

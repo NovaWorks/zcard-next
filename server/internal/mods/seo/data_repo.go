@@ -5,6 +5,7 @@ package seo
 import (
 	"context"
 	"encoding/json"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/i18n"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -68,30 +69,14 @@ func (r *SeoRepo) GetPostSEO(ctx context.Context, slug string) (*PostSEO, error)
 	out := &PostSEO{
 		Slug:        p.Slug,
 		Thumbnail:   p.Thumbnail,
-		Title:       langValue(p.TitleJSON),
-		Summary:     langValue(p.SummaryJSON),
-		ContentHTML: langValue(content),
+		Title:       i18n.Value(p.TitleJSON, string(i18n.FromContext(ctx))),
+		Summary:     i18n.Value(p.SummaryJSON, string(i18n.FromContext(ctx))),
+		ContentHTML: i18n.Value(content, string(i18n.FromContext(ctx))),
 	}
 	if !p.PublishedAt.IsZero() {
 		out.PublishedAt = p.PublishedAt.Unix()
 	}
 	return out, nil
-}
-
-// langValue 多语言回落：zh_CN → zh → 首个非空值。
-func langValue(m map[string]string) string {
-	if v := m["zh_CN"]; v != "" {
-		return v
-	}
-	if v := m["zh"]; v != "" {
-		return v
-	}
-	for _, v := range m {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
 }
 
 // SeoRepo sitemap 数据仓储。
@@ -163,7 +148,7 @@ func (r *SeoRepo) ListPostSEO(ctx context.Context, typ string, categoryID uint64
 	}
 	out := make([]PostSEO, 0, len(rows))
 	for _, p := range rows {
-		out = append(out, PostSEO{Slug: p.Slug, Title: langValue(p.TitleJSON)})
+		out = append(out, PostSEO{Slug: p.Slug, Title: i18n.Value(p.TitleJSON, string(i18n.FromContext(ctx)))})
 	}
 	return out, int64(total), nil
 }

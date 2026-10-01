@@ -68,7 +68,7 @@ func (r *SupplyRepoImpl) OpenCredentials(conn *ent.SupplyConnection) (string, er
 // ── 连接 CRUD ──────────────────────────────────────────────
 
 // CreateConnection 创建连接（base_url SSRF 校验在 service 层）。
-func (r *SupplyRepoImpl) CreateConnection(ctx context.Context, conn *ent.SupplyConnection) (*ent.SupplyConnection, error) {
+func (r *SupplyRepoImpl) createConnection(ctx context.Context, conn *ent.SupplyConnection) (*ent.SupplyConnection, error) {
 	return data.Client(ctx, r.data).SupplyConnection.Create().
 		SetName(conn.Name).
 		SetDriver(conn.Driver).
@@ -583,4 +583,9 @@ func parseRetryIntervals(s string) []int {
 		return nil
 	}
 	return out
+}
+
+func (r *SupplyRepoImpl) CreateConnection(ctx context.Context, conn *ent.SupplyConnection) (out *ent.SupplyConnection, err error) {
+	err = data.CurrencyTx(ctx, r.data, func(ctx context.Context) error { var e error; out, e = r.createConnection(ctx, conn); return e })
+	return out, err
 }

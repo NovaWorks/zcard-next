@@ -3,60 +3,47 @@
     <div class="install-card">
       <!-- 头部：无商城品牌，纯安装向导 + 步骤条 -->
       <div class="install-head">
-        <h1 class="install-title">安装向导</h1>
+        <h1 class="install-title">{{ $t('安装向导') }}</h1>
         <ol class="steps">
           <li :class="{ active: step === 1, done: step > 1 }">
-            <span class="step-no">{{ step > 1 ? '✓' : '1' }}</span> 数据库配置
-          </li>
+            <span class="step-no">{{ step > 1 ? '✓' : '1' }}</span> {{ $t('数据库配置') }} </li>
           <li :class="{ active: step === 2, done: step > 2 }">
-            <span class="step-no">{{ step > 2 ? '✓' : '2' }}</span> 管理员设置
-          </li>
+            <span class="step-no">{{ step > 2 ? '✓' : '2' }}</span> {{ $t('管理员设置') }} </li>
           <li :class="{ active: step === 3 }">
-            <span class="step-no">3</span> 完成
-          </li>
+            <span class="step-no">3</span> {{ $t('完成') }} </li>
         </ol>
       </div>
 
       <!-- 加载中 -->
-      <div v-if="loading" class="install-body muted">正在检测安装状态…</div>
+      <div v-if="loading" class="install-body muted">{{ $t('正在检测安装状态…') }}</div>
 
       <!-- 已安装 -->
       <div v-else-if="status?.installed && !done" class="install-body">
         <div class="done-icon">🔒</div>
-        <div class="done-title">系统已安装</div>
-        <div class="muted">
-          数据库：{{ dialectLabel(status.dialect) }}<br />
-          安装时间：{{ status.installed_at ? new Date(status.installed_at).toLocaleString() : '-' }}<br />
-          如需重新安装，请清空数据库后重启服务。
-        </div>
+        <div class="done-title">{{ $t('系统已安装') }}</div>
+        <div class="muted"> {{ $t('数据库：') }}{{ dialectLabel(status.dialect) }}<br /> {{ $t('安装时间：') }}{{ status.installed_at ? new Date(status.installed_at).toLocaleString(localeTag) : '-' }}<br /> {{ $t('如需重新安装，请清空数据库后重启服务。') }} </div>
         <div class="done-actions">
-          <router-link class="btn" to="/">进入前台</router-link>
-          <router-link class="btn secondary" to="/login">会员登录</router-link>
+          <router-link class="btn" to="/">{{ $t('进入前台') }}</router-link>
+          <router-link class="btn secondary" to="/login">{{ $t('会员登录') }}</router-link>
         </div>
       </div>
 
       <!-- 库切换重启轮询态 -->
       <div v-else-if="restarting" class="install-body">
         <div class="done-icon spin">⏳</div>
-        <div class="done-title">正在切换数据库并重启服务…</div>
-        <div class="muted">
-          目标库：{{ dialectLabel(form.dialect) }} · 已写入配置，服务自重启后将在新库完成安装。<br />
-          已等待 {{ waited }} 秒（通常 10~30 秒；超过 120 秒请查看服务日志）
-        </div>
+        <div class="done-title">{{ $t('正在切换数据库并重启服务…') }}</div>
+        <div class="muted"> {{ $t('目标库：') }}{{ dialectLabel(form.dialect) }} {{ $t('· 已写入配置，服务自重启后将在新库完成安装。') }}<br /> {{ $t('已等待') }} {{ waited }} {{ $t('秒（通常 10~30 秒；超过 120 秒请查看服务日志）') }} </div>
       </div>
 
       <!-- 安装成功 -->
       <div v-else-if="done" class="install-body">
         <div class="done-icon">✅</div>
-        <div class="done-title">安装完成！</div>
-        <div class="muted">
-          数据库：{{ dialectLabel(doneDialect) }}<br />
-          管理员：<b>{{ form.admin_username }}</b><br />
-          后台入口：<code>/admin</code>（用上方账号登录）<br />
-          <span class="pw-hint">请妥善保管管理员密码——系统不存储明文，丢失只能重置。</span>
+        <div class="done-title">{{ $t('安装完成！') }}</div>
+        <div class="muted"> {{ $t('数据库：') }}{{ dialectLabel(doneDialect) }}<br /> {{ $t('管理员：') }}<b>{{ form.admin_username }}</b><br /> {{ $t('后台入口：') }}<code>/admin</code>{{ $t('（用上方账号登录）') }}<br />
+          <span class="pw-hint">{{ $t('请妥善保管管理员密码——系统不存储明文，丢失只能重置。') }}</span>
         </div>
         <div class="done-actions">
-          <router-link class="btn" to="/">进入前台</router-link>
+          <router-link class="btn" to="/">{{ $t('进入前台') }}</router-link>
         </div>
       </div>
 
@@ -64,106 +51,104 @@
       <div v-else class="install-body">
         <!-- 步骤① 数据库配置 -->
         <div v-if="step === 1" class="section">
-          <div class="section-title">选择数据库</div>
+          <div class="section-title">{{ $t('选择数据库') }}</div>
           <div class="dialect-grid">
             <div class="dialect-card" :class="{ active: form.dialect === 'postgres' }" @click="pickDialect('postgres')">
               <div class="dialect-head">
                 <b>PostgreSQL</b>
-                <span class="rec-badge">推荐</span>
+                <span class="rec-badge">{{ $t('推荐') }}</span>
               </div>
-              <div class="dialect-desc">完整高级能力：分站多租户 / Schema 隔离 / 高并发稳定，适合正式运营。</div>
+              <div class="dialect-desc">{{ $t('完整高级能力：分站多租户 / Schema 隔离 / 高并发稳定，适合正式运营。') }}</div>
             </div>
             <div class="dialect-card" :class="{ active: form.dialect === 'mysql' }" @click="pickDialect('mysql')">
               <div class="dialect-head"><b>MySQL</b></div>
-              <div class="dialect-desc">自托管标准形态，分站 Row 级隔离；已有 MySQL 的站长可直接复用实例。</div>
+              <div class="dialect-desc">{{ $t('自托管标准形态，分站 Row 级隔离；已有 MySQL 的站长可直接复用实例。') }}</div>
             </div>
             <div class="dialect-card" :class="{ active: form.dialect === 'sqlite' }" @click="pickDialect('sqlite')">
-              <div class="dialect-head"><b>SQLite</b><span class="test-badge">本地测试</span></div>
-              <div class="dialect-desc">内嵌零依赖，开箱即用。</div>
+              <div class="dialect-head"><b>SQLite</b><span class="test-badge">{{ $t('本地测试') }}</span></div>
+              <div class="dialect-desc">{{ $t('内嵌零依赖，开箱即用。') }}</div>
             </div>
           </div>
 
           <!-- SQLite 警告 -->
-          <div v-if="form.dialect === 'sqlite'" class="warn-box">
-            ⚠️ SQLite 仅适用于<b>本地测试 / 功能体验</b>：不支持分站多租户等高级功能，高并发与多进程场景受限。
-            正式运营请选择 <b>PostgreSQL（推荐）</b>。
+          <div v-if="form.dialect === 'sqlite'" class="warn-box"> {{ $t('⚠️ SQLite 仅适用于') }}<b>{{ $t('本地测试 / 功能体验') }}</b>{{ $t('：不支持分站多租户等高级功能，高并发与多进程场景受限。 正式运营请选择') }} <b>{{ $t('PostgreSQL（推荐）') }}</b>。
           </div>
 
           <!-- MySQL / PG 连接表单 -->
           <div v-else class="server-form">
             <div class="form-grid">
               <div class="form-row">
-                <label>数据库主机</label>
+                <label>{{ $t('数据库主机') }}</label>
                 <input v-model="form.db_host" class="input" placeholder="127.0.0.1" />
               </div>
               <div class="form-row">
-                <label>端口</label>
+                <label>{{ $t('端口') }}</label>
                 <input v-model.number="form.db_port" class="input" type="number" :placeholder="form.dialect === 'mysql' ? '3306' : '5432'" />
               </div>
               <div class="form-row">
-                <label>用户名</label>
+                <label>{{ $t('用户名') }}</label>
                 <input v-model="form.db_user" class="input" placeholder="root / postgres" />
               </div>
               <div class="form-row">
-                <label>密码</label>
-                <input v-model="form.db_password" class="input" type="password" placeholder="数据库密码" />
+                <label>{{ $t('密码') }}</label>
+                <input v-model="form.db_password" class="input" type="password" :placeholder="$t('数据库密码')" />
               </div>
               <div class="form-row span2">
-                <label>数据库名<span class="req">*</span>（不存在将自动创建）</label>
+                <label>{{ $t('数据库名') }}<span class="req">*</span>{{ $t('（不存在将自动创建）') }}</label>
                 <input v-model="form.db_name" class="input" placeholder="zcard" />
               </div>
             </div>
             <!-- Redis（mysql/pg 必填） -->
-            <div class="redis-title">Redis <span class="req">*</span><span class="muted slim">（{{ dialectLabel(form.dialect) }} 模式必配；SQLite 模式免配）</span></div>
+            <div class="redis-title">Redis <span class="req">*</span><span class="muted slim">（{{ dialectLabel(form.dialect) }} {{ $t('模式必配；SQLite 模式免配）') }}</span></div>
             <div class="form-grid">
               <div class="form-row">
-                <label>Redis 地址</label>
+                <label>{{ $t('Redis 地址') }}</label>
                 <input v-model="form.redis_addr" class="input" placeholder="127.0.0.1:6379" />
               </div>
               <div class="form-row">
-                <label>Redis 密码（无则留空）</label>
+                <label>{{ $t('Redis 密码（无则留空）') }}</label>
                 <input v-model="form.redis_password" class="input" type="password" placeholder="" />
               </div>
             </div>
             <button class="btn secondary test-btn" :disabled="testing" @click="testConnection">
-              {{ testing ? '测试中…' : testOk ? '✓ 连接成功（再测一次）' : '测试数据库与 Redis 连接' }}
+              {{ testing ? $t('测试中…') : testOk ? $t('✓ 连接成功（再测一次）') : $t('测试数据库与 Redis 连接') }}
             </button>
-            <div v-if="testMsg" class="test-msg" :class="testOk ? 'ok' : 'bad'">{{ testMsg }}</div>
+            <div v-if="testMsg" class="test-msg" :class="testOk ? 'ok' : 'bad'">{{ uiText(testMsg) }}</div>
           </div>
 
           <div class="nav-row">
-            <button class="btn install-btn" :disabled="!canNext" @click="step = 2">下一步</button>
+            <button class="btn install-btn" :disabled="!canNext" @click="step = 2">{{ $t('下一步') }}</button>
           </div>
         </div>
 
         <!-- 步骤② 管理员设置 -->
         <div v-else class="section">
-          <div class="section-title">设置管理员</div>
+          <div class="section-title">{{ $t('设置管理员') }}</div>
           <div class="form-row">
-            <label>管理员用户名</label>
+            <label>{{ $t('管理员用户名') }}</label>
             <input v-model="form.admin_username" class="input" placeholder="admin" maxlength="32" />
           </div>
           <div class="form-row">
-            <label>管理员密码<span class="req">*</span>（≥8 位）</label>
+            <label>{{ $t('管理员密码') }}<span class="req">*</span>{{ $t('（≥8 位）') }}</label>
             <div class="pw-wrap">
-              <input v-model="form.admin_password" class="input" :type="showPwd ? 'text' : 'password'" placeholder="至少 8 位，建议字母+数字组合" />
-              <button class="pw-toggle" type="button" @click="showPwd = !showPwd">{{ showPwd ? '隐藏' : '显示' }}</button>
+              <input v-model="form.admin_password" class="input" :type="showPwd ? 'text' : 'password'" :placeholder="$t('至少 8 位，建议字母+数字组合')" />
+              <button class="pw-toggle" type="button" @click="showPwd = !showPwd">{{ showPwd ? $t('隐藏') : $t('显示') }}</button>
             </div>
-            <button v-if="!form.admin_password" class="pw-gen" type="button" @click="form.admin_password = genPassword()">帮我生成强密码</button>
+            <button v-if="!form.admin_password" class="pw-gen" type="button" @click="form.admin_password = genPassword()">{{ $t('帮我生成强密码') }}</button>
           </div>
           <div class="form-row">
-            <label>站点名称</label>
-            <input v-model="form.site_name" class="input" placeholder="站点名称" maxlength="50" />
+            <label>{{ $t('站点名称') }}</label>
+            <input v-model="form.site_name" class="input" :placeholder="$t('站点名称')" maxlength="50" />
           </div>
           <div class="form-row">
-            <label>站点网址（选填）</label>
+            <label>{{ $t('站点网址（选填）') }}</label>
             <input v-model="form.site_url" class="input" :placeholder="origin" maxlength="200" />
           </div>
-          <div v-if="error" class="error">{{ error }}</div>
+          <div v-if="error" class="error">{{ uiText(error) }}</div>
           <div class="nav-row">
-            <button class="btn secondary" @click="step = 1">上一步</button>
+            <button class="btn secondary" @click="step = 1">{{ $t('上一步') }}</button>
             <button class="btn install-btn" :disabled="submitting || !form.admin_username || !form.admin_password" @click="submit">
-              {{ submitting ? '提交中…' : form.dialect === 'sqlite' ? '开始安装' : `切换到 ${dialectLabel(form.dialect)} 并安装` }}
+              {{ submitting ? $t('提交中…') : form.dialect === 'sqlite' ? $t('开始安装') : $t('切换到 {0} 并安装', [dialectLabel(form.dialect)]) }}
             </button>
           </div>
         </div>
@@ -173,6 +158,8 @@
 </template>
 
 <script setup lang="ts">
+import { uiText, t as $t, localeTag } from '@/i18n';
+
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 const loading = ref(true);
@@ -210,7 +197,7 @@ function pickDialect(d: string) {
 }
 
 function dialectLabel(d: string) {
-  return ({ postgres: 'PostgreSQL', mysql: 'MySQL', sqlite: 'SQLite（内嵌）' } as any)[d] || d;
+  return ({ postgres: 'PostgreSQL', mysql: 'MySQL', get sqlite() { return $t("SQLite（内嵌）"); } } as any)[d] || d;
 }
 
 function genPassword() {
@@ -250,7 +237,7 @@ async function testConnection() {
     testMsg.value = json.message || '';
   } catch (e: any) {
     testOk.value = false;
-    testMsg.value = e?.message || '网络错误';
+    testMsg.value = e?.message || $t("网络错误");
   } finally {
     testing.value = false;
   }
@@ -259,7 +246,7 @@ async function testConnection() {
 async function submit() {
   error.value = '';
   if (form.value.admin_password.length < 8) {
-    error.value = '管理员密码至少 8 位';
+    error.value = $t("管理员密码至少 8 位");
     return;
   }
   submitting.value = true;
@@ -270,7 +257,7 @@ async function submit() {
       body: JSON.stringify({
         admin_username: form.value.admin_username.trim(),
         admin_password: form.value.admin_password,
-        site_name: form.value.site_name.trim() || 'ZCard 商店',
+        site_name: form.value.site_name.trim() || $t("ZCard 商店"),
         site_url: form.value.site_url.trim() || origin,
         dialect: form.value.dialect,
         db_host: form.value.db_host, db_port: form.value.db_port,
@@ -280,7 +267,7 @@ async function submit() {
     });
     const json = await res.json();
     if (!res.ok) {
-      error.value = json?.message || '安装失败，请重试';
+      error.value = json?.message || $t("安装失败，请重试");
       return;
     }
     if (json.restart_required) {
@@ -303,7 +290,7 @@ async function submit() {
         if (waited.value >= 120 && pollTimer) {
           clearInterval(pollTimer);
           restarting.value = false;
-          error.value = '等待超时：服务可能未能在新数据库上启动，请查看日志后重试';
+          error.value = $t("等待超时：服务可能未能在新数据库上启动，请查看日志后重试");
         }
       }, 2000);
       return;
@@ -312,7 +299,7 @@ async function submit() {
     doneDialect.value = form.value.dialect;
     done.value = true;
   } catch (e: any) {
-    error.value = e?.message || '网络错误';
+    error.value = e?.message || $t("网络错误");
   } finally {
     submitting.value = false;
   }

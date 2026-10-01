@@ -74,7 +74,7 @@ func (uc *SettingsUsecase) Put(ctx context.Context, group, key string, value jso
 	if IsSecret(group, key) && (string(value) == `"****"` || (group == "notify" && key == "telegram_bot_token" && string(value) == `""`)) {
 		return nil // 脱敏回写 = 未修改
 	}
-	return uc.repo.Put(ctx, group, key, value)
+	return uc.PutMany(ctx, []port.Item{{Group: group, Key: key, Value: value}})
 }
 
 // PutMany 批量更新（表单级保存；单事务原子写入——任一项失败整体回滚）。
@@ -84,7 +84,18 @@ func (uc *SettingsUsecase) PutMany(ctx context.Context, items []port.Item) error
 		return nil
 	}
 	valid := make([]port.Item, 0, len(items))
+	seen := map[string]bool{}
 	for _, it := range items {
+		name := it.Group + "." + it.Key
+		if seen[name] {
+			return fmt.Errorf("settings.DUPLICATE_KEY: %s", name)
+		}
+		seen[name] = true
+		if it.Group == "i18n" {
+			if err := validateI18nValue(it.Key, it.Value); err != nil {
+				return err
+			}
+		}
 		if err := ValidateKey(it.Group, it.Key); err != nil {
 			return err
 		}
@@ -98,6 +109,15 @@ func (uc *SettingsUsecase) PutMany(ctx context.Context, items []port.Item) error
 	}
 	if len(valid) == 0 {
 		return nil
+	}
+	if hasI18nWrites(valid) {
+		current, err := uc.repo.List(ctx, "i18n")
+		if err != nil {
+			return err
+		}
+		if _, err := mergedI18n(current, valid); err != nil {
+			return err
+		}
 	}
 	return uc.repo.PutMany(ctx, valid)
 }

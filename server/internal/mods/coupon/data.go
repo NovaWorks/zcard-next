@@ -135,7 +135,7 @@ func csvEscape(s string) string {
 }
 
 // CreateBatch 批量生成券码。
-func (r *CouponRepoImpl) CreateBatch(ctx context.Context, name, typ string, value int64, count int32, expireAt *time.Time) (int32, error) {
+func (r *CouponRepoImpl) createBatch(ctx context.Context, name, typ string, value int64, count int32, expireAt *time.Time) (int32, error) {
 	if _, err := couponDiscount(coupon.Type(typ), value, 0); err != nil {
 		return 0, err
 	}
@@ -232,4 +232,13 @@ func (r *CouponRepoImpl) MarkUsed(ctx context.Context, couponID, orderID uint64)
 		return fmt.Errorf("coupon.NOT_AVAILABLE: 优惠券已使用、已作废或已过期")
 	}
 	return nil
+}
+
+func (r *CouponRepoImpl) CreateBatch(ctx context.Context, name, typ string, value int64, count int32, expireAt *time.Time) (out int32, err error) {
+	err = data.CurrencyTx(ctx, r.data, func(ctx context.Context) error {
+		var e error
+		out, e = r.createBatch(ctx, name, typ, value, count, expireAt)
+		return e
+	})
+	return out, err
 }

@@ -2,8 +2,8 @@
   <div class="home">
     <!-- Hero 轮播（公告设置 image/carousel 优先；回落横幅；无图回退渐变品牌区） -->
     <div v-if="!heroReady" class="hero-placeholder" :role="heroError ? 'alert' : 'status'">
-      <span>{{ heroError ? '店铺展示内容暂时无法加载' : '正在加载店铺内容…' }}</span>
-      <button v-if="heroError" class="feed-retry" @click="loadDecorations">重试</button>
+      <span>{{ heroError ? $t('店铺展示内容暂时无法加载') : $t('正在加载店铺内容…') }}</span>
+      <button v-if="heroError" class="feed-retry" @click="loadDecorations">{{ $t('重试') }}</button>
     </div>
     <div v-else-if="heroItems.length" class="hero-slider" @mouseenter="stopHero" @mouseleave="startHero">
       <div class="hero-track" :style="{ transform: `translateX(-${heroIndex * 100}%)` }">
@@ -25,11 +25,11 @@
     <div v-else class="hero-banner">
       <div>
         <h1 :class="{ 'brand-name-placeholder': !brandReady }" :aria-busy="!brandReady">{{ siteName }}</h1>
-        <p>在线下单 · 正品保障 · 售后无忧</p>
+        <p>{{ $t('在线下单 · 正品保障 · 售后无忧') }}</p>
         <div class="hero-points">
-          <span>📦 按商品交付</span>
-          <span>🛡️ 正品保障</span>
-          <span>💬 在线客服</span>
+          <span>{{ $t('📦 按商品交付') }}</span>
+          <span>{{ $t('🛡️ 正品保障') }}</span>
+          <span>{{ $t('💬 在线客服') }}</span>
         </div>
       </div>
       <span class="hero-icon">🎁</span>
@@ -37,7 +37,7 @@
 
     <!-- 公告条（设置文本优先；回落最新公告文章；点击弹公告弹窗，与导航📢同源） -->
     <div v-if="noticeBarText" class="notice-bar" @click="openNoticeModal()">
-      <span class="tag">公告</span>
+      <span class="tag">{{ $t('公告') }}</span>
       <span class="notice-title">{{ noticeBarText }}</span>
       <span v-if="latestNotice && !announcementText" class="muted">{{ formatDate(latestNotice.published_at) }}</span>
     </div>
@@ -56,23 +56,23 @@
           <input
             v-model="keyword"
             class="input"
-            placeholder="搜索商品名"
-            aria-label="搜索商品名"
+            :placeholder="$t('搜索商品名')"
+            :aria-label="$t('搜索商品名')"
           />
-          <button class="btn btn-primary" type="submit">搜索</button>
+          <button class="btn btn-primary" type="submit">{{ $t('搜索') }}</button>
         </form>
 
         <!-- 分类导航：grid=顶部胶囊全断点；list 时 PC 左树，移动端「全部分类」折叠树（含全部层级，替代胶囊） -->
         <div v-if="navStyle === 'grid' && (categories.length || hasRecommended)" class="card cat-chips">
           <button class="mobile-cat-head" type="button" :aria-expanded="chipsExpanded" @click="chipsExpanded = !chipsExpanded">
-            <span class="mcb-bar"></span><span class="mcb-title">全部分类</span>
-            <span class="mcb-count">{{ categories.length }} 类</span>
-            <span class="mcb-toggle-label">{{ chipsExpanded ? '折叠' : '展开' }}</span>
+            <span class="mcb-bar"></span><span class="mcb-title">{{ $t('全部分类') }}</span>
+            <span class="mcb-count">{{ categories.length }} {{ $t('类') }}</span>
+            <span class="mcb-toggle-label">{{ chipsExpanded ? $t('折叠') : $t('展开') }}</span>
             <span class="mcb-arrow" :class="{ open: chipsExpanded }"></span>
           </button>
           <div class="cat-chips-row" :class="{ expanded: chipsExpanded }">
-            <button class="chip" :class="{ active: !activeCategory }" @click="pickCategory(0)"><ThemeIcon name="grid" class="chip-icon" />全部</button>
-            <button v-if="hasRecommended" class="chip" :class="{ active: activeCategory === -1 }" @click="pickCategory(-1)">推荐商品</button>
+            <button class="chip" :class="{ active: !activeCategory }" @click="pickCategory(0)"><ThemeIcon name="grid" class="chip-icon" />{{ $t('全部') }}</button>
+            <button v-if="hasRecommended" class="chip" :class="{ active: activeCategory === -1 }" @click="pickCategory(-1)">{{ $t('推荐商品') }}</button>
             <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: activeCategory === c.id }" @click="pickCategory(c.id)">
               <CategoryIcon :icon="c.icon" class="chip-icon" />{{ c.name }}
             </button>
@@ -82,8 +82,8 @@
           <CategoryTree variant="panel" :categories="categories" :loading="categoriesLoading" :error="!!categoriesError" @retry="loadCategories" :show-recommended="hasRecommended" :model-value="activeCategory" @update:model-value="pickCategory" />
         </div>
 
-        <div v-if="navStyle === 'grid' && categoriesError" class="error" role="alert">分类加载失败 <button class="feed-retry" :disabled="categoriesLoading" @click="loadCategories">重试</button></div>
-        <div v-if="error" role="alert" class="error" style="margin-bottom: 12px;">{{ error }} <button :disabled="loading" class="feed-retry" @click="load(products.length > 0)">重新加载</button></div>
+        <div v-if="navStyle === 'grid' && categoriesError" class="error" role="alert">{{ $t('分类加载失败') }} <button class="feed-retry" :disabled="categoriesLoading" @click="loadCategories">{{ $t('重试') }}</button></div>
+        <div v-if="error" role="alert" class="error" style="margin-bottom: 12px;">{{ uiText(error) }} <button :disabled="loading" class="feed-retry" @click="load(products.length > 0)">{{ $t('重新加载') }}</button></div>
 
         <CatalogToolbar :title="sectionTitle" :sort="!showSales && sort === 'sales' ? 'default' : sort" :show-sales="showSales" :view="viewMode" :loading="loading" @sort="changeSort" @view="changeView" />
 
@@ -93,52 +93,54 @@
           <template v-for="(p, index) in products" :key="p.id">
             <ProductCard :p="p" :mode="viewMode" :show-sales="showSales" :show-stock="showStock" />
             <BannerStrip v-if="index + 1 === middleBannerIndex" :banners="middleBanners" catalog
-              label="商品列表中部横幅" @open="openBanner" />
+              :label="$t('商品列表中部横幅')" @open="openBanner" />
           </template>
         </div>
         <div v-if="products.length === 0 && !loading && !error" class="empty-state">
           <div class="empty-icon">📦</div>
-          <div class="muted">暂无商品</div>
+          <div class="muted">{{ $t('暂无商品') }}</div>
         </div>
 
         <!-- 分页器（首页/页码/末页 + 每页条数） -->
-        <div v-if="loading && !products.length" class="feed-status" role="status">正在加载商品…</div>
+        <div v-if="loading && !products.length" class="feed-status" role="status">{{ $t('正在加载商品…') }}</div>
         <div v-if="mobileCatalog && products.length" ref="loadMoreTarget" class="feed-status" :class="{ 'is-complete': !hasMore && !loading }" :aria-busy="loading || loadingMore">
-          <span v-if="loadingMore" role="status">正在加载更多商品…</span>
-          <button v-else-if="error" class="feed-retry" @click="load(true)">刷新失败，点击重试</button>
-          <button v-else-if="loadMoreError" class="feed-retry" @click="loadMore()">加载失败，点击重试</button>
-          <button v-else-if="hasMore" class="feed-more" :disabled="loading" @click="loadMore()">继续下滑加载更多 · 已加载 {{ products.length }} 件</button>
-          <span v-else role="status">已显示全部 {{ products.length }} 件商品</span>
+          <span v-if="loadingMore" role="status">{{ $t('正在加载更多商品…') }}</span>
+          <button v-else-if="error" class="feed-retry" @click="load(true)">{{ $t('刷新失败，点击重试') }}</button>
+          <button v-else-if="loadMoreError" class="feed-retry" @click="loadMore()">{{ $t('加载失败，点击重试') }}</button>
+          <button v-else-if="hasMore" class="feed-more" :disabled="loading" @click="loadMore()">{{ $t('继续下滑加载更多 · 已加载') }} {{ products.length }} {{ $t('件') }}</button>
+          <span v-else role="status">{{ $t('已显示全部') }} {{ products.length }} {{ $t('件商品') }}</span>
         </div>
         <div v-if="!mobileCatalog && total > defaultPageSize" class="pager">
-          <span class="pager-total muted">共 {{ total }} 件</span>
+          <span class="pager-total muted">{{ $t('共') }} {{ total }} {{ $t('件') }}</span>
           <div class="pager-btns">
-            <button class="pager-btn pager-jump" :disabled="page <= 1" title="首页" @click="goPage(1)">«</button>
-            <button class="pager-btn" :disabled="page <= 1" @click="goPage(page - 1)">上一页</button>
+            <button class="pager-btn pager-jump" :disabled="page <= 1" :title="$t('首页')" @click="goPage(1)">«</button>
+            <button class="pager-btn" :disabled="page <= 1" @click="goPage(page - 1)">{{ $t('上一页') }}</button>
             <!-- 手机端页码砖收起后的当前位置指示（桌面隐藏） -->
             <span class="pager-now">{{ page }} / {{ totalPage }}</span>
             <template v-for="p in pageList" :key="p">
               <span v-if="p === 0" class="pager-ellipsis">…</span>
               <button v-else class="pager-btn num" :class="{ active: p === page }" @click="goPage(p)">{{ p }}</button>
             </template>
-            <button class="pager-btn" :disabled="page >= totalPage" @click="goPage(page + 1)">下一页</button>
-            <button class="pager-btn pager-jump" :disabled="page >= totalPage" title="末页" @click="goPage(totalPage)">»</button>
+            <button class="pager-btn" :disabled="page >= totalPage" @click="goPage(page + 1)">{{ $t('下一页') }}</button>
+            <button class="pager-btn pager-jump" :disabled="page >= totalPage" :title="$t('末页')" @click="goPage(totalPage)">»</button>
           </div>
           <div class="pager-size">
-            <span class="muted">每页</span>
+            <span class="muted">{{ $t('每页') }}</span>
             <select v-model.number="pageSize" class="pager-select" @change="changePageSize">
               <option v-for="s in pageSizeOptions" :key="s" :value="s">{{ s }}</option>
             </select>
-            <span class="muted">条</span>
+            <span class="muted">{{ $t('条') }}</span>
           </div>
         </div>
       </div>
     </div>
-    <BannerStrip class="home-bottom-banners" :banners="bottomBanners" label="首页底部横幅" @open="openBanner" />
+    <BannerStrip class="home-bottom-banners" :banners="bottomBanners" :label="$t('首页底部横幅')" @open="openBanner" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { uiText, t as $t, localeTag, locale } from '@/i18n';
+
 import { loadPublicConfig } from '@/config';
 import { usePageRecovery } from '@/composables/page-recovery';
 import BannerStrip from '@/components/BannerStrip.vue';
@@ -243,11 +245,11 @@ const topBannerEnabled = ref(true); // promo.top_banner_enabled：顶部横幅�
 const chipsExpanded = ref(false); // 移动端 grid 胶囊：单行横滑 → 展开多行
 
 const categoryTitle = computed(() =>
-  activeCategory.value === -1 ? '推荐商品' : activeCategory.value
-    ? categories.value.find((c) => c.id === activeCategory.value)?.name || '全部商品'
-    : '全部商品',
+  activeCategory.value === -1 ? $t("推荐商品") : activeCategory.value
+    ? categories.value.find((c) => c.id === activeCategory.value)?.name || $t("全部商品")
+    : $t("全部商品"),
 );
-const sectionTitle = computed(() => searchTerm.value ? `${categoryTitle.value} · 搜索结果` : categoryTitle.value);
+const sectionTitle = computed(() => searchTerm.value ? $t("{0} · 搜索结果", [categoryTitle.value]) : categoryTitle.value);
 const totalPage = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)));
 // 页码列表：当前页 ±2 + 首末页；越界段用 0 占位渲染省略号
 const pageList = computed(() => {
@@ -400,7 +402,7 @@ watch(() => route.fullPath, async (_path, previous) => {
 
 function formatDate(unix?: number): string {
   if (!unix) return '';
-  return new Date(unix * 1000).toLocaleDateString('zh-CN');
+  return new Date(unix * 1000).toLocaleDateString(localeTag.value);
 }
 
 async function refreshRecommendations() {
@@ -558,15 +560,19 @@ async function loadCategories() {
   try { await categoriesRequest; } finally { categoriesRequest = undefined; }
 }
 let categoriesRequest: Promise<void> | undefined;
+watch(locale, () => { if (route.path === '/') void loadDecorations(); });
+onActivated(() => { if (route.path === '/') void loadDecorations(); });
 async function loadDecorations() {
   heroError.value = false;
+  const requestedLocale = locale.value;
+  const current = () => requestedLocale === locale.value;
   await Promise.all([
-    listBanners('middle').then(b => { if (b.data) middleBanners.value = b.data.banners || []; }),
-    listBanners('bottom').then(b => { if (b.data) bottomBanners.value = b.data.banners || []; }),
-    listBanners('top').then(b => { heroError.value = !!b.error; if (b.data) { banners.value = b.data.banners || []; heroReady.value = true; } }),
-    listPosts('notice', 1, 1).then(n => { if (n.data) latestNotice.value = n.data.posts?.[0] || null; }),
+    listBanners('middle').then(b => { if (current() && b.data) middleBanners.value = b.data.banners || []; }),
+    listBanners('bottom').then(b => { if (current() && b.data) bottomBanners.value = b.data.banners || []; }),
+    listBanners('top').then(b => { if (!current()) return; heroError.value = !!b.error; if (b.data) { banners.value = b.data.banners || []; heroReady.value = true; } }),
+    listPosts('notice', 1, 1).then(n => { if (current() && n.data) latestNotice.value = n.data.posts?.[0] || null; }),
     fetchAnnouncement().then(a => { announcement.value = a; }),
-    fetchSiteSeo().then(site => { applyDefaultSeo(site); applyVerification(site); }),
+    fetchSiteSeo().then(site => { if (route.path === '/') { applyDefaultSeo(site); applyVerification(site); } }),
   ]);
 }
 // Render loading/error controls immediately; optional banners must not block products.

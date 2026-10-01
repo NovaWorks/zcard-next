@@ -201,16 +201,12 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			if !data.SMSSalesEnabled() || in.UserID == 0 || len(in.Items) != 1 || item.Quantity != 1 || item.SkuID != 0 || in.UsePoints || in.CouponCode != "" || p.UpstreamSourceID == 0 || p.GoodsType == "physical" {
 				return nil, fmt.Errorf("order.FORM_INVALID: 接码仅支持登录会员余额单件独立购买，暂不支持优惠券和积分；请确认接码销售已启用")
 			}
-			if uc.Settings != nil {
-				raw, e := uc.Settings.GetJSON(ctx, "i18n", "base_currency")
-				if e != nil {
-					return nil, e
-				}
-				var currency string
-				_ = json.Unmarshal(raw, &currency)
-				if currency != "" && currency != "CNY" {
-					return nil, fmt.Errorf("order.FORM_INVALID: 接码仅支持人民币基础币种")
-				}
+			currency, e := data.BaseCurrency(ctx, uc.Data)
+			if e != nil {
+				return nil, e
+			}
+			if currency != "CNY" {
+				return nil, fmt.Errorf("order.FORM_INVALID: 接码仅支持人民币基础币种")
 			}
 			if data.FulfillmentMode(p, nil) != "upstream" {
 				return nil, fmt.Errorf("order.FORM_INVALID: 接码须使用上游履约")
@@ -301,6 +297,10 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 	var result *CreateOrderResult
 	err := data.Tx(ctx, uc.Data, func(txCtx context.Context) error {
 		client := data.Client(txCtx, uc.Data)
+		baseCurrency, err := data.BaseCurrency(txCtx, uc.Data)
+		if err != nil {
+			return err
+		}
 
 		// Idempotency-Key：哈希落库唯一索引；同 key 双击返回首单（）
 		var idemHash string
@@ -700,7 +700,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			SetRequestHash(requestHash).
 			SetShippingAmount(shippingTotal).
 			SetShippingAddress(in.ShippingAddress).
-			SetBaseCurrency("CNY").
+			SetBaseCurrency(baseCurrency).
 			SetContact(in.Contact).
 			SetClientIP(in.ClientIP).
 			SetRiskIP(auditport.NormalizeIP(in.ClientIP)).

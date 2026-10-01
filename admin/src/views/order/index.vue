@@ -32,7 +32,7 @@ import {
 } from "@/service/api";
 import ManualDeliverDialog from "./components/manual-deliver-dialog.vue";
 import PendingDeliverTab from "./components/pending-deliver-tab.vue";
-import { formatMoney, formatSignedMoney } from "@/utils/money";
+import { currencyUnit, formatMoney, formatSignedMoney } from "@/utils/money";
 
 defineOptions({ name: "OrderManagement" });
 const route = useRoute();
@@ -1057,7 +1057,7 @@ onMounted(async () => {
         <p class="mb-12px text-13px">
           退款将进入下单会员余额；关联佣金或分站利润的订单须全额退款。
         </p>
-        <NFormItem label="退本金(元)" required>
+        <NFormItem :label="`退本金(${currencyUnit()})`" required>
           <NInputNumber
             v-model:value="refundForm.amount_yuan"
             :min="0"

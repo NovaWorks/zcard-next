@@ -11,7 +11,7 @@ import {
 } from "naive-ui";
 import { previewSupplyProducts, importSupplyProducts } from "@/service/api";
 import { fetchCategories } from "@/service/api";
-import { formatMoney, yuanToFen } from "@/utils/money";
+import { currencyUnit, formatMoney, yuanToFen } from "@/utils/money";
 
 // 上游分类节点（含商品）
 interface PreviewCategory {
@@ -539,7 +539,7 @@ async function submit() {
                 :options="[
                   { label: '跟随渠道定价', value: 'channel' },
                   { label: '独立加价比例（%）', value: 'percent' },
-                  { label: '加固定金额（元）', value: 'fixed' },
+                  { label: `加固定金额（${currencyUnit()}）`, value: 'fixed' },
                   { label: '账号报价导入（不加价）', value: 'equal' },
                   { label: '待定价（导入后不上架）', value: 'pending' },
                 ]"
@@ -548,7 +548,7 @@ async function submit() {
             <NFormItem v-if="pricing.mode === 'percent'" label="加价比例（%）" :show-feedback="false">
               <NInputNumber v-model:value="pricing.markupPercent" :min="0" class="w-full" placeholder="10 = 加价 10%" />
             </NFormItem>
-            <NFormItem v-if="pricing.mode === 'fixed'" label="加价金额（元）" :show-feedback="false">
+            <NFormItem v-if="pricing.mode === 'fixed'" :label="`加价金额（${currencyUnit()}）`" :show-feedback="false">
               <NInputNumber v-model:value="pricing.markupAmountYuan" :min="0.01" :precision="2" class="w-full" />
             </NFormItem>
             <div class="pricing-default">

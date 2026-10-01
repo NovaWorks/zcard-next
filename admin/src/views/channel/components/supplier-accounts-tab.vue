@@ -18,7 +18,7 @@ import {
   setSupplierIPWhitelist,
 } from "@/service/api";
 import { checkAuth } from "@/directives";
-import { formatTransactionRemark, formatMoney, yuanToFen, fenToYuan } from "@/utils/money";
+import { currencyUnit, formatTransactionRemark, formatMoney, yuanToFen, fenToYuan } from "@/utils/money";
 import SupplierPricingDialog from "./supplier-pricing-dialog.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 import { useResponsiveTier, type TableTier } from "./use-responsive-tier";
@@ -224,14 +224,14 @@ function openRecharge(row: any) {
 async function submitRecharge() {
   if (recharging.value || !rechargeTarget.value) return;
   if (rechargeYuan.value === null || !Number.isFinite(rechargeYuan.value) || rechargeYuan.value <= 0) {
-    window.$message?.warning("请填写大于零的充值金额（元）");
+    window.$message?.warning(`请填写大于零的充值金额（${currencyUnit()}）`);
     return;
   }
   let amountCents: number;
   try { amountCents = yuanToFen(rechargeYuan.value); }
   catch { window.$message?.warning("充值金额必须精确到分"); return; }
   if (!Number.isSafeInteger(amountCents) || amountCents <= 0 || amountCents > 1_000_000_000) {
-    window.$message?.warning("充值金额须在 0.01 至 10,000,000 元之间");
+    window.$message?.warning(`充值金额须在 0.01 至 10,000,000 ${currencyUnit()} 之间`);
     return;
   }
   recharging.value = true;
@@ -597,9 +597,9 @@ onMounted(load);
     <NModal v-model:show="showRecharge" preset="dialog" :title="`充值：${rechargeTarget?.name || ''}`" :closable="!recharging" :mask-closable="!recharging" :close-on-esc="!recharging" style="width: 420px; max-width: 96vw">
       <NForm label-placement="top">
         <NFormItem label="当前余额">
-          <span>{{ fenToYuan(rechargeTarget?.balance_cache || 0) }} 元</span>
+          <span>{{ fenToYuan(rechargeTarget?.balance_cache || 0) }} {{ currencyUnit() }}</span>
         </NFormItem>
-        <NFormItem label="充值金额（元）" required>
+        <NFormItem :label="`充值金额（${currencyUnit()}）`" required>
           <NInputNumber v-model:value="rechargeYuan" :min="0.01" :max="10_000_000" :precision="2" :disabled="recharging" class="w-full" />
         </NFormItem>
         <NFormItem label="备注">

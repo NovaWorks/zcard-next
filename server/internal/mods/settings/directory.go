@@ -368,7 +368,7 @@ var groups = map[string]*GroupDef{
 	"i18n": {
 		Name: "i18n", Desc: "语言货币",
 		Labels: map[string]string{
-			"default_locale": "默认语言", "enabled_locales": "启用语言列表", "base_currency": "基础货币",
+			"default_locale": "默认语言", "enabled_locales": "启用语言列表", "base_currency": "基础货币 / 默认结算货币",
 			"display_currency": "前端显示货币",
 		},
 		Defaults: map[string]any{

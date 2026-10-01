@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AccountSecurity from "@/components/security/account-security.vue";
-import { ref, reactive, onMounted, onBeforeUnmount } from "vue";
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRoute, onBeforeRouteLeave } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { fetchSettings, updateSettings, listCurrencies, fetchTemplates } from "@/service/api";
@@ -8,6 +8,7 @@ import type { TemplateItem } from "@/service/api";
 import { NCheckbox, NCheckboxGroup, NRadioButton, NRadioGroup, NSpace, NTabs as OuterTabs, NTabPane as OuterTabPane } from "naive-ui";
 import { checkAuth } from "@/directives";
 import { resolveMediaUrl } from "@/utils/media";
+import { initCurrency } from "@/utils/money";
 import EmailTest from "./components/email-test.vue";
 import TelegramSettings from "./components/telegram-settings.vue";
 import CurrencyTab from "./components/currency-tab.vue";
@@ -45,6 +46,7 @@ async function switchGroup(group: string) {
     telegramDirty.value = false;
     activeGroup.value = group;
     await loadSettings();
+    if (group === "i18n") await loadCurrencies();
   } finally { switching = false; }
 }
 async function switchOuter(tab: string) {
@@ -65,8 +67,29 @@ function beforeUnload(event: BeforeUnloadEvent) {
 onMounted(() => window.addEventListener('beforeunload', beforeUnload));
 onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
 onBeforeRouteLeave(async () => !saving.value && !telegramSaving.value && (!hasDirty() || await confirmDiscard()));
-// 货币下拉选项（i18n.base_currency 联动）；无权限/失败时为空 → 回退文本输入。
+// 货币选择仅列启用货币；读取失败保持下拉并提供重试。
 const currencyOptions = ref<{ label: string; value: string }[]>([]);
+const currenciesLoading = ref(false);
+const currencyLoadError = ref("");
+const currencyVersion = ref(0);
+const localeOptions = [
+  { label: "简体中文", value: "zh_CN" },
+  { label: "English", value: "en" },
+];
+const enabledLocaleOptions = computed(() => {
+  const enabled = getVal(items.value.find((it) => it.group === "i18n" && it.key === "enabled_locales"));
+  return localeOptions.filter((option) => Array.isArray(enabled) && enabled.includes(option.value));
+});
+function setEnabledLocales(item: any, enabled: string[]) {
+  if (!enabled.length) {
+    window.$message?.warning("至少启用一种语言");
+    return;
+  }
+  setVal(item, enabled);
+  const defaultItem = items.value.find((it) => it.group === "i18n" && it.key === "default_locale");
+  if (defaultItem && !enabled.includes(String(getVal(defaultItem)))) setVal(defaultItem, enabled[0]);
+}
+
 // 可用模板清单（template 组主题弹窗数据源）；无权限/失败时为空 → 弹窗显示安装入口。
 const templates = ref<TemplateItem[]>([]);
 
@@ -356,17 +379,29 @@ function confirmDiscard(): Promise<boolean> {
 }
 
 async function loadCurrencies() {
+  currenciesLoading.value = true;
+  currencyLoadError.value = "";
+  currencyOptions.value = [];
   try {
     const { data, error } = await listCurrencies();
-    if (!error && (data as any)?.currencies?.length) {
-      currencyOptions.value = ((data as any).currencies as any[]).map((c: any) => ({
-        label: `${c.code}（${c.symbol ?? ""}）`,
-        value: c.code,
-      }));
+    if (error || !(data as any)?.currencies) {
+      currencyLoadError.value = "货币列表加载失败，请检查读取权限后重试";
+      return;
     }
+    currencyOptions.value = ((data as any).currencies as any[])
+      .filter((c: any) => c.enabled)
+      .map((c: any) => ({ label: `${c.code}（${c.symbol ?? ""}）`, value: c.code }));
+    if (!currencyOptions.value.length) currencyLoadError.value = "暂无启用货币，请先在「货币」页创建并启用";
   } catch {
-    // 无 settings:currency_read 权限或接口异常：保持空列表，渲染回退文本输入
+    currencyLoadError.value = "货币列表加载失败，请重试";
+  } finally {
+    currenciesLoading.value = false;
   }
+}
+
+async function currenciesUpdated() {
+  await loadCurrencies();
+  if (activeGroup.value === "i18n") await loadSettings();
 }
 
 // 表单级保存：一次提交本组全部已修改项（后端单事务原子写入）。
@@ -381,6 +416,10 @@ async function saveAll() {
     if (!error) {
       window.$message?.success("设置已保存");
       dirtyKeys.value.clear();
+      if (pending.some((it) => it.group === "i18n" && it.key === "base_currency")) {
+        await Promise.all([initCurrency(true), loadCurrencies()]);
+        currencyVersion.value += 1;
+      }
       if (data?.admin_base_path) window.location.replace(`${data.admin_base_path}/settings`);
     }
   } finally {
@@ -432,7 +471,7 @@ onMounted(() => {
             </div>
 
             <h3 v-if="activeGroup === 'ticket'" class="mt-16px font-600">工单设置</h3>
-            <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form" :class="{ 'settings-form-wide': ['ops', 'recharge', 'supplier_recharge'].includes(activeGroup), 'settings-form-stock': activeGroup === 'supply', 'settings-form-smtp': activeGroup === 'notify' }">
+            <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form" :class="{ 'settings-form-wide': ['ops', 'recharge', 'supplier_recharge'].includes(activeGroup), 'settings-form-stock': activeGroup === 'supply', 'settings-form-smtp': activeGroup === 'notify', 'settings-form-i18n': activeGroup === 'i18n' }">
               <NFormItem v-for="item in items" :key="item.key" :label="labelOf(item)">
                 <div class="flex w-full items-center gap-8px">
                   <template v-if="linkListOf(item)">
@@ -507,6 +546,45 @@ onMounted(() => {
                     <NSelect :value="String(getVal(item) ?? 'auto')" class="min-w-0 flex-1" :options="item.options"
                       :input-props="{ 'aria-label': labelOf(item) }" @update:value="(v: string) => setVal(item, v)" />
                   </template>
+                  <template v-else-if="item.group === 'i18n' && item.key === 'default_locale'">
+                    <NSelect
+                      :value="String(getVal(item) ?? '')"
+                      class="min-w-0 flex-1"
+                      :options="enabledLocaleOptions"
+                      :input-props="{ 'aria-label': labelOf(item) }"
+                      @update:value="(v: string) => setVal(item, v)"
+                    />
+                  </template>
+                  <template v-else-if="item.group === 'i18n' && item.key === 'enabled_locales'">
+                    <div class="min-w-0 flex-1">
+                      <NSelect
+                        :value="multiValueOf(item)"
+                        multiple
+                        :options="localeOptions"
+                        :input-props="{ 'aria-label': labelOf(item) }"
+                        @update:value="(v: string[]) => setEnabledLocales(item, v)"
+                      />
+                      <p class="mt-6px text-12px text-gray-500">启用两种语言后，默认主题显示语言切换器；默认语言用于首次访问。</p>
+                    </div>
+                  </template>
+                  <template v-else-if="item.group === 'i18n' && (item.key === 'base_currency' || item.key === 'display_currency')">
+                    <div class="min-w-0 flex-1">
+                      <NSelect
+                        :value="String(getVal(item) ?? '')"
+                        filterable
+                        :loading="currenciesLoading"
+                        :disabled="currenciesLoading || !!currencyLoadError"
+                        :input-props="{ 'aria-label': labelOf(item) }"
+                        :options="item.key === 'display_currency' ? [{ label: '跟随基础货币（结算币）', value: '' }, ...currencyOptions] : currencyOptions"
+                        @update:value="(v: string) => setVal(item, v)"
+                      />
+                      <div v-if="currencyLoadError" role="alert" class="mt-6px flex flex-wrap items-center gap-8px text-12px text-red-600">
+                        <span>{{ currencyLoadError }}</span><NButton size="tiny" @click="loadCurrencies">重试</NButton>
+                      </div>
+                      <p v-if="item.key === 'base_currency'" class="mt-6px text-12px text-gray-500">基础货币也是默认结算货币。已有商品、订单或资金记录时禁止直接切换，现有价格与余额需要专门迁移。</p>
+                      <p v-else class="mt-6px text-12px text-gray-500">仅换算前台显示金额，实际结算使用基础货币。</p>
+                    </div>
+                  </template>
                   <template v-else-if="item.options?.length">
                     <!-- 低基数枚举：单选按钮组直接可见，免下拉展开 -->
                     <NRadioGroup
@@ -520,15 +598,6 @@ onMounted(() => {
                         </NRadioButton>
                       </NSpace>
                     </NRadioGroup>
-                  </template>
-                  <template v-else-if="activeGroup === 'i18n' && (item.key === 'base_currency' || item.key === 'display_currency') && currencyOptions.length">
-                    <NSelect
-                      :value="String(getVal(item) ?? '')"
-                      class="flex-1"
-                      filterable
-                      :options="item.key === 'display_currency' ? [{ label: '跟随基础货币（结算币）', value: '' }, ...currencyOptions] : currencyOptions"
-                      @update:value="(v: string) => setVal(item, v)"
-                    />
                   </template>
                   <template v-else-if="typeof getVal(item) === 'boolean'">
                     <NSwitch :value="getVal(item)" :aria-label="labelOf(item)" @update:value="(v: boolean) => setVal(item, v)" />
@@ -587,7 +656,7 @@ onMounted(() => {
           </template>
         </OuterTabPane>
         <OuterTabPane v-if="checkAuth('settings:currency_read')" name="currency" tab="货币">
-          <CurrencyTab />
+          <CurrencyTab :key="currencyVersion" @updated="currenciesUpdated" />
         </OuterTabPane>
         <OuterTabPane v-if="checkAuth('audit:read')" name="audit" tab="审计日志">
           <AuditTab />
@@ -628,9 +697,9 @@ onMounted(() => {
 .settings-form-wide { max-width: 1100px; }
 @media (max-width: 640px) {
   .settings-form-wide :deep(.n-form-item) { grid-template-columns: minmax(0, 1fr); }
-  .settings-form-stock :deep(.n-form-item), .settings-form-smtp :deep(.n-form-item) { grid-template-columns: minmax(0, 1fr); grid-template-areas: "label" "blank" "feedback"; grid-template-rows: auto auto auto; }
-  .settings-form-stock :deep(.n-form-item-label), .settings-form-smtp :deep(.n-form-item-label) { display: flex; text-align: left; padding-bottom: 6px; }
-  .settings-form-wide :deep(.n-form-item-label), .settings-form-stock :deep(.n-form-item-label), .settings-form-smtp :deep(.n-form-item-label) { justify-content: flex-start; }
+  .settings-form-stock :deep(.n-form-item), .settings-form-smtp :deep(.n-form-item), .settings-form-i18n :deep(.n-form-item) { grid-template-columns: minmax(0, 1fr); grid-template-areas: "label" "blank" "feedback"; grid-template-rows: auto auto auto; }
+  .settings-form-stock :deep(.n-form-item-label), .settings-form-smtp :deep(.n-form-item-label), .settings-form-i18n :deep(.n-form-item-label) { display: flex; text-align: left; padding-bottom: 6px; }
+  .settings-form-wide :deep(.n-form-item-label), .settings-form-stock :deep(.n-form-item-label), .settings-form-smtp :deep(.n-form-item-label), .settings-form-i18n :deep(.n-form-item-label) { justify-content: flex-start; }
 }
 /* 页脚分区说明卡（浅蓝信息底，与 naive 信息-alert 同语系） */
 .footer-map {

@@ -13,6 +13,7 @@ function load(file, overrides = {}) {
   const exports = {};
   const requireMock = (id) => {
     if (id.includes('packages/money')) return shared;
+    if (id === '@/i18n') return { t: (source, parameters = []) => source.replace(/\{(\d+)\}/g, (token, index) => index < parameters.length ? String(parameters[index]) : token), languageHeaders: () => ({ 'Accept-Language': 'zh-CN' }), apiError: (problem, status) => problem?.message || `HTTP ${status}` };
     if (id === 'vue') return require('../admin/node_modules/vue');
     if (id.includes('theme-sdk')) return { mergeThemeConfig: x => x };
     if (id === '../config') return { loadPublicConfig: async () => ({ entries: [] }) };
@@ -92,6 +93,19 @@ async function main() {
   assert.equal(shop.getCurrency().precision,0);
   assert.equal(shop.formatMoney(200),'¥2');
   assert.equal(shop.yuanToFen(2),200);
+  const multi = load('storefront/src/api/client.ts', {localStorage:{getItem:()=> 'USD'}});
+  multi.api.get = async p => ({data: p === '/currencies' ? {currencies: [
+    {code:'AUD',symbol:'A$',position:'prefix',precision:2,rate_json:'9'},
+    {code:'USD',symbol:'$',position:'prefix',precision:2,rate_json:'0.67'},
+  ]} : {entries:[{key:'i18n.base_currency',value_json:'"AUD"'}]}});
+  await multi.initCurrency();
+  assert.equal(multi.getBaseCurrency().code,'AUD');
+  assert.equal(multi.getBaseCurrency().rate,'1');
+  assert.equal(multi.formatBaseMoney(10000),'A$100.00');
+  assert.equal(multi.formatMoney(10000),'$67.00');
+  assert.equal(multi.formatPaymentAmount({total_cents:10000,charged_currency:'USD',charged_units:6700,charged_precision:2}),'USD 67.00');
+  assert.equal(multi.formatPaymentAmount({total_cents:10000,charged_currency:'AUD',charged_units:10000,charged_precision:2}),'A$100.00');
+  assert.equal(multi.yuanToFen(100),10000);
   console.log('PASS: actual admin/storefront money helpers, precision 0–8, exchange display, signed inputs, cent validation and config loading');
 }
 main().catch(e=>{console.error(e);process.exitCode=1});

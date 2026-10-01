@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { t as $t } from '@/i18n';
+
 import type { ProductControl } from '@/api';
 const props = defineProps<{ controls: ProductControl[]; modelValue: Record<string,string>; prefix?: string }>();
 const emit = defineEmits<{ 'update:modelValue': [Record<string,string>] }>();
@@ -7,19 +9,19 @@ function toggle(id: number, value: string, checked: boolean) { const values = ne
 </script>
 <template>
   <fieldset v-if="controls.length" class="order-fields">
-    <legend>下单填写信息</legend>
-    <p class="muted">本项全部数量交付到以下账号或地址；不同账号请分别下单。请付款前核对。</p>
+    <legend>{{ $t('下单填写信息') }}</legend>
+    <p class="muted">{{ $t('本项全部数量交付到以下账号或地址；不同账号请分别下单。请付款前核对。') }}</p>
     <div v-for="c in controls" :key="c.id" class="field">
-      <label :for="`${prefix || 'order'}-${c.id}`">{{ c.name }} <span v-if="c.required" class="required">（必填）</span></label>
+      <label :for="`${prefix || 'order'}-${c.id}`">{{ c.name }} <span v-if="c.required" class="required">{{ $t('（必填）') }}</span></label>
       <select v-if="c.type === 'select'" :id="`${prefix || 'order'}-${c.id}`" class="input" :value="modelValue[String(c.id)] || ''" :required="c.required" @change="set(c.id, ($event.target as HTMLSelectElement).value)">
-        <option value="">请选择</option><option v-for="o in c.options || []" :key="o">{{ o }}</option>
+        <option value="">{{ $t('请选择') }}</option><option v-for="o in c.options || []" :key="o">{{ o }}</option>
       </select>
       <div v-else-if="c.type === 'radio' || c.type === 'checkbox'" class="options" :aria-label="c.name">
         <label v-for="o in c.options || []" :key="o"><input :type="c.type" :name="`${prefix || 'order'}-${c.id}`" :checked="c.type === 'radio' ? modelValue[String(c.id)] === o : (modelValue[String(c.id)] || '').split(',').includes(o)" @change="c.type === 'radio' ? set(c.id,o) : toggle(c.id,o,($event.target as HTMLInputElement).checked)" />{{ o }}</label>
       </div>
-      <input v-else :id="`${prefix || 'order'}-${c.id}`" class="input" :type="c.type === 'password' ? 'password' : c.type === 'number' ? 'number' : 'text'" :value="modelValue[String(c.id)] || ''" :required="c.required" :maxlength="c.max_length || 500" :placeholder="c.placeholder || `请输入${c.name}`" autocomplete="off" @input="set(c.id,($event.target as HTMLInputElement).value)" />
-      <small v-if="c.validation === 'tron'">填写 TRON 接收地址，请核对后再付款。</small>
-      <small v-else-if="c.validation === 'url'">填写完整链接，包含 https://。</small>
+      <input v-else :id="`${prefix || 'order'}-${c.id}`" class="input" :type="c.type === 'password' ? 'password' : c.type === 'number' ? 'number' : 'text'" :value="modelValue[String(c.id)] || ''" :required="c.required" :maxlength="c.max_length || 500" :placeholder="c.placeholder || $t('请输入{0}', [c.name])" autocomplete="off" @input="set(c.id,($event.target as HTMLInputElement).value)" />
+      <small v-if="c.validation === 'tron'">{{ $t('填写 TRON 接收地址，请核对后再付款。') }}</small>
+      <small v-else-if="c.validation === 'url'">{{ $t('填写完整链接，包含 https://。') }}</small>
     </div>
   </fieldset>
 </template>

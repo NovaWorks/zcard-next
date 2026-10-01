@@ -5,7 +5,7 @@ import { NButton, NDataTable, NInput, NInputNumber, NModal, NForm, NFormItem, NP
 import type { DataTableColumns, DataTableRowKey } from "naive-ui";
 import { fetchCoupons, createCouponBatch, disableCoupon, grantCoupon, deleteCoupons, exportCoupons } from "@/service/api";
 import { checkAuth } from "@/directives";
-import { formatMoney } from "@/utils/money";
+import { currencyUnit, formatMoney } from "@/utils/money";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 
 defineOptions({ name: "CouponsTab" });
@@ -236,7 +236,7 @@ onMounted(load);
         <NFormItem label="类型">
           <NSelect v-model:value="batchForm.type" :options="[{ label: '满减（固定金额）', value: 'fixed' }, { label: '折扣（万分比）', value: 'percent' }]" />
         </NFormItem>
-        <NFormItem :label="batchForm.type === 'fixed' ? '面值(元)' : '折扣(万分比)'" required>
+        <NFormItem :label="batchForm.type === 'fixed' ? `面值(${currencyUnit()})` : '折扣(万分比)'" required>
           <NInputNumber v-model:value="batchForm.valueYuan" :min="1" class="w-full" />
         </NFormItem>
         <NFormItem label="数量" required>

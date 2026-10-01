@@ -21,6 +21,7 @@ func (c precisionCurrency) CurrencyByCode(context.Context, string) (string, int3
 }
 
 func TestChargePrecisionIndependentOfDisplay(t *testing.T) {
+	d, _, _, _, _, _ := newCallbackEnv(t)
 	ctx := context.Background()
 	for _, prec := range []int32{0, 1, 2, 3, 4, 8} {
 		for _, tc := range []struct {
@@ -36,7 +37,7 @@ func TestChargePrecisionIndependentOfDisplay(t *testing.T) {
 			{"stripe", "KWD", "0.05", 200, 100, 3}, {"epusdt", "USD", "0.14", 1000, 140, 2},
 		} {
 			t.Run(fmt.Sprintf("%s-%s-display%d", tc.driver, tc.code, prec), func(t *testing.T) {
-				repo := &PaymentRepoImpl{currency: precisionCurrency{tc.rate, prec}}
+				repo := &PaymentRepoImpl{data: d, currency: precisionCurrency{tc.rate, prec}}
 				cfg := json.RawMessage(fmt.Sprintf(`{"target_currency":%q}`, tc.code))
 				if tc.driver == "epusdt" {
 					cfg = json.RawMessage(fmt.Sprintf(`{"currency":%q}`, tc.code))
@@ -48,7 +49,7 @@ func TestChargePrecisionIndependentOfDisplay(t *testing.T) {
 			})
 		}
 	}
-	repo := &PaymentRepoImpl{currency: precisionCurrency{"0.14", 4}}
+	repo := &PaymentRepoImpl{data: d, currency: precisionCurrency{"0.14", 4}}
 	snap, err := repo.computeCharge(ctx, "epusdt", json.RawMessage(`{"currency":"usd"}`), 1000)
 	if err != nil || snap.Units != 140 {
 		t.Fatalf("GMPay currency: %+v %v", snap, err)

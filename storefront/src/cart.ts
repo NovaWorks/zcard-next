@@ -1,3 +1,4 @@
+import { t as $t } from '@/i18n';
 // 购物车抽象：登录用户走后端 API（服务端存储）；游客走 localStorage 本地购物车
 // （老项目同款方案——游客可加购/结算/下单，仅支付时无余额渠道）。
 // 登录后自动把本地购物车合并到后端并清空本地。
@@ -29,7 +30,7 @@ export async function refreshCartSetting(force = false): Promise<boolean> {
       cartSettingError.value = '';
     } catch {
       cartEnabled.value = false;
-      cartSettingError.value = '购物车配置暂时无法读取，请重试';
+      cartSettingError.value = $t("购物车配置暂时无法读取，请重试");
     } finally {
       cartSettingLoaded.value = true;
       if (!cartEnabled.value) syncCartState([]);
@@ -39,7 +40,7 @@ export async function refreshCartSetting(force = false): Promise<boolean> {
   try { return await settingRequest; } finally { settingRequest = null; }
 }
 function unavailableMessage() {
-  return cartSettingError.value || '购物车已关闭，请在商品详情页直接购买';
+  return cartSettingError.value || $t("购物车已关闭，请在商品详情页直接购买");
 }
 
 
@@ -116,16 +117,16 @@ function saveGuest(items: GuestCartItem[]) {
 }
 
 /** 401 判定（错误串兼容 reason/message 两种格式） */
-function isAuthError(error: string | null): boolean {
-  return !!error && (error.includes('401') || error.includes('UNAUTHORIZED') || error.includes('未登录'));
+function isAuthError(error: string | null, status?: number): boolean {
+  return status === 401 || !!error && (error.includes('401') || error.includes('UNAUTHORIZED') || error.includes('未登录'));
 }
 
 /** 加载购物车（登录 → 后端；游客/令牌失效 → 本地；同时同步共享角标状态） */
 export async function loadCart() {
   if (!(await refreshCartSetting())) return { items: [], error: unavailableMessage(), isGuest: !getToken() };
   if (getToken()) {
-    const { data, error } = await listCart();
-    if (isAuthError(error)) {
+    const { data, error, status } = await listCart();
+    if (isAuthError(error, status)) {
       // token 过期/失效：降级游客本地购物车（真实游客场景）
       syncCartState(guestItems());
       return { items: guestItems(), error: '', isGuest: true };
@@ -140,12 +141,12 @@ export async function loadCart() {
 /** 加购（登录 → 后端；游客/令牌失效 → 本地，同商品同 SKU 合并数量）；成功后同步角标 */
 export async function addToCart(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number; max_quantity?:number; flash_sale?: FlashOffer }, quantity: number, skuId = 0) {
   if (!(await refreshCartSetting(true))) return { data: null, error: unavailableMessage() };
-  if ((product.stock ?? 0) === 0) return { data: null, error: '暂时缺货' };
-  if ((product.stock ?? 0) < -1) return { data: null, error: '库存待确认，请稍后重试' };
+  if ((product.stock ?? 0) === 0) return { data: null, get error() { return $t("暂时缺货"); } };
+  if ((product.stock ?? 0) < -1) return { data: null, get error() { return $t("库存待确认，请稍后重试"); } };
   let result;
   if (getToken()) {
-    const { data, error } = await addCart(product.id, quantity, skuId);
-    if (isAuthError(error)) {
+    const { data, error, status } = await addCart(product.id, quantity, skuId);
+    if (isAuthError(error, status)) {
       // token 过期：降级游客本地购物车，不阻断加购
       result = addGuestLocal(product, quantity, skuId);
     } else {

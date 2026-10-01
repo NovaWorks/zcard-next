@@ -511,10 +511,17 @@ func (s *StorePaymentService) ListChannels(ctx context.Context, req *storefrontv
 	if err != nil {
 		return nil, errors.InternalServer("payment.LIST_FAILED", "读取渠道失败")
 	}
+	baseCurrency, err := data.BaseCurrency(ctx, s.data)
+	if err != nil {
+		return nil, err
+	}
 	// 游客判定：无登录 claims（余额支付依赖钱包账户）
 	guest := identity.ClaimsFromContext(ctx) == nil
 	reply := &storefrontv1.ChannelListReply{}
 	for _, ch := range rows {
+		if _, err := chargeCurrency(ch.Driver, s.repo.DecryptConfig(ch), baseCurrency); err != nil {
+			continue
+		}
 		if !channelAllows(ch, scene) {
 			continue
 		}
@@ -596,7 +603,7 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 		}
 		// 直接标记成功
 		fact := CallbackFact{
-			Channel: ch.Code, Amount: o.TotalAmount, Currency: "CNY",
+			Channel: ch.Code, Amount: o.TotalAmount, Currency: orderBaseCurrency(o),
 			Success: true, ChannelOrderNo: fmt.Sprintf("wallet-%d", p.ID),
 		}
 		if err := s.repo.HandleCallback(ctx, p.ID, fact); err != nil {

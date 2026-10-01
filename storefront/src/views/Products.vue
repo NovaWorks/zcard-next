@@ -6,14 +6,14 @@
       <!-- 分类导航：grid=顶部胶囊全断点；list 时 PC 左树，移动端「全部分类」折叠树（含全部层级） -->
       <div v-if="navStyle === 'grid' && (categories.length || hasRecommended)" class="card category-chips" style="margin-bottom: 12px;">
         <div class="cat-chips-row" :class="{ expanded: chipsExpanded }">
-          <button class="chip" :class="{ active: !categoryId }" @click="pickCategory(0)"><ThemeIcon name="grid" class="chip-icon" />全部</button>
-          <button v-if="hasRecommended" class="chip" :class="{ active: categoryId === -1 }" @click="pickCategory(-1)">推荐商品</button>
+          <button class="chip" :class="{ active: !categoryId }" @click="pickCategory(0)"><ThemeIcon name="grid" class="chip-icon" />{{ $t('全部') }}</button>
+          <button v-if="hasRecommended" class="chip" :class="{ active: categoryId === -1 }" @click="pickCategory(-1)">{{ $t('推荐商品') }}</button>
           <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: categoryId === c.id }" @click="pickCategory(c.id)">
             <CategoryIcon :icon="c.icon" class="chip-icon" />{{ c.name }}
           </button>
           <!-- 移动端展开/收起：贴右悬浮，免逐个横滑找分类（与首页同款） -->
           <button class="chip chip-more" @click="chipsExpanded = !chipsExpanded">
-            {{ chipsExpanded ? '收起 ⌃' : '更多 ⌄' }}
+            {{ chipsExpanded ? $t('收起 ⌃') : $t('更多 ⌄') }}
           </button>
         </div>
       </div>
@@ -24,27 +24,27 @@
       <!-- 排序 + 搜索 + 视图切换 -->
       <div class="card" style="margin-bottom: 16px;">
         <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-          <input v-model="keyword" class="input" placeholder="搜索商品名" @keyup.enter="onSearch" style="max-width: 240px;" />
-          <button class="btn secondary" @click="onSearch">搜索</button>
-          <span class="muted" style="font-size: 13px;">排序：</span>
+          <input v-model="keyword" class="input" :placeholder="$t('搜索商品名')" @keyup.enter="onSearch" style="max-width: 240px;" />
+          <button class="btn secondary" @click="onSearch">{{ $t('搜索') }}</button>
+          <span class="muted" style="font-size: 13px;">{{ $t('排序：') }}</span>
           <select v-model="sort" class="input" style="max-width: 160px;" @change="onSearch">
-            <option value="default">综合排序</option>
-            <option v-if="showSales" value="sales">销量优先</option>
-            <option value="newest">最新上架</option>
-            <option value="price_asc">价格从低到高</option>
-            <option value="price_desc">价格从高到低</option>
+            <option value="default">{{ $t('综合排序') }}</option>
+            <option v-if="showSales" value="sales">{{ $t('销量优先') }}</option>
+            <option value="newest">{{ $t('最新上架') }}</option>
+            <option value="price_asc">{{ $t('价格从低到高') }}</option>
+            <option value="price_desc">{{ $t('价格从高到低') }}</option>
           </select>
           <span style="flex: 1;"></span>
           <div class="view-toggle">
-            <button class="vt-btn" :class="{ active: viewMode === 'grid' }" title="网格视图" @click="viewMode = 'grid'; bigGrid = false">▦</button>
-            <button class="vt-btn" :class="{ active: viewMode === 'list' }" title="列表视图" @click="viewMode = 'list'">☰</button>
+            <button class="vt-btn" :class="{ active: viewMode === 'grid' }" :title="$t('网格视图')" @click="viewMode = 'grid'; bigGrid = false">▦</button>
+            <button class="vt-btn" :class="{ active: viewMode === 'list' }" :title="$t('列表视图')" @click="viewMode = 'list'">☰</button>
           </div>
         </div>
       </div>
 
-      <div v-if="categoriesError && navStyle === 'grid'" class="error" role="alert">分类加载失败 <button class="btn secondary" :disabled="categoriesLoading" @click="loadCategories">重试</button></div>
-      <div v-if="error" class="error" role="alert" style="margin-bottom: 12px;">{{ error }} <button class="btn secondary" :disabled="loading" @click="load">重新加载</button></div>
-      <div v-if="loading && !products.length" role="status">正在加载商品…</div>
+      <div v-if="categoriesError && navStyle === 'grid'" class="error" role="alert">{{ $t('分类加载失败') }} <button class="btn secondary" :disabled="categoriesLoading" @click="loadCategories">{{ $t('重试') }}</button></div>
+      <div v-if="error" class="error" role="alert" style="margin-bottom: 12px;">{{ uiText(error) }} <button class="btn secondary" :disabled="loading" @click="load">{{ $t('重新加载') }}</button></div>
+      <div v-if="loading && !products.length" role="status">{{ $t('正在加载商品…') }}</div>
 
       <div v-if="viewMode === 'grid'" class="grid" :class="{ 'catalog-big': bigGrid }" :style="gridStyle">
         <ProductCard v-for="p in products" :key="p.id" :p="p" mode="grid" :show-sales="showSales" :show-stock="showStock" />
@@ -52,19 +52,21 @@
       <div v-else class="list-rows">
         <ProductCard v-for="p in products" :key="p.id" :p="p" mode="list" :show-sales="showSales" :show-stock="showStock" />
       </div>
-      <div v-if="products.length === 0 && !loading && !error" class="muted" style="margin-top: 24px; text-align: center;">暂无商品</div>
+      <div v-if="products.length === 0 && !loading && !error" class="muted" style="margin-top: 24px; text-align: center;">{{ $t('暂无商品') }}</div>
 
       <!-- 分页 -->
       <div v-if="total > pageSize" class="actions" style="margin-top: 20px; justify-content: center;">
-        <button class="btn secondary" :disabled="page <= 1" @click="go(page - 1)">上一页</button>
+        <button class="btn secondary" :disabled="page <= 1" @click="go(page - 1)">{{ $t('上一页') }}</button>
         <span class="muted">{{ page }} / {{ Math.ceil(total / pageSize) }}</span>
-        <button class="btn secondary" :disabled="page >= Math.ceil(total / pageSize)" @click="go(page + 1)">下一页</button>
+        <button class="btn secondary" :disabled="page >= Math.ceil(total / pageSize)" @click="go(page + 1)">{{ $t('下一页') }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { uiText, t as $t, locale } from '@/i18n';
+
 import { loadPublicConfig } from '@/config';
 import { usePageRecovery } from '@/composables/page-recovery';
 import { useStockRefresh } from '@/composables/stock-refresh';
@@ -267,11 +269,12 @@ usePageRecovery(async () => {
 
 /** 列表页 SEO：分类名进 title；canonical 恒为 /products（分类筛选是同一列表的
  变体，服务端静态页与爬虫视图均为 /products——水合后保持一致避免规范信号打架） */
+watch(locale, () => { if (route.path === '/products') void applyListSeo(); });
 async function applyListSeo() {
   const site = await fetchSiteSeo();
   const origin = typeof window !== "undefined" ? window.location.origin : site.url;
-  const catName = categoryId.value === -1 ? '推荐商品' : categories.value.find((c) => c.id === categoryId.value)?.name;
-  const title = catName ? `${catName} - ${site.name}` : `全部商品 - ${site.name}`;
+  const catName = categoryId.value === -1 ? $t("推荐商品") : categories.value.find((c) => c.id === categoryId.value)?.name;
+  const title = catName ? `${catName} - ${site.name}` : $t("全部商品 - {0}", [site.name]);
   applySeo({ title, canonical: `${origin}/products`, ogType: 'website' }, site);
 }
 </script>

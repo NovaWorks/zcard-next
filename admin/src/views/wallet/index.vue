@@ -10,7 +10,7 @@ import { ref, reactive, h, watch } from "vue";
 import { NTag, NSelect, NRadioGroup, NRadioButton, NRadio } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchWalletBalance, adjustWalletBalance, adjustWalletPoints, fetchWalletTransactions, fetchUsers, fetchCoupons, grantCoupon } from "@/service/api";
-import { transactionType, transactionAmount, transactionReference, transactionRemark, formatMoney, formatSignedMoney, yuanToFen } from "@/utils/money";
+import { currencyUnit, transactionType, transactionAmount, transactionReference, transactionRemark, formatMoney, formatSignedMoney, yuanToFen } from "@/utils/money";
 
 defineOptions({ name: "WalletManagement" });
 const route = useRoute();
@@ -361,7 +361,7 @@ async function handleAdjust() {
               <NRadio value="sub">扣减</NRadio>
             </NRadioGroup>
           </NFormItem>
-          <NFormItem :label="adjustTab === 'balance' ? '金额（元）' : '积分数量'" required>
+          <NFormItem :label="adjustTab === 'balance' ? `金额（${currencyUnit()}）` : '积分数量'" required>
             <NInputNumber
               v-model:value="adjustForm.amount_yuan"
               class="w-full"

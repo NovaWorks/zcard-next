@@ -20,7 +20,7 @@ import {
 import type { DataTableColumns } from "naive-ui";
 import { checkAuth } from "@/directives";
 import { fetchSkus, createSku, updateSku, deleteSku } from "@/service/api";
-import { centsToYuan, yuanToFen } from "@/utils/money";
+import { centsToYuan, currencyUnit, yuanToFen } from "@/utils/money";
 
 const props = defineProps<{ productId: number; readonly?: boolean; physical?: boolean }>();
 const emit = defineEmits<{ (e: "persisted"): void }>();
@@ -335,14 +335,14 @@ const columns: DataTableColumns<SkuRow> = [
       }),
   },
   {
-    title: "售价(元)",
+    title: () => `售价(${currencyUnit()})`,
     key: "price",
     width: 104,
     // 售价 0 = 继承商品价（列头过窄截断，口径移入 placeholder 提示）
     render: (row) => numCell(row, "price_yuan", "0=继承"),
   },
   {
-    title: "成本(元)",
+    title: () => `成本(${currencyUnit()})`,
     key: "cost",
     width: 96,
     render: (row) => numCell(row, "cost_yuan", "成本"),

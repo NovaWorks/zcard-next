@@ -5,7 +5,7 @@ import { NButton, NDataTable, NDatePicker, NInput, NInputNumber, NModal, NForm, 
 import type { DataTableColumns } from "naive-ui";
 import { fetchFlashSales, createFlashSale, deleteFlashSale, fetchPromotions, upsertPromotion } from "@/service/api";
 import { checkAuth } from "@/directives";
-import { formatMoney } from "@/utils/money";
+import { currencyUnit, formatMoney } from "@/utils/money";
 
 defineOptions({ name: "FlashTab" });
 
@@ -210,7 +210,7 @@ onMounted(() => {
         <NFormItem label="商品ID" required>
           <NInputNumber v-model:value="flashForm.product_id" :min="1" class="w-full" />
         </NFormItem>
-        <NFormItem label="秒杀价(元)" required>
+        <NFormItem :label="`秒杀价(${currencyUnit()})`" required>
           <NInputNumber v-model:value="flashForm.flash_priceYuan" :min="0.01" :precision="2" class="w-full" />
         </NFormItem>
         <NFormItem label="时间窗" required>
@@ -257,7 +257,7 @@ onMounted(() => {
         <NFormItem label="类型">
           <NSelect v-model:value="promoForm.type" :options="[{ label: '折扣（万分比）', value: 'percent' }, { label: '满减（分）', value: 'fixed' }, { label: '特价（分）', value: 'special_price' }]" />
         </NFormItem>
-        <NFormItem label="单件门槛(元)">
+        <NFormItem :label="`单件门槛(${currencyUnit()})`">
           <div class="w-full">
             <NInputNumber v-model:value="promoForm.thresholdYuan" :min="0" class="w-full" />
             <p class="mt-8px text-13px">按会员价或阶梯价计算后的单件商品金额判断，不累计购物车金额，运费不计入门槛。</p>
@@ -266,10 +266,10 @@ onMounted(() => {
         <NFormItem v-if="promoForm.type === 'percent'" label="折扣(万分比)">
           <NInputNumber v-model:value="promoForm.discount" :min="1" :max="10000" class="w-full" />
         </NFormItem>
-        <NFormItem v-else-if="promoForm.type === 'fixed'" label="减额(元)">
+        <NFormItem v-else-if="promoForm.type === 'fixed'" :label="`减额(${currencyUnit()})`">
           <NInputNumber v-model:value="promoForm.special_priceYuan" :min="0" class="w-full" @update:value="(v: number | null) => (promoForm.discount = Math.round((v || 0) * 100))" />
         </NFormItem>
-        <NFormItem v-else label="特价(元)">
+        <NFormItem v-else :label="`特价(${currencyUnit()})`">
           <NInputNumber v-model:value="promoForm.special_priceYuan" :min="0" class="w-full" />
         </NFormItem>
         <NFormItem label="时间窗" required>
