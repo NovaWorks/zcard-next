@@ -166,3 +166,11 @@ admin/dist       f6073650def290bd99ae21f49e93f0f392563f184bfdd3cd24aa7ddc8d75812
 ### 2026-10-01 私有供货端目录联调
 
 私有供货端的 SMSCode 导入和自动采集现已统一为每渠道一个正式商品，并在新客户端目录中过滤旧接码明细。存量站点部署新版私有程序后，对原 SMSCode 渠道重新执行一次导入或采集，才会生成/绑定渠道商品并归档旧明细。开源侧采集渠道商品时，会归档同一供货连接下未锁定的旧接码明细，保留历史商品 ID、订单和会话；其他连接及普通商品不受转换影响。持久导入任务不再用静态售价基线检查渠道商品；版本和锁定检查仍保留；新检查点同时记录映射中的动态加价规则，任务排队后人工修改规则会被保护，旧检查点仍可恢复。真实供货目录 JSON 经过签名 HTTP 接口送入开源采集，两次采集只保留一个商品、无 SKU，第二次更新动态加价，无聚合库存请求。跨仓库回归：私有 `ZCARD_SMS_CONTRACT_FILE=/tmp/zcard-sms-channel-provider.json go test ./internal/mods/supply -run TestSMSChannelPublicImportAndPublication -count=1`；随后开源 `ZCARD_HTTPX_ALLOW_PRIVATE=1 ZCARD_SMS_CONTRACT_FILE=/tmp/zcard-sms-channel-provider.json go test -tags integration ./internal/mods/supply -run TestSMSPrivateProviderCatalogImportsOneProduct -count=1`。
+
+
+## 2026-10-01 游客浏览与渠道名称隔离
+
+- 接码目录和选项售价允许游客查看；购买报价、下单、余额、号码记录和会话操作继续要求会员登录。游客浏览不会初始化会员钱包账户、保存购买报价或分配号码。隐藏及停售商品保持原有访问限制。
+- 自动导入使用「接码服务」作为公开名称，不拼接后台渠道名称。历史「渠道名 · 接码服务」标题和相同的说明标题在商品列表、详情、供货采集和会员订单显示时转换为公开服务名称，后台配置和历史结算不变。自定义公开商品名称和服务说明继续保留。
+- 前端游客可筛选国家、服务、分页报价并选择号码，点击「登录后购买」回到当前商品后再确认价格付款。号码记录和余额仅登录后请求。
+- 本地回归覆盖游客 HTTP 浏览、购买鉴权、旧标题隔离、电脑/手机页面、原购买重试以及收码退款；不代表线上部署或真实供应商付费验收。
