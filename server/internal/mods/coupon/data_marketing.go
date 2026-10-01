@@ -119,27 +119,14 @@ func orderAmountOf(items []port.CartItem) money.Cents {
 
 // ReturnByOrder 返还券（取消/退款路径调用；过期不返）。
 func (r *CouponRepoImpl) ReturnByOrder(ctx context.Context, orderID uint64) error {
-	client := data.Client(ctx, r.data)
-	rows, err := client.Coupon.Query().
-		Where(coupon.UsedOrderID(orderID), coupon.StatusEQ(coupon.StatusUsed)).
-		All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, c := range rows {
-		if !c.ExpireAt.IsZero() && time.Now().UTC().After(c.ExpireAt) {
-			continue // 过期不返（口径：作废）
-		}
-		_, err = client.Coupon.UpdateOneID(c.ID).
-			SetStatus(coupon.StatusUnused).
-			ClearUsedAt().
-			ClearUsedOrderID().
-			Save(ctx)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	// A stale cancellation must never clear a coupon reused by a newer order.
+	_, err := data.Client(ctx, r.data).Coupon.Update().
+		Where(coupon.UsedOrderID(orderID), coupon.StatusEQ(coupon.StatusUsed), unexpiredCoupon(time.Now().UTC())).
+		SetStatus(coupon.StatusUnused).
+		ClearUsedAt().
+		ClearUsedOrderID().
+		Save(ctx)
+	return err
 }
 
 // Redeem 兑换码领券（用户凭 code 领取：未指派券回填 user_id）。
@@ -190,7 +177,7 @@ func (r *CouponRepoImpl) GrantToUser(ctx context.Context, batchID string, userID
 // ListMyCoupons 用户可用券（未用未过期）。
 func (r *CouponRepoImpl) ListMyCoupons(ctx context.Context, userID uint64) ([]*ent.Coupon, error) {
 	return data.Client(ctx, r.data).Coupon.Query().
-		Where(coupon.UserID(userID), coupon.StatusEQ(coupon.StatusUnused)).
+		Where(coupon.UserID(userID), coupon.StatusEQ(coupon.StatusUnused), unexpiredCoupon(time.Now().UTC())).
 		Order(ent.Desc(coupon.FieldID)).
 		Limit(100).
 		All(ctx)

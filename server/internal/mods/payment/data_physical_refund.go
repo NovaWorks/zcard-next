@@ -191,6 +191,18 @@ func (r *PaymentRepoImpl) RefundPhysical(ctx context.Context, oid, actor uint64,
 		if sum != req.AmountCents || (sum == 0 && req.FeeCents == 0 && canceled == 0) {
 			return refundInvalid("退款金额与商品分摊不一致，或没有退款/取消内容")
 		}
+		returnCoupon := refunded+sum == o.TotalAmount
+		for _, it := range items {
+			quantityCanceled := it.CanceledQuantity
+			for _, a := range allocations {
+				if uint64(a["item_id"]) == it.ID {
+					quantityCanceled += int32(a["cancel_quantity"])
+				}
+			}
+			if quantityCanceled != it.Quantity || it.ShippedQuantity > 0 || it.ReceivedQuantity > 0 || it.FulfillmentStatus == "delivered" || it.FulfillmentStatus == "shipped" || it.FulfillmentStatus == "received" {
+				returnCoupon = false
+			}
+		}
 		create := c.RefundOrder.Create().SetOrderID(oid).SetAmount(sum).SetShippingAmount(shippingSum).SetFeeAmount(req.FeeCents).SetItemAllocations(allocations).SetChannel(refundorder.Channel(req.Channel)).SetStatus(refundorder.StatusSucceeded).SetOperatorID(actor).SetReason(req.Reason).SetUpstreamRefundID(externalReference)
 		if requestKey != "" {
 			create.SetRequestKey(requestKey).SetRequestHash(requestHash)
@@ -241,6 +253,15 @@ func (r *PaymentRepoImpl) RefundPhysical(ctx context.Context, oid, actor uint64,
 		}
 		if e = data.RefreshPhysicalProgress(ctx, r.data, &progressOrder); e != nil {
 			return e
+		}
+		if returnCoupon {
+			if coupons, ok := r.lifecycle.(interface {
+				ReturnCoupons(context.Context, uint64) error
+			}); ok {
+				if e = coupons.ReturnCoupons(ctx, oid); e != nil {
+					return e
+				}
+			}
 		}
 		if e = data.PhysicalOrderEvent(ctx, r.data, o, "item_refund", func() string {
 			if actor == 0 {

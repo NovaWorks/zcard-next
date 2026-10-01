@@ -25,6 +25,14 @@ func (a lifecycleAdapter) Cancel(ctx context.Context, orderNo, reason string, op
 	return a.uc.CancelOrder(ctx, orderNo, reason, op.Type, op.ID)
 }
 
+// ReturnCoupons joins the refund transaction after every undelivered item is canceled.
+func (a lifecycleAdapter) ReturnCoupons(ctx context.Context, orderID uint64) error {
+	if a.uc.Coupon == nil {
+		return nil
+	}
+	return a.uc.Coupon.ReturnByOrder(ctx, orderID)
+}
+
 // ProvideOrderLifecycle wire provider（返回端口接口，payment 模块消费）。
 func ProvideOrderLifecycle(uc *OrderUsecase) port.OrderLifecycle {
 	return lifecycleAdapter{uc: uc}

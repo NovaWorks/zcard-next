@@ -130,9 +130,11 @@ func TestCouponRedeemAndReturn(t *testing.T) {
 		t.Fatalf("返还失败: %+v", got)
 	}
 	// 过期不返：核销后过期再返还 → 保持 used
-	exp := time.Now().Add(-time.Hour)
+	if err := r.MarkUsed(ctx, c.ID, o.ID); err != nil {
+		t.Fatal(err)
+	}
+	exp := time.Now().UTC().Add(-time.Hour)
 	_, _ = d.Client.Coupon.UpdateOneID(c.ID).SetExpireAt(exp).Save(ctx)
-	_ = r.MarkUsed(ctx, c.ID, o.ID)
 	_ = r.ReturnByOrder(ctx, o.ID)
 	got, _ = d.Client.Coupon.Get(ctx, c.ID)
 	if got.Status != coupon.StatusUsed {

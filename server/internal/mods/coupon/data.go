@@ -11,6 +11,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/coupon"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/predicate"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 )
@@ -211,12 +212,24 @@ func couponDiscount(typ coupon.Type, configured int64, base money.Cents) (money.
 	return value, nil
 }
 
-// MarkUsed 核销。
+func unexpiredCoupon(now time.Time) predicate.Coupon {
+	return coupon.Or(coupon.ExpireAtIsNil(), coupon.ExpireAtGTE(now))
+}
+
+// MarkUsed claims an unused, unexpired coupon atomically inside the order transaction.
 func (r *CouponRepoImpl) MarkUsed(ctx context.Context, couponID, orderID uint64) error {
 	now := time.Now().UTC()
-	return data.Client(ctx, r.data).Coupon.UpdateOneID(couponID).
+	n, err := data.Client(ctx, r.data).Coupon.Update().
+		Where(coupon.ID(couponID), coupon.StatusEQ(coupon.StatusUnused), unexpiredCoupon(now)).
 		SetStatus(coupon.StatusUsed).
 		SetUsedAt(now).
 		SetUsedOrderID(orderID).
-		Exec(ctx)
+		Save(ctx)
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return fmt.Errorf("coupon.NOT_AVAILABLE: 优惠券已使用、已作废或已过期")
+	}
+	return nil
 }
