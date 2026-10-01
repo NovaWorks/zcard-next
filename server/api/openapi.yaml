@@ -1712,7 +1712,7 @@ paths:
         get:
             tags:
                 - AdminFulfillmentService
-            description: ListPending 待人工发货列表（manual_pending 状态订单）。
+            description: ListPending 待发货列表（实体快递配送及人工交付）。
             operationId: AdminFulfillmentService_ListPending
             parameters:
                 - name: page
@@ -10254,6 +10254,8 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.PendingOrder'
+                hasMore:
+                    type: boolean
         zcard.api.admin.v1.ListPostCategoriesAdminReply:
             type: object
             properties:
@@ -11141,6 +11143,10 @@ components:
                 fulfillmentStatus:
                     type: string
                 assignedAdminId:
+                    type: string
+                fulfillmentType:
+                    type: string
+                goodsType:
                     type: string
                 orderNo:
                     type: string
@@ -14698,6 +14704,9 @@ components:
                     type: integer
                     format: int32
                 canceledQuantity:
+                    type: integer
+                    format: int32
+                returnedQuantity:
                     type: integer
                     format: int32
                 id:

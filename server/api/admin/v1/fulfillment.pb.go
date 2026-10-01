@@ -78,6 +78,7 @@ func (x *ListPendingRequest) GetPageSize() int32 {
 type ListPendingReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Orders        []*PendingOrder        `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
+	HasMore       bool                   `protobuf:"varint,2,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"` // 按订单分页，单页可包含多个商品项
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -119,6 +120,13 @@ func (x *ListPendingReply) GetOrders() []*PendingOrder {
 	return nil
 }
 
+func (x *ListPendingReply) GetHasMore() bool {
+	if x != nil {
+		return x.HasMore
+	}
+	return false
+}
+
 type PendingOrder struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	OrderItemId       uint64                 `protobuf:"varint,6,opt,name=order_item_id,json=orderItemId,proto3" json:"order_item_id,omitempty"`
@@ -126,6 +134,8 @@ type PendingOrder struct {
 	FormAnswersJson   string                 `protobuf:"bytes,8,opt,name=form_answers_json,json=formAnswersJson,proto3" json:"form_answers_json,omitempty"`
 	FulfillmentStatus string                 `protobuf:"bytes,9,opt,name=fulfillment_status,json=fulfillmentStatus,proto3" json:"fulfillment_status,omitempty"`
 	AssignedAdminId   uint64                 `protobuf:"varint,10,opt,name=assigned_admin_id,json=assignedAdminId,proto3" json:"assigned_admin_id,omitempty"`
+	FulfillmentType   string                 `protobuf:"bytes,11,opt,name=fulfillment_type,json=fulfillmentType,proto3" json:"fulfillment_type,omitempty"`
+	GoodsType         string                 `protobuf:"bytes,12,opt,name=goods_type,json=goodsType,proto3" json:"goods_type,omitempty"`
 	OrderNo           string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
 	ProductId         uint64                 `protobuf:"varint,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	ProductName       string                 `protobuf:"bytes,3,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
@@ -198,6 +208,20 @@ func (x *PendingOrder) GetAssignedAdminId() uint64 {
 		return x.AssignedAdminId
 	}
 	return 0
+}
+
+func (x *PendingOrder) GetFulfillmentType() string {
+	if x != nil {
+		return x.FulfillmentType
+	}
+	return ""
+}
+
+func (x *PendingOrder) GetGoodsType() string {
+	if x != nil {
+		return x.GoodsType
+	}
+	return ""
 }
 
 func (x *PendingOrder) GetOrderNo() string {
@@ -876,16 +900,20 @@ const file_admin_v1_fulfillment_proto_rawDesc = "" +
 	"\x1aadmin/v1/fulfillment.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"E\n" +
 	"\x12ListPendingRequest\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"L\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"g\n" +
 	"\x10ListPendingReply\x128\n" +
-	"\x06orders\x18\x01 \x03(\v2 .zcard.api.admin.v1.PendingOrderR\x06orders\"\xec\x02\n" +
+	"\x06orders\x18\x01 \x03(\v2 .zcard.api.admin.v1.PendingOrderR\x06orders\x12\x19\n" +
+	"\bhas_more\x18\x02 \x01(\bR\ahasMore\"\xb6\x03\n" +
 	"\fPendingOrder\x12\"\n" +
 	"\rorder_item_id\x18\x06 \x01(\x04R\vorderItemId\x12\x19\n" +
 	"\bsku_name\x18\a \x01(\tR\askuName\x12*\n" +
 	"\x11form_answers_json\x18\b \x01(\tR\x0fformAnswersJson\x12-\n" +
 	"\x12fulfillment_status\x18\t \x01(\tR\x11fulfillmentStatus\x12*\n" +
 	"\x11assigned_admin_id\x18\n" +
-	" \x01(\x04R\x0fassignedAdminId\x12\x19\n" +
+	" \x01(\x04R\x0fassignedAdminId\x12)\n" +
+	"\x10fulfillment_type\x18\v \x01(\tR\x0ffulfillmentType\x12\x1d\n" +
+	"\n" +
+	"goods_type\x18\f \x01(\tR\tgoodsType\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x02 \x01(\x04R\tproductId\x12!\n" +

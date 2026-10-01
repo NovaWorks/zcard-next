@@ -39,7 +39,7 @@ type AdminFulfillmentServiceClient interface {
 	UpdateShipping(ctx context.Context, in *UpdateShippingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RestockReturn(ctx context.Context, in *RestockReturnRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	StartService(ctx context.Context, in *StartServiceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// ListPending 待人工发货列表（manual_pending 状态订单）。
+	// ListPending 待发货列表（实体快递配送及人工交付）。
 	ListPending(ctx context.Context, in *ListPendingRequest, opts ...grpc.CallOption) (*ListPendingReply, error)
 	// ManualDeliver 手动交付（卡密内容或物流单号）。
 	ManualDeliver(ctx context.Context, in *ManualDeliverRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -135,7 +135,7 @@ type AdminFulfillmentServiceServer interface {
 	UpdateShipping(context.Context, *UpdateShippingRequest) (*emptypb.Empty, error)
 	RestockReturn(context.Context, *RestockReturnRequest) (*emptypb.Empty, error)
 	StartService(context.Context, *StartServiceRequest) (*emptypb.Empty, error)
-	// ListPending 待人工发货列表（manual_pending 状态订单）。
+	// ListPending 待发货列表（实体快递配送及人工交付）。
 	ListPending(context.Context, *ListPendingRequest) (*ListPendingReply, error)
 	// ManualDeliver 手动交付（卡密内容或物流单号）。
 	ManualDeliver(context.Context, *ManualDeliverRequest) (*emptypb.Empty, error)

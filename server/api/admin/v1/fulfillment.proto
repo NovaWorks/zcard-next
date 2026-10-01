@@ -17,7 +17,7 @@ service AdminFulfillmentService {
   rpc StartService(StartServiceRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = { post: "/api/v1/admin/fulfillment/{order_no}/start" body: "*" };
   }
-  // ListPending 待人工发货列表（manual_pending 状态订单）。
+  // ListPending 待发货列表（实体快递配送及人工交付）。
   rpc ListPending(ListPendingRequest) returns (ListPendingReply) {
     option (google.api.http) = { get: "/api/v1/admin/fulfillment/pending" };
   }
@@ -41,6 +41,7 @@ message ListPendingRequest {
 
 message ListPendingReply {
   repeated PendingOrder orders = 1;
+  bool has_more = 2; // 按订单分页，单页可包含多个商品项
 }
 
 message PendingOrder {
@@ -49,6 +50,8 @@ message PendingOrder {
   string form_answers_json = 8;
   string fulfillment_status = 9;
   uint64 assigned_admin_id = 10;
+  string fulfillment_type = 11;
+  string goods_type = 12;
   string order_no = 1;
   uint64 product_id = 2;
   string product_name = 3;

@@ -210,7 +210,14 @@ func (s *AdminFulfillmentService) RestockReturn(ctx context.Context, req *adminv
 		if e = c.OrderItem.UpdateOneID(it.ID).AddReturnedQuantity(req.Quantity).Exec(ctx); e != nil {
 			return e
 		}
-		return data.PhysicalOrderEvent(ctx, s.data, o, "return_restocked", "admin", aid, req.Reason)
+		name := it.ProductName
+		if name == "" {
+			name = fmt.Sprintf("商品 #%d", it.ProductID)
+		}
+		if it.SkuName != "" {
+			name += "（" + it.SkuName + "）"
+		}
+		return data.PhysicalOrderEvent(ctx, s.data, o, "return_restocked", "admin", aid, fmt.Sprintf("商品项 #%d · 入库 %d 件：%s · %s", it.ID, req.Quantity, req.Reason, name))
 	})
 	if e != nil {
 		return nil, kerrors.BadRequest("shipping.RESTOCK", e.Error())

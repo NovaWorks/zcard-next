@@ -111,6 +111,7 @@ message OrderItemReply {
   int32 shipped_quantity = 14;
   int32 received_quantity = 15;
   int32 canceled_quantity = 16;
+  int32 returned_quantity = 17; // 已验收退回并入库数量，与已取消数量分别累计
   uint64 id = 5;
   string sku_name = 6;
   string fulfillment_type = 7;

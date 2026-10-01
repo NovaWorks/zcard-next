@@ -14,38 +14,50 @@
     <!-- 我的券 -->
     <div class="card">
       <h2 style="margin-bottom: 12px;">我的优惠券</h2>
+      <p v-if="loading" class="muted" role="status">正在加载优惠券…</p>
+      <p v-if="loadError" class="error" role="alert">{{ loadError }} <button class="btn secondary" :disabled="loading" @click="load">重试</button></p>
       <div class="grid">
-        <div v-for="c in coupons" :key="c.id" class="card" style="border: 1px dashed var(--zc-primary-border);">
+        <div v-for="c in availableCoupons" :key="c.id" class="card" style="border: 1px dashed var(--zc-primary-border);">
           <div style="font-size: 18px; font-weight: 700; color: #e11d48;">
             <template v-if="c.type === 'fixed'">{{ formatMoney(c.value) }}</template>
-            <template v-else>{{ (c.value / 100).toFixed(1) }} 折</template>
+            <template v-else-if="c.type === 'percent'">{{ couponDiscountLabel(c.value) }}</template>
+            <template v-else>优惠以结算页为准</template>
           </div>
           <div style="font-weight: 600; margin: 6px 0;">{{ c.name }}</div>
           <div class="muted">适用：{{ scopeText(c.scope_json) }}</div>
-          <div class="muted" style="margin-top: 4px;">有效期至 {{ fmtTime(c.expire_at) }}</div>
+          <div class="muted" style="margin-top: 4px;">{{ Number(c.expire_at) > 0 ? `有效期至 ${fmtTime(c.expire_at)}` : '长期有效' }}</div>
           <div class="muted" style="margin-top: 6px;">券码：<code>{{ c.code }}</code></div>
         </div>
       </div>
-      <div v-if="!coupons.length" class="muted" style="text-align: center;">暂无可用优惠券</div>
+      <div v-if="!loading && !loadError && !availableCoupons.length" class="muted" style="text-align: center;">暂无可用优惠券</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { listMyCoupons, redeemCoupon, type MyCoupon } from '@/api';
 import { formatMoney } from '@/api/client';
+import { couponDiscountLabel } from '@/utils/commerce';
 
 const code = ref('');
 const redeeming = ref(false);
 const redeemError = ref('');
 const redeemOk = ref(false);
 const coupons = ref<MyCoupon[]>([]);
+const loading = ref(false);
+const loadError = ref('');
+const availableCoupons = computed(() => coupons.value.filter(c => !(Number(c.expire_at) > 0 && Number(c.expire_at) <= Date.now() / 1000)));
 
 onMounted(load);
 
 async function load() {
-  const { data } = await listMyCoupons();
+  if (loading.value) return;
+  loading.value = true;
+  loadError.value = '';
+  const { data, error } = await listMyCoupons();
+  loading.value = false;
+  if (error) { loadError.value = error; return; }
   coupons.value = data?.coupons || [];
 }
 

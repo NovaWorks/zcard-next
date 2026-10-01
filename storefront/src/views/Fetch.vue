@@ -129,6 +129,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { getOrder, getOrderPassword, rememberOrderPassword, fetchDelivery, listGuestOrders, type FetchDeliveryReply, type GuestOrderItem } from '@/api';
 import { getToken, formatMoney } from '@/api/client';
+import { looksLikeContact } from '@/utils/commerce';
 
 const route = useRoute();
 const orderNo = ref('');
@@ -143,12 +144,6 @@ const copiedAll = ref(false);
 // 联系方式模式：游客按下单邮箱/手机号查订单列表
 const guestOrders = ref<GuestOrderItem[]>([]);
 const listLoading = ref(false);
-
-/** 输入像联系方式（邮箱含@ / 11 位手机号）→ 列表模式 */
-function looksLikeContact(v: string): boolean {
-  const t = v.trim();
-  return t.includes("@") || /^1\d{10}$/.test(t);
-}
 
 // 支付成功/订单列表跳转时预填订单号
 onMounted(() => {

@@ -6,6 +6,7 @@ import { ref } from 'vue';
 import type { FlashOffer } from './api';
 import { listCart, addCart, updateCart, removeCart } from './api';
 import { api, getToken } from './api/client';
+import { cartPriceCents } from './utils/commerce';
 
 const GUEST_KEY = 'zcard_guest_cart';
 
@@ -164,7 +165,7 @@ function addGuestLocal(product: { id: number; name: string; price_cents: number;
   if (existing) {
     existing.quantity = Math.min(product.max_quantity||99, existing.quantity + quantity);
     existing.max_quantity=product.max_quantity;
-    existing.price_cents=product.price_cents;
+    existing.price_cents=cartPriceCents(product.price_cents);
     existing.flash_sale=product.flash_sale;
   } else {
     items.push({
@@ -174,7 +175,7 @@ function addGuestLocal(product: { id: number; name: string; price_cents: number;
       quantity:Math.min(quantity,product.max_quantity||99),
       max_quantity:product.max_quantity,
       product_name: product.name,
-      price_cents: product.price_cents,
+      price_cents: cartPriceCents(product.price_cents),
       flash_sale: product.flash_sale,
       stock: product.stock ?? 0, // proto3 省略零库存，不能转换成不限。
       points_only: !!product.points_required,

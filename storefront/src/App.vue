@@ -4,7 +4,7 @@
     <template v-if="!isInstall && shellReady">
     <!-- 顶部品牌条：主题自定义可独立关闭，不影响首页轮播。 -->
     <div v-if="brandBarEnabled" class="brand-bar">
-      <span class="brand-slogan">🎁 {{ siteName }} · 自动发货 秒速到账</span>
+      <span class="brand-slogan">🎁 {{ siteName }} · 在线下单 按商品交付</span>
       <span class="brand-trust">
         <span>✓ 安全支付</span>
         <span>✓ 隐私保障</span>
@@ -136,7 +136,7 @@
             <span v-else-if="brandReady" class="logo-mark">ZC</span>
             <span v-else class="logo-mark brand-placeholder" aria-hidden="true"></span>
           </div>
-          <p class="muted">{{ footerAbout || '专业的自动发卡商城系统，为你的数字商品交易保驾护航。' }}</p>
+          <p class="muted">{{ footerAbout || '在线选购商品，查看虚拟交付结果或实体配送进度。' }}</p>
           <!-- 社交链接（footer.social = [{icon,url}]，配置后显示） -->
           <div v-if="footerSocial.length" class="footer-social">
             <a v-for="(s, i) in footerSocial" :key="i" :href="s.url || '#'" target="_blank" rel="noopener noreferrer" class="footer-social-link" :title="s.url">{{ s.icon }}</a>
@@ -302,7 +302,7 @@ const appBgStyle = computed(() => {
 const footerExpanded = ref(false);
 watch(() => route.fullPath, () => { footerExpanded.value = false; });
 const footerTrustDefaults = [
-  { icon: '⚡', image: '', title: '极速发货', description: '下单即自动发货' },
+  { icon: '⚡', image: '', title: '按商品履约', description: '虚拟交付或快递配送' },
   { icon: '🛡️', image: '', title: '正品保障', description: '渠道直供货源' },
   { icon: '💬', image: '', title: '在线客服', description: '7×24 小时响应' },
   { icon: '↩️', image: '', title: '售后无忧', description: '问题订单快速处理' },

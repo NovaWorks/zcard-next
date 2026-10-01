@@ -257,8 +257,11 @@ onMounted(() => {
         <NFormItem label="类型">
           <NSelect v-model:value="promoForm.type" :options="[{ label: '折扣（万分比）', value: 'percent' }, { label: '满减（分）', value: 'fixed' }, { label: '特价（分）', value: 'special_price' }]" />
         </NFormItem>
-        <NFormItem label="门槛(元)">
-          <NInputNumber v-model:value="promoForm.thresholdYuan" :min="0" class="w-full" />
+        <NFormItem label="单件门槛(元)">
+          <div class="w-full">
+            <NInputNumber v-model:value="promoForm.thresholdYuan" :min="0" class="w-full" />
+            <p class="mt-8px text-13px">按会员价或阶梯价计算后的单件商品金额判断，不累计购物车金额，运费不计入门槛。</p>
+          </div>
         </NFormItem>
         <NFormItem v-if="promoForm.type === 'percent'" label="折扣(万分比)">
           <NInputNumber v-model:value="promoForm.discount" :min="1" :max="10000" class="w-full" />

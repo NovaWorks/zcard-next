@@ -27,7 +27,6 @@ import {
   cancelOrder,
   deleteOrders,
   createRefund,
-  fetchPendingDeliveries,
   manualDeliver,
   fetchDeliveries,
 } from "@/service/api";
@@ -64,9 +63,11 @@ const deleting = ref(false);
 let listRequest = 0;
 const showDetail = ref(false);
 const showManualDeliver = ref(false);
+const pendingRefreshKey = ref(0);
 async function afterManualDeliver() {
   if (detail.value) await handleDetail(detail.value.order_no);
   await loadOrders();
+  pendingRefreshKey.value++;
 }
 const detail = ref<{
   [key: string]: any;
@@ -365,7 +366,19 @@ const itemColumns: DataTableColumns<any> = [
     render: (row) =>
       (row.name || `#${row.product_id}`) + (row.sku_name ? `（${row.sku_name}）` : ""),
   },
-  { title: "数量", key: "quantity", width: 60 },
+  {
+    title: "数量 / 配送",
+    key: "quantity",
+    width: 150,
+    render: (row) => h("div", {}, [
+      h("div", {}, `购买 ${row.quantity}`),
+      ...(Number(row.canceled_quantity) > 0 ? [h("div", { class: "text-12px text-gray-500" }, `已取消 ${row.canceled_quantity}`)] : []),
+      ...(row.goods_type === "physical" ? [
+        h("div", { class: "text-12px text-gray-500" }, `已寄 ${row.shipped_quantity || 0} · 已收 ${row.received_quantity || 0}`),
+        ...(Number(row.returned_quantity) > 0 ? [h("div", { class: "text-12px text-gray-500" }, `退回入库 ${row.returned_quantity}`)] : []),
+      ] : []),
+    ]),
+  },
   {
     title: "单价",
     key: "unit_price_cents",
@@ -752,13 +765,13 @@ onMounted(async () => {
           />
         </NTabPane>
         <NTabPane v-if="checkAuth('order:view_delivery')" name="pending" tab="待发货">
-          <PendingDeliverTab />
+          <PendingDeliverTab :refresh-key="pendingRefreshKey" @open-order="handleDetail" />
         </NTabPane>
       </NTabs>
     </NCard>
 
     <!-- 订单详情弹窗 -->
-    <NModal v-model:show="showDetail" preset="card" title="订单详情" style="width: 720px">
+    <NModal v-model:show="showDetail" preset="card" title="订单详情" style="width: min(900px, 94vw)">
       <template v-if="detail">
         <NDescriptions :column="2" bordered size="small">
           <NDescriptionsItem label="订单号">{{ detail.order_no }}</NDescriptionsItem>
@@ -859,6 +872,7 @@ onMounted(async () => {
         <NDataTable
           :data="detail.items || []"
           :columns="itemColumns"
+          :scroll-x="1050"
           size="small"
           :max-height="540"
         />

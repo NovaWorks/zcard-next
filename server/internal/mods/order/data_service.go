@@ -173,7 +173,7 @@ func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetO
 		if it.SkuName != "" {
 			name += " / " + it.SkuName
 		}
-		reply.Items = append(reply.Items, &storefrontv1.OrderItemReply{DeliveryKind: it.DeliveryKind, SmsProduct: it.SmsProduct, GoodsType: it.GoodsType, PaidCents: it.PaidAmount, ShippingCents: it.ShippingAmount, ShippedQuantity: it.ShippedQuantity, ReceivedQuantity: it.ReceivedQuantity, CanceledQuantity: it.CanceledQuantity, Id: it.ID, ProductId: it.ProductID, ProductName: name, Quantity: it.Quantity, UnitPriceCents: it.UnitPrice, AmountCents: it.Amount, SkuName: it.SkuName, FulfillmentType: string(it.FulfillmentType), FulfillmentStatus: it.FulfillmentStatus, FormAnswersJson: answersJSON(it.FormAnswers)})
+		reply.Items = append(reply.Items, &storefrontv1.OrderItemReply{DeliveryKind: it.DeliveryKind, SmsProduct: it.SmsProduct, GoodsType: it.GoodsType, PaidCents: it.PaidAmount, ShippingCents: it.ShippingAmount, ShippedQuantity: it.ShippedQuantity, ReceivedQuantity: it.ReceivedQuantity, CanceledQuantity: it.CanceledQuantity, ReturnedQuantity: it.ReturnedQuantity, Id: it.ID, ProductId: it.ProductID, ProductName: name, Quantity: it.Quantity, UnitPriceCents: it.UnitPrice, AmountCents: it.Amount, SkuName: it.SkuName, FulfillmentType: string(it.FulfillmentType), FulfillmentStatus: it.FulfillmentStatus, FormAnswersJson: answersJSON(it.FormAnswers)})
 	}
 	refunds, e := data.Client(ctx, s.uc.Data).RefundOrder.Query().Where(refundorder.OrderID(o.ID), refundorder.StatusEQ(refundorder.StatusSucceeded)).All(ctx)
 	if e != nil {

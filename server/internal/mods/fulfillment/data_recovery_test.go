@@ -26,7 +26,7 @@ func TestGuestUpstreamManualRecovery(t *testing.T) {
 	if err := r.FulfillOrder(ctx, o.OrderNo); err != nil {
 		t.Fatal(err)
 	}
-	pending, err := r.ListPending(ctx, 1, 20)
+	pending, _, err := r.ListPending(ctx, 1, 20)
 	if err != nil || len(pending) != 1 {
 		t.Fatalf("missing pending order: %v", err)
 	}

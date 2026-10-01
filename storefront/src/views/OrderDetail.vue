@@ -39,10 +39,12 @@
             <div v-for="(it, i) in order.items" :key="i" class="od-item">
               <div class="od-item-name">{{ it.product_name }}
                 <p class="muted">{{it.goods_type === 'physical' ? '快递配送' : it.fulfillment_type === 'manual' ? '人工服务' : it.fulfillment_type === 'upstream' ? '上游交付' : '自动交付'}} · {{itemStatus(it.fulfillment_status)}}</p>
+                <p v-if="it.goods_type === 'physical'" class="muted">已发 {{ it.shipped_quantity || 0 }} 件 · 已收 {{ it.received_quantity || 0 }} 件<span v-if="it.canceled_quantity"> · 已取消 {{ it.canceled_quantity }} 件</span><span v-if="it.returned_quantity"> · 退回入库 {{ it.returned_quantity }} 件</span></p>
+                <p v-else-if="it.canceled_quantity" class="muted">已取消 {{ it.canceled_quantity }} 件</p>
                 <dl v-if="answers(it.form_answers_json).length" class="od-answers"><div v-for="(a,j) in answers(it.form_answers_json)" :key="j"><dt>{{a.name}}</dt><dd>{{a.value}}</dd></div></dl>
               </div>
               <div class="od-item-price">{{ formatMoney(it.unit_price_cents) }}</div>
-              <div class="od-item-qty">×{{ it.quantity }}</div>
+              <div class="od-item-qty">购买 ×{{ it.quantity }}</div>
               <div class="od-item-sub">{{ formatMoney(Number(order.commerce_version)===1?it.paid_cents || 0:it.amount_cents ?? it.unit_price_cents * it.quantity) }}</div>
             </div>
           </div>

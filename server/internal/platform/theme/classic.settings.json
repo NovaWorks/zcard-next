@@ -238,13 +238,13 @@
           "key": "theme.footer_service_1_title",
           "label": "第 1 项 · 标题",
           "type": "text",
-          "default": "极速发货"
+          "default": "按商品履约"
         },
         {
           "key": "theme.footer_service_1_description",
           "label": "第 1 项 · 说明",
           "type": "text",
-          "default": "下单即自动发货"
+          "default": "虚拟交付或快递配送"
         },
         {
           "key": "theme.footer_service_2_icon",

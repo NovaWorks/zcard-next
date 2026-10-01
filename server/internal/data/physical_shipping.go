@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 func LockPhysicalOrder(ctx context.Context, d *Data, o *ent.Order, allowRefunded ...bool) error {
@@ -58,8 +59,12 @@ func ShipmentsJSON(ctx context.Context, d *Data, oid uint64) (string, error) {
 	return string(b), e
 }
 func PhysicalOrderEvent(ctx context.Context, d *Data, o *ent.Order, event, actor string, id uint64, reason string) error {
-	if len([]rune(reason)) > 250 {
-		reason = string([]rune(reason)[:250])
+	// The event column is limited in bytes, so preserve UTF-8 at the boundary.
+	if len(reason) > 250 {
+		reason = reason[:250]
+		for !utf8.ValidString(reason) {
+			reason = reason[:len(reason)-1]
+		}
 	}
 	current, e := Client(ctx, d).Order.Get(ctx, o.ID)
 	if e != nil {

@@ -98,10 +98,8 @@ function refundStatus(value: string) {
   );
 }
 function refundItemName(id: any) {
-  return (
-    (props.order.items || []).find((x: any) => String(x.id) === String(id))
-      ?.name || `商品项 #${id}`
-  );
+  const item = (props.order.items || []).find((x: any) => String(x.id) === String(id));
+  return (item?.name || `商品项 #${id}`) + (item?.sku_name ? `（${item.sku_name}）` : "");
 }
 watch(
   () => props.order,
@@ -358,10 +356,7 @@ async function restock() {
       >
       <p>{{ p.carrier }} · {{ p.tracking_no }}</p>
       <p v-for="(qty, id) in p.items" :key="id">
-        {{
-          (order.items || []).find((it: any) => String(it.id) === String(id))
-            ?.name || `商品项 #${id}`
-        }}
+        {{ refundItemName(id) }}
         × {{ qty }}
       </p>
       <NSpace v-if="checkAuth('order:deliver') && p.status === 'shipped'"
@@ -462,7 +457,7 @@ async function restock() {
           size="small"
           class="mr-8px"
           @click="startReturn(it)"
-          >{{ it.name }}：退货验收入库</NButton
+          >{{ refundItemName(it.id) }}：退货验收入库</NButton
         ></template
       >
     </div>

@@ -55,6 +55,24 @@ func newIdemEnv(t *testing.T) (*data.Data, *OrderUsecase, *paymentmod.PaymentRep
 	return d, uc, payRepo
 }
 
+func TestOrderDetailPreservesPhysicalQuantityHistory(t *testing.T) {
+	d, uc, _ := newIdemEnv(t)
+	ctx := identity.WithClaims(context.Background(), &authn.Claims{Subject: 3, Realm: authn.RealmUser})
+	o := d.Client.Order.Create().SetOrderNo("PHYSICAL-QUANTITY-HISTORY").SetUserID(3).SetCommerceVersion(1).SetStatus("completed").SaveX(ctx)
+	d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(1).SetProductName("Parcel").SetSkuName("Blue").SetQuantity(3).SetCanceledQuantity(1).SetShippedQuantity(2).SetReceivedQuantity(2).SetReturnedQuantity(1).SetUnitPrice(500).SetAmount(1500).SetGoodsType("physical").SetFulfillmentType("shipping").SaveX(ctx)
+	got, err := NewStoreOrderService(uc, nil).GetOrder(ctx, &storefrontv1.GetOrderRequest{OrderNo: o.OrderNo})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Items) != 1 {
+		t.Fatalf("missing physical item: %#v", got.Items)
+	}
+	it := got.Items[0]
+	if it.Quantity != 3 || it.CanceledQuantity != 1 || it.ShippedQuantity != 2 || it.ReceivedQuantity != 2 || it.ReturnedQuantity != 1 || it.ProductName != "Parcel / Blue" {
+		t.Fatalf("buyer cannot reconcile purchased, canceled, shipped, received and returned quantities: %#v", it)
+	}
+}
+
 // TestCreateOrderIdempotency 同 Idempotency-Key 双击只产生一单，返回首单。
 func TestCreateOrderIdempotency(t *testing.T) {
 	d, uc, _ := newIdemEnv(t)

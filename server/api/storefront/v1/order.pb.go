@@ -529,6 +529,7 @@ type OrderItemReply struct {
 	ShippedQuantity   int32                  `protobuf:"varint,14,opt,name=shipped_quantity,json=shippedQuantity,proto3" json:"shipped_quantity,omitempty"`
 	ReceivedQuantity  int32                  `protobuf:"varint,15,opt,name=received_quantity,json=receivedQuantity,proto3" json:"received_quantity,omitempty"`
 	CanceledQuantity  int32                  `protobuf:"varint,16,opt,name=canceled_quantity,json=canceledQuantity,proto3" json:"canceled_quantity,omitempty"`
+	ReturnedQuantity  int32                  `protobuf:"varint,17,opt,name=returned_quantity,json=returnedQuantity,proto3" json:"returned_quantity,omitempty"` // 已验收退回并入库数量，与已取消数量分别累计
 	Id                uint64                 `protobuf:"varint,5,opt,name=id,proto3" json:"id,omitempty"`
 	SkuName           string                 `protobuf:"bytes,6,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`
 	FulfillmentType   string                 `protobuf:"bytes,7,opt,name=fulfillment_type,json=fulfillmentType,proto3" json:"fulfillment_type,omitempty"`
@@ -625,6 +626,13 @@ func (x *OrderItemReply) GetReceivedQuantity() int32 {
 func (x *OrderItemReply) GetCanceledQuantity() int32 {
 	if x != nil {
 		return x.CanceledQuantity
+	}
+	return 0
+}
+
+func (x *OrderItemReply) GetReturnedQuantity() int32 {
+	if x != nil {
+		return x.ReturnedQuantity
 	}
 	return 0
 }
@@ -1773,7 +1781,7 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\x0epaid_fee_cents\x18\b \x01(\x03R\fpaidFeeCents\x1aB\n" +
 	"\x14ShippingAddressEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x94\x06\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xc1\x06\n" +
 	"\x0eOrderItemReply\x12#\n" +
 	"\rdelivery_kind\x18\x1e \x01(\tR\fdeliveryKind\x12X\n" +
 	"\vsms_product\x18\x1f \x03(\v27.zcard.api.storefront.v1.OrderItemReply.SmsProductEntryR\n" +
@@ -1785,7 +1793,8 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\x0eshipping_cents\x18\r \x01(\x03R\rshippingCents\x12)\n" +
 	"\x10shipped_quantity\x18\x0e \x01(\x05R\x0fshippedQuantity\x12+\n" +
 	"\x11received_quantity\x18\x0f \x01(\x05R\x10receivedQuantity\x12+\n" +
-	"\x11canceled_quantity\x18\x10 \x01(\x05R\x10canceledQuantity\x12\x0e\n" +
+	"\x11canceled_quantity\x18\x10 \x01(\x05R\x10canceledQuantity\x12+\n" +
+	"\x11returned_quantity\x18\x11 \x01(\x05R\x10returnedQuantity\x12\x0e\n" +
 	"\x02id\x18\x05 \x01(\x04R\x02id\x12\x19\n" +
 	"\bsku_name\x18\x06 \x01(\tR\askuName\x12)\n" +
 	"\x10fulfillment_type\x18\a \x01(\tR\x0ffulfillmentType\x12-\n" +

@@ -36,6 +36,9 @@ async function receive(id: number) {
       邮编：{{ order.shipping_address?.postal_code || "无需填写" }} · 运费
       {{ formatMoney(order.shipping_cents || 0) }}
     </p>
+    <p v-for="it in (order.items || []).filter((i: any) => i.goods_type === 'physical')" :key="it.id" class="muted">
+      {{ it.product_name }}：购买 {{ it.quantity }} 件 · 已发 {{ it.shipped_quantity || 0 }} 件 · 已收 {{ it.received_quantity || 0 }} 件<span v-if="it.canceled_quantity"> · 已取消 {{ it.canceled_quantity }} 件</span><span v-if="it.returned_quantity"> · 退回入库 {{ it.returned_quantity }} 件</span>
+    </p>
     <p v-if="!packages.length" class="muted">
       {{
         order.status === "pending_payment"

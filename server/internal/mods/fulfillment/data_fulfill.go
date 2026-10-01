@@ -16,6 +16,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
+
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
@@ -437,19 +439,35 @@ func (r *DeliveryRepoImpl) ProductNames(ctx context.Context, ids []uint64) (map[
 	return out, nil
 }
 
-// ListPending 待人工发货列表（含子项——面板展示商品名/数量）。
-func (r *DeliveryRepoImpl) ListPending(ctx context.Context, page, size int) ([]*ent.Order, error) {
+// ListPending 按订单分页，包含待寄出的实体商品和待人工处理的交付项。
+func (r *DeliveryRepoImpl) ListPending(ctx context.Context, page, size int) ([]*ent.Order, bool, error) {
 	c := data.Client(ctx, r.data)
 	pos, err := c.ProcurementOrder.Query().Where(procurementorder.StatusIn(procurementorder.StatusManual, procurementorder.StatusRejected, procurementorder.StatusRefunding)).All(ctx)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	var ids []uint64
 	for _, po := range pos {
 		ids = append(ids, po.OrderItemID)
 	}
-	pending := orderitem.And(orderitem.FulfillmentStatusNotIn("delivered", "refunded"), orderitem.Or(orderitem.FulfillmentTypeEQ(orderitem.FulfillmentTypeManual), orderitem.FulfillmentStatusIn("manual", "failed"), orderitem.IDIn(ids...)))
-	return c.Order.Query().Where(order.StatusIn(order.StatusPaid, order.StatusFulfilling, order.StatusPartiallyDelivered), order.HasItemsWith(pending)).WithItems(func(q *ent.OrderItemQuery) { q.Where(pending) }).Order(ent.Desc(order.FieldID)).Offset((page - 1) * size).Limit(size).All(ctx)
+	physical := orderitem.And(orderitem.GoodsTypeEQ("physical"), func(s *sql.Selector) {
+		s.Where(sql.ExprP(fmt.Sprintf("%s > %s + %s", s.C(orderitem.FieldQuantity), s.C(orderitem.FieldShippedQuantity), s.C(orderitem.FieldCanceledQuantity))))
+	})
+	manual := orderitem.And(orderitem.GoodsTypeNEQ("physical"), orderitem.FulfillmentStatusNotIn("delivered", "refunded"),
+		orderitem.Or(orderitem.FulfillmentTypeEQ(orderitem.FulfillmentTypeManual), orderitem.FulfillmentStatusIn("manual", "failed"), orderitem.IDIn(ids...)),
+		func(s *sql.Selector) {
+			s.Where(sql.ColumnsGT(s.C(orderitem.FieldQuantity), s.C(orderitem.FieldCanceledQuantity)))
+		})
+	pending := orderitem.Or(physical, manual)
+	rows, err := c.Order.Query().Where(order.SubsiteID(tenancy.FromContext(ctx).SubsiteID), order.StatusIn(order.StatusPaid, order.StatusFulfilling, order.StatusPartiallyDelivered), order.HasItemsWith(pending)).WithItems(func(q *ent.OrderItemQuery) { q.Where(pending) }).Order(ent.Desc(order.FieldID)).Offset((page - 1) * size).Limit(size + 1).All(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+	hasMore := len(rows) > size
+	if hasMore {
+		rows = rows[:size]
+	}
+	return rows, hasMore, nil
 }
 
 // ListDeliveries 交付记录列表。

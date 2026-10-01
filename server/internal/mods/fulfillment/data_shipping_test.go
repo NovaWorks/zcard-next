@@ -4,11 +4,14 @@ import (
 	"context"
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
+	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 func TestPhysicalPackagesAndReturnedStock(t *testing.T) {
@@ -17,7 +20,7 @@ func TestPhysicalPackagesAndReturnedStock(t *testing.T) {
 	s := NewAdminFulfillmentService(repo, d)
 	p := d.Client.Product.Create().SetName("Parcel").SetSlug("parcel").SetPrice(500).SetGoodsType("physical").SetPhysicalStock(0).SaveX(ctx)
 	o := d.Client.Order.Create().SetOrderNo("SHIP-TEST").SetStatus("paid").SetCommerceVersion(1).SetShippingStatus("pending").SaveX(ctx)
-	it := d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(p.ID).SetQuantity(2).SetUnitPrice(500).SetAmount(1000).SetGoodsType("physical").SetFulfillmentType("shipping").SetFulfillmentStatus("pending").SaveX(ctx)
+	it := d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(p.ID).SetProductName("Parcel").SetSkuName("Blue").SetQuantity(2).SetUnitPrice(500).SetAmount(1000).SetGoodsType("physical").SetFulfillmentType("shipping").SetFulfillmentStatus("pending").SaveX(ctx)
 	req := &adminv1.ShipOrderRequest{OrderNo: o.OrderNo, ItemIds: []uint64{it.ID}, Carrier: "Test Express", TrackingNo: "TEST001", RequestKey: "ship-request-1"}
 	if _, e := s.ShipOrder(tenancy.WithContext(ctx, tenancy.Context{SubsiteID: 99}), req); e == nil {
 		t.Fatal("cross tenant shipping")
@@ -54,6 +57,79 @@ func TestPhysicalPackagesAndReturnedStock(t *testing.T) {
 	}
 	if d.Client.Product.GetX(ctx, p.ID).PhysicalStock != 1 {
 		t.Fatal("return inventory duplicated")
+	}
+	events := d.Client.OrderStatusEvent.Query().Where(orderstatusevent.OrderID(o.ID), orderstatusevent.Event("return_restocked")).AllX(ctx)
+	if len(events) != 1 || !strings.Contains(events[0].Reason, "Parcel（Blue）") || !strings.Contains(events[0].Reason, "入库 1 件") || !strings.Contains(events[0].Reason, "验收完好") {
+		t.Fatalf("return record missing item, SKU, quantity or reason: %#v", events)
+	}
+}
+
+func TestPendingDeliveriesIncludePhysicalRemaindersAndOrderPagination(t *testing.T) {
+	d, _, repo := newFulfillData(t)
+	ctx := context.Background()
+	s := NewAdminFulfillmentService(repo, d)
+	p := d.Client.Product.Create().SetName("Physical product").SetSlug("pending-physical").SetPrice(500).SaveX(ctx)
+	manual := d.Client.Order.Create().SetOrderNo("PENDING-MANUAL").SetStatus("paid").SaveX(ctx)
+	d.Client.OrderItem.Create().SetOrderID(manual.ID).SetProductID(p.ID).SetQuantity(1).SetUnitPrice(500).SetAmount(500).SetFulfillmentType("manual").SaveX(ctx)
+	o := d.Client.Order.Create().SetOrderNo("PENDING-PHYSICAL").SetStatus("partially_delivered").SetCommerceVersion(1).SaveX(ctx)
+	remaining := d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(p.ID).SetProductName("Snapshot product").SetSkuName("Blue").SetQuantity(5).SetCanceledQuantity(2).SetShippedQuantity(1).SetUnitPrice(500).SetAmount(2500).SetGoodsType("physical").SetFulfillmentType("shipping").SaveX(ctx)
+	second := d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(p.ID).SetSkuName("Red").SetQuantity(1).SetUnitPrice(500).SetAmount(500).SetGoodsType("physical").SetFulfillmentType("shipping").SaveX(ctx)
+	d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(p.ID).SetQuantity(2).SetCanceledQuantity(2).SetUnitPrice(500).SetAmount(1000).SetGoodsType("physical").SetFulfillmentType("shipping").SaveX(ctx)
+	shipped := d.Client.Order.Create().SetOrderNo("ALREADY-SHIPPED").SetStatus("fulfilling").SaveX(ctx)
+	d.Client.OrderItem.Create().SetOrderID(shipped.ID).SetProductID(p.ID).SetQuantity(3).SetCanceledQuantity(1).SetShippedQuantity(2).SetUnitPrice(500).SetAmount(1500).SetGoodsType("physical").SetFulfillmentType("shipping").SaveX(ctx)
+	d.Client.OrderItem.Create().SetOrderID(shipped.ID).SetProductID(p.ID).SetQuantity(1).SetCanceledQuantity(1).SetUnitPrice(500).SetAmount(500).SetFulfillmentType("manual").SaveX(ctx)
+	foreign := d.Client.Order.Create().SetOrderNo("FOREIGN-PENDING").SetSubsiteID(99).SetStatus("paid").SaveX(ctx)
+	d.Client.OrderItem.Create().SetOrderID(foreign.ID).SetProductID(p.ID).SetSubsiteID(99).SetQuantity(1).SetUnitPrice(500).SetAmount(500).SetGoodsType("physical").SetFulfillmentType("shipping").SaveX(ctx)
+	first, err := s.ListPending(ctx, &adminv1.ListPendingRequest{Page: 1, PageSize: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !first.HasMore || len(first.Orders) != 2 {
+		t.Fatalf("one order with two items must not distort pagination: %#v", first)
+	}
+	items := map[uint64]*adminv1.PendingOrder{}
+	for _, row := range first.Orders {
+		if row.OrderNo != o.OrderNo || row.GoodsType != "physical" || row.FulfillmentType != "shipping" {
+			t.Fatalf("physical delivery route missing: %#v", row)
+		}
+		items[row.OrderItemId] = row
+	}
+	if items[remaining.ID].Quantity != 2 || items[remaining.ID].SkuName != "Blue" || items[remaining.ID].ProductName != "Snapshot product" || items[second.ID].Quantity != 1 {
+		t.Fatalf("wrong pending quantity or product snapshot: %#v", first)
+	}
+	last, err := s.ListPending(ctx, &adminv1.ListPendingRequest{Page: 2, PageSize: 1})
+	if err != nil || last.HasMore || len(last.Orders) != 1 || last.Orders[0].OrderNo != manual.OrderNo || last.Orders[0].FulfillmentType != "manual" {
+		t.Fatalf("last page must preserve manual delivery and disable next: %#v %v", last, err)
+	}
+	d.Client.OrderItem.UpdateOneID(remaining.ID).SetShippedQuantity(3).ExecX(ctx)
+	d.Client.OrderItem.UpdateOneID(second.ID).SetShippedQuantity(1).ExecX(ctx)
+	after, err := s.ListPending(ctx, &adminv1.ListPendingRequest{Page: 1, PageSize: 20})
+	if err != nil || after.HasMore || len(after.Orders) != 1 || after.Orders[0].OrderNo != manual.OrderNo {
+		t.Fatalf("shipped/canceled items remain in pending list: %#v %v", after, err)
+	}
+	foreignPage, err := s.ListPending(tenancy.WithContext(ctx, tenancy.Context{SubsiteID: 99}), &adminv1.ListPendingRequest{Page: 1, PageSize: 20})
+	if err != nil || foreignPage.HasMore || len(foreignPage.Orders) != 1 || foreignPage.Orders[0].OrderNo != foreign.OrderNo {
+		t.Fatalf("pending list must match current shipping tenant: %#v %v", foreignPage, err)
+	}
+}
+
+func TestPhysicalReturnWithLongProductNameKeepsEssentialRecord(t *testing.T) {
+	for _, name := range []string{strings.Repeat("实", 80), strings.Repeat("Parcel", 100)} {
+		t.Run(name[:6], func(t *testing.T) {
+			d, _, repo := newFulfillData(t)
+			ctx := identity.WithClaims(context.Background(), &authn.Claims{Subject: 7})
+			s := NewAdminFulfillmentService(repo, d)
+			p := d.Client.Product.Create().SetName(name).SetSlug("return-long-name").SetPrice(0).SetGoodsType("physical").SaveX(ctx)
+			o := d.Client.Order.Create().SetOrderNo("RETURN-LONG-NAME").SetStatus("completed").SetCommerceVersion(1).SaveX(ctx)
+			it := d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(p.ID).SetProductName(name).SetSkuName("蓝色 / M").SetQuantity(1).SetShippedQuantity(1).SetReceivedQuantity(1).SetUnitPrice(0).SetAmount(0).SetGoodsType("physical").SetFulfillmentType("shipping").SaveX(ctx)
+			if _, err := s.RestockReturn(ctx, &adminv1.RestockReturnRequest{OrderNo: o.OrderNo, ItemId: it.ID, Quantity: 1, Reason: "验收完好", RequestKey: "long-product-return"}); err != nil {
+				t.Fatal("valid long product name blocked return", err)
+			}
+			event := d.Client.OrderStatusEvent.Query().Where(orderstatusevent.Event("return_restocked")).OnlyX(ctx)
+			if !utf8.ValidString(event.Reason) || len(event.Reason) > 255 || !strings.Contains(event.Reason, "商品项 #") || !strings.Contains(event.Reason, "入库 1 件：验收完好") || d.Client.Product.GetX(ctx, p.ID).PhysicalStock != 1 {
+				t.Fatalf("return audit lost essential information: %q", event.Reason)
+			}
+		})
 	}
 }
 

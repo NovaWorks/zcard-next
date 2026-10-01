@@ -72,7 +72,7 @@ func NewAdminFulfillmentService(repo *DeliveryRepoImpl, d *data.Data) *AdminFulf
 	return &AdminFulfillmentService{repo: repo, data: d}
 }
 
-// ListPending 待人工发货列表。
+// ListPending 待快递发货及人工交付列表。
 func (s *AdminFulfillmentService) ListPending(ctx context.Context, req *adminv1.ListPendingRequest) (*adminv1.ListPendingReply, error) {
 	page := int(req.GetPage())
 	size := int(req.GetPageSize())
@@ -82,7 +82,7 @@ func (s *AdminFulfillmentService) ListPending(ctx context.Context, req *adminv1.
 	if size < 1 || size > 100 {
 		size = 20
 	}
-	rows, err := s.repo.ListPending(ctx, page, size)
+	rows, hasMore, err := s.repo.ListPending(ctx, page, size)
 	if err != nil {
 		return nil, errors.InternalServer("fulfillment.LIST_FAILED", "读取待发货失败")
 	}
@@ -94,10 +94,10 @@ func (s *AdminFulfillmentService) ListPending(ctx context.Context, req *adminv1.
 		}
 	}
 	names, _ := s.repo.ProductNames(ctx, ids)
-	reply := &adminv1.ListPendingReply{}
+	reply := &adminv1.ListPendingReply{HasMore: hasMore}
 	for _, o := range rows {
 		for _, it := range o.Edges.Items {
-			if it.FulfillmentStatus == "delivered" || it.FulfillmentStatus == "refunded" {
+			if it.GoodsType != "physical" && (it.FulfillmentStatus == "delivered" || it.FulfillmentStatus == "refunded") {
 				continue
 			}
 
@@ -106,7 +106,11 @@ func (s *AdminFulfillmentService) ListPending(ctx context.Context, req *adminv1.
 				name = names[it.ProductID]
 			}
 			raw, _ := json.Marshal(it.FormAnswers)
-			reply.Orders = append(reply.Orders, &adminv1.PendingOrder{OrderNo: o.OrderNo, ProductId: it.ProductID, ProductName: name, Quantity: it.Quantity, CreatedAt: o.CreatedAt.Unix(), OrderItemId: it.ID, SkuName: it.SkuName, FormAnswersJson: string(raw), FulfillmentStatus: it.FulfillmentStatus, AssignedAdminId: it.AssignedAdminID})
+			quantity := it.Quantity - it.CanceledQuantity
+			if it.GoodsType == "physical" {
+				quantity -= it.ShippedQuantity
+			}
+			reply.Orders = append(reply.Orders, &adminv1.PendingOrder{OrderNo: o.OrderNo, ProductId: it.ProductID, ProductName: name, Quantity: quantity, CreatedAt: o.CreatedAt.Unix(), OrderItemId: it.ID, SkuName: it.SkuName, FormAnswersJson: string(raw), FulfillmentStatus: it.FulfillmentStatus, AssignedAdminId: it.AssignedAdminID, FulfillmentType: string(it.FulfillmentType), GoodsType: string(it.GoodsType)})
 		}
 	}
 	return reply, nil
