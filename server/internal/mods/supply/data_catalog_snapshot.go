@@ -134,9 +134,17 @@ func (s *AdminSupplyService) ensureCatalogSnapshot(ctx context.Context, connecti
 		}
 		tenant := tenancy.FromContext(ctx).SubsiteID
 		q := c.SupplyCatalogSnapshot.Query().Where(snap.ConnectionID(connectionID), snap.SubsiteID(tenant), snap.Identity(catalogIdentity(conn)), snap.ExpiresAtGT(time.Now().Unix()))
-		row, e := q.Order(ent.Desc(snap.FieldID)).First(ctx)
+		// Sort only IDs: large JSON payloads can exhaust MySQL's sort buffer.
+		id, e := q.Order(ent.Desc(snap.FieldID)).FirstID(ctx)
 		if e != nil && !ent.IsNotFound(e) {
 			return e
+		}
+		var row *ent.SupplyCatalogSnapshot
+		if e == nil {
+			row, e = c.SupplyCatalogSnapshot.Get(ctx, id)
+			if e != nil {
+				return e
+			}
 		}
 		// Explicit refresh retries failures; opening a failed job never creates an automatic retry loop.
 		if e == nil && ((row.Status == "pending" || row.Status == "loading") || (!refresh && (row.Status == "failed" || time.Since(row.CreatedAt) < 15*time.Minute))) {
