@@ -1428,7 +1428,7 @@ https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.106
 
 ## v1.2.107 · 上游详情图片与云帆手机表单
 
-状态：公告文案已更新，待手动发布到频道。
+状态：正式版已发布，公告已补充发行校验结果及主题直链；待手动发布到频道。
 
 ```text
 📦 ZCard 众卡 v1.2.107 更新日志
@@ -1445,6 +1445,9 @@ https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.106
 • 12 组视口与字体模拟接口检查通过，保留桌面样式、用户缩放与原金额换算；未修改订单金额或财务记录。
 • 云帆需另外上传 yunfan-0.1.32.zip，升级主程序不会自动更新独立主题。
 
+✅ 发行验证
+本地后端全量测试、静态检查与 Docker 安装及数据持久化检查通过；公开发行文件已验证签名、大小和 SHA256。
+
 📌 升级提醒
 本版无新增数据库迁移，请备份并更新完整发行包，保留加密密钥，重启服务。
 已有破图需升级后执行一次采集同步，或重新导入相应商品更新详情；受保护详情由运营确认允许覆盖后解除保护再同步。无需删除货源、商品映射或历史订单。
@@ -1454,5 +1457,10 @@ https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.106
 🔗 版本详情与下载
 https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.107
 
+云帆 0.1.32 主题包：
+https://github.com/NovaWorks/zcard-next/releases/download/v1.2.107/yunfan-0.1.32.zip
+
 #ZCard #版本更新 #上游对接 #详情图片 #云帆主题
 ```
+
+发布核对：main 发布提交及 v1.2.107 标签为 fef7dd8，公开正式版包含 11 个附件。公告尚未代发，客户站点尚未升级。CI 的 4 项作业通过，仍有与 v1.2.106 相同的既有格式和 schema 检查失败；不宣称 CI 全绿。
