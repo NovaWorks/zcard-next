@@ -9,40 +9,66 @@ package supply
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strings"
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/mods/media"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/httpx"
 )
 
 // maxCoverBytes 封面大小上限（2MB——发卡商品图足够；Content-Length 不可信时 LimitReader 兜底）。
 const maxCoverBytes = 2 << 20
 
-var coverClient = &http.Client{Timeout: 10 * time.Second}
+var coverClient = httpx.NewSafeClient(10 * time.Second)
 
-// resolveUpstreamURL 封面相对路径 → 完整 URL（baseURL 拼接；已是完整 URL 原样返回）。
+// resolveUpstreamURL resolves media relative to the upstream directory. Unsafe
+// schemes and embedded credentials are never retained as browser image URLs.
 func resolveUpstreamURL(baseURL, cover string) string {
-	if cover == "" {
+	cover = strings.TrimSpace(cover)
+	if cover == "" || strings.Contains(cover, "\\") || strings.HasPrefix(cover, "#") {
 		return ""
 	}
-	if strings.HasPrefix(cover, "http://") || strings.HasPrefix(cover, "https://") {
-		return cover
+	u, err := url.Parse(cover)
+	if err != nil || u.User != nil {
+		return ""
 	}
-	return strings.TrimRight(baseURL, "/") + "/" + strings.TrimLeft(cover, "/")
+	if !u.IsAbs() {
+		base, err := url.Parse(strings.TrimSpace(baseURL))
+		if err != nil || base.User != nil || base.Hostname() == "" || (base.Scheme != "http" && base.Scheme != "https") {
+			return ""
+		}
+		if !strings.HasSuffix(base.Path, "/") {
+			base.Path += "/"
+			if base.RawPath != "" {
+				base.RawPath += "/"
+			}
+		}
+		base.RawQuery = ""
+		base.Fragment = ""
+		u = base.ResolveReference(u)
+	}
+	u.Scheme = strings.ToLower(u.Scheme)
+	if (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" || u.User != nil {
+		return ""
+	}
+	u.Fragment = ""
+	return u.String()
 }
 
 // downloadCover 下载上游封面到本地 uploads/<coverDir>/；返回本地 URL（/uploads/...）。
 // 任何失败均 fail-open：返回完整上游 URL（记录 warn，不阻断同步）。
 func (s *SyncService) downloadCover(ctx context.Context, baseURL, cover, coverDir string) string {
-	if cover == "" {
+	src := resolveUpstreamURL(baseURL, cover)
+	if src == "" {
 		return ""
 	}
-	src := resolveUpstreamURL(baseURL, cover)
-	key := coverDir + "|" + cover
+	key := coverDir + "|" + src
 	// 去重缓存（并发任务加锁）
 	s.coverMu.Lock()
 	if s.coverCache == nil {
@@ -54,48 +80,93 @@ func (s *SyncService) downloadCover(ctx context.Context, baseURL, cover, coverDi
 	}
 	s.coverMu.Unlock()
 
-	local := s.fetchCover(ctx, src, coverDir)
-	s.coverMu.Lock()
-	s.coverCache[key] = local
-	s.coverMu.Unlock()
+	local := s.fetchCover(ctx, src, coverDir, upstreamOrigin(baseURL))
+	// A temporary upstream failure must remain retryable on the next sync.
+	if strings.HasPrefix(local, "/uploads/") {
+		s.coverMu.Lock()
+		s.coverCache[key] = local
+		s.coverMu.Unlock()
+	}
 	return local
 }
 
+func upstreamOrigin(baseURL string) string {
+	u, err := url.Parse(baseURL)
+	if err != nil || u.Hostname() == "" || (u.Scheme != "http" && u.Scheme != "https") {
+		return ""
+	}
+	return (&url.URL{Scheme: u.Scheme, Host: u.Host, Path: "/"}).String()
+}
+
+// Image query strings may carry upstream access tokens. Diagnostics retain only
+// the origin and path, while the browser fallback keeps the usable full URL.
+func mediaLogURL(src string) string {
+	u, err := url.Parse(src)
+	if err != nil {
+		return "<invalid>"
+	}
+	u.User = nil
+	u.RawQuery = ""
+	u.ForceQuery = false
+	u.Fragment = ""
+	return u.String()
+}
+
+func mediaFetchError(err error) error {
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		return urlErr.Err
+	}
+	return err
+}
+
 // fetchCover 单次下载 + 落盘（无缓存）。
-func (s *SyncService) fetchCover(ctx context.Context, src, coverDir string) string {
+func (s *SyncService) fetchCover(ctx context.Context, src, coverDir, referer string) string {
+	if ctx.Err() != nil {
+		return src
+	}
+	if err := httpx.ValidateURL(src); err != nil {
+		s.log.Warn("supply.cover_fetch_blocked", "url", mediaLogURL(src), "err", mediaFetchError(err))
+		return src
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, src, nil)
 	if err != nil {
 		return src
 	}
+	req.Header.Set("User-Agent", httpx.UserAgent)
+	if referer != "" {
+		req.Header.Set("Referer", referer)
+	}
 	resp, err := coverClient.Do(req)
 	if err != nil {
-		s.log.Warn("supply.cover_fetch_failed", "url", src, "err", err)
+		s.log.Warn("supply.cover_fetch_failed", "url", mediaLogURL(src), "err", mediaFetchError(err))
 		return src
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		s.log.Warn("supply.cover_fetch_status", "url", src, "status", resp.StatusCode)
+		s.log.Warn("supply.cover_fetch_status", "url", mediaLogURL(src), "status", resp.StatusCode)
 		return src
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxCoverBytes+1))
 	if err != nil || len(body) > maxCoverBytes {
-		s.log.Warn("supply.cover_fetch_too_large", "url", src)
+		s.log.Warn("supply.cover_fetch_too_large", "url", mediaLogURL(src))
 		return src
 	}
 	ext := coverExt(resp.Header.Get("Content-Type"), src)
 	if ext == "" {
-		s.log.Warn("supply.cover_fetch_unsupported", "url", src, "type", resp.Header.Get("Content-Type"))
+		s.log.Warn("supply.cover_fetch_unsupported", "url", mediaLogURL(src), "type", resp.Header.Get("Content-Type"))
 		return src
 	}
 	rel, err := media.SaveLocalIn(coverDir, body, ext)
 	if err != nil {
-		s.log.Warn("supply.cover_save_failed", "url", src, "err", err)
+		s.log.Warn("supply.cover_save_failed", "url", mediaLogURL(src), "err", err)
 		return src
 	}
 	return "/uploads/" + rel
 }
 
-// coverExt Content-Type → 白名单扩展名（缺失时按 URL 后缀兜底；未知返回空）。
+// coverExt permits filename fallback only when the server omitted the MIME or
+// used a generic binary MIME. An HTML/login page at a .png URL is not an image.
 func coverExt(ctype, src string) string {
 	switch strings.ToLower(strings.TrimSpace(strings.Split(ctype, ";")[0])) {
 	case "image/jpeg":
@@ -106,6 +177,10 @@ func coverExt(ctype, src string) string {
 		return ".webp"
 	case "image/gif":
 		return ".gif"
+	case "", "application/octet-stream", "binary/octet-stream":
+		// Some suppliers serve valid images without an image Content-Type.
+	default:
+		return ""
 	}
 	switch strings.ToLower(path.Ext(strings.Split(src, "?")[0])) {
 	case ".jpg", ".jpeg":

@@ -358,8 +358,9 @@ func (s *SyncService) attemptImportItem(ctx context.Context, task *ent.SupplySyn
 	}
 	mediaCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	cover := s.coverFor(mediaCtx, mapping, conn, p.Cover)
+	description := s.descriptionFor(mediaCtx, mapping, conn, p.Description)
 	cancel()
-	cp := &importCheckpoint{holdStock: item.LocalProductID == 0, cover: cover}
+	cp := &importCheckpoint{holdStock: item.LocalProductID == 0, cover: cover, description: description}
 	if id, ok := payload.ProductCategories[item.Code]; ok {
 		cp.categoryID = &id
 	}

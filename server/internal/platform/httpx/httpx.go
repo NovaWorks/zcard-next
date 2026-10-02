@@ -79,23 +79,78 @@ func ValidateURL(raw string) error {
 }
 
 func checkHost(host string) error {
+	_, err := resolveHost(context.Background(), host, net.DefaultResolver.LookupIPAddr)
+	return err
+}
+
+type lookupIPAddrFunc func(context.Context, string) ([]net.IPAddr, error)
+type dialContextFunc func(context.Context, string, string) (net.Conn, error)
+
+func resolveHost(ctx context.Context, host string, lookup lookupIPAddrFunc) ([]net.IPAddr, error) {
+	var addrs []net.IPAddr
 	if ip := net.ParseIP(host); ip != nil {
-		if !allowPrivate && IsPrivateIP(ip) {
-			return &ErrBlockedAddress{Host: host}
+		addrs = []net.IPAddr{{IP: ip}}
+	} else {
+		var err error
+		addrs, err = lookup(ctx, host)
+		if err != nil {
+			return nil, fmt.Errorf("httpx: 解析 %s 失败: %w", host, err)
 		}
-		return nil
 	}
-	// 域名：解析后逐 IP 校验（任一命中私有段即拦截）
-	addrs, err := net.LookupIP(host)
-	if err != nil {
-		return fmt.Errorf("httpx: 解析 %s 失败: %w", host, err)
+	if len(addrs) == 0 {
+		return nil, &net.DNSError{Err: "no addresses found", Name: host}
 	}
+	// Check the whole answer before dialing any member of a mixed answer.
 	for _, a := range addrs {
-		if IsPrivateIP(a) {
-			return &ErrBlockedAddress{Host: host + " (" + a.String() + ")"}
+		if !allowPrivate && IsPrivateIP(a.IP) {
+			return nil, &ErrBlockedAddress{Host: host + " (" + a.String() + ")"}
 		}
 	}
-	return nil
+	return addrs, nil
+}
+
+func safeDialContext(ctx context.Context, network, addr string, lookup lookupIPAddrFunc, dial dialContextFunc) (net.Conn, error) {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, err
+	}
+	addrs, err := resolveHost(ctx, host, lookup)
+	if err != nil {
+		return nil, err
+	}
+	candidates := make([]net.IPAddr, 0, len(addrs))
+	for _, a := range addrs {
+		if (network == "tcp4" && a.IP.To4() == nil) || (network == "tcp6" && a.IP.To4() != nil) {
+			continue
+		}
+		candidates = append(candidates, a)
+	}
+	if len(candidates) == 0 {
+		return nil, &net.DNSError{Err: "no suitable addresses found", Name: host}
+	}
+	var firstErr error
+	for i, a := range candidates {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		attemptCtx, cancel := context.WithCancel(ctx)
+		if deadline, ok := ctx.Deadline(); ok && len(candidates)-i > 1 {
+			cancel()
+			// Share the remaining timeout so one unreachable address cannot
+			// consume the entire connection budget and prevent fallback.
+			attemptCtx, cancel = context.WithTimeout(ctx, time.Until(deadline)/time.Duration(len(candidates)-i))
+		}
+		// Pin the checked IP. Passing the hostname here would resolve again.
+		conn, err := dial(attemptCtx, network, net.JoinHostPort(a.String(), port))
+		cancel()
+		if err == nil {
+			return conn, nil
+		}
+		if firstErr == nil {
+			firstErr = err
+		}
+	}
+	return nil, firstErr
 }
 
 // NewSafeClient 构造安全出站客户端：超时 + 重定向逐跳校验 + 连接期 IP 复核。
@@ -103,15 +158,9 @@ func NewSafeClient(timeout time.Duration) *http.Client {
 	dialer := &net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}
 	transport := &http.Transport{
 		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			// DNS rebinding 防护：连接建立瞬间复核实际 IP
-			host, port, err := net.SplitHostPort(addr)
-			if err != nil {
-				return nil, err
-			}
-			if ip := net.ParseIP(host); ip != nil && !allowPrivate && IsPrivateIP(ip) {
-				return nil, &ErrBlockedAddress{Host: host}
-			}
-			return dialer.DialContext(ctx, network, net.JoinHostPort(host, port))
+			dialCtx, cancel := context.WithTimeout(ctx, dialer.Timeout)
+			defer cancel()
+			return safeDialContext(dialCtx, network, addr, net.DefaultResolver.LookupIPAddr, dialer.DialContext)
 		},
 	}
 	return &http.Client{

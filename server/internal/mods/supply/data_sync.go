@@ -111,7 +111,7 @@ type SyncService struct {
 	outbox              events.Writer // sync.completed 发布
 	log                 *slog.Logger
 
-	// 封面采集去重缓存（url → 本地 /uploads/ 路径或完整上游 URL；mutex 保护并发任务）
+	// 上游图片采集去重缓存（目录+绝对 URL → 本地 /uploads/ 路径；仅缓存成功下载）。
 	coverMu    sync.Mutex
 	coverCache map[string]string
 	coverDirs  map[uint64]string // connectionID → 渠道封面目录名（ensureCoverDir 缓存）
@@ -516,6 +516,11 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 		if p.IsActive {
 			cover = s.coverFor(ctx, m, conn, p.Cover)
 		}
+		mediaCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+		prepared := *p
+		prepared.Description = s.descriptionFor(mediaCtx, m, conn, p.Description)
+		cancel()
+		p = &prepared
 	}
 	next := *stats
 	canceled := false
@@ -1046,11 +1051,12 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 }
 
 type importCheckpoint struct {
-	categoryID *uint64
-	before     func(context.Context) error
-	after      func(context.Context, uint64, bool) error
-	holdStock  bool
-	cover      string
+	categoryID  *uint64
+	before      func(context.Context) error
+	after       func(context.Context, uint64, bool) error
+	holdStock   bool
+	cover       string
+	description string
 }
 
 func (s *SyncService) importOne(ctx context.Context, conn *ent.SupplyConnection, p *adapter.Product, categoryMap map[string]uint64, mode string, markupPercent float64, markupAmount int64, checkpoint *importCheckpoint) (bool, error) {
@@ -1086,7 +1092,7 @@ func (s *SyncService) importOne(ctx context.Context, conn *ent.SupplyConnection,
 		UpstreamProductCode: p.ID,
 		UpstreamSyncedAt:    time.Now().UTC(),
 		Name:                p.Name,
-		Description:         p.Description,
+		Description:         s.importDescription(ctx, mapping, conn, p.Description, checkpoint),
 		DescriptionSet:      p.DescriptionSet,
 		Cover:               s.importCover(ctx, mapping, conn, p.Cover, checkpoint), // 上游图采集落本地（fail-open；保留旧文件，避免共享引用失效）
 		FactoryPrice:        accountCost(conn, p),
@@ -1257,4 +1263,13 @@ func (s *SyncService) importCover(ctx context.Context, m *ent.SupplyMapping, con
 		return cp.cover
 	}
 	return s.coverFor(ctx, m, conn, url)
+}
+
+func (s *SyncService) importDescription(ctx context.Context, m *ent.SupplyMapping, conn *ent.SupplyConnection, description string, cp *importCheckpoint) string {
+	if cp != nil {
+		return cp.description
+	}
+	mediaCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	return s.descriptionFor(mediaCtx, m, conn, description)
 }
