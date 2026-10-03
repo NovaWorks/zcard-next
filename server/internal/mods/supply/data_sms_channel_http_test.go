@@ -4,6 +4,7 @@ package supply
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
@@ -39,6 +40,15 @@ func TestStoreChannelHTTPContractRetailPricing(t *testing.T) {
 		case "/api/supply/products/17/sms/offers":
 			fmt.Fprint(w, `{"offers":[{"offer_id":"opaque","price_cents":"123","stock":7,"name":"US / WA"}]}`)
 		case "/api/supply/products/17/sms/quotes":
+			var req struct {
+				CountryID  int64 `json:"country_id"`
+				PlatformID int64 `json:"platform_id"`
+			}
+			if err := json.Unmarshal(body, &req); err != nil || req.CountryID != 1 || req.PlatformID != 2 {
+				t.Errorf("quote filters violate supply contract: %+v, %v", req, err)
+				http.Error(w, "invalid quote filters", http.StatusBadRequest)
+				return
+			}
 			fmt.Fprintf(w, `{"quote_id":"supplier-fixed","amount_cents":"123","currency":"CNY","expires_at":"%d","offer_name":"US / WA"}`, time.Now().Add(5*time.Minute).Unix())
 		default:
 			t.Errorf("browse allocated a number or unexpected %s", r.URL.Path)

@@ -48,7 +48,23 @@ func (a *zCardAdapter) SMSChannelOffers(ctx context.Context, id string, f supply
 	return &out, nil
 }
 func (a *zCardAdapter) SMSChannelQuote(ctx context.Context, id, offer string, f supplyport.SMSChannelFilter) (*supplyport.SMSChannelQuote, error) {
-	raw, e := a.request(ctx, "POST", "/api/supply/products/"+url.PathEscape(id)+"/sms/quotes", nil, map[string]any{"offer_id": offer, "country_id": f.CountryID, "platform_id": f.PlatformID, "page": f.Page, "page_size": f.PageSize})
+	country, e := parseChannelQuoteID("country_id", f.CountryID)
+	if e != nil {
+		return nil, e
+	}
+	platform, e := parseChannelQuoteID("platform_id", f.PlatformID)
+	if e != nil {
+		return nil, e
+	}
+	// Supply quote filters are JSON integers; storefront IDs remain strings.
+	body := struct {
+		OfferID    string `json:"offer_id"`
+		CountryID  int64  `json:"country_id"`
+		PlatformID int64  `json:"platform_id"`
+		Page       int    `json:"page"`
+		PageSize   int    `json:"page_size"`
+	}{OfferID: offer, CountryID: country, PlatformID: platform, Page: f.Page, PageSize: f.PageSize}
+	raw, e := a.request(ctx, "POST", "/api/supply/products/"+url.PathEscape(id)+"/sms/quotes", nil, body)
 	if e != nil {
 		return nil, e
 	}
@@ -57,4 +73,15 @@ func (a *zCardAdapter) SMSChannelQuote(ctx context.Context, id, offer string, f 
 		return nil, fmt.Errorf("adapter.zcard: invalid channel quote")
 	}
 	return &out, nil
+}
+
+func parseChannelQuoteID(field, value string) (int64, error) {
+	if value == "" {
+		return 0, nil
+	}
+	id, err := strconv.ParseInt(value, 10, 64)
+	if err != nil || id < 0 {
+		return 0, fmt.Errorf("adapter.zcard: invalid channel %s", field)
+	}
+	return id, nil
 }
