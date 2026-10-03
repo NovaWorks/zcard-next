@@ -416,6 +416,15 @@ func (s *ProcureService) smsFailure(ctx context.Context, row *ent.SMSIntent, err
 	}
 	if errors.As(err, &fault) {
 		status, reason, retry := fault.SMSFailure()
+		// A request codec error cannot be resolved by replaying the same intent.
+		// Keep the original intent and funds intact for reconciliation.
+		if status == 400 && reason == "CODEC" {
+			if s.log != nil {
+				s.log.WarnContext(ctx, "procurement.sms.codec_error", "intent_id", row.ID, "order_id", row.OrderID, "connection_id", row.ConnectionID, "phase", row.Phase, "http_status", status, "diagnostic", "upstream_codec_error")
+			}
+			s.smsReview(ctx, row, "upstream_codec_error")
+			return
+		}
 		if retry > delay {
 			delay = retry
 		}

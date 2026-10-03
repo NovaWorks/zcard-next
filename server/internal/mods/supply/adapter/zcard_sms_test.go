@@ -1,14 +1,19 @@
 package adapter
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
+	khttp "github.com/go-kratos/kratos/v3/transport/http"
 	"io"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 )
 
@@ -60,8 +65,14 @@ func TestZCardSMSPublicContractTwoSources(t *testing.T) {
 			if _, ok := fields["callback_url"]; ok {
 				t.Error("SMS callback sent")
 			}
-			if string(fields["max_supply_amount_cents"]) != `"101"` {
-				t.Error("price ceiling not integer string")
+			var purchase smsPurchaseContractRequest
+			if err := json.Unmarshal(raw, &purchase); err != nil {
+				t.Errorf("purchase request violates supply contract: %v", err)
+				http.Error(w, "invalid purchase request", http.StatusBadRequest)
+				return
+			}
+			if purchase.MaxSupplyAmountCents != 101 {
+				t.Error("price ceiling changed")
 			}
 			if source == "reject" {
 				fmt.Fprint(w, `{"supply_order_id":"r1","status":"rejected","error_code":"price_changed"}`)
@@ -108,6 +119,110 @@ func TestZCardSMSPublicContractTwoSources(t *testing.T) {
 	}
 	if calls != 3 {
 		t.Fatal("invalid purchase reached upstream")
+	}
+}
+
+// Mirrors the market purchase request; its JSON decoder requires an int64 amount.
+// The open-source supply API does not expose the market SMS purchase fields.
+type smsPurchaseContractRequest struct {
+	SMSQuoteID           string `json:"sms_quote_id,omitempty"`
+	ProductID            string `json:"product_id"`
+	Quantity             int32  `json:"quantity"`
+	DownstreamOrderNo    string `json:"downstream_order_no"`
+	RequiredCapability   string `json:"required_capability"`
+	MaxSupplyAmountCents int64  `json:"max_supply_amount_cents"`
+	Currency             string `json:"currency"`
+}
+
+func TestZCardSMSPurchaseNumericWireKeepsIntent(t *testing.T) {
+	for _, channel := range []bool{false, true} {
+		for _, amount := range []int64{101, 9007199254740993, math.MaxInt64} {
+			for _, encoding := range []string{"string", "number"} {
+				t.Run(fmt.Sprintf("channel=%t/amount=%d/intent=%s", channel, amount, encoding), func(t *testing.T) {
+					original := supplyport.SMSPurchase{ProductID: "opaque-product", Quantity: 1, DownstreamOrderNo: "sms_original-intent", RequiredCapability: supplyport.SMSCapability, MaxSupplyAmountCents: supplyport.Integer(amount), Currency: "CNY"}
+					path := "/api/supply/orders"
+					if channel {
+						original.SMSQuoteID = "original-quote"
+						original.RequiredCapability = supplyport.SMSProductPurchase
+						path = "/api/supply/sms/channel-orders"
+					}
+					persisted, err := json.Marshal(original)
+					if err != nil {
+						t.Fatal(err)
+					}
+					saved := string(persisted)
+					if encoding == "number" {
+						saved = strings.Replace(saved, fmt.Sprintf(`"max_supply_amount_cents":"%d"`, amount), fmt.Sprintf(`"max_supply_amount_cents":%d`, amount), 1)
+					}
+					var intent supplyport.SMSPurchase
+					if err := json.Unmarshal([]byte(saved), &intent); err != nil || intent != original {
+						t.Fatalf("saved intent is incompatible: %+v %v", intent, err)
+					}
+					var calls atomic.Int32
+					var mu sync.Mutex
+					seenNonces := map[string]bool{}
+					var firstBody []byte
+					srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						mu.Lock()
+						defer mu.Unlock()
+						calls.Add(1)
+						body, err := io.ReadAll(r.Body)
+						if err != nil {
+							t.Error(err)
+							w.WriteHeader(http.StatusBadRequest)
+							return
+						}
+						if r.Method != http.MethodPost || r.URL.Path != path || r.Header.Get("Content-Type") != "application/json" {
+							t.Errorf("purchase route or codec changed: %s %s %s", r.Method, r.URL.Path, r.Header.Get("Content-Type"))
+						}
+						nonce := r.Header.Get("X-Supply-Nonce")
+						if nonce == "" || seenNonces[nonce] {
+							t.Error("purchase replay reused nonce")
+						}
+						seenNonces[nonce] = true
+						expected := ZCardSign("secret", r.Method, r.URL.Path, r.URL.RawQuery, r.Header.Get("X-Supply-Timestamp"), nonce, body)
+						if r.Header.Get("X-Supply-Key") != "key" || r.Header.Get("X-Supply-Signature") != expected {
+							t.Error("purchase signature does not cover final body")
+						}
+						if encoding == "string" && expected == ZCardSign("secret", r.Method, r.URL.Path, r.URL.RawQuery, r.Header.Get("X-Supply-Timestamp"), nonce, []byte(saved)) {
+							t.Error("wire amount still uses saved JSON string")
+						}
+						if firstBody == nil {
+							firstBody = append([]byte(nil), body...)
+						} else if !bytes.Equal(firstBody, body) {
+							t.Error("purchase replay changed intent body")
+						}
+						r.Body = io.NopCloser(bytes.NewReader(body))
+						var purchase smsPurchaseContractRequest
+						if err := khttp.DefaultRequestDecoder(r, &purchase); err != nil {
+							t.Errorf("purchase violates market HTTP decoder: %v", err)
+							w.WriteHeader(http.StatusBadRequest)
+							fmt.Fprint(w, `{"reason":"CODEC"}`)
+							return
+						}
+						if purchase.ProductID != original.ProductID || purchase.Quantity != 1 || purchase.DownstreamOrderNo != original.DownstreamOrderNo || purchase.SMSQuoteID != original.SMSQuoteID || purchase.RequiredCapability != original.RequiredCapability || purchase.Currency != original.Currency || purchase.MaxSupplyAmountCents != amount {
+							t.Errorf("purchase intent changed: %+v", purchase)
+						}
+						fmt.Fprintf(w, `{"supply_order_id":"original-receipt","status":"fulfilling","charged":true,"amount":%d}`, amount)
+					}))
+					defer srv.Close()
+					a := &zCardAdapter{creds: Credentials{APIKey: "key", APISecret: "secret"}, t: newTransportWithClient(srv.URL, []int{0, 0}, nil, srv.Client())}
+					for i := 0; i < 2; i++ {
+						receipt, err := a.CreateSMS(context.Background(), intent)
+						if err != nil || receipt.SupplyOrderID != "original-receipt" || receipt.Amount != original.MaxSupplyAmountCents {
+							t.Fatalf("purchase receipt: %+v %v", receipt, err)
+						}
+					}
+					if calls.Load() != 2 || intent != original {
+						t.Fatalf("purchase replay changed intent: calls=%d intent=%+v", calls.Load(), intent)
+					}
+					after, err := json.Marshal(intent)
+					if err != nil || !bytes.Equal(after, persisted) {
+						t.Fatalf("persisted intent representation changed: %s %v", after, err)
+					}
+				})
+			}
+		}
 	}
 }
 func TestProtocolIntegerRejectsLossyForms(t *testing.T) {

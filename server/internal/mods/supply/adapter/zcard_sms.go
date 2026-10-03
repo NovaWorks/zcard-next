@@ -19,7 +19,26 @@ func (a *zCardAdapter) CreateSMS(ctx context.Context, req supplyport.SMSPurchase
 		}
 		path = "/api/supply/sms/channel-orders"
 	}
-	raw, err := a.request(withoutRetries(ctx), "POST", path, nil, req)
+	// Keep the saved intent representation compatible while sending the supply
+	// API's amount as a JSON integer rather than Integer's decimal string.
+	body := struct {
+		SMSQuoteID           string `json:"sms_quote_id,omitempty"`
+		ProductID            string `json:"product_id"`
+		Quantity             int    `json:"quantity"`
+		DownstreamOrderNo    string `json:"downstream_order_no"`
+		RequiredCapability   string `json:"required_capability"`
+		MaxSupplyAmountCents int64  `json:"max_supply_amount_cents"`
+		Currency             string `json:"currency"`
+	}{
+		SMSQuoteID:           req.SMSQuoteID,
+		ProductID:            req.ProductID,
+		Quantity:             req.Quantity,
+		DownstreamOrderNo:    req.DownstreamOrderNo,
+		RequiredCapability:   req.RequiredCapability,
+		MaxSupplyAmountCents: int64(req.MaxSupplyAmountCents),
+		Currency:             req.Currency,
+	}
+	raw, err := a.request(withoutRetries(ctx), "POST", path, nil, body)
 	if err != nil {
 		return nil, err
 	}

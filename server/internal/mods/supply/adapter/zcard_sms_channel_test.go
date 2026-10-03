@@ -42,8 +42,12 @@ func TestZCardChannelContractUsesSingleProductAndQuote(t *testing.T) {
 			fmt.Fprintf(w, `{"quote_id":"fixed-quote","amount_cents":"123","currency":"CNY","expires_at":"%d","offer_name":"US / WA"}`, time.Now().Add(time.Minute).Unix())
 		case "/api/supply/sms/channel-orders":
 			calls++
-			var req supplyport.SMSPurchase
-			_ = json.Unmarshal(body, &req)
+			var req smsPurchaseContractRequest
+			if err := json.Unmarshal(body, &req); err != nil {
+				t.Errorf("purchase request violates supply contract: %v", err)
+				http.Error(w, "invalid purchase request", http.StatusBadRequest)
+				return
+			}
 			if req.SMSQuoteID != "fixed-quote" || req.RequiredCapability != supplyport.SMSProductPurchase || req.MaxSupplyAmountCents != 123 || req.DownstreamOrderNo != "fixed-intent" {
 				t.Error("supplier intent changed")
 			}
