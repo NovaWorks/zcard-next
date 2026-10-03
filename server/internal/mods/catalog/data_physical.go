@@ -3,13 +3,16 @@ package catalog
 import (
 	"context"
 	"fmt"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/shipping"
 )
 
 func (r *ProductRepoImpl) validatePhysicalProduct(ctx context.Context, p *ent.Product, in *port.ProductInput) error {
+	shippingChanged := in.GoodsType != nil || in.ProductProperty != nil || in.ShippingMode != nil
 	kind := "virtual"
 	if p != nil {
 		kind = p.GoodsType
@@ -17,13 +20,24 @@ func (r *ProductRepoImpl) validatePhysicalProduct(ctx context.Context, p *ent.Pr
 	if in.GoodsType != nil {
 		kind = *in.GoodsType
 	}
+	if in.ProductProperty != nil {
+		if in.GoodsType != nil && *in.ProductProperty != *in.GoodsType {
+			return fmt.Errorf("商品属性与商品类型不一致")
+		}
+		kind = *in.ProductProperty
+	}
 	if kind != "physical" && kind != "virtual" {
 		return fmt.Errorf("商品类型无效")
 	}
 	if p != nil && kind != p.GoodsType {
 		return fmt.Errorf("已保存的商品不能改变虚拟或实体属性，请新建商品")
 	}
+	in.GoodsType = &kind
+	in.ProductProperty = &kind
 	if kind != "physical" {
+		if in.TrackInventory != nil && !*in.TrackInventory {
+			return fmt.Errorf("仅实体商品支持关闭库存管理")
+		}
 		return nil
 	}
 	if p != nil && (p.UpstreamSourceID > 0 || len(p.DirectContent) > 0 || p.FulfillmentMode == "local" || p.FulfillmentMode == "reuse") {
@@ -40,13 +54,32 @@ func (r *ProductRepoImpl) validatePhysicalProduct(ctx context.Context, p *ent.Pr
 	}
 	in.FulfillmentMode = "auto"
 	in.StockType = "card"
+	in.DeliveryMode = "status"
+	in.Dedup = false
+	in.ManualStock = nil
+	track := p == nil || p.TrackInventory
+	if in.TrackInventory != nil {
+		track = *in.TrackInventory
+	}
+	if !track {
+		in.PhysicalStock = nil
+		in.ExpectedPhysicalStock = nil
+	} else if p != nil && !p.TrackInventory {
+		hasSKU, err := data.Client(ctx, r.data).ProductSku.Query().Where(productsku.ProductID(p.ID), productsku.SubsiteID(p.SubsiteID)).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if !hasSKU && (in.PhysicalStock == nil || in.ExpectedPhysicalStock == nil) {
+			return fmt.Errorf("重新开启库存管理前，请核对并填写可售库存")
+		}
+	}
 	mode := "free"
 	fee := int64(0)
 	countries := in.ShippingCountries
 	if p != nil {
 		mode = p.ShippingMode
 		fee = p.ShippingFee
-		if in.GoodsType == nil && in.ShippingMode == nil {
+		if !shippingChanged {
 			countries = p.ShippingCountries
 		}
 	}

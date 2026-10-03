@@ -546,7 +546,9 @@ function statsCell(row: any) {
     ]);
   // 预警按后台阈值和实际规格计算，不能用商品合计掩盖缺货规格。
   const stockNode =
-    row.stock_status === "stale"
+    (row.product_property || row.goods_type) === "physical" && row.track_inventory === false
+      ? h("span", {}, "不管理库存")
+      : row.stock_status === "stale"
       ? h(
           "span",
           {
@@ -587,7 +589,7 @@ const showCategory = ref(false);
 
 // 分步表单（大厂发布商品模式：基础 → 价格库存 → 商品描述 → 规格与控件 → 高级设置）
 const step = ref(1);
-const stepCount = 5;
+const stepCount = computed(() => formData.product_property === "physical" ? 4 : 5);
 
 const formData = reactive({
  product_kind:"standard",
@@ -599,7 +601,9 @@ const formData = reactive({
   price_yuan: 0,
   factory_price_yuan: 0,
   points_required: 0,
-  goods_type: "virtual",
+  product_property: "virtual" as "virtual" | "physical",
+  track_inventory: true,
+  sales_visible: true,
   shipping_mode: "free",
   shipping_fee_yuan: 0,
   shipping_countries: [] as string[],
@@ -616,6 +620,12 @@ const formData = reactive({
   is_recommend: false,
 });
 const directContentSet = ref(false); // 编辑时已配置直发内容（不回显明文，留空=不变）
+const savedInventoryTracked = computed(() => editingProduct.value?.track_inventory !== false);
+const inventoryModePending = computed(() =>
+  !!editingId.value && formData.product_property === "physical" &&
+  formData.track_inventory !== savedInventoryTracked.value,
+);
+watch(stepCount, (count) => { if (step.value > count) step.value = count; });
 
 const stockTypeOptions = [
   { label: "卡密（一卡一卖，导入卡池发货）", value: "card" },
@@ -661,7 +671,7 @@ function stepNext() {
     window.$message?.warning("请先填写有效售价");
     return;
   }
-  if (step.value < stepCount) step.value += 1;
+  if (step.value < stepCount.value) step.value += 1;
 }
 
 const columns: DataTableColumns<any> = [
@@ -799,6 +809,9 @@ const columns: DataTableColumns<any> = [
     key: "stock_type",
     width: 64,
     render: (row) => {
+      if ((row.product_property || row.goods_type) === "physical") return "实体";
+      if (row.product_kind === "sms_channel") return "接码";
+      if (row.fulfillment_mode === "manual") return "人工服务";
       const map: Record<string, string> = { card: "卡密", url: "链接", code: "兑换码" };
       return map[row.stock_type] || row.stock_type;
     },
@@ -1192,7 +1205,9 @@ function resetForm() {
     price_yuan: 0,
     factory_price_yuan: 0,
     points_required: 0,
-    goods_type: "virtual",
+    product_property: "virtual",
+    track_inventory: true,
+    sales_visible: true,
     shipping_mode: "free",
     shipping_fee_yuan: 0,
     shipping_countries: [] as string[],
@@ -1230,7 +1245,9 @@ async function handleEdit(row: any) {
     price_yuan: Number(centsToYuan(p.price_cents)),
     factory_price_yuan: p.factory_price_cents ? Number(centsToYuan(p.factory_price_cents)) : 0,
     points_required: p.points_required || 0,
-    goods_type: p.goods_type || "virtual",
+    product_property: p.product_property || p.goods_type || "virtual",
+    track_inventory: p.track_inventory !== false,
+    sales_visible: p.sales_visible !== false,
     shipping_mode: p.shipping_mode || "free",
     shipping_fee_yuan: centsToYuan(p.shipping_fee_cents || 0),
     shipping_countries: p.shipping_countries || [],
@@ -1256,6 +1273,7 @@ async function handleEdit(row: any) {
 
 function buildPayload() {
   // 元 → 分（铁律 15：提交统一 *100，经 utils/money 防浮点）
+  const physical = formData.product_property === "physical";
   return {
     name: formData.name,
     category_id: formData.category_id || 0,
@@ -1264,24 +1282,27 @@ function buildPayload() {
     images: formData.images,
     price_cents: yuanToFen(formData.price_yuan),
     factory_price_cents: yuanToFen(formData.factory_price_yuan || 0),
-    points_required: formData.points_required || 0,
-    goods_type: formData.goods_type,
+    points_required: physical ? 0 : formData.points_required || 0,
+    product_property: formData.product_property,
+    goods_type: formData.product_property,
+    track_inventory: physical ? formData.track_inventory : true,
+    sales_visible: formData.sales_visible,
     shipping_mode: formData.shipping_mode,
     shipping_fee_cents: yuanToFen(formData.shipping_fee_yuan || 0),
     shipping_countries: formData.shipping_countries,
-    ...(formData.goods_type === "physical"
+    ...(physical && formData.track_inventory
       ? {
           physical_stock: formData.physical_stock,
           expected_physical_stock: Number(editingProduct.value?.physical_stock || 0),
         }
       : {}),
-    stock_type: formData.stock_type,
-    fulfillment_mode: formData.goods_type === "physical" ? "auto" : formData.fulfillment_mode,
-    manual_stock: formData.manual_stock,
-    ...(formData.direct_content ? { direct_content: formData.direct_content } : {}),
-    delivery_mode: formData.delivery_mode,
+    stock_type: physical ? "card" : formData.stock_type,
+    fulfillment_mode: physical ? "auto" : formData.fulfillment_mode,
+    ...(!physical ? { manual_stock: formData.manual_stock } : {}),
+    ...(!physical && formData.direct_content ? { direct_content: formData.direct_content } : {}),
+    delivery_mode: physical ? "status" : formData.delivery_mode,
     stock_visible: formData.stock_visible,
-    dedup: formData.dedup,
+    dedup: physical ? false : formData.dedup,
     sort: formData.sort || 0,
     status: formData.status,
     is_recommend: formData.is_recommend,
@@ -1336,6 +1357,7 @@ async function saveAndContinue() {
       const created = (data as any) || {};
       if (created.id) {
         editingId.value = created.id;
+        editingProduct.value = created;
         initialProduct.value = JSON.stringify(buildPayload());
         independentlySaved.value = true;
         window.$message?.success("商品已创建，可继续配置规格与控件");
@@ -1762,7 +1784,7 @@ onMounted(() => {
           <NStep title="价格库存" />
           <NStep title="商品描述" />
           <NStep title="规格与控件" />
-          <NStep title="高级设置" />
+          <NStep v-if="formData.product_property !== 'physical'" title="高级设置" />
         </NSteps>
 
         <!-- 商品描述步：完全展开（编辑器整高可见，不内滚）；其余步骤限高内滚 -->
@@ -1800,16 +1822,16 @@ onMounted(() => {
                 </NButton>
               </div>
             </NFormItem>
-            <NFormItem label="商品类型"
+            <NFormItem label="商品属性"
               ><NSelect
-                v-model:value="formData.goods_type"
+                v-model:value="formData.product_property"
                 :disabled="!!editingId || formData.product_kind==='sms_channel'"
                 :options="[
                   { label: '虚拟商品', value: 'virtual' },
                   { label: '实体商品（快递配送）', value: 'physical' },
                 ]"
             /></NFormItem>
-            <template v-if="formData.goods_type === 'physical'">
+            <template v-if="formData.product_property === 'physical'">
               <NFormItem label="运费方式"
                 ><NSelect
                   v-model:value="formData.shipping_mode"
@@ -1832,7 +1854,14 @@ onMounted(() => {
                   :options="countryOptions(shippingRegions)"
                   placeholder="选择可配送的国家或地区"
               /></NFormItem>
-              <NFormItem label="可售库存"
+              <NFormItem label="库存管理">
+                <NSwitch v-model:value="formData.track_inventory" />
+                <span class="ml-8px text-12px text-gray-400">关闭后不限制下单数量，保留已有库存记录</span>
+              </NFormItem>
+              <NAlert v-if="inventoryModePending" type="info" class="mb-12px">
+                库存管理切换将在保存商品后生效。规格库存暂按已保存的设置处理，请先保存商品再调整规格。
+              </NAlert>
+              <NFormItem v-if="formData.track_inventory" label="可售库存"
                 ><div>
                   <NInputNumber
                     v-model:value="formData.physical_stock"
@@ -1843,6 +1872,9 @@ onMounted(() => {
                   <p class="text-12px opacity-60">
                     无规格商品使用此库存；多规格请在规格中调整。新增首个规格前须清空此库存；已有无规格订单请新建商品。数量不含待付款预占。
                   </p>
+                  <p v-if="inventoryModePending && formData.track_inventory" class="text-12px text-orange-500">
+                    重新开启前，请核对可售数量；多规格商品保存后请逐个核对规格库存。
+                  </p>
                 </div></NFormItem
               >
               <p class="mb-12px text-12px opacity-60">
@@ -1850,12 +1882,12 @@ onMounted(() => {
               </p>
             </template>
             <NButton
-              v-if="formData.goods_type !== 'physical' && formData.product_kind !== 'sms_channel' && editingId && checkAuth('catalog:write')"
+              v-if="formData.product_property !== 'physical' && formData.product_kind !== 'sms_channel' && editingId && checkAuth('catalog:write')"
               class="mb-12px"
               @click="openDeliverySources(editingProduct)"
               >发货设置：上游采购 / 我的卡密 / 重复发货</NButton
             >
-            <NFormItem v-if="formData.goods_type !== 'physical' && formData.product_kind !== 'sms_channel'" label="交付方式"
+            <NFormItem v-if="formData.product_property !== 'physical' && formData.product_kind !== 'sms_channel'" label="交付方式"
               ><NSelect
                 v-model:value="formData.fulfillment_mode"
                 :disabled="['local', 'reuse'].includes(formData.fulfillment_mode)"
@@ -1866,7 +1898,7 @@ onMounted(() => {
                   { label: '重复发货（请在发货设置修改）', value: 'reuse', disabled: true },
                 ]"
             /></NFormItem>
-            <NFormItem v-if="formData.goods_type !== 'physical'" label="人工可售总量"
+            <NFormItem v-if="formData.product_property !== 'physical'" label="人工可售总量"
               ><div class="w-full">
                 <NInputNumber v-model:value="formData.manual_stock" :min="-1" :precision="0" />
                 <p class="text-12px opacity-60">
@@ -1875,14 +1907,14 @@ onMounted(() => {
               </div></NFormItem
             >
             <NFormItem
-              v-if="formData.goods_type !== 'physical' && formData.fulfillment_mode !== 'manual'"
+              v-if="formData.product_property !== 'physical' && formData.fulfillment_mode !== 'manual'"
               label="库存类型"
             >
               <NSelect v-model:value="formData.stock_type" :options="stockTypeOptions" />
             </NFormItem>
             <NFormItem
               v-if="
-                formData.goods_type !== 'physical' &&
+                formData.product_property !== 'physical' &&
                 formData.fulfillment_mode !== 'manual' &&
                 formData.stock_type !== 'card'
               "
@@ -1942,7 +1974,7 @@ onMounted(() => {
                 class="w-full"
               />
             </NFormItem>
-            <NFormItem v-if="formData.goods_type !== 'physical' && formData.product_kind!=='sms_channel'" label="积分价">
+            <NFormItem v-if="formData.product_property !== 'physical' && formData.product_kind!=='sms_channel'" label="积分价">
               <NInputNumber
                 v-model:value="formData.points_required"
                 :min="0"
@@ -1953,9 +1985,13 @@ onMounted(() => {
                 >0 = 不参与积分商城</span
               >
             </NFormItem>
-            <NFormItem label="库存可见">
+            <NFormItem label="前台显示库存">
               <NSwitch v-model:value="formData.stock_visible" />
-              <span class="ml-8px text-12px text-gray-400">关闭后前台不显示剩余库存</span>
+              <span class="ml-8px text-12px text-gray-400">控制买家是否看到库存数量，与库存管理独立</span>
+            </NFormItem>
+            <NFormItem label="前台显示销量">
+              <NSwitch v-model:value="formData.sales_visible" />
+              <span class="ml-8px text-12px text-gray-400">关闭后前台不显示已售数量</span>
             </NFormItem>
             <NFormItem label="首页推荐">
               <NSwitch v-model:value="formData.is_recommend" />
@@ -1971,13 +2007,13 @@ onMounted(() => {
 
           <!-- 高级设置（第 5 步，内滚容器内） -->
           <NForm
-            v-else
+            v-else-if="step === 5 && formData.product_property !== 'physical'"
             :model="formData"
             :disabled="editorLocked"
             label-placement="left"
             label-width="100"
           >
-            <NFormItem v-if="formData.goods_type !== 'physical'" label="发货模式">
+            <NFormItem label="发货模式">
               <NSelect v-model:value="formData.delivery_mode" :options="deliveryModeOptions" />
             </NFormItem>
             <NFormItem label="导入去重">
@@ -2046,11 +2082,15 @@ onMounted(() => {
               >规格的「保存/全部保存/删除」及控件的「创建/更新/删除」会立即生效，关闭商品窗口不会撤销。其余未保存输入可通过取消放弃。</NAlert
             >
             <NCard size="small" title="SKU 多规格" class="mb-12px">
+              <NAlert v-if="inventoryModePending" type="info" class="mb-12px">
+                请先保存商品的库存管理设置，再重新打开规格调整库存。
+              </NAlert>
               <SkuPanel
                 ref="skuPanel"
                 :key="editingId"
                 :product-id="editingId"
-                :physical="formData.goods_type === 'physical'"
+                :physical="formData.product_property === 'physical'"
+                :inventory-tracked="savedInventoryTracked"
                 :readonly="editorLocked"
                 @persisted="independentlySaved = true"
               />
@@ -2059,7 +2099,7 @@ onMounted(() => {
               <ControlPanel
                 ref="controlPanel"
                 :product-id="editingId"
-                :physical="formData.goods_type === 'physical'"
+                :physical="formData.product_property === 'physical'"
                 :readonly="editorLocked"
                 @persisted="independentlySaved = true"
               />

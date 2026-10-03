@@ -60,6 +60,7 @@ message MethodItem {
 }
 
 message CreatePaymentRequest {
+  string order_access_token = 6;
   string quote_key = 4;
   string query_password = 5;
   string order_no = 1 [(google.api.field_behavior) = REQUIRED];
@@ -75,6 +76,7 @@ message CreatePaymentReply {
 }
 
 message PaymentQuoteRequest {
+  string order_access_token = 7;
   string order_no = 1;
   string channel = 2;
   string method = 3;

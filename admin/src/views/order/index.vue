@@ -220,6 +220,7 @@ function eventText(evt: string) {
     shipping_address_changed: "收货地址更正",
     shipment_received: "确认收货",
     return_restocked: "退货入库",
+    return_registered: "退货登记",
     item_refund: "商品退款 / 取消",
     created: "创建订单",
     paid: "支付成功",
@@ -542,6 +543,7 @@ async function handleDetail(orderNo: string) {
     showDetail.value = true;
   }
   deliveries.value = [];
+  if (!detail.value?.items?.some((it:any)=>it.goods_type!=='physical')) return;
   const dres = await fetchDeliveries(orderNo, 1, 100);
   if (!dres.error && dres.data) {
     deliveries.value = (dres.data as any).deliveries || [];
@@ -888,6 +890,7 @@ onMounted(async () => {
             处理人 ID：{{ it.assigned_admin_id }}
           </p>
         </div>
+        <template v-if="detail.items?.some((it:any)=>it.goods_type!=='physical')">
         <NDivider>交付结果（{{ deliveries.length }} 条）</NDivider>
         <div v-if="deliveries.length" class="flex flex-col gap-8px">
           <div
@@ -916,6 +919,7 @@ onMounted(async () => {
           </div>
         </div>
         <div v-else class="text-12px opacity-50" style="padding: 4px 0">暂无交付记录</div>
+        </template>
         <NDivider>金额明细（{{ (detail.amount_lines || []).length }} 行）</NDivider>
         <NDataTable
           :data="detail.amount_lines || []"
@@ -991,7 +995,7 @@ onMounted(async () => {
         <div v-if="detail" class="flex justify-end gap-8px">
           <!-- NPopconfirm 的 trigger 槽必须恰好一个子节点：v-if 放在 Popconfirm 自身（空槽会抛 follower 错误） -->
           <NButton
-            v-if="checkAuth('procurement:read')"
+            v-if="checkAuth('procurement:read') && detail.items?.some((it:any)=>it.goods_type!=='physical' && it.fulfillment_type==='upstream')"
             @click="
               router.push({
                 path: '/channel',

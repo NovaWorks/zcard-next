@@ -229,7 +229,7 @@ func (r *PaymentRepoImpl) RefundPhysical(ctx context.Context, oid, actor uint64,
 			if e = q.Exec(ctx); e != nil {
 				return e
 			}
-			if qty > 0 && it.GoodsType == "physical" {
+			if qty > 0 && it.GoodsType == "physical" && it.InventoryTracked {
 				if e = data.MovePhysicalStock(ctx, r.data, it.SubsiteID, it.ProductID, it.SkuID, oid, int64(qty), fmt.Sprintf("refund:%d:%d", result.ID, it.ID), "退款取消未发货数量"); e != nil {
 					return e
 				}

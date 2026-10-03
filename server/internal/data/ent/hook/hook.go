@@ -537,6 +537,18 @@ func (f PaymentChannelFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PaymentChannelMutation", m)
 }
 
+// The PhysicalReturnReceiptFunc type is an adapter to allow the use of ordinary
+// function as PhysicalReturnReceipt mutator.
+type PhysicalReturnReceiptFunc func(context.Context, *ent.PhysicalReturnReceiptMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PhysicalReturnReceiptFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PhysicalReturnReceiptMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PhysicalReturnReceiptMutation", m)
+}
+
 // The PhysicalStockMovementFunc type is an adapter to allow the use of ordinary
 // function as PhysicalStockMovement mutator.
 type PhysicalStockMovementFunc func(context.Context, *ent.PhysicalStockMovementMutation) (ent.Value, error)

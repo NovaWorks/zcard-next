@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 )
@@ -35,6 +36,12 @@ const (
 	FieldName = "name"
 	// FieldGoodsType holds the string denoting the goods_type field in the database.
 	FieldGoodsType = "goods_type"
+	// FieldProductProperty holds the string denoting the product_property field in the database.
+	FieldProductProperty = "product_property"
+	// FieldTrackInventory holds the string denoting the track_inventory field in the database.
+	FieldTrackInventory = "track_inventory"
+	// FieldSalesVisible holds the string denoting the sales_visible field in the database.
+	FieldSalesVisible = "sales_visible"
 	// FieldShippingMode holds the string denoting the shipping_mode field in the database.
 	FieldShippingMode = "shipping_mode"
 	// FieldShippingFee holds the string denoting the shipping_fee field in the database.
@@ -154,6 +161,9 @@ var Columns = []string{
 	FieldCategoryProtected,
 	FieldName,
 	FieldGoodsType,
+	FieldProductProperty,
+	FieldTrackInventory,
+	FieldSalesVisible,
 	FieldShippingMode,
 	FieldShippingFee,
 	FieldShippingCountries,
@@ -208,7 +218,13 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+// Note that the variables below are initialized by the runtime
+// package on the initialization of the application. Therefore,
+// it should be imported in the main as follows:
+//
+//	import _ "github.com/NovaWorks/zcard-next/server/internal/data/ent/runtime"
 var (
+	Hooks [1]ent.Hook
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -227,6 +243,14 @@ var (
 	NameValidator func(string) error
 	// DefaultGoodsType holds the default value on creation for the "goods_type" field.
 	DefaultGoodsType string
+	// DefaultProductProperty holds the default value on creation for the "product_property" field.
+	DefaultProductProperty string
+	// ProductPropertyValidator is a validator for the "product_property" field. It is called by the builders before save.
+	ProductPropertyValidator func(string) error
+	// DefaultTrackInventory holds the default value on creation for the "track_inventory" field.
+	DefaultTrackInventory bool
+	// DefaultSalesVisible holds the default value on creation for the "sales_visible" field.
+	DefaultSalesVisible bool
 	// DefaultShippingMode holds the default value on creation for the "shipping_mode" field.
 	DefaultShippingMode string
 	// DefaultShippingFee holds the default value on creation for the "shipping_fee" field.
@@ -399,6 +423,21 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByGoodsType orders the results by the goods_type field.
 func ByGoodsType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldGoodsType, opts...).ToFunc()
+}
+
+// ByProductProperty orders the results by the product_property field.
+func ByProductProperty(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProductProperty, opts...).ToFunc()
+}
+
+// ByTrackInventory orders the results by the track_inventory field.
+func ByTrackInventory(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTrackInventory, opts...).ToFunc()
+}
+
+// BySalesVisible orders the results by the sales_visible field.
+func BySalesVisible(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSalesVisible, opts...).ToFunc()
 }
 
 // ByShippingMode orders the results by the shipping_mode field.

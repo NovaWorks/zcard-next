@@ -177,7 +177,7 @@ func toPortProduct(row *ent.Product) port.Product {
 	name, description := sanitize.SMSPublicContent(row.ProductKind, row.Name, row.Description)
 	return port.Product{
 		ProductKind: row.ProductKind, DeliveryKind: row.DeliveryKind, SMSProduct: row.SmsProduct,
-		GoodsType: row.GoodsType, ShippingMode: row.ShippingMode, ShippingFee: row.ShippingFee, ShippingCountries: row.ShippingCountries, PhysicalStock: row.PhysicalStock,
+		GoodsType: row.GoodsType, ProductProperty: row.ProductProperty, SalesVisible: row.SalesVisible, TrackInventory: row.TrackInventory, ShippingMode: row.ShippingMode, ShippingFee: row.ShippingFee, ShippingCountries: row.ShippingCountries, PhysicalStock: row.PhysicalStock,
 		ID:              row.ID,
 		SubsiteID:       row.SubsiteID,
 		Name:            name,

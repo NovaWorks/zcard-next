@@ -417,6 +417,9 @@ func (x *FlashOffer) GetPerUserLimit() int32 {
 
 type Product struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
+	ProductProperty   string                 `protobuf:"bytes,71,opt,name=product_property,json=productProperty,proto3" json:"product_property,omitempty"`
+	TrackInventory    *bool                  `protobuf:"varint,72,opt,name=track_inventory,json=trackInventory,proto3,oneof" json:"track_inventory,omitempty"`
+	SalesVisible      *bool                  `protobuf:"varint,73,opt,name=sales_visible,json=salesVisible,proto3,oneof" json:"sales_visible,omitempty"`
 	ProductKind       string                 `protobuf:"bytes,70,opt,name=product_kind,json=productKind,proto3" json:"product_kind,omitempty"`
 	DeliveryKind      string                 `protobuf:"bytes,60,opt,name=delivery_kind,json=deliveryKind,proto3" json:"delivery_kind,omitempty"`
 	SmsProduct        map[string]string      `protobuf:"bytes,61,rep,name=sms_product,json=smsProduct,proto3" json:"sms_product,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
@@ -440,7 +443,7 @@ type Product struct {
 	// 按货源返回库存（>=0 数量，-1 不限，-2 待确认），stock_visible 仅控制展示
 	Stock int64 `protobuf:"varint,8,opt,name=stock,proto3" json:"stock,omitempty"`
 	// 库存是否对外可见
-	StockVisible bool   `protobuf:"varint,9,opt,name=stock_visible,json=stockVisible,proto3" json:"stock_visible,omitempty"`
+	StockVisible *bool  `protobuf:"varint,9,opt,name=stock_visible,json=stockVisible,proto3,oneof" json:"stock_visible,omitempty"`
 	CategoryId   uint64 `protobuf:"varint,10,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	// 展示销量 = 真实 + 虚拟
 	SalesCount int64 `protobuf:"varint,11,opt,name=sales_count,json=salesCount,proto3" json:"sales_count,omitempty"`
@@ -492,6 +495,27 @@ func (x *Product) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Product.ProtoReflect.Descriptor instead.
 func (*Product) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Product) GetProductProperty() string {
+	if x != nil {
+		return x.ProductProperty
+	}
+	return ""
+}
+
+func (x *Product) GetTrackInventory() bool {
+	if x != nil && x.TrackInventory != nil {
+		return *x.TrackInventory
+	}
+	return false
+}
+
+func (x *Product) GetSalesVisible() bool {
+	if x != nil && x.SalesVisible != nil {
+		return *x.SalesVisible
+	}
+	return false
 }
 
 func (x *Product) GetProductKind() string {
@@ -628,8 +652,8 @@ func (x *Product) GetStock() int64 {
 }
 
 func (x *Product) GetStockVisible() bool {
-	if x != nil {
-		return x.StockVisible
+	if x != nil && x.StockVisible != nil {
+		return *x.StockVisible
 	}
 	return false
 }
@@ -1041,9 +1065,11 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"priceCents\x12\x15\n" +
 	"\x06end_at\x18\x02 \x01(\x03R\x05endAt\x12\x1c\n" +
 	"\tremaining\x18\x03 \x01(\x05R\tremaining\x12$\n" +
-	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\xe6\n" +
-	"\n" +
-	"\aProduct\x12!\n" +
+	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\xa6\f\n" +
+	"\aProduct\x12)\n" +
+	"\x10product_property\x18G \x01(\tR\x0fproductProperty\x12,\n" +
+	"\x0ftrack_inventory\x18H \x01(\bH\x00R\x0etrackInventory\x88\x01\x01\x12(\n" +
+	"\rsales_visible\x18I \x01(\bH\x01R\fsalesVisible\x88\x01\x01\x12!\n" +
 	"\fproduct_kind\x18F \x01(\tR\vproductKind\x12#\n" +
 	"\rdelivery_kind\x18< \x01(\tR\fdeliveryKind\x12Q\n" +
 	"\vsms_product\x18= \x03(\v20.zcard.api.storefront.v1.Product.SmsProductEntryR\n" +
@@ -1066,8 +1092,8 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"priceCents\x12\x1d\n" +
 	"\n" +
 	"stock_type\x18\a \x01(\tR\tstockType\x12\x14\n" +
-	"\x05stock\x18\b \x01(\x03R\x05stock\x12#\n" +
-	"\rstock_visible\x18\t \x01(\bR\fstockVisible\x12\x1f\n" +
+	"\x05stock\x18\b \x01(\x03R\x05stock\x12(\n" +
+	"\rstock_visible\x18\t \x01(\bH\x02R\fstockVisible\x88\x01\x01\x12\x1f\n" +
 	"\vcategory_id\x18\n" +
 	" \x01(\x04R\n" +
 	"categoryId\x12\x1f\n" +
@@ -1087,7 +1113,10 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\x0fcategory_pinned\x18\x18 \x01(\bR\x0ecategoryPinned\x1a=\n" +
 	"\x0fSmsProductEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xf3\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x12\n" +
+	"\x10_track_inventoryB\x10\n" +
+	"\x0e_sales_visibleB\x10\n" +
+	"\x0e_stock_visible\"\xf3\x01\n" +
 	"\x0eProductControl\x12 \n" +
 	"\vplaceholder\x18\a \x01(\tR\vplaceholder\x12\x1e\n" +
 	"\n" +
@@ -1180,6 +1209,7 @@ func file_storefront_v1_catalog_proto_init() {
 	if File_storefront_v1_catalog_proto != nil {
 		return
 	}
+	file_storefront_v1_catalog_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

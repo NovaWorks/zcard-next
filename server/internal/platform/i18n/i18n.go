@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 )
 
 // Locale 语言标识（zh_CN / en；架构支持任意扩展）。
@@ -31,6 +32,20 @@ var localeFS embed.FS
 // Bundle 文案包（只读；M3 增加 DB 覆盖层）。
 type Bundle struct {
 	messages map[Locale]map[string]string
+}
+
+var messageOnce sync.Once
+var messageBundle *Bundle
+
+// Message selects the request language for a business message, keeping the caller's fallback for unknown keys.
+func Message(ctx context.Context, key, fallback string) string {
+	messageOnce.Do(func() { messageBundle, _ = Load() })
+	if messageBundle != nil {
+		if value := messageBundle.T(FromContext(ctx), key); value != key {
+			return value
+		}
+	}
+	return fallback
 }
 
 // Load 从 embed FS 装载全部语言。

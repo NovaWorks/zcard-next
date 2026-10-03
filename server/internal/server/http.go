@@ -143,6 +143,7 @@ func NewHTTPServer(
 	var opts = []khttp.ServerOption{
 		khttp.Filter(
 			requestDeadlineFilter(requestTimeout),
+			privateOrderResponseFilter,
 			corsFilter,
 			// ：租户域名解析（Filter 层——中间件拿不到 Host；最外层确保全链路继承）
 			tenantFilter(tenancyMainDomain(c), resellerRepo),
@@ -380,12 +381,24 @@ func contextWithTimeout(r *http.Request) (ctx context.Context, cancel context.Ca
 	return context.WithTimeout(r.Context(), 3*time.Second)
 }
 
-// corsFilter CORS 过滤器（开发阶段前后端联调；生产同源部署无此问题—— 按环境开关化）。
+// Order data and bearer credentials must never be stored by shared caches.
+func privateOrderResponseFilter(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/v1/storefront/orders") ||
+			strings.HasPrefix(r.URL.Path, "/api/v1/storefront/payments") ||
+			r.URL.Path == "/api/v1/storefront/payment/quote" {
+			w.Header().Set("Cache-Control", "no-store, private")
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// corsFilter CORS 过滤器（开发阶段前后端联调）。
 func corsFilter(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Authorization,Content-Type,X-Requested-With")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization,Content-Type,X-Requested-With,Accept-Language,Idempotency-Key,X-Order-Access-Token")
 		w.Header().Set("Access-Control-Max-Age", "86400")
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)

@@ -19,6 +19,7 @@ import (
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"github.com/go-kratos/kratos/v3/transport"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -271,6 +272,7 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 	}
 
 	return &storefrontv1.Product{
+		ProductProperty: p.ProductProperty, SalesVisible: &p.SalesVisible, TrackInventory: &p.TrackInventory,
 		ProductKind: p.ProductKind, DeliveryKind: p.DeliveryKind, SmsProduct: p.SMSProduct, SmsSalesEnabled: data.SMSSalesEnabled(),
 		GoodsType: p.GoodsType, ShippingMode: p.ShippingMode, ShippingFeeCents: p.ShippingFee, ShippingCountries: p.ShippingCountries,
 		Id:              p.ID,
@@ -282,7 +284,7 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 		StockType:       p.StockType,
 		FulfillmentMode: p.FulfillmentMode, ManualStock: p.ManualStock,
 		Stock:             stock,
-		StockVisible:      p.StockVisible,
+		StockVisible:      proto.Bool(p.StockVisible),
 		PointsRequired:    p.PointsRequired, // 积分商城（；0=常规商品）
 		SalesCount:        soldCount,
 		CategoryRecommend: p.CategoryRecommend, CategoryPinned: p.CategoryPinned,

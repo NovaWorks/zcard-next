@@ -35,6 +35,7 @@ import (
 	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
 	memberlevelport "github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel/port"
 	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
@@ -48,6 +49,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/id"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/orderaccess"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/shopspring/decimal"
@@ -55,21 +57,22 @@ import (
 
 // OrderUsecase 扩展（持有依赖）。
 type OrderUsecase struct {
-	Data       *data.Data
-	Inv        port.Inventory
-	Gen        *id.Generator
-	MemberRate memberlevelport.RateResolver
-	Coupon     couponport.CouponResolver
-	Catalog    catalogport.PricingResolver
-	Outbox     events.Writer                  // order.* 事件发布（：procurement 订阅 order.paid）
-	Gate       auditport.RiskGate             // 下单风控闸门（nil = 未装配跳过）
-	Flash      couponport.FlashResolver       // ：秒杀（nil 跳过）
-	Promos     couponport.PromotionResolver   // ：促销（nil 跳过）
-	Settings   settingsport.SettingsReader    // ：互斥开关读取（nil 默认互斥）
-	Reseller   resellerport.Pricer            // ：管线步骤 7 分站定价 + 防自购快照（nil 跳过）
-	Points     walletport.PointsDebiter       // ：积分兑换下单扣分（nil = 积分单不可用）
-	SlowPay    paymentport.SlowPaymentChecker // ：慢通道顺延探测（nil = 不顺延直接取消；newApp 破环点注入）
-	StockGate  orderport.UpstreamStockGate    // ：上游代发项下单前实时库存预检（nil = 跳过；newApp 破环点注入）
+	Data         *data.Data
+	Inv          port.Inventory
+	Gen          *id.Generator
+	MemberRate   memberlevelport.RateResolver
+	Coupon       couponport.CouponResolver
+	Catalog      catalogport.PricingResolver
+	Outbox       events.Writer                  // order.* 事件发布（：procurement 订阅 order.paid）
+	Gate         auditport.RiskGate             // 下单风控闸门（nil = 未装配跳过）
+	Flash        couponport.FlashResolver       // ：秒杀（nil 跳过）
+	Promos       couponport.PromotionResolver   // ：促销（nil 跳过）
+	Settings     settingsport.SettingsReader    // ：互斥开关读取（nil 默认互斥）
+	Reseller     resellerport.Pricer            // ：管线步骤 7 分站定价 + 防自购快照（nil 跳过）
+	Points       walletport.PointsDebiter       // ：积分兑换下单扣分（nil = 积分单不可用）
+	SlowPay      paymentport.SlowPaymentChecker // ：慢通道顺延探测（nil = 不顺延直接取消；newApp 破环点注入）
+	StockGate    orderport.UpstreamStockGate    // ：上游代发项下单前实时库存预检（nil = 跳过；newApp 破环点注入）
+	AccessCipher *inventory.CardCipher
 }
 
 // ttlMinutes 订单超时分钟数（settings trade.order_ttl_minutes；缺省/非法回落 30）。
@@ -91,8 +94,8 @@ func (uc *OrderUsecase) ttlMinutes(ctx context.Context) int {
 
 // NewOrderUsecaseDep 构造（wire 注入依赖版）。
 // SlowPay 经 SetSlowPaymentChecker 由 cmd/zcard newApp 注入（order↔payment wire 环破环点）。
-func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator, memberRate memberlevelport.RateResolver, coupon couponport.CouponResolver, cat catalogport.PricingResolver, outbox events.Writer, gate auditport.RiskGate, flash couponport.FlashResolver, promos couponport.PromotionResolver, settings settingsport.SettingsReader, reseller resellerport.Pricer, points walletport.PointsDebiter) *OrderUsecase {
-	return &OrderUsecase{Data: d, Inv: inv, Gen: gen, MemberRate: memberRate, Coupon: coupon, Catalog: cat, Outbox: outbox, Gate: gate, Flash: flash, Promos: promos, Settings: settings, Reseller: reseller, Points: points}
+func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator, memberRate memberlevelport.RateResolver, coupon couponport.CouponResolver, cat catalogport.PricingResolver, outbox events.Writer, gate auditport.RiskGate, flash couponport.FlashResolver, promos couponport.PromotionResolver, settings settingsport.SettingsReader, reseller resellerport.Pricer, points walletport.PointsDebiter, cipher *inventory.CardCipher) *OrderUsecase {
+	return &OrderUsecase{Data: d, Inv: inv, Gen: gen, MemberRate: memberRate, Coupon: coupon, Catalog: cat, Outbox: outbox, Gate: gate, Flash: flash, Promos: promos, Settings: settings, Reseller: reseller, Points: points, AccessCipher: cipher}
 }
 
 // SetSlowPaymentChecker 慢通道探测注入（装配期一次；payment 侧实现，
@@ -138,11 +141,12 @@ type OrderItemInput struct {
 
 // CreateOrderResult 下单结果。
 type CreateOrderResult struct {
-	ShippingCents int64
-	QuoteKey      string
-	OrderNo       string
-	TotalCents    int64
-	ExpiresAt     time.Time
+	OrderAccessToken string
+	ShippingCents    int64
+	QuoteKey         string
+	OrderNo          string
+	TotalCents       int64
+	ExpiresAt        time.Time
 }
 
 // CreateOrder 下单（单事务编排）。
@@ -166,11 +170,6 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 	if prev, e := uc.ReplayOrder(ctx, in); e != nil || prev != nil {
 		return prev, e
 	}
-	// 交易设置校验（settings.trade；读取失败走保守默认——强制查询密码 + any 联系方式）
-	if err := uc.validateTradeRequirements(ctx, in); err != nil {
-		return nil, err
-	}
-
 	// 下单风控闸门（事务前快速失败；事务内 pending 计数复查见 Gate 实现说明）
 	if uc.Gate != nil && in.ClientIP != "" {
 		if err := uc.Gate.Check(ctx, auditport.GateInput{RiskIP: in.ClientIP, UserID: in.UserID}); err != nil {
@@ -183,6 +182,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 	smsQuotes := map[uint64]supplyport.SMSQuote{}
 	hasSMS := false
 	hasPhysical := false
+	hasVirtual := false
 	shippingByProduct := map[uint64]int64{}
 	var shippingTotal int64
 	for _, item := range in.Items {
@@ -233,10 +233,10 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			}
 			hasSMS = true
 		}
+		if p.GoodsType != "physical" {
+			hasVirtual = true
+		}
 		if p.GoodsType == "physical" {
-			if in.UserID == 0 && len(in.QueryPassword) < 4 {
-				return nil, fmt.Errorf("order.FORM_INVALID: 游客购买实体商品须设置至少4位查询密码")
-			}
 			if in.UsePoints {
 				return nil, fmt.Errorf("order.FORM_INVALID: 实体商品暂不支持积分兑换")
 			}
@@ -268,6 +268,27 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				shippingByProduct[p.ID] = fee
 				shippingTotal += fee
 			}
+		}
+	}
+	purePhysical := hasPhysical && !hasVirtual
+	if purePhysical {
+		if in.QueryPassword != "" && len(in.QueryPassword) < 4 {
+			return nil, fmt.Errorf("order.QUERY_PASSWORD_REQUIRED: 查询密码至少4位")
+		}
+		if in.UserID == 0 && in.QueryPassword == "" {
+			if _, err := orderaccess.EmailAddress(in.Contact); err != nil {
+				return nil, fmt.Errorf("order.CONTACT_INVALID: 请填写有效邮箱，用于实体订单查询与售后")
+			}
+			if in.IdempotencyKey != "" && !orderaccess.SecureRequestKey(in.IdempotencyKey) {
+				return nil, fmt.Errorf("order.FORM_INVALID: 请使用安全随机请求标识")
+			}
+		}
+	} else {
+		if hasPhysical && in.UserID == 0 && len(in.QueryPassword) < 4 {
+			return nil, fmt.Errorf("order.QUERY_PASSWORD_REQUIRED: 混合订单请设置至少4位查询密码")
+		}
+		if err := uc.validateTradeRequirements(ctx, in); err != nil {
+			return nil, err
 		}
 	}
 	// ：上游代发项实时库存预检（事务前快速失败——
@@ -316,7 +337,11 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				if exp.IsZero() {
 					exp = time.Now().Add(time.Duration(uc.ttlMinutes(txCtx)) * time.Minute).UTC()
 				}
-				result = &CreateOrderResult{OrderNo: prev.OrderNo, TotalCents: prev.TotalAmount, ShippingCents: prev.ShippingAmount, ExpiresAt: exp}
+				result, err = uc.replayOrderResult(prev, in)
+				if err != nil {
+					return err
+				}
+				result.ExpiresAt = exp
 				return nil // 幂等快路径：重复请求返回首次结果
 			}
 		}
@@ -410,10 +435,11 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 
 		// 4) 算价管线（每商品行独立跑管线；会员折扣逐行，优惠券整单后置）
 		type itemResult struct {
-			input       OrderItemInput
-			res         PriceResult
-			cost        int64
-			productName string
+			input            OrderItemInput
+			res              PriceResult
+			cost             int64
+			productName      string
+			inventoryTracked bool
 		}
 		var results []itemResult
 		var totalCents int64
@@ -554,7 +580,8 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			}
 			results = append(results, itemResult{
 				input: item, res: pr, cost: cost,
-				productName: p.Name,
+				productName:      p.Name,
+				inventoryTracked: p.GoodsType == "physical" && p.TrackInventory,
 			})
 			totalCents += int64(pr.Total)
 			if groupRate == 0 || group.StackCoupon {
@@ -621,7 +648,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 
 		// 4) 查询密码哈希
 		var queryPwdHash string
-		if in.QueryPassword != "" {
+		if in.QueryPassword != "" && !in.QuoteOnly {
 			// 接 argon2；当前 bcrypt（crypto 包）
 			hash, err := hashQueryPassword(in.QueryPassword)
 			if err != nil {
@@ -710,6 +737,21 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		if hasPhysical {
 			create.SetCommerceVersion(1).SetShippingStatus("pending_payment")
 		}
+		var accessToken string
+		if purePhysical && in.UserID == 0 && in.QueryPassword == "" && !in.QuoteOnly {
+			if uc.AccessCipher == nil {
+				return fmt.Errorf("order.CREATE_FAILED: 订单授权服务未就绪")
+			}
+			accessToken, err = orderaccess.NewToken()
+			if err != nil {
+				return err
+			}
+			secret, e := uc.AccessCipher.SealOrderAccess(accessToken, orderNo, in.SubsiteID)
+			if e != nil {
+				return e
+			}
+			create.SetOrderAccessTokenHash(orderaccess.TokenHash(in.SubsiteID, orderNo, accessToken)).SetOrderAccessTokenSecret(secret)
+		}
 		if idemHash != "" {
 			create.SetIdempotencyKey(idemHash)
 		}
@@ -769,7 +811,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				SetUnitPrice(int64(r.res.Lines[0].Amount)).
 				SetQuantity(r.input.Quantity).
 				SetAmount(int64(r.res.Total)).
-				SetGoodsType(kind).SetPaidAmount(paid).SetShippingAmount(fee).
+				SetGoodsType(kind).SetInventoryTracked(r.inventoryTracked).SetPaidAmount(paid).SetShippingAmount(fee).
 				SetProfitSnapshot(func() map[string]any {
 					var markup int64
 					for _, line := range r.res.Lines {
@@ -801,7 +843,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 					return err
 				}
 			}
-			if kind == "physical" {
+			if kind == "physical" && orderItem.InventoryTracked {
 				if err := data.MovePhysicalStock(txCtx, uc.Data, o.SubsiteID, r.input.ProductID, r.input.SkuID, o.ID, -int64(r.input.Quantity), fmt.Sprintf("reserve:%d", orderItem.ID), "下单预占"); err != nil {
 					return err
 				}
@@ -889,8 +931,9 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 
 		result = &CreateOrderResult{
-			OrderNo:       orderNo,
-			ShippingCents: shippingTotal, QuoteKey: quoteKey,
+			OrderAccessToken: accessToken,
+			OrderNo:          orderNo,
+			ShippingCents:    shippingTotal, QuoteKey: quoteKey,
 			TotalCents: totalCents,
 			ExpiresAt:  exp,
 		}
@@ -906,7 +949,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			if prev.RequestHash != "" && prev.RequestHash != requestHash {
 				return nil, fmt.Errorf("order.FORM_INVALID: 请求内容已变化")
 			}
-			return &CreateOrderResult{OrderNo: prev.OrderNo, TotalCents: prev.TotalAmount, ShippingCents: prev.ShippingAmount, ExpiresAt: prev.ExpiredAt}, nil
+			return uc.replayOrderResult(prev, in)
 		}
 	}
 	return result, err

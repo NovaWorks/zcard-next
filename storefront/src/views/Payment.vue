@@ -9,7 +9,9 @@
     <div v-else-if="phase === 'error'" class="pay-center-card">
       <div class="pay-state-title">{{ $t('暂时无法查询订单') }}</div>
       <div class="muted" role="alert">{{ uiText(error) }}</div>
-      <p class="muted">{{ $t('已付款请勿重复支付。游客在新窗口返回时，可输入下单时的查询密码查看结果。') }}</p>
+      <p class="muted">{{ $t('已付款请勿重复支付。可通过下单邮箱验证恢复订单访问。') }}</p>
+      <OrderAccessRecovery :order-no="orderNo" @recovered="retryOrder" />
+      <details><summary>{{ $t('虚拟商品或历史订单：使用查询密码') }}</summary>
       <form @submit.prevent="retryOrder">
         <label for="order-query-password">{{ $t('查询密码（游客订单）') }}</label>
         <input id="order-query-password" v-model="queryPassword" class="input" type="password" autocomplete="off" />
@@ -17,7 +19,7 @@
           <button class="btn btn-primary" type="submit" :disabled="retrying">{{ retrying ? $t('查询中…') : $t('重新查询') }}</button>
           <router-link class="btn btn-outline" :to="`/fetch?order_no=${orderNo}`">{{ $t('前往取货') }}</router-link>
         </div>
-      </form>
+      </form></details>
     </div>
 
     <!-- 已取消 / 已过期 -->
@@ -48,9 +50,11 @@
       </div>
 
       <p v-if="order?.items.some(i=>i.delivery_kind==='sms_activation')" class="muted">{{ $t('正在获取号码，请前往订单详情查看短信和取消/完成状态。') }}</p>
-      <p class="muted">{{ $t('请保存订单号和下单时的查询密码，游客也可随时查询、取货，无需注册。') }}</p>
+      <p v-if="physicalOnly" class="muted">{{ $t('请保存订单访问链接，换设备可通过邮箱验证找回') }}</p>
+      <p v-else class="muted">{{ $t('请保存订单号和下单时的查询密码，游客也可随时查询、取货，无需注册。') }}</p>
       <div class="pay-btn-row">
-        <button class="btn btn-primary" @click="checkOnce(true)">{{ $t('刷新发货结果') }}</button>
+        <button class="btn btn-primary" @click="checkOnce(true)">{{ physicalOnly ? $t('刷新订单状态') : $t('刷新发货结果') }}</button>
+        <button v-if="physicalOnly && getOrderAccessToken(orderNo)" class="btn btn-outline" @click="saveAccessLink">{{ copiedAccessLink ? $t('已复制') : $t('复制订单访问链接') }}</button>
         <router-link class="btn btn-outline" :to="`/order/${orderNo}`">{{ $t('查看订单详情') }}</router-link>
         <router-link class="btn btn-outline" to="/products">{{ $t('继续购物') }}</router-link>
       </div>
@@ -163,7 +167,8 @@ import { submitPaymentForm as submitForm } from "@/utils/payment-form";
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import QRCode from 'qrcode';
-import { getBalance, createPayment, fetchPaymentChannels, getOrder, fetchDelivery, getOrderPassword, rememberOrderPassword, type ChannelItem, type OrderDetail, type FetchDeliveryReply } from '@/api';
+import OrderAccessRecovery from '@/components/OrderAccessRecovery.vue';
+import { getOrderAccessToken, orderAccessLink, getBalance, createPayment, fetchPaymentChannels, getOrder, fetchDelivery, getOrderPassword, rememberOrderPassword, type ChannelItem, type OrderDetail, type FetchDeliveryReply } from '@/api';
 import { getToken, formatMoney, formatBaseMoney, formatPaymentAmount } from '@/api/client';
 import { flattenPayOptions, emojiOf } from '@/composables/pay-options';
 import PayChannelGrid from '@/components/PayChannelGrid.vue';
@@ -189,12 +194,15 @@ const payingChannel = ref<ChannelItem | null>(null);
 const submitting = ref(false);
 const error = ref('');
 const queryPassword = ref('');
+const physicalOnly=computed(()=>!!order.value?.items?.length && order.value.items.every(i=>i.goods_type==='physical'));
+const copiedAccessLink=ref(false);
+async function saveAccessLink(){try{await navigator.clipboard.writeText(orderAccessLink(orderNo));copiedAccessLink.value=true;}catch{error.value=$t('无法复制链接，请允许剪贴板权限后重试');}}
 const retrying = ref(false);
 const paidQuote = ref<PaymentQuote | null>(null);
 const { quote, quoteLoading, quoteError, refreshQuote } = usePaymentQuote(() =>
   order.value?.status === 'pending_payment' && selected.value.channel ? {
     order_no: orderNo, channel: selected.value.channel, method: selected.value.method,
-    scene: 'purchase', query_password: getOrderPassword(orderNo),
+    scene: 'purchase', query_password: getOrderPassword(orderNo), order_access_token: getOrderAccessToken(orderNo),
   } : null,
 );
 

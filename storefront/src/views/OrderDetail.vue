@@ -9,7 +9,8 @@
     <div v-if="loading" class="card muted" style="padding: 48px; text-align: center;">{{ $t('加载中…') }}</div>
     <div v-else-if="error" class="card" style="padding: 24px;">
       <p class="error">{{ uiText(error) }}</p>
-      <form @submit.prevent="loadOrder"><label>{{ $t('下单时的查询密码') }}<input v-model="password" class="input" type="password" autocomplete="off" /></label><button class="btn" type="submit">{{ $t('查询订单') }}</button></form>
+      <OrderAccessRecovery :order-no="orderNo" @recovered="loadOrder" />
+      <details><summary>{{ $t('虚拟商品或历史订单：使用查询密码') }}</summary><form @submit.prevent="loadOrder"><label>{{ $t('下单时的查询密码') }}<input v-model="password" class="input" type="password" autocomplete="off" /></label><button class="btn" type="submit">{{ $t('查询订单') }}</button></form></details>
     </div>
 
     <template v-else-if="order">
@@ -39,7 +40,7 @@
             <div v-for="(it, i) in order.items" :key="i" class="od-item">
               <div class="od-item-name">{{ it.product_name }}
                 <p class="muted">{{it.goods_type === 'physical' ? $t('快递配送') : it.fulfillment_type === 'manual' ? $t('人工服务') : it.fulfillment_type === 'upstream' ? $t('上游交付') : $t('自动交付')}} · {{itemStatus(it.fulfillment_status)}}</p>
-                <p v-if="it.goods_type === 'physical'" class="muted">{{ $t('已发') }} {{ it.shipped_quantity || 0 }} {{ $t('件 · 已收') }} {{ it.received_quantity || 0 }} {{ $t('件') }}<span v-if="it.canceled_quantity"> {{ $t('· 已取消') }} {{ it.canceled_quantity }} {{ $t('件') }}</span><span v-if="it.returned_quantity"> {{ $t('· 退回入库') }} {{ it.returned_quantity }} {{ $t('件') }}</span></p>
+                <p v-if="it.goods_type === 'physical'" class="muted">{{ $t('已发') }} {{ it.shipped_quantity || 0 }} {{ $t('件 · 已收') }} {{ it.received_quantity || 0 }} {{ $t('件') }}<span v-if="it.canceled_quantity"> {{ $t('· 已取消') }} {{ it.canceled_quantity }} {{ $t('件') }}</span><span v-if="it.returned_quantity"> {{ $t('· 已退货') }} {{ it.returned_quantity }} {{ $t('件') }}</span></p>
                 <p v-else-if="it.canceled_quantity" class="muted">{{ $t('已取消') }} {{ it.canceled_quantity }} {{ $t('件') }}</p>
                 <dl v-if="answers(it.form_answers_json).length" class="od-answers"><div v-for="(a,j) in answers(it.form_answers_json)" :key="j"><dt>{{a.name}}</dt><dd>{{a.value}}</dd></div></dl>
               </div>
@@ -76,6 +77,7 @@
           </div>
         </div>
       </div>
+      <div v-if="order.items.every(i=>i.goods_type==='physical') && getOrderAccessToken(orderNo)" class="card"><p>{{ $t('请保存订单访问链接，换设备可通过邮箱验证找回') }}</p><button class="btn secondary" @click="saveAccessLink">{{ copiedLink ? $t('已复制') : $t('复制订单访问链接') }}</button><p v-if="linkError" class="error" role="alert">{{ linkError }}</p></div>
       <OrderReview v-if="isLoggedIn" :order-no="orderNo" />
     </template>
   </div>
@@ -84,10 +86,11 @@
 <script setup lang="ts">
 import { uiText, t as $t, localeTag } from '@/i18n';
 
+import OrderAccessRecovery from '@/components/OrderAccessRecovery.vue';
 import SMSOrder from '@/components/SMSOrder.vue';
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { getOrder, getOrderPassword, rememberOrderPassword, cancelMyOrder, type OrderDetail } from '@/api';
+import { getOrder, getOrderPassword, getOrderAccessToken, orderAccessLink, rememberOrderPassword, cancelMyOrder, type OrderDetail } from '@/api';
 import ShippingDetails from "@/components/ShippingDetails.vue";
 import OrderReview from '@/components/OrderReview.vue';
 import { getToken, formatMoney } from '@/api/client';
@@ -99,6 +102,8 @@ const isLoggedIn = !!getToken();
 const loading = ref(false);
 const error = ref('');
 const order = ref<OrderDetail | null>(null);
+const copiedLink = ref(false); const linkError=ref('');
+async function saveAccessLink(){try{await navigator.clipboard.writeText(orderAccessLink(orderNo)); copiedLink.value=true;}catch{linkError.value=$t('无法复制链接，请允许剪贴板权限后重试');}}
 
 onMounted(loadOrder);
 async function loadOrder() {

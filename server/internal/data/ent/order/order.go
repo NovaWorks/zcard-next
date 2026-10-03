@@ -37,6 +37,10 @@ const (
 	FieldGuestContact = "guest_contact"
 	// FieldQueryPasswordHash holds the string denoting the query_password_hash field in the database.
 	FieldQueryPasswordHash = "query_password_hash"
+	// FieldOrderAccessTokenHash holds the string denoting the order_access_token_hash field in the database.
+	FieldOrderAccessTokenHash = "order_access_token_hash"
+	// FieldOrderAccessTokenSecret holds the string denoting the order_access_token_secret field in the database.
+	FieldOrderAccessTokenSecret = "order_access_token_secret"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldCommerceVersion holds the string denoting the commerce_version field in the database.
@@ -173,6 +177,8 @@ var Columns = []string{
 	FieldUserID,
 	FieldGuestContact,
 	FieldQueryPasswordHash,
+	FieldOrderAccessTokenHash,
+	FieldOrderAccessTokenSecret,
 	FieldStatus,
 	FieldCommerceVersion,
 	FieldShippingAmount,
@@ -240,6 +246,10 @@ var (
 	GuestContactValidator func(string) error
 	// QueryPasswordHashValidator is a validator for the "query_password_hash" field. It is called by the builders before save.
 	QueryPasswordHashValidator func(string) error
+	// DefaultOrderAccessTokenHash holds the default value on creation for the "order_access_token_hash" field.
+	DefaultOrderAccessTokenHash string
+	// OrderAccessTokenHashValidator is a validator for the "order_access_token_hash" field. It is called by the builders before save.
+	OrderAccessTokenHashValidator func(string) error
 	// DefaultCommerceVersion holds the default value on creation for the "commerce_version" field.
 	DefaultCommerceVersion int32
 	// DefaultShippingAmount holds the default value on creation for the "shipping_amount" field.
@@ -371,6 +381,11 @@ func ByGuestContact(opts ...sql.OrderTermOption) OrderOption {
 // ByQueryPasswordHash orders the results by the query_password_hash field.
 func ByQueryPasswordHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldQueryPasswordHash, opts...).ToFunc()
+}
+
+// ByOrderAccessTokenHash orders the results by the order_access_token_hash field.
+func ByOrderAccessTokenHash(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOrderAccessTokenHash, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.

@@ -219,6 +219,20 @@ func (_c *OrderItemCreate) SetNillableGoodsType(v *string) *OrderItemCreate {
 	return _c
 }
 
+// SetInventoryTracked sets the "inventory_tracked" field.
+func (_c *OrderItemCreate) SetInventoryTracked(v bool) *OrderItemCreate {
+	_c.mutation.SetInventoryTracked(v)
+	return _c
+}
+
+// SetNillableInventoryTracked sets the "inventory_tracked" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableInventoryTracked(v *bool) *OrderItemCreate {
+	if v != nil {
+		_c.SetInventoryTracked(*v)
+	}
+	return _c
+}
+
 // SetPaidAmount sets the "paid_amount" field.
 func (_c *OrderItemCreate) SetPaidAmount(v int64) *OrderItemCreate {
 	_c.mutation.SetPaidAmount(v)
@@ -455,6 +469,10 @@ func (_c *OrderItemCreate) defaults() {
 		v := orderitem.DefaultGoodsType
 		_c.mutation.SetGoodsType(v)
 	}
+	if _, ok := _c.mutation.InventoryTracked(); !ok {
+		v := orderitem.DefaultInventoryTracked
+		_c.mutation.SetInventoryTracked(v)
+	}
 	if _, ok := _c.mutation.PaidAmount(); !ok {
 		v := orderitem.DefaultPaidAmount
 		_c.mutation.SetPaidAmount(v)
@@ -538,6 +556,9 @@ func (_c *OrderItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.GoodsType(); !ok {
 		return &ValidationError{Name: "goods_type", err: errors.New(`ent: missing required field "OrderItem.goods_type"`)}
+	}
+	if _, ok := _c.mutation.InventoryTracked(); !ok {
+		return &ValidationError{Name: "inventory_tracked", err: errors.New(`ent: missing required field "OrderItem.inventory_tracked"`)}
 	}
 	if _, ok := _c.mutation.PaidAmount(); !ok {
 		return &ValidationError{Name: "paid_amount", err: errors.New(`ent: missing required field "OrderItem.paid_amount"`)}
@@ -682,6 +703,10 @@ func (_c *OrderItemCreate) createSpec() (*OrderItem, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.GoodsType(); ok {
 		_spec.SetField(orderitem.FieldGoodsType, field.TypeString, value)
 		_node.GoodsType = value
+	}
+	if value, ok := _c.mutation.InventoryTracked(); ok {
+		_spec.SetField(orderitem.FieldInventoryTracked, field.TypeBool, value)
+		_node.InventoryTracked = value
 	}
 	if value, ok := _c.mutation.PaidAmount(); ok {
 		_spec.SetField(orderitem.FieldPaidAmount, field.TypeInt64, value)
@@ -1083,6 +1108,18 @@ func (u *OrderItemUpsert) SetGoodsType(v string) *OrderItemUpsert {
 // UpdateGoodsType sets the "goods_type" field to the value that was provided on create.
 func (u *OrderItemUpsert) UpdateGoodsType() *OrderItemUpsert {
 	u.SetExcluded(orderitem.FieldGoodsType)
+	return u
+}
+
+// SetInventoryTracked sets the "inventory_tracked" field.
+func (u *OrderItemUpsert) SetInventoryTracked(v bool) *OrderItemUpsert {
+	u.Set(orderitem.FieldInventoryTracked, v)
+	return u
+}
+
+// UpdateInventoryTracked sets the "inventory_tracked" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateInventoryTracked() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldInventoryTracked)
 	return u
 }
 
@@ -1691,6 +1728,20 @@ func (u *OrderItemUpsertOne) SetGoodsType(v string) *OrderItemUpsertOne {
 func (u *OrderItemUpsertOne) UpdateGoodsType() *OrderItemUpsertOne {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.UpdateGoodsType()
+	})
+}
+
+// SetInventoryTracked sets the "inventory_tracked" field.
+func (u *OrderItemUpsertOne) SetInventoryTracked(v bool) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetInventoryTracked(v)
+	})
+}
+
+// UpdateInventoryTracked sets the "inventory_tracked" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateInventoryTracked() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateInventoryTracked()
 	})
 }
 
@@ -2503,6 +2554,20 @@ func (u *OrderItemUpsertBulk) SetGoodsType(v string) *OrderItemUpsertBulk {
 func (u *OrderItemUpsertBulk) UpdateGoodsType() *OrderItemUpsertBulk {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.UpdateGoodsType()
+	})
+}
+
+// SetInventoryTracked sets the "inventory_tracked" field.
+func (u *OrderItemUpsertBulk) SetInventoryTracked(v bool) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetInventoryTracked(v)
+	})
+}
+
+// UpdateInventoryTracked sets the "inventory_tracked" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateInventoryTracked() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateInventoryTracked()
 	})
 }
 

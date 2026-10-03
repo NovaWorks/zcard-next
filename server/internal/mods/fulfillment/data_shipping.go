@@ -10,6 +10,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/physicalreturnreceipt"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/physicalstockmovement"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/shipment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
@@ -176,6 +177,20 @@ func (s *AdminFulfillmentService) RestockReturn(ctx context.Context, req *adminv
 		}
 		c := data.Client(ctx, s.data)
 		key := fmt.Sprintf("return:%x", sha256.Sum256([]byte(fmt.Sprintf("%d:%s", o.ID, req.RequestKey))))
+		requestBytes, _ := json.Marshal([]any{req.ItemId, req.Quantity, strings.TrimSpace(req.Reason)})
+		requestHash := fmt.Sprintf("%x", sha256.Sum256(requestBytes))
+		receipt, e := c.PhysicalReturnReceipt.Query().Where(physicalreturnreceipt.RequestKey(key), physicalreturnreceipt.OrderID(o.ID), physicalreturnreceipt.SubsiteID(o.SubsiteID)).Only(ctx)
+		if e != nil && !ent.IsNotFound(e) {
+			return e
+		}
+		if receipt != nil {
+			if receipt.RequestHash != requestHash {
+				return fmt.Errorf("同一退货请求不能改变商品、数量或原因")
+			}
+			return nil
+		}
+		// Older versions used the inventory movement itself as the receipt.
+		// Preserve their retries while new returns always have their own record.
 		oldMovement, e := c.PhysicalStockMovement.Query().Where(physicalstockmovement.Reference(key)).Only(ctx)
 		if e != nil && !ent.IsNotFound(e) {
 			return e
@@ -204,8 +219,13 @@ func (s *AdminFulfillmentService) RestockReturn(ctx context.Context, req *adminv
 		if req.Quantity > it.ShippedQuantity-it.ReturnedQuantity {
 			return fmt.Errorf("退货入库不能超过已发货且未入库数量")
 		}
-		if e = data.MovePhysicalStock(ctx, s.data, o.SubsiteID, it.ProductID, it.SkuID, o.ID, int64(req.Quantity), key, "退货验收入库"); e != nil {
+		if e = c.PhysicalReturnReceipt.Create().SetSubsiteID(o.SubsiteID).SetOrderID(o.ID).SetItemID(it.ID).SetQuantity(req.Quantity).SetRequestKey(key).SetRequestHash(requestHash).SetReason(strings.TrimSpace(req.Reason)).SetInventoryTracked(it.InventoryTracked).Exec(ctx); e != nil {
 			return e
+		}
+		if it.InventoryTracked {
+			if e = data.MovePhysicalStock(ctx, s.data, o.SubsiteID, it.ProductID, it.SkuID, o.ID, int64(req.Quantity), key, "退货验收入库"); e != nil {
+				return e
+			}
 		}
 		if e = c.OrderItem.UpdateOneID(it.ID).AddReturnedQuantity(req.Quantity).Exec(ctx); e != nil {
 			return e
@@ -217,7 +237,11 @@ func (s *AdminFulfillmentService) RestockReturn(ctx context.Context, req *adminv
 		if it.SkuName != "" {
 			name += "（" + it.SkuName + "）"
 		}
-		return data.PhysicalOrderEvent(ctx, s.data, o, "return_restocked", "admin", aid, fmt.Sprintf("商品项 #%d · 入库 %d 件：%s · %s", it.ID, req.Quantity, req.Reason, name))
+		event, action := "return_registered", "登记退货"
+		if it.InventoryTracked {
+			event, action = "return_restocked", "入库"
+		}
+		return data.PhysicalOrderEvent(ctx, s.data, o, event, "admin", aid, fmt.Sprintf("商品项 #%d · %s %d 件：%s · %s", it.ID, action, req.Quantity, req.Reason, name))
 	})
 	if e != nil {
 		return nil, kerrors.BadRequest("shipping.RESTOCK", e.Error())

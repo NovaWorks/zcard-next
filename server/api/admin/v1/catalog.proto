@@ -194,6 +194,9 @@ message GetProductRequest {
 
 // AdminProduct 管理面商品（含成本价等敏感字段）。
 message AdminProduct {
+  string product_property = 71;
+  optional bool track_inventory = 72;
+  optional bool sales_visible = 73;
  string product_kind = 70;
   string goods_type = 50;
   string shipping_mode = 51;
@@ -212,7 +215,7 @@ message AdminProduct {
   int64 price_cents = 8;
   int64 factory_price_cents = 9;
   string stock_type = 10; // card | url | code
-  bool stock_visible = 11;
+  optional bool stock_visible = 11;
   string delivery_mode = 12; // status | delete
   bool dedup = 13;
   int32 sort = 14;
@@ -249,6 +252,9 @@ message AdminProduct {
 }
 
 message CreateProductRequest {
+  optional string product_property = 71;
+  optional bool track_inventory = 72;
+  optional bool sales_visible = 73;
   optional string goods_type = 50;
   optional string shipping_mode = 51;
   optional int64 shipping_fee_cents = 52;
@@ -278,6 +284,9 @@ message CreateProductRequest {
 }
 
 message UpdateProductRequest {
+  optional string product_property = 71;
+  optional bool track_inventory = 72;
+  optional bool sales_visible = 73;
  optional int64 expected_physical_stock = 55;
   optional string goods_type = 50;
   optional string shipping_mode = 51;
@@ -295,7 +304,7 @@ message UpdateProductRequest {
   int64 price_cents = 7;
   int64 factory_price_cents = 8;
   string delivery_mode = 9;
-  bool stock_visible = 10;
+  optional bool stock_visible = 10;
   int32 sort = 11;
   int32 status = 12;
   // 积分兑换价（0=不参与积分商城；）

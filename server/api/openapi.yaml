@@ -6540,6 +6540,10 @@ paths:
                   required: true
                   schema:
                     type: string
+                - name: orderAccessToken
+                  in: query
+                  schema:
+                    type: string
                 - name: queryPassword
                   in: query
                   schema:
@@ -6551,6 +6555,51 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.GetOrderReply'
+    /api/v1/storefront/orders/{orderNo}/access-code:
+        post:
+            tags:
+                - StoreOrderService
+            operationId: StoreOrderService_SendOrderAccessCode
+            parameters:
+                - name: orderNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.OrderAccessCodeRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/storefront/orders/{orderNo}/access-recover:
+        post:
+            tags:
+                - StoreOrderService
+            operationId: StoreOrderService_RecoverOrderAccess
+            parameters:
+                - name: orderNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.OrderAccessRecoveryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.OrderAccessReply'
     /api/v1/storefront/orders/{orderNo}/cancel:
         post:
             tags:
@@ -7766,6 +7815,8 @@ components:
                 returnedQuantity:
                     type: integer
                     format: int32
+                inventoryTracked:
+                    type: boolean
                 formAnswersJson:
                     type: string
                 assignedAdminId:
@@ -7808,6 +7859,12 @@ components:
         zcard.api.admin.v1.AdminProduct:
             type: object
             properties:
+                productProperty:
+                    type: string
+                trackInventory:
+                    type: boolean
+                salesVisible:
+                    type: boolean
                 productKind:
                     type: string
                 goodsType:
@@ -8989,6 +9046,12 @@ components:
                 - stockType
             type: object
             properties:
+                productProperty:
+                    type: string
+                trackInventory:
+                    type: boolean
+                salesVisible:
+                    type: boolean
                 goodsType:
                     type: string
                 shippingMode:
@@ -13015,6 +13078,12 @@ components:
                 - id
             type: object
             properties:
+                productProperty:
+                    type: string
+                trackInventory:
+                    type: boolean
+                salesVisible:
+                    type: boolean
                 expectedPhysicalStock:
                     type: string
                 goodsType:
@@ -13712,6 +13781,8 @@ components:
         zcard.api.storefront.v1.CreateOrderReply:
             type: object
             properties:
+                orderAccessToken:
+                    type: string
                 shippingCents:
                     type: string
                 quoteKey:
@@ -13780,6 +13851,8 @@ components:
                 - channel
             type: object
             properties:
+                orderAccessToken:
+                    type: string
                 quoteKey:
                     type: string
                 queryPassword:
@@ -14665,6 +14738,27 @@ components:
                     type: string
                 createdAt:
                     type: string
+        zcard.api.storefront.v1.OrderAccessCodeRequest:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                email:
+                    type: string
+        zcard.api.storefront.v1.OrderAccessRecoveryRequest:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                email:
+                    type: string
+                code:
+                    type: string
+        zcard.api.storefront.v1.OrderAccessReply:
+            type: object
+            properties:
+                orderAccessToken:
+                    type: string
         zcard.api.storefront.v1.OrderItemInput:
             required:
                 - productId
@@ -14803,6 +14897,8 @@ components:
         zcard.api.storefront.v1.PaymentQuoteRequest:
             type: object
             properties:
+                orderAccessToken:
+                    type: string
                 orderNo:
                     type: string
                 channel:
@@ -14818,6 +14914,12 @@ components:
         zcard.api.storefront.v1.Product:
             type: object
             properties:
+                productProperty:
+                    type: string
+                trackInventory:
+                    type: boolean
+                salesVisible:
+                    type: boolean
                 productKind:
                     type: string
                 deliveryKind:
@@ -14991,6 +15093,8 @@ components:
                 shipmentId:
                     type: string
                 queryPassword:
+                    type: string
+                orderAccessToken:
                     type: string
         zcard.api.storefront.v1.RedeemCouponRequest:
             required:

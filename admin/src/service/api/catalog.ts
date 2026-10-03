@@ -32,6 +32,15 @@ export function fetchProduct(id: number) {
 
 export function createProduct(data: {
   name: string;
+  product_property?: "virtual" | "physical";
+  goods_type?: "virtual" | "physical";
+  track_inventory?: boolean;
+  sales_visible?: boolean;
+  shipping_mode?: string;
+  shipping_fee_cents?: number;
+  shipping_countries?: string[];
+  physical_stock?: number;
+  expected_physical_stock?: number;
   category_id?: number;
   description?: string;
   cover?: string;

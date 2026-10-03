@@ -21,8 +21,10 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/orderaccess"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 	"github.com/go-kratos/kratos/v3/errors"
+	"github.com/go-kratos/kratos/v3/transport"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -133,7 +135,17 @@ func paymentOrderOwner(ctx context.Context, o *ent.Order) bool {
 
 // Both public payment entry points require the same tenant and order access.
 // A legacy order without a password can only be paid by its signed-in owner.
-func (s *StorePaymentService) paymentOrder(ctx context.Context, no, password string) (*ent.Order, error) {
+func (s *StorePaymentService) paymentOrder(ctx context.Context, no, password string, suppliedToken ...string) (*ent.Order, error) {
+	var explicit string
+	if len(suppliedToken) > 0 {
+		explicit = suppliedToken[0]
+	}
+	token := explicit
+	if token == "" {
+		if tr, ok := transport.FromServerContext(ctx); ok {
+			token = tr.RequestHeader().Get("X-Order-Access-Token")
+		}
+	}
 	o, err := data.Client(ctx, s.data).Order.Query().
 		Where(order.OrderNo(no), order.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).Only(ctx)
 	if ent.IsNotFound(err) {
@@ -142,8 +154,20 @@ func (s *StorePaymentService) paymentOrder(ctx context.Context, no, password str
 	if err != nil {
 		return nil, err
 	}
-	if !paymentOrderOwner(ctx, o) && (o.QueryPasswordHash == "" || !crypto.VerifyPassword(o.QueryPasswordHash, password)) {
-		return nil, errors.NotFound("order.NOT_FOUND", "订单不存在或查询密码错误")
+	if !paymentOrderOwner(ctx, o) {
+		if o.OrderAccessTokenHash != "" {
+			if !orderaccess.VerifyToken(o.OrderAccessTokenHash, o.SubsiteID, o.OrderNo, token) {
+				return nil, orderaccess.Required(ctx)
+			}
+			return o, nil
+		}
+		valid := o.QueryPasswordHash != "" && crypto.VerifyPassword(o.QueryPasswordHash, password)
+		if token != "" {
+			valid = orderaccess.VerifyToken(o.OrderAccessTokenHash, o.SubsiteID, o.OrderNo, token)
+		}
+		if !valid {
+			return nil, errors.NotFound("order.NOT_FOUND", "订单不存在或查询凭证无效")
+		}
 	}
 	return o, nil
 }
@@ -168,7 +192,7 @@ func (s *StorePaymentService) QuotePayment(ctx context.Context, req *storefrontv
 	var purchaseOrder *ent.Order
 	scope := scene
 	if scene == scenePurchase {
-		o, err := s.paymentOrder(ctx, req.GetOrderNo(), req.GetQueryPassword())
+		o, err := s.paymentOrder(ctx, req.GetOrderNo(), req.GetQueryPassword(), req.GetOrderAccessToken())
 		if err != nil {
 			return nil, err
 		}

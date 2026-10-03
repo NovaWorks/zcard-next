@@ -20,14 +20,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StoreOrderService_QuoteOrder_FullMethodName      = "/zcard.api.storefront.v1.StoreOrderService/QuoteOrder"
-	StoreOrderService_ShippingRegions_FullMethodName = "/zcard.api.storefront.v1.StoreOrderService/ShippingRegions"
-	StoreOrderService_ReceiveShipment_FullMethodName = "/zcard.api.storefront.v1.StoreOrderService/ReceiveShipment"
-	StoreOrderService_CreateOrder_FullMethodName     = "/zcard.api.storefront.v1.StoreOrderService/CreateOrder"
-	StoreOrderService_GetOrder_FullMethodName        = "/zcard.api.storefront.v1.StoreOrderService/GetOrder"
-	StoreOrderService_ListMyOrders_FullMethodName    = "/zcard.api.storefront.v1.StoreOrderService/ListMyOrders"
-	StoreOrderService_ListGuestOrders_FullMethodName = "/zcard.api.storefront.v1.StoreOrderService/ListGuestOrders"
-	StoreOrderService_CancelMyOrder_FullMethodName   = "/zcard.api.storefront.v1.StoreOrderService/CancelMyOrder"
+	StoreOrderService_SendOrderAccessCode_FullMethodName = "/zcard.api.storefront.v1.StoreOrderService/SendOrderAccessCode"
+	StoreOrderService_RecoverOrderAccess_FullMethodName  = "/zcard.api.storefront.v1.StoreOrderService/RecoverOrderAccess"
+	StoreOrderService_QuoteOrder_FullMethodName          = "/zcard.api.storefront.v1.StoreOrderService/QuoteOrder"
+	StoreOrderService_ShippingRegions_FullMethodName     = "/zcard.api.storefront.v1.StoreOrderService/ShippingRegions"
+	StoreOrderService_ReceiveShipment_FullMethodName     = "/zcard.api.storefront.v1.StoreOrderService/ReceiveShipment"
+	StoreOrderService_CreateOrder_FullMethodName         = "/zcard.api.storefront.v1.StoreOrderService/CreateOrder"
+	StoreOrderService_GetOrder_FullMethodName            = "/zcard.api.storefront.v1.StoreOrderService/GetOrder"
+	StoreOrderService_ListMyOrders_FullMethodName        = "/zcard.api.storefront.v1.StoreOrderService/ListMyOrders"
+	StoreOrderService_ListGuestOrders_FullMethodName     = "/zcard.api.storefront.v1.StoreOrderService/ListGuestOrders"
+	StoreOrderService_CancelMyOrder_FullMethodName       = "/zcard.api.storefront.v1.StoreOrderService/CancelMyOrder"
 )
 
 // StoreOrderServiceClient is the client API for StoreOrderService service.
@@ -36,6 +38,8 @@ const (
 //
 // StoreOrderService 顾客下单。
 type StoreOrderServiceClient interface {
+	SendOrderAccessCode(ctx context.Context, in *OrderAccessCodeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RecoverOrderAccess(ctx context.Context, in *OrderAccessRecoveryRequest, opts ...grpc.CallOption) (*OrderAccessReply, error)
 	QuoteOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*CreateOrderReply, error)
 	ShippingRegions(ctx context.Context, in *ShippingRegionsRequest, opts ...grpc.CallOption) (*ShippingRegionsReply, error)
 	ReceiveShipment(ctx context.Context, in *ReceiveShipmentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -58,6 +62,26 @@ type storeOrderServiceClient struct {
 
 func NewStoreOrderServiceClient(cc grpc.ClientConnInterface) StoreOrderServiceClient {
 	return &storeOrderServiceClient{cc}
+}
+
+func (c *storeOrderServiceClient) SendOrderAccessCode(ctx context.Context, in *OrderAccessCodeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, StoreOrderService_SendOrderAccessCode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeOrderServiceClient) RecoverOrderAccess(ctx context.Context, in *OrderAccessRecoveryRequest, opts ...grpc.CallOption) (*OrderAccessReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OrderAccessReply)
+	err := c.cc.Invoke(ctx, StoreOrderService_RecoverOrderAccess_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *storeOrderServiceClient) QuoteOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*CreateOrderReply, error) {
@@ -146,6 +170,8 @@ func (c *storeOrderServiceClient) CancelMyOrder(ctx context.Context, in *CancelM
 //
 // StoreOrderService 顾客下单。
 type StoreOrderServiceServer interface {
+	SendOrderAccessCode(context.Context, *OrderAccessCodeRequest) (*emptypb.Empty, error)
+	RecoverOrderAccess(context.Context, *OrderAccessRecoveryRequest) (*OrderAccessReply, error)
 	QuoteOrder(context.Context, *CreateOrderRequest) (*CreateOrderReply, error)
 	ShippingRegions(context.Context, *ShippingRegionsRequest) (*ShippingRegionsReply, error)
 	ReceiveShipment(context.Context, *ReceiveShipmentRequest) (*emptypb.Empty, error)
@@ -170,6 +196,12 @@ type StoreOrderServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedStoreOrderServiceServer struct{}
 
+func (UnimplementedStoreOrderServiceServer) SendOrderAccessCode(context.Context, *OrderAccessCodeRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendOrderAccessCode not implemented")
+}
+func (UnimplementedStoreOrderServiceServer) RecoverOrderAccess(context.Context, *OrderAccessRecoveryRequest) (*OrderAccessReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method RecoverOrderAccess not implemented")
+}
 func (UnimplementedStoreOrderServiceServer) QuoteOrder(context.Context, *CreateOrderRequest) (*CreateOrderReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method QuoteOrder not implemented")
 }
@@ -213,6 +245,42 @@ func RegisterStoreOrderServiceServer(s grpc.ServiceRegistrar, srv StoreOrderServ
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&StoreOrderService_ServiceDesc, srv)
+}
+
+func _StoreOrderService_SendOrderAccessCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OrderAccessCodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreOrderServiceServer).SendOrderAccessCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreOrderService_SendOrderAccessCode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreOrderServiceServer).SendOrderAccessCode(ctx, req.(*OrderAccessCodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreOrderService_RecoverOrderAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OrderAccessRecoveryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreOrderServiceServer).RecoverOrderAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreOrderService_RecoverOrderAccess_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreOrderServiceServer).RecoverOrderAccess(ctx, req.(*OrderAccessRecoveryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _StoreOrderService_QuoteOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -366,6 +434,14 @@ var StoreOrderService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.storefront.v1.StoreOrderService",
 	HandlerType: (*StoreOrderServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SendOrderAccessCode",
+			Handler:    _StoreOrderService_SendOrderAccessCode_Handler,
+		},
+		{
+			MethodName: "RecoverOrderAccess",
+			Handler:    _StoreOrderService_RecoverOrderAccess_Handler,
+		},
 		{
 			MethodName: "QuoteOrder",
 			Handler:    _StoreOrderService_QuoteOrder_Handler,

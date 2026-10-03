@@ -10,6 +10,12 @@ import "google/protobuf/empty.proto";
 
 // StoreOrderService 顾客下单。
 service StoreOrderService {
+  rpc SendOrderAccessCode(OrderAccessCodeRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { post: "/api/v1/storefront/orders/{order_no}/access-code" body: "*" };
+  }
+  rpc RecoverOrderAccess(OrderAccessRecoveryRequest) returns (OrderAccessReply) {
+    option (google.api.http) = { post: "/api/v1/storefront/orders/{order_no}/access-recover" body: "*" };
+  }
  rpc QuoteOrder(CreateOrderRequest) returns (CreateOrderReply) { option (google.api.http) = { post: "/api/v1/storefront/orders/quote" body: "*" }; }
  rpc ShippingRegions(ShippingRegionsRequest) returns (ShippingRegionsReply) { option (google.api.http) = { get: "/api/v1/storefront/shipping/regions" }; }
  rpc ReceiveShipment(ReceiveShipmentRequest) returns (google.protobuf.Empty) { option (google.api.http) = { post: "/api/v1/storefront/orders/{order_no}/receive" body: "*" }; }
@@ -72,6 +78,7 @@ message OrderItemInput {
 }
 
 message CreateOrderReply {
+  string order_access_token = 6;
   int64 shipping_cents = 4;
   string quote_key = 5;
   string order_no = 1;
@@ -80,6 +87,7 @@ message CreateOrderReply {
 }
 
 message GetOrderRequest {
+  string order_access_token = 3;
   string order_no = 1 [(google.api.field_behavior) = REQUIRED];
   string query_password = 2;
 }
@@ -175,7 +183,7 @@ message CancelMyOrderRequest {
 
 message ShippingRegionsRequest { string country = 1; }
 message ShippingRegionsReply { string data_json = 1; }
-message ReceiveShipmentRequest { string order_no = 1; uint64 shipment_id = 2; string query_password = 3; }
+message ReceiveShipmentRequest { string order_no = 1; uint64 shipment_id = 2; string query_password = 3; string order_access_token = 4; }
 
 service StoreSMSService {
  rpc ListSMSProduct(SMSProductHistoryRequest) returns(SMSProductHistoryReply){option(google.api.http)={get:"/api/v1/storefront/products/{product_id}/sms/sessions"};}
@@ -196,3 +204,7 @@ message SMSOrderReply {
 message SMSProductHistoryRequest{uint64 product_id=1;int32 page=2;}
 message SMSRetailSession{string order_no=1;string offer_name=2;int64 amount_cents=3;SMSOrderReply sms=4;}
 message SMSProductHistoryReply{repeated SMSRetailSession orders=1;}
+
+message OrderAccessCodeRequest { string order_no = 1; string email = 2; }
+message OrderAccessRecoveryRequest { string order_no = 1; string email = 2; string code = 3; }
+message OrderAccessReply { string order_access_token = 1; }

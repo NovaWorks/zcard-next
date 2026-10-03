@@ -100,6 +100,8 @@ type Tx struct {
 	Payment *PaymentClient
 	// PaymentChannel is the client for interacting with the PaymentChannel builders.
 	PaymentChannel *PaymentChannelClient
+	// PhysicalReturnReceipt is the client for interacting with the PhysicalReturnReceipt builders.
+	PhysicalReturnReceipt *PhysicalReturnReceiptClient
 	// PhysicalStockMovement is the client for interacting with the PhysicalStockMovement builders.
 	PhysicalStockMovement *PhysicalStockMovementClient
 	// PointAccount is the client for interacting with the PointAccount builders.
@@ -389,6 +391,7 @@ func (tx *Tx) init() {
 	tx.PageView = NewPageViewClient(tx.config)
 	tx.Payment = NewPaymentClient(tx.config)
 	tx.PaymentChannel = NewPaymentChannelClient(tx.config)
+	tx.PhysicalReturnReceipt = NewPhysicalReturnReceiptClient(tx.config)
 	tx.PhysicalStockMovement = NewPhysicalStockMovementClient(tx.config)
 	tx.PointAccount = NewPointAccountClient(tx.config)
 	tx.PointTransaction = NewPointTransactionClient(tx.config)

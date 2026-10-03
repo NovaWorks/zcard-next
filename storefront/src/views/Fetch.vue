@@ -3,7 +3,7 @@
     <!-- Hero 搜索区（深蓝渐变） -->
     <section class="query-hero">
       <h1 class="query-title">{{ $t('订单与交付查询') }}</h1>
-      <p class="query-sub">{{ $t('输入订单号 或 下单时留的邮箱/手机号，凭查询密码查看交付结果') }}</p>
+      <p class="query-sub">{{ $t('输入订单号查看进度，游客可通过下单邮箱验证找回') }}</p>
 
       <form class="query-form" @submit.prevent="fetch">
         <div class="query-input-row">
@@ -19,7 +19,7 @@
             {{ loading ? $t('查询中…') : $t('查询') }}
           </button>
         </div>
-        <div class="query-pwd-row">
+        <details><summary>{{ $t('虚拟商品或历史订单：使用查询密码') }}</summary><div class="query-pwd-row">
           <span class="query-pwd-label">{{ $t('查询密码') }}</span>
           <input
             v-model="queryPassword"
@@ -27,10 +27,11 @@
             class="query-pwd-input"
             :placeholder="$t('下单时设置的查询密码')"
           />
-        </div>
+        </div></details>
       </form>
 
-      <p class="query-sub">{{ $t('同一网络下，同一订单连续查询失败 5 次将锁定 30 分钟；验证成功后重新计数。') }}</p>
+<OrderAccessRecovery :order-no="looksLikeContact(orderNo) ? undefined : orderNo" @recovered="pickOrder" />
+      <p v-if="queryPassword" class="query-sub">{{ $t('同一网络下，同一订单连续查询失败 5 次将锁定 30 分钟；验证成功后重新计数。') }}</p>
       <div v-if="error" class="query-error" role="alert">{{ uiText(error) }}</div>
     </section>
 
@@ -42,14 +43,14 @@
           <span class="guide-num">1</span>
           <div>
             <b>{{ $t('下单购买') }}</b>
-            <span class="muted">{{ $t('选择商品并完成支付，下单时设置查询密码') }}</span>
+            <span class="muted">{{ $t('选择商品并完成支付，保存订单信息') }}</span>
           </div>
         </div>
         <div class="guide-step">
           <span class="guide-num">2</span>
           <div>
             <b>{{ $t('输入信息') }}</b>
-            <span class="muted">{{ $t('订单号（或下单邮箱/手机号查订单）+ 查询密码') }}</span>
+            <span class="muted">{{ $t('使用账户、订单访问链接或邮箱验证码') }}</span>
           </div>
         </div>
         <div class="guide-step">
@@ -123,13 +124,14 @@
 </template>
 
 <script setup lang="ts">
+import OrderAccessRecovery from '@/components/OrderAccessRecovery.vue';
 import { uiText, t as $t, localeTag } from '@/i18n';
 
 import ShippingDetails from '@/components/ShippingDetails.vue';
 import DeliveryResults from '@/components/DeliveryResults.vue';
 import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { getOrder, getOrderPassword, rememberOrderPassword, fetchDelivery, listGuestOrders, type FetchDeliveryReply, type GuestOrderItem } from '@/api';
+import { getOrder, getOrderPassword, getOrderAccessToken, consumeOrderAccessLink, rememberOrderPassword, fetchDelivery, listGuestOrders, type FetchDeliveryReply, type GuestOrderItem } from '@/api';
 import { getToken, formatMoney } from '@/api/client';
 import { looksLikeContact } from '@/utils/commerce';
 
@@ -150,7 +152,7 @@ const listLoading = ref(false);
 // 支付成功/订单列表跳转时预填订单号
 onMounted(() => {
   const q = route.query.order_no;
-  if (typeof q === 'string' && q) { orderNo.value = q; queryPassword.value = getOrderPassword(q); if (queryPassword.value || getToken()) pickOrder(q); }
+  if (typeof q === 'string' && q) { consumeOrderAccessLink(q); orderNo.value = q; queryPassword.value = getOrderPassword(q); if (queryPassword.value || getToken() || getOrderAccessToken(q)) pickOrder(q); }
 });
 
 async function fetch() {
@@ -178,8 +180,8 @@ async function fetch() {
   }
 
   // 订单号模式：密码 + 直接取货
-  if (!queryPassword.value && !getToken()) {
-    error.value = $t("请填写查询密码");
+  if (!queryPassword.value && !getToken() && !getOrderAccessToken(ident)) {
+    error.value = $t("请验证下单邮箱或使用订单访问链接");
     return;
   }
   await pickOrder(ident);
@@ -187,21 +189,26 @@ async function fetch() {
 
 /** 列表/直连取货：订单号 + 查询密码 → 卡密 */
 async function pickOrder(no: string) {
-  if (!queryPassword.value && !getToken()) {
-    error.value = $t("请填写查询密码");
+  if (!queryPassword.value && !getToken() && !getOrderAccessToken(no)) {
+    error.value = $t("请验证下单邮箱或使用订单访问链接");
     return;
   }
   loading.value = true;
   error.value = '';
   result.value = null;
   shippingOrder.value = null;
-  const { data, error: err } = await fetchDelivery(no, queryPassword.value);
-  if (err) { loading.value = false; error.value = err; return; }
   const detail = await getOrder(no, queryPassword.value);
-  if (detail.data?.commerce_version === 1) shippingOrder.value = detail.data;
-  loading.value = false;
-  result.value = data;
-  if (data) rememberOrderPassword(no, queryPassword.value);
+  if (detail.error || !detail.data) { loading.value=false; error.value=detail.error || $t('订单不存在或无权查看'); return; }
+  if (detail.data.commerce_version === 1) shippingOrder.value=detail.data;
+  if (detail.data.items?.length && detail.data.items.every(i=>i.goods_type==='physical')) {
+    result.value={order_no:no,status:detail.data.status,items:[],fetch_count:0};
+  } else {
+    const { data, error: err }=await fetchDelivery(no,queryPassword.value);
+    if(err){loading.value=false;error.value=err;return;}
+    result.value=data;
+    if(data)rememberOrderPassword(no,queryPassword.value);
+  }
+  loading.value=false;
   guestOrders.value = []; // 取货成功收起列表
   orderNo.value = no;     // 结果区显示该单号
 }

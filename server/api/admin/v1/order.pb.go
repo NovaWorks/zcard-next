@@ -515,6 +515,7 @@ type AdminOrderItem struct {
 	ShippedQuantity       int32                  `protobuf:"varint,36,opt,name=shipped_quantity,json=shippedQuantity,proto3" json:"shipped_quantity,omitempty"`
 	ReceivedQuantity      int32                  `protobuf:"varint,37,opt,name=received_quantity,json=receivedQuantity,proto3" json:"received_quantity,omitempty"`
 	ReturnedQuantity      int32                  `protobuf:"varint,38,opt,name=returned_quantity,json=returnedQuantity,proto3" json:"returned_quantity,omitempty"`
+	InventoryTracked      *bool                  `protobuf:"varint,39,opt,name=inventory_tracked,json=inventoryTracked,proto3,oneof" json:"inventory_tracked,omitempty"`
 	FormAnswersJson       string                 `protobuf:"bytes,18,opt,name=form_answers_json,json=formAnswersJson,proto3" json:"form_answers_json,omitempty"`
 	AssignedAdminId       uint64                 `protobuf:"varint,19,opt,name=assigned_admin_id,json=assignedAdminId,proto3" json:"assigned_admin_id,omitempty"`
 	Id                    uint64                 `protobuf:"varint,17,opt,name=id,proto3" json:"id,omitempty"` // 订单商品项 ID，人工补发使用
@@ -629,6 +630,13 @@ func (x *AdminOrderItem) GetReturnedQuantity() int32 {
 		return x.ReturnedQuantity
 	}
 	return 0
+}
+
+func (x *AdminOrderItem) GetInventoryTracked() bool {
+	if x != nil && x.InventoryTracked != nil {
+		return *x.InventoryTracked
+	}
+	return false
 }
 
 func (x *AdminOrderItem) GetFormAnswersJson() string {
@@ -1085,7 +1093,7 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"\rexpiry_reason\x18\x13 \x01(\tR\fexpiryReason\x1aB\n" +
 	"\x14ShippingAddressEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xae\b\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xf6\b\n" +
 	"\x0eAdminOrderItem\x12\x1d\n" +
 	"\n" +
 	"goods_type\x18\x1e \x01(\tR\tgoodsType\x12\x1d\n" +
@@ -1097,7 +1105,8 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"\x11canceled_quantity\x18# \x01(\x05R\x10canceledQuantity\x12)\n" +
 	"\x10shipped_quantity\x18$ \x01(\x05R\x0fshippedQuantity\x12+\n" +
 	"\x11received_quantity\x18% \x01(\x05R\x10receivedQuantity\x12+\n" +
-	"\x11returned_quantity\x18& \x01(\x05R\x10returnedQuantity\x12*\n" +
+	"\x11returned_quantity\x18& \x01(\x05R\x10returnedQuantity\x120\n" +
+	"\x11inventory_tracked\x18' \x01(\bH\x00R\x10inventoryTracked\x88\x01\x01\x12*\n" +
 	"\x11form_answers_json\x18\x12 \x01(\tR\x0fformAnswersJson\x12*\n" +
 	"\x11assigned_admin_id\x18\x13 \x01(\x04R\x0fassignedAdminId\x12\x0e\n" +
 	"\x02id\x18\x11 \x01(\x04R\x02id\x12\x1d\n" +
@@ -1119,7 +1128,8 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"\x14upstream_source_name\x18\r \x01(\tR\x12upstreamSourceName\x12'\n" +
 	"\x0fupstream_driver\x18\x0e \x01(\tR\x0eupstreamDriver\x122\n" +
 	"\x15upstream_product_code\x18\x0f \x01(\tR\x13upstreamProductCode\x12!\n" +
-	"\fupstream_url\x18\x10 \x01(\tR\vupstreamUrl\"\x93\x01\n" +
+	"\fupstream_url\x18\x10 \x01(\tR\vupstreamUrlB\x14\n" +
+	"\x12_inventory_tracked\"\x93\x01\n" +
 	"\n" +
 	"AmountLine\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12!\n" +
@@ -1201,6 +1211,7 @@ func file_admin_v1_order_proto_init() {
 	if File_admin_v1_order_proto != nil {
 		return
 	}
+	file_admin_v1_order_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

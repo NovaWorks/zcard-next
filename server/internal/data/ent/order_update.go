@@ -218,6 +218,32 @@ func (_u *OrderUpdate) ClearQueryPasswordHash() *OrderUpdate {
 	return _u
 }
 
+// SetOrderAccessTokenHash sets the "order_access_token_hash" field.
+func (_u *OrderUpdate) SetOrderAccessTokenHash(v string) *OrderUpdate {
+	_u.mutation.SetOrderAccessTokenHash(v)
+	return _u
+}
+
+// SetNillableOrderAccessTokenHash sets the "order_access_token_hash" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableOrderAccessTokenHash(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetOrderAccessTokenHash(*v)
+	}
+	return _u
+}
+
+// SetOrderAccessTokenSecret sets the "order_access_token_secret" field.
+func (_u *OrderUpdate) SetOrderAccessTokenSecret(v []byte) *OrderUpdate {
+	_u.mutation.SetOrderAccessTokenSecret(v)
+	return _u
+}
+
+// ClearOrderAccessTokenSecret clears the value of the "order_access_token_secret" field.
+func (_u *OrderUpdate) ClearOrderAccessTokenSecret() *OrderUpdate {
+	_u.mutation.ClearOrderAccessTokenSecret()
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *OrderUpdate) SetStatus(v order.Status) *OrderUpdate {
 	_u.mutation.SetStatus(v)
@@ -1137,6 +1163,11 @@ func (_u *OrderUpdate) check() error {
 			return &ValidationError{Name: "query_password_hash", err: fmt.Errorf(`ent: validator failed for field "Order.query_password_hash": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.OrderAccessTokenHash(); ok {
+		if err := order.OrderAccessTokenHashValidator(v); err != nil {
+			return &ValidationError{Name: "order_access_token_hash", err: fmt.Errorf(`ent: validator failed for field "Order.order_access_token_hash": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := order.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Order.status": %w`, err)}
@@ -1250,6 +1281,15 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.QueryPasswordHashCleared() {
 		_spec.ClearField(order.FieldQueryPasswordHash, field.TypeString)
+	}
+	if value, ok := _u.mutation.OrderAccessTokenHash(); ok {
+		_spec.SetField(order.FieldOrderAccessTokenHash, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.OrderAccessTokenSecret(); ok {
+		_spec.SetField(order.FieldOrderAccessTokenSecret, field.TypeBytes, value)
+	}
+	if _u.mutation.OrderAccessTokenSecretCleared() {
+		_spec.ClearField(order.FieldOrderAccessTokenSecret, field.TypeBytes)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(order.FieldStatus, field.TypeEnum, value)
@@ -1920,6 +1960,32 @@ func (_u *OrderUpdateOne) SetNillableQueryPasswordHash(v *string) *OrderUpdateOn
 // ClearQueryPasswordHash clears the value of the "query_password_hash" field.
 func (_u *OrderUpdateOne) ClearQueryPasswordHash() *OrderUpdateOne {
 	_u.mutation.ClearQueryPasswordHash()
+	return _u
+}
+
+// SetOrderAccessTokenHash sets the "order_access_token_hash" field.
+func (_u *OrderUpdateOne) SetOrderAccessTokenHash(v string) *OrderUpdateOne {
+	_u.mutation.SetOrderAccessTokenHash(v)
+	return _u
+}
+
+// SetNillableOrderAccessTokenHash sets the "order_access_token_hash" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableOrderAccessTokenHash(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetOrderAccessTokenHash(*v)
+	}
+	return _u
+}
+
+// SetOrderAccessTokenSecret sets the "order_access_token_secret" field.
+func (_u *OrderUpdateOne) SetOrderAccessTokenSecret(v []byte) *OrderUpdateOne {
+	_u.mutation.SetOrderAccessTokenSecret(v)
+	return _u
+}
+
+// ClearOrderAccessTokenSecret clears the value of the "order_access_token_secret" field.
+func (_u *OrderUpdateOne) ClearOrderAccessTokenSecret() *OrderUpdateOne {
+	_u.mutation.ClearOrderAccessTokenSecret()
 	return _u
 }
 
@@ -2855,6 +2921,11 @@ func (_u *OrderUpdateOne) check() error {
 			return &ValidationError{Name: "query_password_hash", err: fmt.Errorf(`ent: validator failed for field "Order.query_password_hash": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.OrderAccessTokenHash(); ok {
+		if err := order.OrderAccessTokenHashValidator(v); err != nil {
+			return &ValidationError{Name: "order_access_token_hash", err: fmt.Errorf(`ent: validator failed for field "Order.order_access_token_hash": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := order.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Order.status": %w`, err)}
@@ -2985,6 +3056,15 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 	}
 	if _u.mutation.QueryPasswordHashCleared() {
 		_spec.ClearField(order.FieldQueryPasswordHash, field.TypeString)
+	}
+	if value, ok := _u.mutation.OrderAccessTokenHash(); ok {
+		_spec.SetField(order.FieldOrderAccessTokenHash, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.OrderAccessTokenSecret(); ok {
+		_spec.SetField(order.FieldOrderAccessTokenSecret, field.TypeBytes, value)
+	}
+	if _u.mutation.OrderAccessTokenSecretCleared() {
+		_spec.ClearField(order.FieldOrderAccessTokenSecret, field.TypeBytes)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(order.FieldStatus, field.TypeEnum, value)

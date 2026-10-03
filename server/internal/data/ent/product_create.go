@@ -148,6 +148,48 @@ func (_c *ProductCreate) SetNillableGoodsType(v *string) *ProductCreate {
 	return _c
 }
 
+// SetProductProperty sets the "product_property" field.
+func (_c *ProductCreate) SetProductProperty(v string) *ProductCreate {
+	_c.mutation.SetProductProperty(v)
+	return _c
+}
+
+// SetNillableProductProperty sets the "product_property" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableProductProperty(v *string) *ProductCreate {
+	if v != nil {
+		_c.SetProductProperty(*v)
+	}
+	return _c
+}
+
+// SetTrackInventory sets the "track_inventory" field.
+func (_c *ProductCreate) SetTrackInventory(v bool) *ProductCreate {
+	_c.mutation.SetTrackInventory(v)
+	return _c
+}
+
+// SetNillableTrackInventory sets the "track_inventory" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableTrackInventory(v *bool) *ProductCreate {
+	if v != nil {
+		_c.SetTrackInventory(*v)
+	}
+	return _c
+}
+
+// SetSalesVisible sets the "sales_visible" field.
+func (_c *ProductCreate) SetSalesVisible(v bool) *ProductCreate {
+	_c.mutation.SetSalesVisible(v)
+	return _c
+}
+
+// SetNillableSalesVisible sets the "sales_visible" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableSalesVisible(v *bool) *ProductCreate {
+	if v != nil {
+		_c.SetSalesVisible(*v)
+	}
+	return _c
+}
+
 // SetShippingMode sets the "shipping_mode" field.
 func (_c *ProductCreate) SetShippingMode(v string) *ProductCreate {
 	_c.mutation.SetShippingMode(v)
@@ -731,7 +773,9 @@ func (_c *ProductCreate) Mutation() *ProductMutation {
 
 // Save creates the Product in the database.
 func (_c *ProductCreate) Save(ctx context.Context) (*Product, error) {
-	_c.defaults()
+	if err := _c.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
@@ -758,12 +802,18 @@ func (_c *ProductCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (_c *ProductCreate) defaults() {
+func (_c *ProductCreate) defaults() error {
 	if _, ok := _c.mutation.CreatedAt(); !ok {
+		if product.DefaultCreatedAt == nil {
+			return fmt.Errorf("ent: uninitialized product.DefaultCreatedAt (forgotten import ent/runtime?)")
+		}
 		v := product.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
+		if product.DefaultUpdatedAt == nil {
+			return fmt.Errorf("ent: uninitialized product.DefaultUpdatedAt (forgotten import ent/runtime?)")
+		}
 		v := product.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
@@ -786,6 +836,18 @@ func (_c *ProductCreate) defaults() {
 	if _, ok := _c.mutation.GoodsType(); !ok {
 		v := product.DefaultGoodsType
 		_c.mutation.SetGoodsType(v)
+	}
+	if _, ok := _c.mutation.ProductProperty(); !ok {
+		v := product.DefaultProductProperty
+		_c.mutation.SetProductProperty(v)
+	}
+	if _, ok := _c.mutation.TrackInventory(); !ok {
+		v := product.DefaultTrackInventory
+		_c.mutation.SetTrackInventory(v)
+	}
+	if _, ok := _c.mutation.SalesVisible(); !ok {
+		v := product.DefaultSalesVisible
+		_c.mutation.SetSalesVisible(v)
 	}
 	if _, ok := _c.mutation.ShippingMode(); !ok {
 		v := product.DefaultShippingMode
@@ -907,6 +969,7 @@ func (_c *ProductCreate) defaults() {
 		v := product.DefaultLockedBy
 		_c.mutation.SetLockedBy(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -939,6 +1002,20 @@ func (_c *ProductCreate) check() error {
 	}
 	if _, ok := _c.mutation.GoodsType(); !ok {
 		return &ValidationError{Name: "goods_type", err: errors.New(`ent: missing required field "Product.goods_type"`)}
+	}
+	if _, ok := _c.mutation.ProductProperty(); !ok {
+		return &ValidationError{Name: "product_property", err: errors.New(`ent: missing required field "Product.product_property"`)}
+	}
+	if v, ok := _c.mutation.ProductProperty(); ok {
+		if err := product.ProductPropertyValidator(v); err != nil {
+			return &ValidationError{Name: "product_property", err: fmt.Errorf(`ent: validator failed for field "Product.product_property": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.TrackInventory(); !ok {
+		return &ValidationError{Name: "track_inventory", err: errors.New(`ent: missing required field "Product.track_inventory"`)}
+	}
+	if _, ok := _c.mutation.SalesVisible(); !ok {
+		return &ValidationError{Name: "sales_visible", err: errors.New(`ent: missing required field "Product.sales_visible"`)}
 	}
 	if _, ok := _c.mutation.ShippingMode(); !ok {
 		return &ValidationError{Name: "shipping_mode", err: errors.New(`ent: missing required field "Product.shipping_mode"`)}
@@ -1140,6 +1217,18 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.GoodsType(); ok {
 		_spec.SetField(product.FieldGoodsType, field.TypeString, value)
 		_node.GoodsType = value
+	}
+	if value, ok := _c.mutation.ProductProperty(); ok {
+		_spec.SetField(product.FieldProductProperty, field.TypeString, value)
+		_node.ProductProperty = value
+	}
+	if value, ok := _c.mutation.TrackInventory(); ok {
+		_spec.SetField(product.FieldTrackInventory, field.TypeBool, value)
+		_node.TrackInventory = value
+	}
+	if value, ok := _c.mutation.SalesVisible(); ok {
+		_spec.SetField(product.FieldSalesVisible, field.TypeBool, value)
+		_node.SalesVisible = value
 	}
 	if value, ok := _c.mutation.ShippingMode(); ok {
 		_spec.SetField(product.FieldShippingMode, field.TypeString, value)
@@ -1522,6 +1611,42 @@ func (u *ProductUpsert) SetGoodsType(v string) *ProductUpsert {
 // UpdateGoodsType sets the "goods_type" field to the value that was provided on create.
 func (u *ProductUpsert) UpdateGoodsType() *ProductUpsert {
 	u.SetExcluded(product.FieldGoodsType)
+	return u
+}
+
+// SetProductProperty sets the "product_property" field.
+func (u *ProductUpsert) SetProductProperty(v string) *ProductUpsert {
+	u.Set(product.FieldProductProperty, v)
+	return u
+}
+
+// UpdateProductProperty sets the "product_property" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateProductProperty() *ProductUpsert {
+	u.SetExcluded(product.FieldProductProperty)
+	return u
+}
+
+// SetTrackInventory sets the "track_inventory" field.
+func (u *ProductUpsert) SetTrackInventory(v bool) *ProductUpsert {
+	u.Set(product.FieldTrackInventory, v)
+	return u
+}
+
+// UpdateTrackInventory sets the "track_inventory" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateTrackInventory() *ProductUpsert {
+	u.SetExcluded(product.FieldTrackInventory)
+	return u
+}
+
+// SetSalesVisible sets the "sales_visible" field.
+func (u *ProductUpsert) SetSalesVisible(v bool) *ProductUpsert {
+	u.Set(product.FieldSalesVisible, v)
+	return u
+}
+
+// UpdateSalesVisible sets the "sales_visible" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateSalesVisible() *ProductUpsert {
+	u.SetExcluded(product.FieldSalesVisible)
 	return u
 }
 
@@ -2399,6 +2524,48 @@ func (u *ProductUpsertOne) SetGoodsType(v string) *ProductUpsertOne {
 func (u *ProductUpsertOne) UpdateGoodsType() *ProductUpsertOne {
 	return u.Update(func(s *ProductUpsert) {
 		s.UpdateGoodsType()
+	})
+}
+
+// SetProductProperty sets the "product_property" field.
+func (u *ProductUpsertOne) SetProductProperty(v string) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetProductProperty(v)
+	})
+}
+
+// UpdateProductProperty sets the "product_property" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateProductProperty() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateProductProperty()
+	})
+}
+
+// SetTrackInventory sets the "track_inventory" field.
+func (u *ProductUpsertOne) SetTrackInventory(v bool) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetTrackInventory(v)
+	})
+}
+
+// UpdateTrackInventory sets the "track_inventory" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateTrackInventory() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateTrackInventory()
+	})
+}
+
+// SetSalesVisible sets the "sales_visible" field.
+func (u *ProductUpsertOne) SetSalesVisible(v bool) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetSalesVisible(v)
+	})
+}
+
+// UpdateSalesVisible sets the "sales_visible" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateSalesVisible() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateSalesVisible()
 	})
 }
 
@@ -3554,6 +3721,48 @@ func (u *ProductUpsertBulk) SetGoodsType(v string) *ProductUpsertBulk {
 func (u *ProductUpsertBulk) UpdateGoodsType() *ProductUpsertBulk {
 	return u.Update(func(s *ProductUpsert) {
 		s.UpdateGoodsType()
+	})
+}
+
+// SetProductProperty sets the "product_property" field.
+func (u *ProductUpsertBulk) SetProductProperty(v string) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetProductProperty(v)
+	})
+}
+
+// UpdateProductProperty sets the "product_property" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateProductProperty() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateProductProperty()
+	})
+}
+
+// SetTrackInventory sets the "track_inventory" field.
+func (u *ProductUpsertBulk) SetTrackInventory(v bool) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetTrackInventory(v)
+	})
+}
+
+// UpdateTrackInventory sets the "track_inventory" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateTrackInventory() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateTrackInventory()
+	})
+}
+
+// SetSalesVisible sets the "sales_visible" field.
+func (u *ProductUpsertBulk) SetSalesVisible(v bool) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetSalesVisible(v)
+	})
+}
+
+// UpdateSalesVisible sets the "sales_visible" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateSalesVisible() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateSalesVisible()
 	})
 }
 

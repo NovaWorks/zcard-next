@@ -55,6 +55,8 @@ type OrderItem struct {
 	Cost int64 `json:"cost,omitempty"`
 	// GoodsType holds the value of the "goods_type" field.
 	GoodsType string `json:"goods_type,omitempty"`
+	// 下单时数量库存管理快照；旧实体项继续管理
+	InventoryTracked bool `json:"inventory_tracked,omitempty"`
 	// PaidAmount holds the value of the "paid_amount" field.
 	PaidAmount int64 `json:"paid_amount,omitempty"`
 	// ShippingAmount holds the value of the "shipping_amount" field.
@@ -114,6 +116,8 @@ func (*OrderItem) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case orderitem.FieldSmsProduct, orderitem.FieldFormAnswers, orderitem.FieldCommissionSnapshot, orderitem.FieldProfitSnapshot:
 			values[i] = new([]byte)
+		case orderitem.FieldInventoryTracked:
+			values[i] = new(sql.NullBool)
 		case orderitem.FieldID, orderitem.FieldSubsiteID, orderitem.FieldOrderID, orderitem.FieldProductID, orderitem.FieldSkuID, orderitem.FieldAssignedAdminID, orderitem.FieldUnitPrice, orderitem.FieldQuantity, orderitem.FieldAmount, orderitem.FieldCost, orderitem.FieldPaidAmount, orderitem.FieldShippingAmount, orderitem.FieldRefundedAmount, orderitem.FieldRefundedShipping, orderitem.FieldCanceledQuantity, orderitem.FieldShippedQuantity, orderitem.FieldReceivedQuantity, orderitem.FieldReturnedQuantity, orderitem.FieldDeliverySourceID:
 			values[i] = new(sql.NullInt64)
 		case orderitem.FieldProductName, orderitem.FieldDeliveryKind, orderitem.FieldSmsPurchaseSnapshot, orderitem.FieldSkuName, orderitem.FieldGoodsType, orderitem.FieldFulfillmentType, orderitem.FieldFulfillmentStatus:
@@ -252,6 +256,12 @@ func (_m *OrderItem) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field goods_type", values[i])
 			} else if value.Valid {
 				_m.GoodsType = value.String
+			}
+		case orderitem.FieldInventoryTracked:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field inventory_tracked", values[i])
+			} else if value.Valid {
+				_m.InventoryTracked = value.Bool
 			}
 		case orderitem.FieldPaidAmount:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -429,6 +439,9 @@ func (_m *OrderItem) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("goods_type=")
 	builder.WriteString(_m.GoodsType)
+	builder.WriteString(", ")
+	builder.WriteString("inventory_tracked=")
+	builder.WriteString(fmt.Sprintf("%v", _m.InventoryTracked))
 	builder.WriteString(", ")
 	builder.WriteString("paid_amount=")
 	builder.WriteString(fmt.Sprintf("%v", _m.PaidAmount))

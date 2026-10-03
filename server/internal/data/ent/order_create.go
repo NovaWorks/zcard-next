@@ -174,6 +174,26 @@ func (_c *OrderCreate) SetNillableQueryPasswordHash(v *string) *OrderCreate {
 	return _c
 }
 
+// SetOrderAccessTokenHash sets the "order_access_token_hash" field.
+func (_c *OrderCreate) SetOrderAccessTokenHash(v string) *OrderCreate {
+	_c.mutation.SetOrderAccessTokenHash(v)
+	return _c
+}
+
+// SetNillableOrderAccessTokenHash sets the "order_access_token_hash" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableOrderAccessTokenHash(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetOrderAccessTokenHash(*v)
+	}
+	return _c
+}
+
+// SetOrderAccessTokenSecret sets the "order_access_token_secret" field.
+func (_c *OrderCreate) SetOrderAccessTokenSecret(v []byte) *OrderCreate {
+	_c.mutation.SetOrderAccessTokenSecret(v)
+	return _c
+}
+
 // SetStatus sets the "status" field.
 func (_c *OrderCreate) SetStatus(v order.Status) *OrderCreate {
 	_c.mutation.SetStatus(v)
@@ -753,6 +773,10 @@ func (_c *OrderCreate) defaults() {
 		v := order.DefaultProfitEligible
 		_c.mutation.SetProfitEligible(v)
 	}
+	if _, ok := _c.mutation.OrderAccessTokenHash(); !ok {
+		v := order.DefaultOrderAccessTokenHash
+		_c.mutation.SetOrderAccessTokenHash(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := order.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -836,6 +860,14 @@ func (_c *OrderCreate) check() error {
 	if v, ok := _c.mutation.QueryPasswordHash(); ok {
 		if err := order.QueryPasswordHashValidator(v); err != nil {
 			return &ValidationError{Name: "query_password_hash", err: fmt.Errorf(`ent: validator failed for field "Order.query_password_hash": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.OrderAccessTokenHash(); !ok {
+		return &ValidationError{Name: "order_access_token_hash", err: errors.New(`ent: missing required field "Order.order_access_token_hash"`)}
+	}
+	if v, ok := _c.mutation.OrderAccessTokenHash(); ok {
+		if err := order.OrderAccessTokenHashValidator(v); err != nil {
+			return &ValidationError{Name: "order_access_token_hash", err: fmt.Errorf(`ent: validator failed for field "Order.order_access_token_hash": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
@@ -989,6 +1021,14 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.QueryPasswordHash(); ok {
 		_spec.SetField(order.FieldQueryPasswordHash, field.TypeString, value)
 		_node.QueryPasswordHash = value
+	}
+	if value, ok := _c.mutation.OrderAccessTokenHash(); ok {
+		_spec.SetField(order.FieldOrderAccessTokenHash, field.TypeString, value)
+		_node.OrderAccessTokenHash = value
+	}
+	if value, ok := _c.mutation.OrderAccessTokenSecret(); ok {
+		_spec.SetField(order.FieldOrderAccessTokenSecret, field.TypeBytes, value)
+		_node.OrderAccessTokenSecret = value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(order.FieldStatus, field.TypeEnum, value)
@@ -1431,6 +1471,36 @@ func (u *OrderUpsert) UpdateQueryPasswordHash() *OrderUpsert {
 // ClearQueryPasswordHash clears the value of the "query_password_hash" field.
 func (u *OrderUpsert) ClearQueryPasswordHash() *OrderUpsert {
 	u.SetNull(order.FieldQueryPasswordHash)
+	return u
+}
+
+// SetOrderAccessTokenHash sets the "order_access_token_hash" field.
+func (u *OrderUpsert) SetOrderAccessTokenHash(v string) *OrderUpsert {
+	u.Set(order.FieldOrderAccessTokenHash, v)
+	return u
+}
+
+// UpdateOrderAccessTokenHash sets the "order_access_token_hash" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateOrderAccessTokenHash() *OrderUpsert {
+	u.SetExcluded(order.FieldOrderAccessTokenHash)
+	return u
+}
+
+// SetOrderAccessTokenSecret sets the "order_access_token_secret" field.
+func (u *OrderUpsert) SetOrderAccessTokenSecret(v []byte) *OrderUpsert {
+	u.Set(order.FieldOrderAccessTokenSecret, v)
+	return u
+}
+
+// UpdateOrderAccessTokenSecret sets the "order_access_token_secret" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateOrderAccessTokenSecret() *OrderUpsert {
+	u.SetExcluded(order.FieldOrderAccessTokenSecret)
+	return u
+}
+
+// ClearOrderAccessTokenSecret clears the value of the "order_access_token_secret" field.
+func (u *OrderUpsert) ClearOrderAccessTokenSecret() *OrderUpsert {
+	u.SetNull(order.FieldOrderAccessTokenSecret)
 	return u
 }
 
@@ -2266,6 +2336,41 @@ func (u *OrderUpsertOne) UpdateQueryPasswordHash() *OrderUpsertOne {
 func (u *OrderUpsertOne) ClearQueryPasswordHash() *OrderUpsertOne {
 	return u.Update(func(s *OrderUpsert) {
 		s.ClearQueryPasswordHash()
+	})
+}
+
+// SetOrderAccessTokenHash sets the "order_access_token_hash" field.
+func (u *OrderUpsertOne) SetOrderAccessTokenHash(v string) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetOrderAccessTokenHash(v)
+	})
+}
+
+// UpdateOrderAccessTokenHash sets the "order_access_token_hash" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateOrderAccessTokenHash() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateOrderAccessTokenHash()
+	})
+}
+
+// SetOrderAccessTokenSecret sets the "order_access_token_secret" field.
+func (u *OrderUpsertOne) SetOrderAccessTokenSecret(v []byte) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetOrderAccessTokenSecret(v)
+	})
+}
+
+// UpdateOrderAccessTokenSecret sets the "order_access_token_secret" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateOrderAccessTokenSecret() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateOrderAccessTokenSecret()
+	})
+}
+
+// ClearOrderAccessTokenSecret clears the value of the "order_access_token_secret" field.
+func (u *OrderUpsertOne) ClearOrderAccessTokenSecret() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearOrderAccessTokenSecret()
 	})
 }
 
@@ -3365,6 +3470,41 @@ func (u *OrderUpsertBulk) UpdateQueryPasswordHash() *OrderUpsertBulk {
 func (u *OrderUpsertBulk) ClearQueryPasswordHash() *OrderUpsertBulk {
 	return u.Update(func(s *OrderUpsert) {
 		s.ClearQueryPasswordHash()
+	})
+}
+
+// SetOrderAccessTokenHash sets the "order_access_token_hash" field.
+func (u *OrderUpsertBulk) SetOrderAccessTokenHash(v string) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetOrderAccessTokenHash(v)
+	})
+}
+
+// UpdateOrderAccessTokenHash sets the "order_access_token_hash" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateOrderAccessTokenHash() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateOrderAccessTokenHash()
+	})
+}
+
+// SetOrderAccessTokenSecret sets the "order_access_token_secret" field.
+func (u *OrderUpsertBulk) SetOrderAccessTokenSecret(v []byte) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetOrderAccessTokenSecret(v)
+	})
+}
+
+// UpdateOrderAccessTokenSecret sets the "order_access_token_secret" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateOrderAccessTokenSecret() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateOrderAccessTokenSecret()
+	})
+}
+
+// ClearOrderAccessTokenSecret clears the value of the "order_access_token_secret" field.
+func (u *OrderUpsertBulk) ClearOrderAccessTokenSecret() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearOrderAccessTokenSecret()
 	})
 }
 

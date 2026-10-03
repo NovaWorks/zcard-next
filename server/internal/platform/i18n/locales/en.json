@@ -9,5 +9,11 @@
   "identity.admin_disabled": "Account disabled",
   "identity.totp_required": "TOTP code required",
   "authz.permission_denied": "Permission denied: {permission}",
-  "settings.not_found": "Setting not found"
+  "settings.not_found": "Setting not found",
+  "order.access_required": "Order access is missing or invalid. Use your saved access link or verify the email used at checkout.",
+  "order.access_code_invalid": "The order or email does not match, or the verification code is invalid, expired, or already used.",
+  "order.access_contact_invalid": "Enter the order number and the email used at checkout.",
+  "order.access_recovery_unavailable": "Order email verification is temporarily unavailable. Please try again later.",
+  "order.access_email_unavailable": "Email verification is not configured. Please contact support.",
+  "order.access_email_failed": "The verification email could not be delivered. Please try again later or contact support."
 }

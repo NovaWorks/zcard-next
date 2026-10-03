@@ -11,6 +11,9 @@ import (
 )
 
 func PhysicalAvailable(ctx context.Context, c *ent.Client, p *ent.Product) (int64, error) {
+	if !p.TrackInventory {
+		return -1, nil
+	}
 	skus, e := c.ProductSku.Query().Where(productsku.ProductID(p.ID), productsku.SubsiteID(p.SubsiteID)).All(ctx)
 	if e != nil {
 		return 0, e
@@ -90,6 +93,11 @@ func ReleasePhysicalStock(ctx context.Context, d *Data, oid uint64, reason strin
 		return e
 	}
 	for _, it := range rows {
+		// Stock reservations belong to the order snapshot. Changing the product's
+		// inventory setting must not discard an older reservation or create one.
+		if !it.InventoryTracked {
+			continue
+		}
 		if e = MovePhysicalStock(ctx, d, it.SubsiteID, it.ProductID, it.SkuID, oid, int64(it.Quantity-it.CanceledQuantity), fmt.Sprintf("cancel:%d", it.ID), reason); e != nil {
 			return e
 		}

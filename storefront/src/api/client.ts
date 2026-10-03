@@ -100,7 +100,7 @@ export const api = {
   post: <T>(path: string, body: unknown, headers?: Record<string,string>) => request<T>('POST', path, body, undefined, false, headers),
   delete_: <T>(path: string) => request<T>('DELETE', path),
   // silent 变体：401 只清 token 不跳登录（游客可降级端点在调用方处理）
-  getSilent: <T>(path: string, params?: Record<string, string | number | boolean | undefined>) => request<T>('GET', path, undefined, params, true),
+  getSilent: <T>(path: string, params?: Record<string, string | number | boolean | undefined>, headers?: Record<string,string>) => request<T>('GET', path, undefined, params, true, headers),
   postSilent: <T>(path: string, body: unknown) => request<T>('POST', path, body, undefined, true),
   deleteSilent: <T>(path: string) => request<T>('DELETE', path, undefined, undefined, true)
 };

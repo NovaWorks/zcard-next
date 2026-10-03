@@ -22,7 +22,7 @@ import { checkAuth } from "@/directives";
 import { fetchSkus, createSku, updateSku, deleteSku } from "@/service/api";
 import { centsToYuan, currencyUnit, yuanToFen } from "@/utils/money";
 
-const props = defineProps<{ productId: number; readonly?: boolean; physical?: boolean }>();
+const props = defineProps<{ productId: number; readonly?: boolean; physical?: boolean; inventoryTracked?: boolean }>();
 const emit = defineEmits<{ (e: "persisted"): void }>();
 
 interface SkuRow {
@@ -167,14 +167,14 @@ async function persistRow(row: SkuRow): Promise<boolean> {
     return false;
   }
   const payload = {
-    ...(props.physical
+    ...(props.physical && props.inventoryTracked !== false
       ? { physical_stock: row.physical_stock, expected_physical_stock: row.original_physical_stock }
       : {}),
     name: row.name.trim(),
     spec_values: row.spec_values,
     price_cents: yuanToFen(row.price_yuan || 0),
     cost_cents: yuanToFen(row.cost_yuan || 0),
-    stock_offset: row.stock_offset || 0,
+    stock_offset: props.physical ? 0 : row.stock_offset || 0,
     fulfillment_mode: props.physical ? "follow" : row.fulfillment_mode,
   };
   const { data, error } = row.id
@@ -277,7 +277,7 @@ function numCell(
   });
 }
 
-const columns: DataTableColumns<SkuRow> = [
+const allColumns: DataTableColumns<SkuRow> = [
   {
     title: "规格组合",
     key: "spec_values",
@@ -408,6 +408,10 @@ const columns: DataTableColumns<SkuRow> = [
       ),
   },
 ];
+const columns = computed(() => allColumns.filter((column) => !("key" in column) || (
+    (column.key !== "fulfillment_mode" || !props.physical) &&
+    (column.key !== "stock_offset" || !props.physical || props.inventoryTracked !== false)
+)));
 </script>
 
 <template>

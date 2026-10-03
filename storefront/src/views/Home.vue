@@ -240,7 +240,7 @@ const middleBannerIndex = computed(() => {
 });
 
 const { showSales, applySalesConfig, normalizeSalesSort } = useSalesVisibility();
-const showStock = ref(true); // template.show_stock：卡片「库存」显示开关
+const showStock = ref(false); // template.show_stock：卡片「库存」显示开关
 const topBannerEnabled = ref(true); // promo.top_banner_enabled：顶部横幅（首页 Hero 轮播）开关
 const chipsExpanded = ref(false); // 移动端 grid 胶囊：单行横滑 → 展开多行
 

@@ -102,6 +102,10 @@ func (d *Dispatcher) HandleEvent(ctx context.Context, env events.Envelope) error
 		}
 	}
 	locale := "zh_CN"
+	templateEvent := env.Type
+	if env.Type == "order.delivered" && payload["goods_type"] == "physical" {
+		templateEvent = "order.received"
+	}
 
 	for _, ch := range channels {
 		channel, ok := d.channels[ch]
@@ -109,7 +113,7 @@ func (d *Dispatcher) HandleEvent(ctx context.Context, env events.Envelope) error
 			continue // 通道未注册（SMS/Telegram ）
 		}
 		// 模板（事件 × 通道 × 语言；无模板 → 该通道跳过——不算错误）
-		tpl, err := d.repo.Template(ctx, env.Type, ch, locale)
+		tpl, err := d.repo.Template(ctx, templateEvent, ch, locale)
 		if err != nil {
 			continue
 		}
@@ -207,7 +211,7 @@ func logOf(msg notifyport.Message, status, errMsg string) LogInput {
 	// 敏感类型（验证码邮件）：正文/变量不落日志——库内无明文纪律
 	// （邮件照发，仅审计留档脱敏；BizType 契约见调用方）
 	body, vars := msg.Body, msg.Variables
-	if msg.BizType == "password_reset" {
+	if msg.BizType == "password_reset" || msg.BizType == "order_access_recovery" || msg.BizType == "register_code" {
 		body = "[验证码邮件：内容不落日志]"
 		vars = map[string]string{"masked": "true"}
 	}

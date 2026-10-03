@@ -167,6 +167,48 @@ func (_u *ProductUpdate) SetNillableGoodsType(v *string) *ProductUpdate {
 	return _u
 }
 
+// SetProductProperty sets the "product_property" field.
+func (_u *ProductUpdate) SetProductProperty(v string) *ProductUpdate {
+	_u.mutation.SetProductProperty(v)
+	return _u
+}
+
+// SetNillableProductProperty sets the "product_property" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableProductProperty(v *string) *ProductUpdate {
+	if v != nil {
+		_u.SetProductProperty(*v)
+	}
+	return _u
+}
+
+// SetTrackInventory sets the "track_inventory" field.
+func (_u *ProductUpdate) SetTrackInventory(v bool) *ProductUpdate {
+	_u.mutation.SetTrackInventory(v)
+	return _u
+}
+
+// SetNillableTrackInventory sets the "track_inventory" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableTrackInventory(v *bool) *ProductUpdate {
+	if v != nil {
+		_u.SetTrackInventory(*v)
+	}
+	return _u
+}
+
+// SetSalesVisible sets the "sales_visible" field.
+func (_u *ProductUpdate) SetSalesVisible(v bool) *ProductUpdate {
+	_u.mutation.SetSalesVisible(v)
+	return _u
+}
+
+// SetNillableSalesVisible sets the "sales_visible" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableSalesVisible(v *bool) *ProductUpdate {
+	if v != nil {
+		_u.SetSalesVisible(*v)
+	}
+	return _u
+}
+
 // SetShippingMode sets the "shipping_mode" field.
 func (_u *ProductUpdate) SetShippingMode(v string) *ProductUpdate {
 	_u.mutation.SetShippingMode(v)
@@ -991,7 +1033,9 @@ func (_u *ProductUpdate) RemoveCards(v ...*Card) *ProductUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *ProductUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
+	if err := _u.defaults(); err != nil {
+		return 0, err
+	}
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -1018,11 +1062,15 @@ func (_u *ProductUpdate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *ProductUpdate) defaults() {
+func (_u *ProductUpdate) defaults() error {
 	if _, ok := _u.mutation.UpdatedAt(); !ok {
+		if product.UpdateDefaultUpdatedAt == nil {
+			return fmt.Errorf("ent: uninitialized product.UpdateDefaultUpdatedAt (forgotten import ent/runtime?)")
+		}
 		v := product.UpdateDefaultUpdatedAt()
 		_u.mutation.SetUpdatedAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -1030,6 +1078,11 @@ func (_u *ProductUpdate) check() error {
 	if v, ok := _u.mutation.Name(); ok {
 		if err := product.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Product.name": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ProductProperty(); ok {
+		if err := product.ProductPropertyValidator(v); err != nil {
+			return &ValidationError{Name: "product_property", err: fmt.Errorf(`ent: validator failed for field "Product.product_property": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.Slug(); ok {
@@ -1120,6 +1173,15 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.GoodsType(); ok {
 		_spec.SetField(product.FieldGoodsType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ProductProperty(); ok {
+		_spec.SetField(product.FieldProductProperty, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.TrackInventory(); ok {
+		_spec.SetField(product.FieldTrackInventory, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SalesVisible(); ok {
+		_spec.SetField(product.FieldSalesVisible, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.ShippingMode(); ok {
 		_spec.SetField(product.FieldShippingMode, field.TypeString, value)
@@ -1583,6 +1645,48 @@ func (_u *ProductUpdateOne) SetGoodsType(v string) *ProductUpdateOne {
 func (_u *ProductUpdateOne) SetNillableGoodsType(v *string) *ProductUpdateOne {
 	if v != nil {
 		_u.SetGoodsType(*v)
+	}
+	return _u
+}
+
+// SetProductProperty sets the "product_property" field.
+func (_u *ProductUpdateOne) SetProductProperty(v string) *ProductUpdateOne {
+	_u.mutation.SetProductProperty(v)
+	return _u
+}
+
+// SetNillableProductProperty sets the "product_property" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableProductProperty(v *string) *ProductUpdateOne {
+	if v != nil {
+		_u.SetProductProperty(*v)
+	}
+	return _u
+}
+
+// SetTrackInventory sets the "track_inventory" field.
+func (_u *ProductUpdateOne) SetTrackInventory(v bool) *ProductUpdateOne {
+	_u.mutation.SetTrackInventory(v)
+	return _u
+}
+
+// SetNillableTrackInventory sets the "track_inventory" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableTrackInventory(v *bool) *ProductUpdateOne {
+	if v != nil {
+		_u.SetTrackInventory(*v)
+	}
+	return _u
+}
+
+// SetSalesVisible sets the "sales_visible" field.
+func (_u *ProductUpdateOne) SetSalesVisible(v bool) *ProductUpdateOne {
+	_u.mutation.SetSalesVisible(v)
+	return _u
+}
+
+// SetNillableSalesVisible sets the "sales_visible" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableSalesVisible(v *bool) *ProductUpdateOne {
+	if v != nil {
+		_u.SetSalesVisible(*v)
 	}
 	return _u
 }
@@ -2424,7 +2528,9 @@ func (_u *ProductUpdateOne) Select(field string, fields ...string) *ProductUpdat
 
 // Save executes the query and returns the updated Product entity.
 func (_u *ProductUpdateOne) Save(ctx context.Context) (*Product, error) {
-	_u.defaults()
+	if err := _u.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -2451,11 +2557,15 @@ func (_u *ProductUpdateOne) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *ProductUpdateOne) defaults() {
+func (_u *ProductUpdateOne) defaults() error {
 	if _, ok := _u.mutation.UpdatedAt(); !ok {
+		if product.UpdateDefaultUpdatedAt == nil {
+			return fmt.Errorf("ent: uninitialized product.UpdateDefaultUpdatedAt (forgotten import ent/runtime?)")
+		}
 		v := product.UpdateDefaultUpdatedAt()
 		_u.mutation.SetUpdatedAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -2463,6 +2573,11 @@ func (_u *ProductUpdateOne) check() error {
 	if v, ok := _u.mutation.Name(); ok {
 		if err := product.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Product.name": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ProductProperty(); ok {
+		if err := product.ProductPropertyValidator(v); err != nil {
+			return &ValidationError{Name: "product_property", err: fmt.Errorf(`ent: validator failed for field "Product.product_property": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.Slug(); ok {
@@ -2570,6 +2685,15 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if value, ok := _u.mutation.GoodsType(); ok {
 		_spec.SetField(product.FieldGoodsType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ProductProperty(); ok {
+		_spec.SetField(product.FieldProductProperty, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.TrackInventory(); ok {
+		_spec.SetField(product.FieldTrackInventory, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SalesVisible(); ok {
+		_spec.SetField(product.FieldSalesVisible, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.ShippingMode(); ok {
 		_spec.SetField(product.FieldShippingMode, field.TypeString, value)

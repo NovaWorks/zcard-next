@@ -92,7 +92,7 @@ func (EmailVerification) Fields() []ent.Field {
 		field.Uint64("id"),
 		field.String("email").MaxLen(255).Comment("目标地址（邮箱或手机号；purpose 区分通道）"),
 		field.Uint64("user_id").Optional(),
-		field.Enum("purpose").Values("register", "phone_register", "reset"),
+		field.Enum("purpose").Values("register", "phone_register", "reset", "order_access"),
 		field.String("code_hash").MaxLen(128).Comment("验证码哈希"),
 		field.Time("expires_at").SchemaType(mysqlTime),
 		field.Time("verified_at").SchemaType(mysqlTime).Optional(),

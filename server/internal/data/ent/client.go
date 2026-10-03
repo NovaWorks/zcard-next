@@ -59,6 +59,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pageview"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/physicalreturnreceipt"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/physicalstockmovement"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointtransaction"
@@ -211,6 +212,8 @@ type Client struct {
 	Payment *PaymentClient
 	// PaymentChannel is the client for interacting with the PaymentChannel builders.
 	PaymentChannel *PaymentChannelClient
+	// PhysicalReturnReceipt is the client for interacting with the PhysicalReturnReceipt builders.
+	PhysicalReturnReceipt *PhysicalReturnReceiptClient
 	// PhysicalStockMovement is the client for interacting with the PhysicalStockMovement builders.
 	PhysicalStockMovement *PhysicalStockMovementClient
 	// PointAccount is the client for interacting with the PointAccount builders.
@@ -380,6 +383,7 @@ func (c *Client) init() {
 	c.PageView = NewPageViewClient(c.config)
 	c.Payment = NewPaymentClient(c.config)
 	c.PaymentChannel = NewPaymentChannelClient(c.config)
+	c.PhysicalReturnReceipt = NewPhysicalReturnReceiptClient(c.config)
 	c.PhysicalStockMovement = NewPhysicalStockMovementClient(c.config)
 	c.PointAccount = NewPointAccountClient(c.config)
 	c.PointTransaction = NewPointTransactionClient(c.config)
@@ -573,6 +577,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PageView:                 NewPageViewClient(cfg),
 		Payment:                  NewPaymentClient(cfg),
 		PaymentChannel:           NewPaymentChannelClient(cfg),
+		PhysicalReturnReceipt:    NewPhysicalReturnReceiptClient(cfg),
 		PhysicalStockMovement:    NewPhysicalStockMovementClient(cfg),
 		PointAccount:             NewPointAccountClient(cfg),
 		PointTransaction:         NewPointTransactionClient(cfg),
@@ -693,6 +698,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PageView:                 NewPageViewClient(cfg),
 		Payment:                  NewPaymentClient(cfg),
 		PaymentChannel:           NewPaymentChannelClient(cfg),
+		PhysicalReturnReceipt:    NewPhysicalReturnReceiptClient(cfg),
 		PhysicalStockMovement:    NewPhysicalStockMovementClient(cfg),
 		PointAccount:             NewPointAccountClient(cfg),
 		PointTransaction:         NewPointTransactionClient(cfg),
@@ -788,8 +794,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.MemberLevel, c.MemberProductGroup, c.Notification, c.NotificationLog,
 		c.NotifyBroadcast, c.NotifyTemplate, c.Order, c.OrderAmountLine,
 		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.PageView,
-		c.Payment, c.PaymentChannel, c.PhysicalStockMovement, c.PointAccount,
-		c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
+		c.Payment, c.PaymentChannel, c.PhysicalReturnReceipt, c.PhysicalStockMovement,
+		c.PointAccount, c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
 		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductContentBatch,
 		c.ProductControl, c.ProductDeliverySource, c.ProductSku, c.Promotion,
 		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
@@ -821,8 +827,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.MemberLevel, c.MemberProductGroup, c.Notification, c.NotificationLog,
 		c.NotifyBroadcast, c.NotifyTemplate, c.Order, c.OrderAmountLine,
 		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.PageView,
-		c.Payment, c.PaymentChannel, c.PhysicalStockMovement, c.PointAccount,
-		c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
+		c.Payment, c.PaymentChannel, c.PhysicalReturnReceipt, c.PhysicalStockMovement,
+		c.PointAccount, c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
 		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductContentBatch,
 		c.ProductControl, c.ProductDeliverySource, c.ProductSku, c.Promotion,
 		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
@@ -932,6 +938,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Payment.mutate(ctx, m)
 	case *PaymentChannelMutation:
 		return c.PaymentChannel.mutate(ctx, m)
+	case *PhysicalReturnReceiptMutation:
+		return c.PhysicalReturnReceipt.mutate(ctx, m)
 	case *PhysicalStockMovementMutation:
 		return c.PhysicalStockMovement.mutate(ctx, m)
 	case *PointAccountMutation:
@@ -7095,6 +7103,139 @@ func (c *PaymentChannelClient) mutate(ctx context.Context, m *PaymentChannelMuta
 	}
 }
 
+// PhysicalReturnReceiptClient is a client for the PhysicalReturnReceipt schema.
+type PhysicalReturnReceiptClient struct {
+	config
+}
+
+// NewPhysicalReturnReceiptClient returns a client for the PhysicalReturnReceipt from the given config.
+func NewPhysicalReturnReceiptClient(c config) *PhysicalReturnReceiptClient {
+	return &PhysicalReturnReceiptClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `physicalreturnreceipt.Hooks(f(g(h())))`.
+func (c *PhysicalReturnReceiptClient) Use(hooks ...Hook) {
+	c.hooks.PhysicalReturnReceipt = append(c.hooks.PhysicalReturnReceipt, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `physicalreturnreceipt.Intercept(f(g(h())))`.
+func (c *PhysicalReturnReceiptClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PhysicalReturnReceipt = append(c.inters.PhysicalReturnReceipt, interceptors...)
+}
+
+// Create returns a builder for creating a PhysicalReturnReceipt entity.
+func (c *PhysicalReturnReceiptClient) Create() *PhysicalReturnReceiptCreate {
+	mutation := newPhysicalReturnReceiptMutation(c.config, OpCreate)
+	return &PhysicalReturnReceiptCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PhysicalReturnReceipt entities.
+func (c *PhysicalReturnReceiptClient) CreateBulk(builders ...*PhysicalReturnReceiptCreate) *PhysicalReturnReceiptCreateBulk {
+	return &PhysicalReturnReceiptCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PhysicalReturnReceiptClient) MapCreateBulk(slice any, setFunc func(*PhysicalReturnReceiptCreate, int)) *PhysicalReturnReceiptCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PhysicalReturnReceiptCreateBulk{err: fmt.Errorf("calling to PhysicalReturnReceiptClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PhysicalReturnReceiptCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PhysicalReturnReceiptCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PhysicalReturnReceipt.
+func (c *PhysicalReturnReceiptClient) Update() *PhysicalReturnReceiptUpdate {
+	mutation := newPhysicalReturnReceiptMutation(c.config, OpUpdate)
+	return &PhysicalReturnReceiptUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PhysicalReturnReceiptClient) UpdateOne(_m *PhysicalReturnReceipt) *PhysicalReturnReceiptUpdateOne {
+	mutation := newPhysicalReturnReceiptMutation(c.config, OpUpdateOne, withPhysicalReturnReceipt(_m))
+	return &PhysicalReturnReceiptUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PhysicalReturnReceiptClient) UpdateOneID(id uint64) *PhysicalReturnReceiptUpdateOne {
+	mutation := newPhysicalReturnReceiptMutation(c.config, OpUpdateOne, withPhysicalReturnReceiptID(id))
+	return &PhysicalReturnReceiptUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PhysicalReturnReceipt.
+func (c *PhysicalReturnReceiptClient) Delete() *PhysicalReturnReceiptDelete {
+	mutation := newPhysicalReturnReceiptMutation(c.config, OpDelete)
+	return &PhysicalReturnReceiptDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PhysicalReturnReceiptClient) DeleteOne(_m *PhysicalReturnReceipt) *PhysicalReturnReceiptDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PhysicalReturnReceiptClient) DeleteOneID(id uint64) *PhysicalReturnReceiptDeleteOne {
+	builder := c.Delete().Where(physicalreturnreceipt.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PhysicalReturnReceiptDeleteOne{builder}
+}
+
+// Query returns a query builder for PhysicalReturnReceipt.
+func (c *PhysicalReturnReceiptClient) Query() *PhysicalReturnReceiptQuery {
+	return &PhysicalReturnReceiptQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePhysicalReturnReceipt},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PhysicalReturnReceipt entity by its id.
+func (c *PhysicalReturnReceiptClient) Get(ctx context.Context, id uint64) (*PhysicalReturnReceipt, error) {
+	return c.Query().Where(physicalreturnreceipt.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PhysicalReturnReceiptClient) GetX(ctx context.Context, id uint64) *PhysicalReturnReceipt {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PhysicalReturnReceiptClient) Hooks() []Hook {
+	return c.hooks.PhysicalReturnReceipt
+}
+
+// Interceptors returns the client interceptors.
+func (c *PhysicalReturnReceiptClient) Interceptors() []Interceptor {
+	return c.inters.PhysicalReturnReceipt
+}
+
+func (c *PhysicalReturnReceiptClient) mutate(ctx context.Context, m *PhysicalReturnReceiptMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PhysicalReturnReceiptCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PhysicalReturnReceiptUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PhysicalReturnReceiptUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PhysicalReturnReceiptDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PhysicalReturnReceipt mutation op: %q", m.Op())
+	}
+}
+
 // PhysicalStockMovementClient is a client for the PhysicalStockMovement schema.
 type PhysicalStockMovementClient struct {
 	config
@@ -8301,7 +8442,8 @@ func (c *ProductClient) QueryCards(_m *Product) *CardQuery {
 
 // Hooks returns the client hooks.
 func (c *ProductClient) Hooks() []Hook {
-	return c.hooks.Product
+	hooks := c.hooks.Product
+	return append(hooks[:len(hooks):len(hooks)], product.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.
@@ -14751,8 +14893,8 @@ type (
 		MediaCategory, MemberLevel, MemberProductGroup, Notification, NotificationLog,
 		NotifyBroadcast, NotifyTemplate, Order, OrderAmountLine, OrderDelivery,
 		OrderItem, OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel,
-		PhysicalStockMovement, PointAccount, PointTransaction, Post, PostCategory,
-		ProcessedEvent, ProcurementItem, ProcurementOrder, Product,
+		PhysicalReturnReceipt, PhysicalStockMovement, PointAccount, PointTransaction,
+		Post, PostCategory, ProcessedEvent, ProcurementItem, ProcurementOrder, Product,
 		ProductContentBatch, ProductControl, ProductDeliverySource, ProductSku,
 		Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
 		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
@@ -14773,8 +14915,8 @@ type (
 		MediaCategory, MemberLevel, MemberProductGroup, Notification, NotificationLog,
 		NotifyBroadcast, NotifyTemplate, Order, OrderAmountLine, OrderDelivery,
 		OrderItem, OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel,
-		PhysicalStockMovement, PointAccount, PointTransaction, Post, PostCategory,
-		ProcessedEvent, ProcurementItem, ProcurementOrder, Product,
+		PhysicalReturnReceipt, PhysicalStockMovement, PointAccount, PointTransaction,
+		Post, PostCategory, ProcessedEvent, ProcurementItem, ProcurementOrder, Product,
 		ProductContentBatch, ProductControl, ProductDeliverySource, ProductSku,
 		Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
 		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,

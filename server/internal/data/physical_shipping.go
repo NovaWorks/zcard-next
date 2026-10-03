@@ -203,7 +203,7 @@ func PhysicalNotification(ctx context.Context, d *Data, o *ent.Order, event, key
 			email = u.Email
 		}
 	}
-	payload := map[string]any{"order_no": o.OrderNo, "order_id": o.ID, "subsite_id": o.SubsiteID, "user_id": o.UserID, "email": email}
+	payload := map[string]any{"order_no": o.OrderNo, "order_id": o.ID, "subsite_id": o.SubsiteID, "user_id": o.UserID, "email": email, "goods_type": "physical"}
 	for k, v := range values {
 		payload[k] = v
 	}

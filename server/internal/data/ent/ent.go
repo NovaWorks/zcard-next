@@ -56,6 +56,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pageview"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/physicalreturnreceipt"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/physicalstockmovement"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointtransaction"
@@ -217,6 +218,7 @@ func checkColumn(t, c string) error {
 			pageview.Table:                 pageview.ValidColumn,
 			payment.Table:                  payment.ValidColumn,
 			paymentchannel.Table:           paymentchannel.ValidColumn,
+			physicalreturnreceipt.Table:    physicalreturnreceipt.ValidColumn,
 			physicalstockmovement.Table:    physicalstockmovement.ValidColumn,
 			pointaccount.Table:             pointaccount.ValidColumn,
 			pointtransaction.Table:         pointtransaction.ValidColumn,

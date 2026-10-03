@@ -336,6 +336,20 @@ func (_u *OrderItemUpdate) SetNillableGoodsType(v *string) *OrderItemUpdate {
 	return _u
 }
 
+// SetInventoryTracked sets the "inventory_tracked" field.
+func (_u *OrderItemUpdate) SetInventoryTracked(v bool) *OrderItemUpdate {
+	_u.mutation.SetInventoryTracked(v)
+	return _u
+}
+
+// SetNillableInventoryTracked sets the "inventory_tracked" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableInventoryTracked(v *bool) *OrderItemUpdate {
+	if v != nil {
+		_u.SetInventoryTracked(*v)
+	}
+	return _u
+}
+
 // SetPaidAmount sets the "paid_amount" field.
 func (_u *OrderItemUpdate) SetPaidAmount(v int64) *OrderItemUpdate {
 	_u.mutation.ResetPaidAmount()
@@ -761,6 +775,9 @@ func (_u *OrderItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.GoodsType(); ok {
 		_spec.SetField(orderitem.FieldGoodsType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.InventoryTracked(); ok {
+		_spec.SetField(orderitem.FieldInventoryTracked, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.PaidAmount(); ok {
 		_spec.SetField(orderitem.FieldPaidAmount, field.TypeInt64, value)
@@ -1188,6 +1205,20 @@ func (_u *OrderItemUpdateOne) SetGoodsType(v string) *OrderItemUpdateOne {
 func (_u *OrderItemUpdateOne) SetNillableGoodsType(v *string) *OrderItemUpdateOne {
 	if v != nil {
 		_u.SetGoodsType(*v)
+	}
+	return _u
+}
+
+// SetInventoryTracked sets the "inventory_tracked" field.
+func (_u *OrderItemUpdateOne) SetInventoryTracked(v bool) *OrderItemUpdateOne {
+	_u.mutation.SetInventoryTracked(v)
+	return _u
+}
+
+// SetNillableInventoryTracked sets the "inventory_tracked" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableInventoryTracked(v *bool) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetInventoryTracked(*v)
 	}
 	return _u
 }
@@ -1647,6 +1678,9 @@ func (_u *OrderItemUpdateOne) sqlSave(ctx context.Context) (_node *OrderItem, er
 	}
 	if value, ok := _u.mutation.GoodsType(); ok {
 		_spec.SetField(orderitem.FieldGoodsType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.InventoryTracked(); ok {
+		_spec.SetField(orderitem.FieldInventoryTracked, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.PaidAmount(); ok {
 		_spec.SetField(orderitem.FieldPaidAmount, field.TypeInt64, value)

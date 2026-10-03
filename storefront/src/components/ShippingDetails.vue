@@ -3,7 +3,8 @@ import { uiText, t as $t } from '@/i18n';
 
 import { computed, ref } from "vue";
 import { api, formatMoney } from "@/api/client";
-import { shippingStatus, shipments } from "../../../packages/shipping";
+import { getOrderAccessToken } from "@/api";
+import { shippingStatus, shipments, addressLines } from "../../../packages/shipping";
 const props = defineProps<{ order: any; password: string }>();
 const emit = defineEmits<{ refresh: [] }>();
 const busy = ref(false);
@@ -15,6 +16,7 @@ async function receive(id: number) {
   const r = await api.post(`/orders/${props.order.order_no}/receive`, {
     shipment_id: id,
     query_password: props.password,
+    order_access_token: getOrderAccessToken(props.order.order_no),
   });
   busy.value = false;
   if (r.error) {
@@ -27,17 +29,12 @@ async function receive(id: number) {
 </script>
 <template>
   <section class="card shipping-details" :aria-label="$t('收货及配送信息')">
-    <h3>{{ $t('实体配送 ·') }} {{ shippingStatus(order.shipping_status) }}</h3>
+    <h3>{{ $t('实体配送 ·') }} {{ $t(shippingStatus(order.shipping_status) || '') }}</h3>
     <p>{{ order.shipping_address?.name }} · {{ order.shipping_address?.phone }}</p>
-    <p>
-      {{ order.shipping_address?.country }} {{ order.shipping_address?.region }}
-      {{ order.shipping_address?.city }} {{ order.shipping_address?.district }}
-      {{ order.shipping_address?.address }}
-    </p>
-    <p> {{ $t('邮编：') }}{{ order.shipping_address?.postal_code || $t('无需填写') }} {{ $t('· 运费') }} {{ formatMoney(order.shipping_cents || 0) }}
-    </p>
+    <p v-for="(line, index) in addressLines(order.shipping_address || {})" :key="index">{{ line }}</p>
+    <p>{{ $t('运费') }} {{ formatMoney(order.shipping_cents || 0) }}</p>
     <p v-for="it in (order.items || []).filter((i: any) => i.goods_type === 'physical')" :key="it.id" class="muted">
-      {{ it.product_name }}{{ $t('：购买') }} {{ it.quantity }} {{ $t('件 · 已发') }} {{ it.shipped_quantity || 0 }} {{ $t('件 · 已收') }} {{ it.received_quantity || 0 }} {{ $t('件') }}<span v-if="it.canceled_quantity"> {{ $t('· 已取消') }} {{ it.canceled_quantity }} {{ $t('件') }}</span><span v-if="it.returned_quantity"> {{ $t('· 退回入库') }} {{ it.returned_quantity }} {{ $t('件') }}</span>
+      {{ it.product_name }}{{ $t('：购买') }} {{ it.quantity }} {{ $t('件 · 已发') }} {{ it.shipped_quantity || 0 }} {{ $t('件 · 已收') }} {{ it.received_quantity || 0 }} {{ $t('件') }}<span v-if="it.canceled_quantity"> {{ $t('· 已取消') }} {{ it.canceled_quantity }} {{ $t('件') }}</span><span v-if="it.returned_quantity"> {{ $t('· 已退货') }} {{ it.returned_quantity }} {{ $t('件') }}</span>
     </p>
     <p v-if="!packages.length" class="muted">
       {{

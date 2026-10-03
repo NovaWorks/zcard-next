@@ -135,6 +135,11 @@ func GoodsType(v string) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldGoodsType, v))
 }
 
+// InventoryTracked applies equality check predicate on the "inventory_tracked" field. It's identical to InventoryTrackedEQ.
+func InventoryTracked(v bool) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldInventoryTracked, v))
+}
+
 // PaidAmount applies equality check predicate on the "paid_amount" field. It's identical to PaidAmountEQ.
 func PaidAmount(v int64) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldPaidAmount, v))
@@ -978,6 +983,16 @@ func GoodsTypeEqualFold(v string) predicate.OrderItem {
 // GoodsTypeContainsFold applies the ContainsFold predicate on the "goods_type" field.
 func GoodsTypeContainsFold(v string) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldContainsFold(FieldGoodsType, v))
+}
+
+// InventoryTrackedEQ applies the EQ predicate on the "inventory_tracked" field.
+func InventoryTrackedEQ(v bool) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldInventoryTracked, v))
+}
+
+// InventoryTrackedNEQ applies the NEQ predicate on the "inventory_tracked" field.
+func InventoryTrackedNEQ(v bool) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldInventoryTracked, v))
 }
 
 // PaidAmountEQ applies the EQ predicate on the "paid_amount" field.

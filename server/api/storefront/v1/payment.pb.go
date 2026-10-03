@@ -321,14 +321,15 @@ func (x *MethodItem) GetIcon() string {
 }
 
 type CreatePaymentRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuoteKey      string                 `protobuf:"bytes,4,opt,name=quote_key,json=quoteKey,proto3" json:"quote_key,omitempty"`
-	QueryPassword string                 `protobuf:"bytes,5,opt,name=query_password,json=queryPassword,proto3" json:"query_password,omitempty"`
-	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	Channel       string                 `protobuf:"bytes,2,opt,name=channel,proto3" json:"channel,omitempty"`
-	Method        string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"` // 支付方式 code（多方式渠道必选；单方式渠道可空）
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	OrderAccessToken string                 `protobuf:"bytes,6,opt,name=order_access_token,json=orderAccessToken,proto3" json:"order_access_token,omitempty"`
+	QuoteKey         string                 `protobuf:"bytes,4,opt,name=quote_key,json=quoteKey,proto3" json:"quote_key,omitempty"`
+	QueryPassword    string                 `protobuf:"bytes,5,opt,name=query_password,json=queryPassword,proto3" json:"query_password,omitempty"`
+	OrderNo          string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	Channel          string                 `protobuf:"bytes,2,opt,name=channel,proto3" json:"channel,omitempty"`
+	Method           string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"` // 支付方式 code（多方式渠道必选；单方式渠道可空）
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *CreatePaymentRequest) Reset() {
@@ -359,6 +360,13 @@ func (x *CreatePaymentRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreatePaymentRequest.ProtoReflect.Descriptor instead.
 func (*CreatePaymentRequest) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CreatePaymentRequest) GetOrderAccessToken() string {
+	if x != nil {
+		return x.OrderAccessToken
+	}
+	return ""
 }
 
 func (x *CreatePaymentRequest) GetQuoteKey() string {
@@ -465,15 +473,16 @@ func (x *CreatePaymentReply) GetPayload() string {
 }
 
 type PaymentQuoteRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	Channel       string                 `protobuf:"bytes,2,opt,name=channel,proto3" json:"channel,omitempty"`
-	Method        string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
-	Scene         string                 `protobuf:"bytes,4,opt,name=scene,proto3" json:"scene,omitempty"`
-	AmountCents   int64                  `protobuf:"varint,5,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
-	QueryPassword string                 `protobuf:"bytes,6,opt,name=query_password,json=queryPassword,proto3" json:"query_password,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	OrderAccessToken string                 `protobuf:"bytes,7,opt,name=order_access_token,json=orderAccessToken,proto3" json:"order_access_token,omitempty"`
+	OrderNo          string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	Channel          string                 `protobuf:"bytes,2,opt,name=channel,proto3" json:"channel,omitempty"`
+	Method           string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
+	Scene            string                 `protobuf:"bytes,4,opt,name=scene,proto3" json:"scene,omitempty"`
+	AmountCents      int64                  `protobuf:"varint,5,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
+	QueryPassword    string                 `protobuf:"bytes,6,opt,name=query_password,json=queryPassword,proto3" json:"query_password,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *PaymentQuoteRequest) Reset() {
@@ -504,6 +513,13 @@ func (x *PaymentQuoteRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use PaymentQuoteRequest.ProtoReflect.Descriptor instead.
 func (*PaymentQuoteRequest) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *PaymentQuoteRequest) GetOrderAccessToken() string {
+	if x != nil {
+		return x.OrderAccessToken
+	}
+	return ""
 }
 
 func (x *PaymentQuoteRequest) GetOrderNo() string {
@@ -718,8 +734,9 @@ const file_storefront_v1_payment_proto_rawDesc = "" +
 	"\vrecommended\x18\x04 \x01(\bR\vrecommended\x12'\n" +
 	"\x0frecommend_label\x18\x05 \x01(\tR\x0erecommendLabel\x123\n" +
 	"\x15recommend_description\x18\x06 \x01(\tR\x14recommendDescription\x12\x12\n" +
-	"\x04icon\x18\x03 \x01(\tR\x04icon\"\xb1\x01\n" +
-	"\x14CreatePaymentRequest\x12\x1b\n" +
+	"\x04icon\x18\x03 \x01(\tR\x04icon\"\xdf\x01\n" +
+	"\x14CreatePaymentRequest\x12,\n" +
+	"\x12order_access_token\x18\x06 \x01(\tR\x10orderAccessToken\x12\x1b\n" +
 	"\tquote_key\x18\x04 \x01(\tR\bquoteKey\x12%\n" +
 	"\x0equery_password\x18\x05 \x01(\tR\rqueryPassword\x12\x1e\n" +
 	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12\x1d\n" +
@@ -730,8 +747,9 @@ const file_storefront_v1_payment_proto_rawDesc = "" +
 	"\n" +
 	"payment_id\x18\x01 \x01(\x04R\tpaymentId\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x18\n" +
-	"\apayload\x18\x03 \x01(\tR\apayload\"\xc2\x01\n" +
-	"\x13PaymentQuoteRequest\x12\x19\n" +
+	"\apayload\x18\x03 \x01(\tR\apayload\"\xf0\x01\n" +
+	"\x13PaymentQuoteRequest\x12,\n" +
+	"\x12order_access_token\x18\a \x01(\tR\x10orderAccessToken\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x18\n" +
 	"\achannel\x18\x02 \x01(\tR\achannel\x12\x16\n" +
 	"\x06method\x18\x03 \x01(\tR\x06method\x12\x14\n" +

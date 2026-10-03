@@ -10,6 +10,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	entorder "github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/orderaccess"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/shipping"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 	kerrors "github.com/go-kratos/kratos/v3/errors"
@@ -42,7 +43,7 @@ func (s *StoreOrderService) ShippingRegions(ctx context.Context, req *storefront
 	return &storefrontv1.ShippingRegionsReply{DataJson: string(b)}, nil
 }
 func (s *StoreOrderService) ReceiveShipment(ctx context.Context, req *storefrontv1.ReceiveShipmentRequest) (*emptypb.Empty, error) {
-	if _, e := s.GetOrder(ctx, &storefrontv1.GetOrderRequest{OrderNo: req.OrderNo, QueryPassword: req.QueryPassword}); e != nil {
+	if _, e := s.GetOrder(ctx, &storefrontv1.GetOrderRequest{OrderNo: req.OrderNo, QueryPassword: req.QueryPassword, OrderAccessToken: req.OrderAccessToken}); e != nil {
 		return nil, e
 	}
 	if e := data.ReceivePhysicalShipment(ctx, s.uc.Data, req.OrderNo, req.ShipmentId, "user", 0); e != nil {
@@ -98,5 +99,21 @@ func (uc *OrderUsecase) ReplayOrder(ctx context.Context, in CreateOrderInput) (*
 	if prev.RequestHash != "" && prev.RequestHash != orderRequestHash(in) {
 		return nil, fmt.Errorf("order.FORM_INVALID: 同一请求标识不能用于不同订单内容")
 	}
-	return &CreateOrderResult{OrderNo: prev.OrderNo, TotalCents: prev.TotalAmount, ShippingCents: prev.ShippingAmount, ExpiresAt: prev.ExpiredAt}, nil
+	return uc.replayOrderResult(prev, in)
+}
+
+// A token is re-issued only for the same unpredictable request key and complete payload.
+func (uc *OrderUsecase) replayOrderResult(prev *ent.Order, in CreateOrderInput) (*CreateOrderResult, error) {
+	result := &CreateOrderResult{OrderNo: prev.OrderNo, TotalCents: prev.TotalAmount, ShippingCents: prev.ShippingAmount, ExpiresAt: prev.ExpiredAt}
+	if prev.OrderAccessTokenHash != "" {
+		if !orderaccess.SecureRequestKey(in.IdempotencyKey) || prev.RequestHash == "" || prev.RequestHash != orderRequestHash(in) || uc.AccessCipher == nil {
+			return nil, fmt.Errorf("order.FORM_INVALID: 无法恢复此订单授权，请通过邮箱查询订单")
+		}
+		token, err := uc.AccessCipher.OpenOrderAccess(prev.OrderAccessTokenSecret, prev.OrderNo, prev.SubsiteID)
+		if err != nil || !orderaccess.VerifyToken(prev.OrderAccessTokenHash, prev.SubsiteID, prev.OrderNo, token) {
+			return nil, fmt.Errorf("order.CREATE_FAILED: 订单授权暂时不可用，请通过邮箱查询订单")
+		}
+		result.OrderAccessToken = token
+	}
+	return result, nil
 }

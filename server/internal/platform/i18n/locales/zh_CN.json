@@ -9,5 +9,11 @@
   "identity.admin_disabled": "账号已禁用",
   "identity.totp_required": "需要两步验证码",
   "authz.permission_denied": "权限不足：{permission}",
-  "settings.not_found": "设置项不存在"
+  "settings.not_found": "设置项不存在",
+  "order.access_required": "订单访问凭证无效，请使用保存的访问链接或通过下单邮箱验证",
+  "order.access_code_invalid": "订单或邮箱不匹配，或验证码无效、已使用或已过期",
+  "order.access_contact_invalid": "请填写订单号和下单邮箱",
+  "order.access_recovery_unavailable": "订单邮件验证暂时不可用，请稍后重试",
+  "order.access_email_unavailable": "邮箱验证通道尚未配置，请联系客服",
+  "order.access_email_failed": "验证码邮件暂未送达，请稍后重试或联系客服"
 }

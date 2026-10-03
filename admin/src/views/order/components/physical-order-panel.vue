@@ -22,6 +22,11 @@ import {
   shipments,
   countryOptions,
   regionOptions,
+  emptyAddress,
+  addressFields,
+  addressRequired,
+  addressLines,
+  validateAddress,
   type RegionData,
 } from "../../../../../packages/shipping";
 import { newRequestId } from "../../../../../packages/request-id";
@@ -128,18 +133,31 @@ const refundTotal = computed(() =>
 );
 const regions = ref<RegionData>({});
 const address = reactive<Record<string, string>>({});
+const addressErrors = ref<Record<string, string>>({});
+const addressLocationFields = computed(() => addressFields(regions.value, address.country || ""));
+const addressFieldNames = { city: "郊区或城市", district: "区 / 县", region: "州 / 省 / 地区", postal_code: "邮政编码" };
 const editAddress = ref(false);
 const correctionReason = ref("");
+watch(address, () => {
+  if (Object.keys(addressErrors.value).length) addressErrors.value = validateAddress(address, regions.value);
+});
 watch(
   () => props.order,
   () => {
     selected.value = [];
     showRefund.value = false;
     editAddress.value = false;
-    Object.assign(address, props.order.shipping_address || {});
+    for (const key of Object.keys(address)) delete address[key];
+    Object.assign(address, emptyAddress(), props.order.shipping_address || {});
+    addressErrors.value = {};
   },
   { immediate: true },
 );
+async function saveAddress() {
+  addressErrors.value = validateAddress(address, regions.value);
+  if (Object.keys(addressErrors.value).length || !correctionReason.value.trim()) return;
+  await act("shipping", { address: { ...address }, reason: correctionReason.value });
+}
 onMounted(async () => {
   const r = await request<{ data_json: string }>({
     url: "/api/v1/storefront/shipping/regions",
@@ -297,14 +315,8 @@ async function restock() {
       ><NTag type="info">{{ shippingStatus(order.shipping_status) }}</NTag
       ><span>运费 {{ formatMoney(order.shipping_cents || 0) }}</span></NSpace
     >
-    <p class="break-all">
-      {{ order.shipping_address?.name }} · {{ order.shipping_address?.phone }} ·
-      {{ order.shipping_address?.country }}
-      {{ order.shipping_address?.region }} {{ order.shipping_address?.city }}
-      {{ order.shipping_address?.district }}
-      {{ order.shipping_address?.address }} · 邮编
-      {{ order.shipping_address?.postal_code || "无" }}
-    </p>
+    <p class="break-all">{{ order.shipping_address?.name }} · {{ order.shipping_address?.phone }}</p>
+    <p v-for="(line, index) in addressLines(order.shipping_address || {})" :key="index" class="break-all">{{ line }}</p>
     <NButton
       v-if="editable && !packages.length && checkAuth('order:deliver')"
       size="small"
@@ -319,33 +331,22 @@ async function restock() {
           disabled
           :options="countryOptions(regions)"
       /></NFormItem>
-      <NFormItem label="省 / 州 / 地区"
-        ><NSelect
-          v-if="regionOptions(regions, address.country || '').length"
-          v-model:value="address.region"
-          :options="regionOptions(regions, address.country || '')" /><NInput
-          v-else
-          v-model:value="address.region"
-      /></NFormItem>
-      <NFormItem
-        v-for="f in [
-          { key: 'city', label: '城市' },
-          { key: 'district', label: '区 / 县' },
-          { key: 'address', label: '详细地址' },
-          { key: 'name', label: '姓名' },
-          { key: 'phone', label: '电话' },
-          { key: 'postal_code', label: '邮编' },
-        ]"
-        :key="f.key"
-        :label="f.label"
-        ><NInput v-model:value="address[f.key]" :maxlength="300"
-      /></NFormItem>
+      <NFormItem v-for="field in [{ key: 'address', label: '地址第一行' }, { key: 'address_line2', label: '地址第二行（选填）' }]" :key="field.key" :label="field.label" :validation-status="addressErrors[field.key] ? 'error' : undefined" :feedback="addressErrors[field.key]">
+        <NInput v-model:value="address[field.key]" :maxlength="300" />
+      </NFormItem>
+      <NFormItem v-for="field in addressLocationFields" :key="field" :label="addressFieldNames[field] + (addressRequired(regions, address.country, field) ? '' : '（选填）')" :validation-status="addressErrors[field] ? 'error' : undefined" :feedback="addressErrors[field]">
+        <NSelect v-if="field === 'region' && regionOptions(regions, address.country || '').length" v-model:value="address.region" :options="regionOptions(regions, address.country || '')" :clearable="!addressRequired(regions, address.country, field)" />
+        <NInput v-else v-model:value="address[field]" :maxlength="field === 'postal_code' ? 30 : 100" />
+      </NFormItem>
+      <NFormItem v-for="field in [{ key: 'name', label: '收货人姓名' }, { key: 'phone', label: '电话号码' }]" :key="field.key" :label="field.label" :validation-status="addressErrors[field.key] ? 'error' : undefined" :feedback="addressErrors[field.key]">
+        <NInput v-model:value="address[field.key]" :maxlength="field.key === 'phone' ? 30 : 100" />
+      </NFormItem>
       <NFormItem label="更正原因"
         ><NInput v-model:value="correctionReason" :maxlength="120" /></NFormItem
       ><NButton
         :loading="busy"
         :disabled="!correctionReason.trim()"
-        @click="act('shipping', { address, reason: correctionReason })"
+        @click="saveAddress"
         >保存地址</NButton
       >
     </div>
@@ -457,12 +458,12 @@ async function restock() {
           size="small"
           class="mr-8px"
           @click="startReturn(it)"
-          >{{ refundItemName(it.id) }}：退货验收入库</NButton
+          >{{ refundItemName(it.id) }}：{{ it.inventory_tracked === false ? '登记退货' : '退货验收入库' }}</NButton
         ></template
       >
     </div>
     <div v-if="returnItem" class="shipping-grid">
-      <NFormItem label="验收入库数量"
+      <NFormItem :label="returnItem.inventory_tracked === false ? '退货登记数量' : '验收入库数量'"
         ><NInputNumber
           v-model:value="returnQty"
           :min="1"
@@ -476,9 +477,9 @@ async function restock() {
       ><NPopconfirm @positive-click="restock"
         ><template #trigger
           ><NButton :loading="busy" :disabled="!returnReason.trim()"
-            >确认商品已退回并可重新销售</NButton
+            >{{ returnItem.inventory_tracked === false ? '确认商品已退回' : '确认商品已退回并可重新销售' }}</NButton
           ></template
-        >此操作会增加可售库存，不会自动退款。</NPopconfirm
+        >{{ returnItem.inventory_tracked === false ? '登记已验收的退货，不调整库存，不会自动退款。' : '此操作会增加可售库存，不会自动退款。' }}</NPopconfirm
       >
     </div>
     <section

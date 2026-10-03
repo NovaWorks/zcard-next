@@ -565,7 +565,7 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 	client := data.Client(ctx, s.data)
 
 	// 查订单
-	o, err := s.paymentOrder(ctx, req.GetOrderNo(), req.GetQueryPassword())
+	o, err := s.paymentOrder(ctx, req.GetOrderNo(), req.GetQueryPassword(), req.GetOrderAccessToken())
 	if err != nil {
 		return nil, err
 	}

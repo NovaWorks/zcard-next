@@ -133,6 +133,9 @@ func AdmitDeliverySource(ctx context.Context, d *Data, p *ent.Product, skuID uin
 }
 func LocalSKUStock(ctx context.Context, d *Data, p *ent.Product, sku *ent.ProductSku) (int64, error) {
 	if p.GoodsType == "physical" {
+		if !p.TrackInventory {
+			return -1, nil
+		}
 		if sku != nil {
 			return sku.PhysicalStock, nil
 		}

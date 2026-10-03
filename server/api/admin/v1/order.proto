@@ -99,6 +99,7 @@ message AdminOrderItem {
   int32 shipped_quantity = 36;
   int32 received_quantity = 37;
   int32 returned_quantity = 38;
+  optional bool inventory_tracked = 39;
   string form_answers_json = 18;
   uint64 assigned_admin_id = 19;
   uint64 id = 17; // 订单商品项 ID，人工补发使用

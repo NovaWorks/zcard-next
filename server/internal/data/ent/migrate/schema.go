@@ -450,7 +450,7 @@ var (
 		{Name: "id", Type: field.TypeUint64, Increment: true},
 		{Name: "email", Type: field.TypeString, Size: 255},
 		{Name: "user_id", Type: field.TypeUint64, Nullable: true},
-		{Name: "purpose", Type: field.TypeEnum, Enums: []string{"register", "phone_register", "reset"}},
+		{Name: "purpose", Type: field.TypeEnum, Enums: []string{"register", "phone_register", "reset", "order_access"}},
 		{Name: "code_hash", Type: field.TypeString, Size: 128},
 		{Name: "expires_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "verified_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
@@ -1079,6 +1079,8 @@ var (
 		{Name: "user_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "guest_contact", Type: field.TypeString, Nullable: true, Size: 150},
 		{Name: "query_password_hash", Type: field.TypeString, Nullable: true, Size: 128},
+		{Name: "order_access_token_hash", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "order_access_token_secret", Type: field.TypeBytes, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending_payment", "paid", "fulfilling", "partially_delivered", "delivered", "completed", "canceled", "expired", "refund_pending", "refunded"}, Default: "pending_payment"},
 		{Name: "commerce_version", Type: field.TypeInt32, Default: 0},
 		{Name: "shipping_amount", Type: field.TypeInt64, Default: 0},
@@ -1126,32 +1128,32 @@ var (
 			{
 				Name:    "order_user_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[12]},
+				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[14]},
 			},
 			{
 				Name:    "order_status_expired_at",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[12], OrdersColumns[39]},
+				Columns: []*schema.Column{OrdersColumns[14], OrdersColumns[41]},
 			},
 			{
 				Name:    "order_parent_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[29]},
+				Columns: []*schema.Column{OrdersColumns[31]},
 			},
 			{
 				Name:    "order_escrow_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[30]},
+				Columns: []*schema.Column{OrdersColumns[32]},
 			},
 			{
 				Name:    "order_invite_l1",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[31]},
+				Columns: []*schema.Column{OrdersColumns[33]},
 			},
 			{
 				Name:    "order_risk_ip_user_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[27], OrdersColumns[9], OrdersColumns[12]},
+				Columns: []*schema.Column{OrdersColumns[29], OrdersColumns[9], OrdersColumns[14]},
 			},
 		},
 	}
@@ -1258,6 +1260,7 @@ var (
 		{Name: "amount", Type: field.TypeInt64},
 		{Name: "cost", Type: field.TypeInt64, Default: 0},
 		{Name: "goods_type", Type: field.TypeString, Default: "virtual"},
+		{Name: "inventory_tracked", Type: field.TypeBool, Default: true},
 		{Name: "paid_amount", Type: field.TypeInt64, Default: 0},
 		{Name: "shipping_amount", Type: field.TypeInt64, Default: 0},
 		{Name: "refunded_amount", Type: field.TypeInt64, Default: 0},
@@ -1281,7 +1284,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "order_items_orders_items",
-				Columns:    []*schema.Column{OrderItemsColumns[31]},
+				Columns:    []*schema.Column{OrderItemsColumns[32]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1290,12 +1293,12 @@ var (
 			{
 				Name:    "orderitem_delivery_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrderItemsColumns[27]},
+				Columns: []*schema.Column{OrderItemsColumns[28]},
 			},
 			{
 				Name:    "orderitem_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrderItemsColumns[31]},
+				Columns: []*schema.Column{OrderItemsColumns[32]},
 			},
 			{
 				Name:    "orderitem_product_id",
@@ -1497,6 +1500,38 @@ var (
 				Name:    "paymentchannel_subsite_id_code",
 				Unique:  true,
 				Columns: []*schema.Column{PaymentChannelsColumns[3], PaymentChannelsColumns[5]},
+			},
+		},
+	}
+	// PhysicalReturnReceiptsColumns holds the columns for the "physical_return_receipts" table.
+	PhysicalReturnReceiptsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "order_id", Type: field.TypeUint64},
+		{Name: "item_id", Type: field.TypeUint64},
+		{Name: "quantity", Type: field.TypeInt32},
+		{Name: "request_key", Type: field.TypeString, Unique: true, Size: 128},
+		{Name: "request_hash", Type: field.TypeString, Size: 64},
+		{Name: "reason", Type: field.TypeString, Size: 120},
+		{Name: "inventory_tracked", Type: field.TypeBool},
+	}
+	// PhysicalReturnReceiptsTable holds the schema information for the "physical_return_receipts" table.
+	PhysicalReturnReceiptsTable = &schema.Table{
+		Name:       "physical_return_receipts",
+		Columns:    PhysicalReturnReceiptsColumns,
+		PrimaryKey: []*schema.Column{PhysicalReturnReceiptsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "physicalreturnreceipt_order_id",
+				Unique:  false,
+				Columns: []*schema.Column{PhysicalReturnReceiptsColumns[4]},
+			},
+			{
+				Name:    "physicalreturnreceipt_item_id",
+				Unique:  false,
+				Columns: []*schema.Column{PhysicalReturnReceiptsColumns[5]},
 			},
 		},
 	}
@@ -1720,6 +1755,9 @@ var (
 		{Name: "category_protected", Type: field.TypeBool, Default: false},
 		{Name: "name", Type: field.TypeString, Size: 1024},
 		{Name: "goods_type", Type: field.TypeString, Default: "virtual"},
+		{Name: "product_property", Type: field.TypeString, Size: 16, Default: ""},
+		{Name: "track_inventory", Type: field.TypeBool, Default: true},
+		{Name: "sales_visible", Type: field.TypeBool, Default: true},
 		{Name: "shipping_mode", Type: field.TypeString, Default: "free"},
 		{Name: "shipping_fee", Type: field.TypeInt64, Default: 0},
 		{Name: "shipping_countries", Type: field.TypeJSON, Nullable: true},
@@ -1772,7 +1810,7 @@ var (
 			{
 				Name:    "product_subsite_id_slug",
 				Unique:  true,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[15]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[18]},
 			},
 			{
 				Name:    "product_subsite_id_category_id",
@@ -1782,17 +1820,17 @@ var (
 			{
 				Name:    "product_subsite_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[36]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[39]},
 			},
 			{
 				Name:    "product_upstream_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[37]},
+				Columns: []*schema.Column{ProductsColumns[40]},
 			},
 			{
 				Name:    "product_subsite_id_upstream_source_id_upstream_product_code",
 				Unique:  true,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[37], ProductsColumns[38]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[40], ProductsColumns[41]},
 			},
 		},
 	}
@@ -3334,6 +3372,7 @@ var (
 		PageViewsTable,
 		PaymentsTable,
 		PaymentChannelsTable,
+		PhysicalReturnReceiptsTable,
 		PhysicalStockMovementsTable,
 		PointAccountsTable,
 		PointTransactionsTable,

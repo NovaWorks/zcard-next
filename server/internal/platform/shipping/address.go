@@ -21,12 +21,16 @@ func init() {
 }
 func Normalize(a map[string]string) (map[string]string, error) {
 	out := map[string]string{}
-	for _, k := range []string{"country", "region", "city", "district", "address", "name", "phone", "postal_code"} {
+	for _, k := range []string{"country", "region", "city", "district", "address", "address_line2", "name", "phone", "postal_code"} {
 		v := strings.TrimSpace(a[k])
 		if utf8.RuneCountInString(v) > 300 || strings.ContainsAny(v, "\x00\r\n") {
 			return nil, fmt.Errorf("收货信息格式无效")
 		}
-		out[k] = v
+		// An absent/empty optional line must preserve the exact legacy map shape:
+		// normalized addresses participate in persisted idempotency fingerprints.
+		if k != "address_line2" || v != "" {
+			out[k] = v
+		}
 	}
 	out["country"] = strings.ToUpper(out["country"])
 	return out, nil
@@ -49,12 +53,12 @@ func Validate(a map[string]string) (map[string]string, error) {
 			return nil, fmt.Errorf("请填写收货人、电话号码和详细地址")
 		}
 	}
-	for code, key := range map[string]string{"S": "region", "C": "city", "Z": "postal_code"} {
+	for code, key := range map[string]string{"S": "region", "C": "city", "Z": "postal_code", "D": "district"} {
 		if strings.Contains(required, code) && out[key] == "" {
 			return nil, fmt.Errorf("请完整填写国家要求的地区、城市和邮编")
 		}
 	}
-	if keys := r["sub_keys"]; keys != "" {
+	if keys := r["sub_keys"]; keys != "" && out["region"] != "" {
 		valid := false
 		for _, k := range strings.Split(keys, "~") {
 			if k == out["region"] {
@@ -75,7 +79,7 @@ func Validate(a map[string]string) (map[string]string, error) {
 		return nil, fmt.Errorf("电话号码格式无效，请包含国际区号")
 	}
 	if pattern := r["zip"]; pattern != "" && out["postal_code"] != "" {
-		if re, e := regexp.Compile("^(?:" + pattern + ")$"); e == nil && !re.MatchString(out["postal_code"]) {
+		if re, e := regexp.Compile("(?i)^(?:" + pattern + ")$"); e == nil && !re.MatchString(out["postal_code"]) {
 			return nil, fmt.Errorf("邮编与国家格式不符")
 		}
 	}

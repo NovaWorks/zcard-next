@@ -18,26 +18,28 @@ type StockSnapshot struct {
 
 // Product 商品 DTO（跨模块快照：order 价格管线消费；管理字段不下发）。
 type Product struct {
-	ProductKind                string
-	DeliveryKind               string
-	SMSProduct                 map[string]string
-	GoodsType, ShippingMode    string
-	ShippingFee, PhysicalStock int64
-	ShippingCountries          []string
-	FulfillmentMode            string
-	ManualStock                int64
-	ID                         uint64
-	SubsiteID                  uint64
-	Name                       string
-	Slug                       string
-	Cover                      string
-	Description                string      // 商品详情（sanitize 后富文本；storefront 详情页下发）
-	Price                      money.Cents // 售价（分）
-	FactoryPrice               money.Cents // 成本价（分）
-	StockType                  string      // card / url / code
-	DeliveryMode               string      // status / delete
-	Status                     int8        // 1=上架 0=下架 2=隐藏
-	StockVisible               bool
+	ProductKind                  string
+	DeliveryKind                 string
+	SMSProduct                   map[string]string
+	GoodsType, ShippingMode      string
+	ProductProperty              string
+	SalesVisible, TrackInventory bool
+	ShippingFee, PhysicalStock   int64
+	ShippingCountries            []string
+	FulfillmentMode              string
+	ManualStock                  int64
+	ID                           uint64
+	SubsiteID                    uint64
+	Name                         string
+	Slug                         string
+	Cover                        string
+	Description                  string      // 商品详情（sanitize 后富文本；storefront 详情页下发）
+	Price                        money.Cents // 售价（分）
+	FactoryPrice                 money.Cents // 成本价（分）
+	StockType                    string      // card / url / code
+	DeliveryMode                 string      // status / delete
+	Status                       int8        // 1=上架 0=下架 2=隐藏
+	StockVisible                 bool
 	// 积分兑换价（0=常规商品；>0=积分商城商品——order 兑换分支判定，）
 	PointsRequired int64
 	// 货源信息（ procurement 消费：判定上游项与提交采购）
@@ -156,26 +158,29 @@ type AdminFilter struct {
 
 // ProductInput 商品创建/更新输入（description 已 sanitize）。
 type ProductInput struct {
-	GoodsType, ShippingMode    *string
-	ShippingFee, PhysicalStock *int64
-	ExpectedPhysicalStock      *int64
-	ShippingCountries          []string
-	FulfillmentMode            string
-	ManualStock                *int64
-	Name                       string
-	CategoryID                 uint64
-	Description                string
-	DescriptionSet             bool // distinguish clearing an admin description from omitted upstream fields
-	Cover                      string
-	Images                     []string
-	Price                      int64 // 分
-	FactoryPrice               int64
-	StockType                  string
-	DeliveryMode               string
-	StockVisible               bool
-	Dedup                      bool
-	Sort                       int32
-	Status                     int8
+	GoodsType, ShippingMode      *string
+	ProductProperty              *string
+	SalesVisible, TrackInventory *bool
+	ShippingFee, PhysicalStock   *int64
+	ExpectedPhysicalStock        *int64
+	ShippingCountries            []string
+	FulfillmentMode              string
+	ManualStock                  *int64
+	Name                         string
+	CategoryID                   uint64
+	Description                  string
+	DescriptionSet               bool // distinguish clearing an admin description from omitted upstream fields
+	Cover                        string
+	Images                       []string
+	Price                        int64 // 分
+	FactoryPrice                 int64
+	StockType                    string
+	DeliveryMode                 string
+	StockVisible                 bool
+	StockVisibleSet              bool // update presence; omitted fields keep the saved display preference
+	Dedup                        bool
+	Sort                         int32
+	Status                       int8
 	// 积分兑换价（分单位积分；0=不参与积分商城——PUT 全量语义，）
 	PointsRequired    int64
 	PointsRequiredSet bool // true = 写入该值（含 0=移出积分商城）

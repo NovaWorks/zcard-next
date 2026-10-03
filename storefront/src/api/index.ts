@@ -36,6 +36,7 @@ export interface Sku {
 }
 
 export interface Product {
+ product_property?: 'virtual' | 'physical'; track_inventory?:boolean; sales_visible?:boolean;
  product_kind?: string;
  delivery_kind?:string; sms_product?:Record<string,string>; sms_sales_enabled?:boolean;
  goods_type?:string; shipping_mode?:string; shipping_fee_cents?:number; shipping_countries?:string[];
@@ -78,6 +79,7 @@ export interface ListProductsReply {
 }
 
 export interface CreateOrderReply {
+ order_access_token?:string;
  shipping_cents?:number;quote_key?:string;
   order_no: string;
   total_cents: number;
@@ -162,7 +164,7 @@ export interface CreateOrderInput {
   captcha_id?: string;  // 图形验证码（captcha_order 开启时游客必填）
   captcha_code?: string;
 }
-export function createOrder(body:CreateOrderInput, key?:string) { return api.post<CreateOrderReply>('/orders',body,key?{'Idempotency-Key':key}:undefined); }
+export async function createOrder(body:CreateOrderInput, key?:string) { const r = await api.post<CreateOrderReply>('/orders',body,key?{'Idempotency-Key':key}:undefined); if(r.data?.order_access_token) rememberOrderAccessToken(r.data.order_no,r.data.order_access_token); return r; }
 export function quoteOrder(body:CreateOrderInput) { return api.post<CreateOrderReply>('/orders/quote',body); }
 
 export interface MethodItem {
@@ -193,7 +195,7 @@ export function fetchPaymentChannels(scene: 'purchase' | 'member_recharge' | 'su
 }
 
 export function createPayment(order_no: string, channel: string, method?: string, quote_key?: string, query_password?: string) {
-  return api.post<CreatePaymentReply>('/payments', { order_no, channel, method: method || '', quote_key, query_password });
+  return api.post<CreatePaymentReply>('/payments', { order_no, channel, method: method || '', quote_key, query_password, order_access_token: getOrderAccessToken(order_no) });
 }
 
 export async function fetchDelivery(order_no: string, query_password: string) {
@@ -428,7 +430,9 @@ export interface OrderDetail {
 }
 
 export function getOrder(orderNo: string, queryPassword?: string) {
-  return api.getSilent<OrderDetail>(`/orders/${orderNo}`, queryPassword ? { query_password: queryPassword } : undefined);
+  consumeOrderAccessLink(orderNo);
+  const token = getOrderAccessToken(orderNo);
+  return api.getSilent<OrderDetail>(`/orders/${orderNo}`, queryPassword ? { query_password: queryPassword } : undefined, token ? { 'X-Order-Access-Token': token } : undefined);
 }
 
 // 支付页/取货页共用：订单号 → 下单时设置的查询密码（sessionStorage 会话级记忆，
@@ -936,7 +940,7 @@ export interface PaymentQuote {
 }
 export interface PaymentQuoteRequest {
   order_no?: string; channel: string; method?: string;
-  scene?: 'purchase' | 'member_recharge' | 'supply_recharge'; amount_cents?: number; query_password?: string;
+  scene?: 'purchase' | 'member_recharge' | 'supply_recharge'; amount_cents?: number; query_password?: string; order_access_token?: string;
 }
 export function quotePayment(body: PaymentQuoteRequest) {
   return api.post<PaymentQuote>('/payment/quote', body);
@@ -945,4 +949,36 @@ export function quotePayment(body: PaymentQuoteRequest) {
 export interface InviteBenefit { valid: boolean; has_benefit: boolean; level?: LevelBrief }
 export function getInviteBenefit(code: string) {
   return api.get<InviteBenefit>(`/member-level/invite-benefit?code=${encodeURIComponent(code)}`);
+}
+
+// Order-scoped bearer credentials stay in this tab; exported links use fragments so web servers do not log them.
+const orderAccessMemory = new Map<string,string>();
+export function rememberOrderAccessToken(orderNo:string, token:string) {
+  if(!token) return;
+  orderAccessMemory.set(orderNo,token);
+  try { sessionStorage.setItem(`zc_access_${orderNo}`,token); } catch {}
+}
+export function getOrderAccessToken(orderNo:string):string {
+  try { return sessionStorage.getItem(`zc_access_${orderNo}`) || orderAccessMemory.get(orderNo) || ''; }
+  catch { return orderAccessMemory.get(orderNo) || ''; }
+}
+export function consumeOrderAccessLink(orderNo:string) {
+  if(typeof window === 'undefined') return;
+  const token = new URLSearchParams(window.location.hash.slice(1)).get('order_access');
+  if(token && /^[A-Za-z0-9_-]{43}$/.test(token)) {
+    rememberOrderAccessToken(orderNo, token);
+    history.replaceState(history.state,'',window.location.pathname+window.location.search);
+  }
+}
+export function orderAccessLink(orderNo:string):string {
+  const token=getOrderAccessToken(orderNo);
+  return `${window.location.origin}/order/${encodeURIComponent(orderNo)}${token?'#order_access='+encodeURIComponent(token):''}`;
+}
+export function sendOrderAccessCode(orderNo:string,email:string) {
+  return api.post(`/orders/${encodeURIComponent(orderNo)}/access-code`,{email});
+}
+export async function recoverOrderAccess(orderNo:string,email:string,code:string) {
+  const r=await api.post<{order_access_token:string}>(`/orders/${encodeURIComponent(orderNo)}/access-recover`,{email,code});
+  if(r.data?.order_access_token) rememberOrderAccessToken(orderNo,r.data.order_access_token);
+  return r;
 }

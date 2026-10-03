@@ -111,7 +111,7 @@ const gridStyle = computed(() =>
     : { gridTemplateColumns: `repeat(auto-fill, minmax(${gridMinPx.value}px, 1fr))` },
 );
 const { showSales, applySalesConfig, normalizeSalesSort } = useSalesVisibility();
-const showStock = ref(true); // template.show_stock：卡片「库存」显示开关（叠加商品级 stock_visible）
+const showStock = ref(false); // template.show_stock：卡片「库存」显示开关（叠加商品级 stock_visible）
 
 let appliedDefaultView = '';
 let appliedDefaultSort = '';

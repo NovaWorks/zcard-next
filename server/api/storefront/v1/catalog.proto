@@ -79,6 +79,9 @@ message FlashOffer {
 }
 
 message Product {
+  string product_property = 71;
+  optional bool track_inventory = 72;
+  optional bool sales_visible = 73;
  string product_kind = 70;
  string delivery_kind = 60;
  map<string,string> sms_product = 61;
@@ -102,7 +105,7 @@ message Product {
   // 按货源返回库存（>=0 数量，-1 不限，-2 待确认），stock_visible 仅控制展示
   int64 stock = 8;
   // 库存是否对外可见
-  bool stock_visible = 9;
+  optional bool stock_visible = 9;
   uint64 category_id = 10;
   // 展示销量 = 真实 + 虚拟
   int64 sales_count = 11;

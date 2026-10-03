@@ -24,6 +24,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
+	"google.golang.org/protobuf/proto"
 )
 
 // ── 商品 ─────────────────────────────────────────────────────
@@ -118,7 +119,7 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 		q = q.Offset((int(f.Page) - 1) * int(f.PageSize)).Limit(int(f.PageSize))
 	}
 	if f.OptionsOnly {
-		q.Select(product.FieldID, product.FieldName, product.FieldCategoryID, product.FieldPrice, product.FieldStockType, product.FieldSort, product.FieldIsLocked, product.FieldLockVersion, product.FieldStatus, product.FieldCover, product.FieldUpstreamSourceID)
+		q.Select(product.FieldID, product.FieldName, product.FieldCategoryID, product.FieldPrice, product.FieldStockType, product.FieldGoodsType, product.FieldProductProperty, product.FieldSalesVisible, product.FieldTrackInventory, product.FieldSort, product.FieldIsLocked, product.FieldLockVersion, product.FieldStatus, product.FieldCover, product.FieldUpstreamSourceID)
 	}
 	rows, err := q.All(ctx)
 	return rows, int64(total), err
@@ -203,6 +204,7 @@ func (r *ProductRepoImpl) createProduct(ctx context.Context, in port.ProductInpu
 		SetFactoryPrice(in.FactoryPrice).
 		SetStockType(product.StockType(in.StockType))
 	create.SetNillableGoodsType(in.GoodsType).SetNillableShippingMode(in.ShippingMode).SetNillableShippingFee(in.ShippingFee).SetNillablePhysicalStock(in.PhysicalStock).SetShippingCountries(in.ShippingCountries)
+	create.SetNillableProductProperty(in.ProductProperty).SetNillableSalesVisible(in.SalesVisible).SetNillableTrackInventory(in.TrackInventory)
 	if in.FulfillmentMode != "" {
 		create.SetFulfillmentMode(in.FulfillmentMode)
 	}
@@ -234,6 +236,7 @@ func (r *ProductRepoImpl) createProduct(ctx context.Context, in port.ProductInpu
 // SetDirectContent 回填直发内容密文（创建后由 service 按真实 productID 加密调用）。
 func (r *ProductRepoImpl) SetDirectContent(ctx context.Context, id uint64, ciphered []byte) error {
 	return data.Client(ctx, r.data).Product.UpdateOneID(id).
+		Where(product.GoodsTypeNEQ("physical")).
 		SetDirectContent(ciphered).Exec(ctx)
 }
 
@@ -279,6 +282,10 @@ func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.
 	}
 	q := data.Client(ctx, r.data).Product.UpdateOneID(id).Where(product.StatusGTE(0), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID))
 	q.SetNillableGoodsType(in.GoodsType).SetNillableShippingMode(in.ShippingMode).SetNillableShippingFee(in.ShippingFee)
+	q.SetNillableProductProperty(in.ProductProperty).SetNillableSalesVisible(in.SalesVisible).SetNillableTrackInventory(in.TrackInventory)
+	if current.GoodsType == "physical" {
+		q.SetDedup(false)
+	}
 	if in.GoodsType != nil || in.ShippingMode != nil {
 		q.SetShippingCountries(in.ShippingCountries)
 	}
@@ -338,7 +345,9 @@ func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.
 	if in.DirectContent != nil {
 		q.SetDirectContent(in.DirectContent)
 	}
-	q.SetStockVisible(in.StockVisible)
+	if in.StockVisibleSet {
+		q.SetStockVisible(in.StockVisible)
+	}
 	q.SetIsRecommend(in.IsRecommend) // PUT 全量语义（含 false=取消推荐）
 	if in.Sort >= 0 {
 		q.SetSort(in.Sort)
@@ -711,13 +720,14 @@ func (r *ProductRepoImpl) DeleteTag(ctx context.Context, id uint64) error {
 // ToAdminPB 转 admin 协议对象。
 func ToAdminPB(p *ent.Product) *adminv1.AdminProduct {
 	out := &adminv1.AdminProduct{
+		ProductProperty: p.ProductProperty, SalesVisible: &p.SalesVisible, TrackInventory: &p.TrackInventory,
 		ProductKind: p.ProductKind, GoodsType: p.GoodsType, ShippingMode: p.ShippingMode, ShippingFeeCents: p.ShippingFee, ShippingCountries: p.ShippingCountries, PhysicalStock: p.PhysicalStock,
 		FulfillmentMode: p.FulfillmentMode, ManualStock: &p.ManualStock,
 		Id: p.ID, CategoryId: p.CategoryID, Name: p.Name, Slug: p.Slug,
 		Description: p.Description, Cover: p.Cover, Images: p.Images,
 		CoverProtected: p.CoverProtected, DescriptionProtected: p.DescriptionProtected,
 		PriceCents: p.Price, FactoryPriceCents: p.FactoryPrice,
-		StockType: string(p.StockType), StockVisible: p.StockVisible,
+		StockType: string(p.StockType), StockVisible: proto.Bool(p.StockVisible),
 		DeliveryMode: string(p.DeliveryMode), Dedup: p.Dedup,
 		Sort: p.Sort, Status: int32(p.Status),
 		UpstreamSourceId: p.UpstreamSourceID, UpstreamProductCode: p.UpstreamProductCode,

@@ -161,7 +161,7 @@ func (s *AdminCatalogService) ListProducts(ctx context.Context, req *adminv1.Lis
 	reply := &adminv1.ListProductsReply{Products: make([]*adminv1.AdminProduct, 0, len(rows))}
 	for _, p := range rows {
 		if req.GetOptionsOnly() {
-			reply.Products = append(reply.Products, &adminv1.AdminProduct{Id: p.ID, Name: p.Name, CategoryId: p.CategoryID, PriceCents: p.Price, StockType: string(p.StockType), IsLocked: p.IsLocked, LockVersion: p.LockVersion, Status: int32(p.Status), Cover: p.Cover, UpstreamSourceId: p.UpstreamSourceID})
+			reply.Products = append(reply.Products, &adminv1.AdminProduct{Id: p.ID, Name: p.Name, CategoryId: p.CategoryID, PriceCents: p.Price, GoodsType: p.GoodsType, ProductProperty: p.ProductProperty, SalesVisible: &p.SalesVisible, TrackInventory: &p.TrackInventory, StockType: string(p.StockType), IsLocked: p.IsLocked, LockVersion: p.LockVersion, Status: int32(p.Status), Cover: p.Cover, UpstreamSourceId: p.UpstreamSourceID})
 		} else {
 			reply.Products = append(reply.Products, ToAdminPB(p))
 		}
@@ -219,6 +219,7 @@ func (s *AdminCatalogService) CreateProduct(ctx context.Context, req *adminv1.Cr
 		return nil, errors.BadRequest("catalog.INVALID_INPUT", "名称必填、价格与成本须为非负且不超上限")
 	}
 	in := port.ProductInput{
+		ProductProperty: req.ProductProperty, SalesVisible: req.SalesVisible, TrackInventory: req.TrackInventory,
 		GoodsType: req.GoodsType, ShippingMode: req.ShippingMode, ShippingFee: req.ShippingFeeCents, PhysicalStock: req.PhysicalStock, ShippingCountries: req.ShippingCountries,
 		Name: req.GetName(), CategoryID: req.GetCategoryId(),
 		Description:    sanitize.RichHTML(req.GetDescription()),
@@ -231,6 +232,12 @@ func (s *AdminCatalogService) CreateProduct(ctx context.Context, req *adminv1.Cr
 		Sort: req.GetSort(), Status: int8(req.GetStatus()),
 		PointsRequired: req.GetPointsRequired(), PointsRequiredSet: true,
 		IsRecommend: req.GetIsRecommend(),
+	}
+	if err := s.repo.validatePhysicalProduct(ctx, nil, &in); err != nil {
+		return nil, errors.BadRequest("catalog.INVALID_INPUT", err.Error())
+	}
+	if *in.GoodsType == "physical" && req.GetDirectContent() != "" {
+		return nil, errors.BadRequest("catalog.INVALID_INPUT", "实体商品不能配置虚拟直发内容")
 	}
 	p, err := s.repo.CreateProduct(ctx, in)
 	if err != nil {
@@ -259,6 +266,7 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 		return nil, errors.BadRequest("catalog.INVALID_INPUT", "价格与成本不得超出上限")
 	}
 	in := port.ProductInput{
+		ProductProperty: req.ProductProperty, SalesVisible: req.SalesVisible, TrackInventory: req.TrackInventory,
 		GoodsType: req.GoodsType, ShippingMode: req.ShippingMode, ShippingFee: req.ShippingFeeCents, PhysicalStock: req.PhysicalStock, ExpectedPhysicalStock: req.ExpectedPhysicalStock, ShippingCountries: req.ShippingCountries,
 		Name: req.GetName(), CategoryID: req.GetCategoryId(),
 		Description:    sanitize.RichHTML(req.GetDescription()),
@@ -267,8 +275,8 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 		Price: req.GetPriceCents(), FactoryPrice: req.GetFactoryPriceCents(),
 		StockType: req.GetStockType(), DeliveryMode: req.GetDeliveryMode(),
 		FulfillmentMode: req.GetFulfillmentMode(), ManualStock: req.ManualStock,
-		StockVisible: req.GetStockVisible(),
-		Sort:         req.GetSort(), Status: int8(req.GetStatus()),
+		StockVisible: req.GetStockVisible(), StockVisibleSet: req.StockVisible != nil,
+		Sort: req.GetSort(), Status: int8(req.GetStatus()),
 		PointsRequired: req.GetPointsRequired(), PointsRequiredSet: true,
 		IsRecommend: req.GetIsRecommend(), // PUT 全量语义（含 false=取消推荐）
 	}
@@ -282,7 +290,13 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 		}
 		return nil, errors.InternalServer("catalog.GET_FAILED", "读取商品失败")
 	}
-	stockType := req.GetStockType()
+	if err := s.repo.validatePhysicalProduct(ctx, old, &in); err != nil {
+		return nil, errors.BadRequest("catalog.INVALID_INPUT", err.Error())
+	}
+	if *in.GoodsType == "physical" && req.GetDirectContent() != "" {
+		return nil, errors.BadRequest("catalog.INVALID_INPUT", "实体商品不能配置虚拟直发内容")
+	}
+	stockType := in.StockType
 	if stockType == "" {
 		stockType = string(old.StockType)
 	}

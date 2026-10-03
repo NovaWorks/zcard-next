@@ -399,7 +399,7 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 	if len(deliveries) > 0 {
 		result.FetchCnt = deliveries[0].FetchCount + 1
 	}
-	if o.Status == order.StatusDelivered && len(deliveries) > 0 {
+	if o.CommerceVersion == 0 && o.Status == order.StatusDelivered && len(deliveries) > 0 {
 		err := data.Tx(ctx, r.data, func(ctx context.Context) error {
 			client := data.Client(ctx, r.data)
 			n, err := client.Order.Update().Where(order.ID(o.ID), order.StatusEQ(order.StatusDelivered), order.Version(o.Version)).SetStatus(order.StatusCompleted).AddVersion(1).Save(ctx)

@@ -140,5 +140,10 @@ func ReencryptCards(ctx context.Context, client *ent.Client, oldKey, newKey []by
 		}
 		cursor = rows[len(rows)-1].ID
 	}
+	r, s, f, e := reencryptOrderAccess(ctx, client, oldCipher, newCipher, batchSize)
+	rotated, skipped, failed = rotated+r, skipped+s, failed+f
+	if e != nil {
+		return rotated, skipped, failed, e
+	}
 	return rotated, skipped, failed, nil
 }

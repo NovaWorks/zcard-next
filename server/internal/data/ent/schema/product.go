@@ -3,10 +3,12 @@ package schema
 // 所有权：mods/catalog（M1；M0 先落表结构支撑 storefront 列表链路）
 
 import (
+	"context"
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"fmt"
 )
 
 // Product 商品主表（《数据库架构设计.md》§4.1，字段精确对齐）。
@@ -26,6 +28,14 @@ func (Product) Fields() []ent.Field {
 		field.Bool("category_protected").Default(false),
 		field.String("name").MaxLen(1024),
 		field.String("goods_type").Default("virtual"),
+		field.String("product_property").Default("").MaxLen(16).Validate(func(v string) error {
+			if v != "" && v != "virtual" && v != "physical" {
+				return fmt.Errorf("商品属性无效")
+			}
+			return nil
+		}).Comment("商品属性；goods_type 为旧客户端兼容镜像"),
+		field.Bool("track_inventory").Default(true).Comment("实体商品是否管理数量库存；规格继承"),
+		field.Bool("sales_visible").Default(true).Comment("是否向买家显示已售数量"),
 		field.String("shipping_mode").Default("free"),
 		field.Int64("shipping_fee").Default(0),
 		field.JSON("shipping_countries", []string{}).Optional(),
@@ -70,6 +80,35 @@ func (Product) Fields() []ent.Field {
 		field.Uint64("locked_by").Default(0),
 		field.Time("locked_at").SchemaType(mysqlTime).Optional().Nillable(),
 	}
+}
+
+// Keep legacy writers and the dedicated property column consistent at the storage boundary.
+func (Product) Hooks() []ent.Hook {
+	return []ent.Hook{func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			property, hasProperty := m.Field("product_property")
+			legacy, hasLegacy := m.Field("goods_type")
+			p, _ := property.(string)
+			g, _ := legacy.(string)
+			if p != "" && g != "" && p != g && !m.Op().Is(ent.OpCreate) {
+				return nil, fmt.Errorf("商品属性与旧类型不一致")
+			}
+			if p != "" {
+				if err := m.SetField("goods_type", p); err != nil {
+					return nil, err
+				}
+			} else if hasLegacy && g != "" {
+				if err := m.SetField("product_property", g); err != nil {
+					return nil, err
+				}
+			} else if m.Op().Is(ent.OpCreate) || hasProperty {
+				if err := m.SetField("product_property", "virtual"); err != nil {
+					return nil, err
+				}
+			}
+			return next.Mutate(ctx, m)
+		})
+	}}
 }
 
 func (Product) Indexes() []ent.Index {

@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	_ "github.com/NovaWorks/zcard-next/server/internal/data/ent/runtime"
 	"slices"
 
 	"entgo.io/ent/dialect"

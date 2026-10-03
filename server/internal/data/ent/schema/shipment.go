@@ -37,3 +37,19 @@ func (PhysicalStockMovement) Fields() []ent.Field {
 func (PhysicalStockMovement) Indexes() []ent.Index {
 	return []ent.Index{index.Fields("product_id", "sku_id"), index.Fields("order_id")}
 }
+
+// PhysicalReturnReceipt records a return independently of optional inventory movements.
+type PhysicalReturnReceipt struct{ ent.Schema }
+
+func (PhysicalReturnReceipt) Mixin() []ent.Mixin { return []ent.Mixin{TimeMixin{}, TenantMixin{}} }
+func (PhysicalReturnReceipt) Fields() []ent.Field {
+	return []ent.Field{
+		field.Uint64("id"), field.Uint64("order_id"), field.Uint64("item_id"),
+		field.Int32("quantity"), field.String("request_key").MaxLen(128).Unique(),
+		field.String("request_hash").MaxLen(64), field.String("reason").MaxRuneLen(120),
+		field.Bool("inventory_tracked"),
+	}
+}
+func (PhysicalReturnReceipt) Indexes() []ent.Index {
+	return []ent.Index{index.Fields("order_id"), index.Fields("item_id")}
+}

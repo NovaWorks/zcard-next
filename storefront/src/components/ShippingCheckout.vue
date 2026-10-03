@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { uiText, t as $t } from '@/i18n';
+import { uiText, t as $t, localeTag } from '@/i18n';
 
 import { computed, nextTick, reactive, ref, watch } from "vue";
 import { api, formatMoney } from "@/api/client";
@@ -8,6 +8,9 @@ import {
   countryOptions,
   regionOptions,
   emptyAddress,
+  addressFields,
+  addressRequired,
+  validateAddress,
   type RegionData,
 } from "../../../packages/shipping";
 import { newRequestId } from "../../../packages/request-id";
@@ -19,19 +22,34 @@ const body = ref<CreateOrderInput>();
 const busy = ref(false);
 const error = ref("");
 const quote = ref<CreateOrderReply>();
-const countries = computed(() => countryOptions(regions.value, allowed.value));
-const states = computed(() => regionOptions(regions.value, address.country));
-const required = computed(() => regions.value[address.country]?.require || "AC");
+const countries = computed(() => countryOptions(regions.value, allowed.value, localeTag.value));
+const states = computed(() => regionOptions(regions.value, address.country, localeTag.value));
+const locationFields = computed(() => addressFields(regions.value, address.country));
+const fieldErrors = ref<Record<string, string>>({});
+const touched = new Set<string>();
+let attempted = false;
+const fieldNames = { city: "郊区或城市", district: "区 / 县", region: "州 / 省 / 地区", postal_code: "邮政编码" };
+const fieldAutocomplete = { city: "address-level2", district: "address-level3", region: "address-level1", postal_code: "postal-code" };
+function checkField(field: string) {
+  touched.add(field);
+  const errors = validateAddress(address, regions.value);
+  if (errors[field]) fieldErrors.value[field] = errors[field];
+  else delete fieldErrors.value[field];
+}
 let finish: ((value: CreateOrderReply | null) => void) | undefined;
 watch(address, () => {
   quote.value = undefined;
   error.value = "";
+  const errors = validateAddress(address, regions.value);
+  if (attempted) fieldErrors.value = errors;
+  else for (const field of touched) {
+    if (errors[field]) fieldErrors.value[field] = errors[field];
+    else delete fieldErrors.value[field];
+  }
 });
 function changeCountry() {
-  address.region = "";
-  address.city = "";
-  address.district = "";
-  address.postal_code = "";
+  if (!locationFields.value.includes("region") || (states.value.length && !states.value.some(state => state.value === address.region))) address.region = "";
+  for (const field of ["city", "district", "postal_code"] as const) if (!locationFields.value.includes(field)) address[field] = "";
 }
 async function open(
   input: CreateOrderInput,
@@ -41,6 +59,9 @@ async function open(
   allowed.value = deliveryCountries;
   error.value = "";
   quote.value = undefined;
+  attempted = false;
+  touched.clear();
+  fieldErrors.value = {};
   if (!allowed.value.includes(address.country)) {
     address.country = allowed.value.includes("CN") ? "CN" : allowed.value[0] || "";
     changeCountry();
@@ -73,6 +94,13 @@ function close(result: CreateOrderReply | null = null) {
 }
 async function submit() {
   if (!body.value || busy.value) return;
+  attempted = true;
+  fieldErrors.value = validateAddress(address, regions.value);
+  if (Object.keys(fieldErrors.value).length) {
+    await nextTick();
+    dialog.value?.querySelector<HTMLElement>(`#shipping-${Object.keys(fieldErrors.value)[0]}`)?.focus();
+    return;
+  }
   busy.value = true;
   error.value = "";
   try {
@@ -136,91 +164,49 @@ defineExpose({ open });
     aria-labelledby="shipping-title"
     @cancel.prevent="close()"
   >
-    <form @submit.prevent="submit">
+    <form novalidate @submit.prevent="submit">
       <div class="shipping-head">
         <h2 id="shipping-title">{{ $t('填写收货地址') }}</h2>
         <button type="button" class="btn secondary" :disabled="busy" @click="close()">{{ $t('关闭') }}</button>
       </div>
       <p class="muted">{{ $t('实体商品将寄送至以下地址。确认金额后再创建订单。') }}</p>
-      <fieldset :disabled="busy" class="shipping-fields">
-        <label
-          >{{ $t('国家或地区') }} <select
-            v-model="address.country"
-            required
-            class="input"
-            autocomplete="country"
-            @change="changeCountry"
-          >
+      <fieldset :disabled="busy" class="shipping-fields shipping-recipient">
+        <legend>{{ $t('收货人') }}</legend>
+        <label for="shipping-name">{{ $t('收货人姓名') }}
+          <input id="shipping-name" v-model="address.name" required maxlength="100" class="input" autocomplete="shipping name" :aria-invalid="!!fieldErrors.name" :aria-describedby="fieldErrors.name ? 'shipping-name-error' : undefined" @blur="checkField('name')" />
+          <span v-if="fieldErrors.name" id="shipping-name-error" class="field-error">{{ $t(fieldErrors.name) }}</span>
+        </label>
+        <label for="shipping-phone">{{ $t('电话号码') }}
+          <input id="shipping-phone" v-model="address.phone" type="tel" required maxlength="30" class="input" autocomplete="shipping tel" :placeholder="$t('如 +61 412 345 678')" :aria-invalid="!!fieldErrors.phone" :aria-describedby="fieldErrors.phone ? 'shipping-phone-error' : undefined" @blur="checkField('phone')" />
+          <span v-if="fieldErrors.phone" id="shipping-phone-error" class="field-error">{{ $t(fieldErrors.phone) }}</span>
+        </label>
+      </fieldset>
+      <fieldset :disabled="busy" class="shipping-fields shipping-address">
+        <legend>{{ $t('配送地址') }}</legend>
+        <label for="shipping-country">{{ $t('国家或地区') }}
+          <select id="shipping-country" v-model="address.country" required class="input" autocomplete="shipping country" :aria-invalid="!!fieldErrors.country" :aria-describedby="fieldErrors.country ? 'shipping-country-error' : undefined" @change="changeCountry" @blur="checkField('country')">
             <option value="" disabled>{{ $t('请选择') }}</option>
             <option v-for="c in countries" :key="c.value" :value="c.value">{{ c.label }}</option>
-          </select></label
-        >
-        <label
-          >{{ $t('省 / 州 / 地区') }} <select
-            v-if="states.length"
-            v-model="address.region"
-            required
-            class="input"
-            autocomplete="address-level1"
-          >
-            <option value="" disabled>{{ $t('请选择地区') }}</option>
-            <option v-for="s in states" :key="s.value" :value="s.value">
-              {{ s.label }}
-            </option></select
-          ><input
-            v-else
-            v-model="address.region"
-            class="input"
-            :required="required.includes('S')"
-            maxlength="100"
-            autocomplete="address-level1"
-        /></label>
-        <label
-          >{{ $t('城市') }} <input
-            v-model="address.city"
-            class="input"
-            :required="required.includes('C')"
-            maxlength="100"
-            autocomplete="address-level2"
-        /></label>
-        <label
-          >{{ $t('区 / 县（选填）') }}<input
-            v-model="address.district"
-            class="input"
-            maxlength="100"
-            autocomplete="address-level3"
-        /></label>
-        <label class="shipping-wide"
-          >{{ $t('详细地址') }} <input
-            v-model="address.address"
-            required
-            maxlength="300"
-            class="input"
-            autocomplete="street-address"
-            :placeholder="$t('街道、门牌号、楼层及房号')"
-        /></label>
-        <label
-          >{{ $t('收货人姓名') }} <input v-model="address.name" required maxlength="100" class="input" autocomplete="name"
-        /></label>
-        <label
-          >{{ $t('电话号码') }} <input
-            v-model="address.phone"
-            type="tel"
-            required
-            maxlength="30"
-            class="input"
-            autocomplete="tel"
-            :placeholder="$t('如 +86 13800138000')"
-        /></label>
-        <label
-          >{{ $t('邮编') }}{{ required.includes("Z") ? "" : $t('（选填）') }}
-          <input
-            v-model="address.postal_code"
-            :required="required.includes('Z')"
-            maxlength="30"
-            class="input"
-            autocomplete="postal-code"
-        /></label>
+          </select>
+          <span v-if="fieldErrors.country" id="shipping-country-error" class="field-error">{{ $t(fieldErrors.country) }}</span>
+        </label>
+        <label for="shipping-address">{{ $t('地址第一行') }}
+          <input id="shipping-address" v-model="address.address" required maxlength="300" class="input" autocomplete="shipping address-line1" :placeholder="$t('街道名称和门牌号')" :aria-invalid="!!fieldErrors.address" :aria-describedby="fieldErrors.address ? 'shipping-address-error' : undefined" @blur="checkField('address')" />
+          <span v-if="fieldErrors.address" id="shipping-address-error" class="field-error">{{ $t(fieldErrors.address) }}</span>
+        </label>
+        <label for="shipping-address_line2">{{ $t('地址第二行（选填）') }}
+          <input id="shipping-address_line2" v-model="address.address_line2" maxlength="300" class="input" autocomplete="shipping address-line2" :placeholder="$t('公寓、套房、单元号等（选填）')" :aria-invalid="!!fieldErrors.address_line2" :aria-describedby="fieldErrors.address_line2 ? 'shipping-address_line2-error' : undefined" @blur="checkField('address_line2')" />
+          <span v-if="fieldErrors.address_line2" id="shipping-address_line2-error" class="field-error">{{ $t(fieldErrors.address_line2) }}</span>
+        </label>
+        <label v-for="field in locationFields" :key="field" :for="`shipping-${field}`">
+          {{ $t(fieldNames[field]) }}{{ addressRequired(regions, address.country, field) ? '' : $t('（选填）') }}
+          <select v-if="field === 'region' && states.length" :id="`shipping-${field}`" v-model="address.region" :required="addressRequired(regions, address.country, field)" class="input" :autocomplete="`shipping ${fieldAutocomplete[field]}`" :aria-invalid="!!fieldErrors[field]" :aria-describedby="fieldErrors[field] ? `shipping-${field}-error` : undefined" @blur="checkField(field)">
+            <option value="" :disabled="addressRequired(regions, address.country, field)">{{ $t('请选择地区') }}</option>
+            <option v-for="state in states" :key="state.value" :value="state.value">{{ state.label }}</option>
+          </select>
+          <input v-else :id="`shipping-${field}`" v-model="address[field]" :required="addressRequired(regions, address.country, field)" :maxlength="field === 'postal_code' ? 30 : 100" class="input" :autocomplete="`shipping ${fieldAutocomplete[field]}`" :aria-invalid="!!fieldErrors[field]" :aria-describedby="fieldErrors[field] ? `shipping-${field}-error` : undefined" @blur="checkField(field)" />
+          <span v-if="fieldErrors[field]" :id="`shipping-${field}-error`" class="field-error">{{ $t(fieldErrors[field]) }}</span>
+        </label>
       </fieldset>
       <p v-if="error" role="alert" class="error">{{ uiText(error) }}</p>
       <div v-if="quote" class="shipping-quote" aria-live="polite">
@@ -275,10 +261,16 @@ defineExpose({ open });
   padding: 0;
   margin: 20px 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 16px;
   min-width: 0;
 }
+.shipping-fields legend {
+  padding: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.shipping-address { grid-template-columns: minmax(0, 1fr); }
 .shipping-fields label {
   display: flex;
   flex-direction: column;
@@ -290,6 +282,15 @@ defineExpose({ open });
   width: 100%;
   box-sizing: border-box;
   min-height: 44px;
+}
+.shipping-fields .input[aria-invalid="true"] {
+  border-color: #b42318;
+}
+.field-error {
+  color: #b42318;
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 .shipping-wide {
   grid-column: 1/-1;

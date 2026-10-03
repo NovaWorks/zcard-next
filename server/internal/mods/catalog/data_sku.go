@@ -54,6 +54,11 @@ func (r *ProductRepoImpl) createSku(ctx context.Context, in SkuInput) (*ent.Prod
 		return nil, fmt.Errorf("渠道接码不生成 SKU，请在商品页面选择选项")
 	}
 	if parent.GoodsType == "physical" {
+		in.StockOffset = 0
+		in.UpstreamSkuID = ""
+		if !parent.TrackInventory {
+			in.PhysicalStock = nil
+		}
 		c := data.Client(ctx, r.data)
 		hasSKU, err := c.ProductSku.Query().Where(productsku.ProductID(parent.ID)).Exist(ctx)
 		if err != nil {
@@ -126,6 +131,13 @@ func (r *ProductRepoImpl) updateSku(ctx context.Context, id uint64, in SkuInput)
 		return nil, e
 	}
 	if parent.GoodsType == "physical" {
+		in.StockOffset = 0
+		in.SetStockOffset = true
+		in.UpstreamSkuID = ""
+		if !parent.TrackInventory {
+			in.PhysicalStock = nil
+			in.ExpectedPhysicalStock = nil
+		}
 		if in.FulfillmentMode != "" && in.FulfillmentMode != "follow" && in.FulfillmentMode != "auto" {
 			return nil, fmt.Errorf("实体规格仅支持快递配送")
 		}
@@ -154,6 +166,9 @@ func (r *ProductRepoImpl) updateSku(ctx context.Context, id uint64, in SkuInput)
 		}
 	}
 	q := data.Client(ctx, r.data).ProductSku.UpdateOneID(id)
+	if parent.GoodsType == "physical" {
+		q.ClearUpstreamSkuID()
+	}
 	if in.FulfillmentMode != "" {
 		q.SetFulfillmentMode(in.FulfillmentMode)
 	}
@@ -263,6 +278,9 @@ func (r *ProductRepoImpl) ListSkus(ctx context.Context, productID uint64) ([]por
 		switch mode {
 		case "shipping":
 			stock = s.PhysicalStock
+			if !p.TrackInventory {
+				stock = -1
+			}
 		case "reuse":
 			stock, err = data.LocalSKUStock(ctx, r.data, p, s)
 		case "manual":

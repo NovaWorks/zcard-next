@@ -38,6 +38,12 @@ type Product struct {
 	Name string `json:"name,omitempty"`
 	// GoodsType holds the value of the "goods_type" field.
 	GoodsType string `json:"goods_type,omitempty"`
+	// 商品属性；goods_type 为旧客户端兼容镜像
+	ProductProperty string `json:"product_property,omitempty"`
+	// 实体商品是否管理数量库存；规格继承
+	TrackInventory bool `json:"track_inventory,omitempty"`
+	// 是否向买家显示已售数量
+	SalesVisible bool `json:"sales_visible,omitempty"`
 	// ShippingMode holds the value of the "shipping_mode" field.
 	ShippingMode string `json:"shipping_mode,omitempty"`
 	// ShippingFee holds the value of the "shipping_fee" field.
@@ -164,11 +170,11 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case product.FieldSmsProduct, product.FieldShippingCountries, product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig:
 			values[i] = new([]byte)
-		case product.FieldCategoryProtected, product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend, product.FieldAutoListing, product.FieldListingRestocked, product.FieldIsLocked:
+		case product.FieldCategoryProtected, product.FieldTrackInventory, product.FieldSalesVisible, product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend, product.FieldAutoListing, product.FieldListingRestocked, product.FieldIsLocked:
 			values[i] = new(sql.NullBool)
 		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldShippingFee, product.FieldPhysicalStock, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldManualStock, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID, product.FieldListingRestoreStatus, product.FieldListingChangedAt, product.FieldListingObservedAt, product.FieldListingZeroSince, product.FieldListingLastStock, product.FieldLockVersion, product.FieldLockedBy:
 			values[i] = new(sql.NullInt64)
-		case product.FieldProductKind, product.FieldDeliveryKind, product.FieldName, product.FieldGoodsType, product.FieldShippingMode, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldFulfillmentMode, product.FieldDeliveryMode, product.FieldUpstreamProductCode, product.FieldListingReason, product.FieldListingMessage:
+		case product.FieldProductKind, product.FieldDeliveryKind, product.FieldName, product.FieldGoodsType, product.FieldProductProperty, product.FieldShippingMode, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldFulfillmentMode, product.FieldDeliveryMode, product.FieldUpstreamProductCode, product.FieldListingReason, product.FieldListingMessage:
 			values[i] = new(sql.NullString)
 		case product.FieldCreatedAt, product.FieldUpdatedAt, product.FieldUpstreamSyncedAt, product.FieldLockedAt:
 			values[i] = new(sql.NullTime)
@@ -254,6 +260,24 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field goods_type", values[i])
 			} else if value.Valid {
 				_m.GoodsType = value.String
+			}
+		case product.FieldProductProperty:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field product_property", values[i])
+			} else if value.Valid {
+				_m.ProductProperty = value.String
+			}
+		case product.FieldTrackInventory:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field track_inventory", values[i])
+			} else if value.Valid {
+				_m.TrackInventory = value.Bool
+			}
+		case product.FieldSalesVisible:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field sales_visible", values[i])
+			} else if value.Valid {
+				_m.SalesVisible = value.Bool
 			}
 		case product.FieldShippingMode:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -591,6 +615,15 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("goods_type=")
 	builder.WriteString(_m.GoodsType)
+	builder.WriteString(", ")
+	builder.WriteString("product_property=")
+	builder.WriteString(_m.ProductProperty)
+	builder.WriteString(", ")
+	builder.WriteString("track_inventory=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TrackInventory))
+	builder.WriteString(", ")
+	builder.WriteString("sales_visible=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SalesVisible))
 	builder.WriteString(", ")
 	builder.WriteString("shipping_mode=")
 	builder.WriteString(_m.ShippingMode)

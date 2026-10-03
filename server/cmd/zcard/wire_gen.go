@@ -97,7 +97,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	alerter := audit.ProvideAuditAlerter(repoImpl, dispatcher)
 	auditRepo := audit.NewAuditRepoWithAlerter(dataData, logger, alerter)
 	pointsDebiter := wallet.ProvidePortPointsDebiter(walletRepoImpl)
-	orderUsecase := order.NewOrderUsecaseDep(dataData, cardRepoImpl, generator, memberLevelRepoImpl, couponRepoImpl, productRepoImpl, outboxWriter, auditRepo, couponRepoImpl, couponRepoImpl, settingsReader, resellerRepo, pointsDebiter)
+	orderUsecase := order.NewOrderUsecaseDep(dataData, cardRepoImpl, generator, memberLevelRepoImpl, couponRepoImpl, productRepoImpl, outboxWriter, auditRepo, couponRepoImpl, couponRepoImpl, settingsReader, resellerRepo, pointsDebiter, cardCipher)
 	storeCatalogService := catalog.NewStoreCatalogService(catalogUsecase, resellerRepo, orderUsecase)
 	storeReviewService := catalog.NewStoreReviewService(productRepoImpl)
 	supplyRepoImpl := supply.NewSupplyRepoImpl(dataData, box)
@@ -200,7 +200,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	backgroundServer := server.NewBackgroundServer(outboxRelay, cron, runMode)
 	settleService := reseller.NewSettleService(resellerRepo, logger)
 	pointsService := memberlevel.NewPointsService(memberLevelRepoImpl, points, logger)
-	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer, dataDispatcher, procureService, dispatcher, affiliateService, settleService, deliveryRepoImpl, pointsService, orderUsecase, paymentRepoImpl, walletRepoImpl, gateway, storeCatalogService)
+	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer, dataDispatcher, procureService, dispatcher, affiliateService, settleService, deliveryRepoImpl, pointsService, orderUsecase, paymentRepoImpl, walletRepoImpl, gateway, storeCatalogService, storeOrderService)
 	mainAppDeps := &appDeps{
 		App:    app,
 		Update: updateService,

@@ -138,6 +138,9 @@ type Payment func(*sql.Selector)
 // PaymentChannel is the predicate function for paymentchannel builders.
 type PaymentChannel func(*sql.Selector)
 
+// PhysicalReturnReceipt is the predicate function for physicalreturnreceipt builders.
+type PhysicalReturnReceipt func(*sql.Selector)
+
 // PhysicalStockMovement is the predicate function for physicalstockmovement builders.
 type PhysicalStockMovement func(*sql.Selector)
 

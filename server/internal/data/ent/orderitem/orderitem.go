@@ -51,6 +51,8 @@ const (
 	FieldCost = "cost"
 	// FieldGoodsType holds the string denoting the goods_type field in the database.
 	FieldGoodsType = "goods_type"
+	// FieldInventoryTracked holds the string denoting the inventory_tracked field in the database.
+	FieldInventoryTracked = "inventory_tracked"
 	// FieldPaidAmount holds the string denoting the paid_amount field in the database.
 	FieldPaidAmount = "paid_amount"
 	// FieldShippingAmount holds the string denoting the shipping_amount field in the database.
@@ -111,6 +113,7 @@ var Columns = []string{
 	FieldAmount,
 	FieldCost,
 	FieldGoodsType,
+	FieldInventoryTracked,
 	FieldPaidAmount,
 	FieldShippingAmount,
 	FieldRefundedAmount,
@@ -157,6 +160,8 @@ var (
 	DefaultCost int64
 	// DefaultGoodsType holds the default value on creation for the "goods_type" field.
 	DefaultGoodsType string
+	// DefaultInventoryTracked holds the default value on creation for the "inventory_tracked" field.
+	DefaultInventoryTracked bool
 	// DefaultPaidAmount holds the default value on creation for the "paid_amount" field.
 	DefaultPaidAmount int64
 	// DefaultShippingAmount holds the default value on creation for the "shipping_amount" field.
@@ -291,6 +296,11 @@ func ByCost(opts ...sql.OrderTermOption) OrderOption {
 // ByGoodsType orders the results by the goods_type field.
 func ByGoodsType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldGoodsType, opts...).ToFunc()
+}
+
+// ByInventoryTracked orders the results by the inventory_tracked field.
+func ByInventoryTracked(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldInventoryTracked, opts...).ToFunc()
 }
 
 // ByPaidAmount orders the results by the paid_amount field.

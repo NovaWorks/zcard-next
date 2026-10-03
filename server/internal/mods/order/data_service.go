@@ -27,12 +27,14 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/captcha"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/orderaccess"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"github.com/go-kratos/kratos/v3/transport"
 	khttp "github.com/go-kratos/kratos/v3/transport/http"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -41,9 +43,12 @@ import (
 // StoreOrderService 顾客下单服务。
 type StoreOrderService struct {
 	storefrontv1.UnimplementedStoreOrderServiceServer
-	uc      *OrderUsecase
-	captcha *captcha.Service // 图形验证码（captcha_order 场景）
+	uc             *OrderUsecase
+	captcha        *captcha.Service // 图形验证码（captcha_order 场景）
+	recoverySender notifyport.Sender
 }
+
+func (s *StoreOrderService) SetRecoverySender(sender notifyport.Sender) { s.recoverySender = sender }
 
 // NewStoreOrderService 构造。
 func NewStoreOrderService(uc *OrderUsecase, cap *captcha.Service) *StoreOrderService {
@@ -90,7 +95,7 @@ func (s *StoreOrderService) createOrder(ctx context.Context, req *storefrontv1.C
 	if replay, e := s.uc.ReplayOrder(ctx, input); e != nil {
 		return nil, mapOrderErr(e)
 	} else if replay != nil {
-		return &storefrontv1.CreateOrderReply{OrderNo: replay.OrderNo, TotalCents: replay.TotalCents, ShippingCents: replay.ShippingCents, ExpiresAt: replay.ExpiresAt.Unix()}, nil
+		return &storefrontv1.CreateOrderReply{OrderNo: replay.OrderNo, TotalCents: replay.TotalCents, ShippingCents: replay.ShippingCents, ExpiresAt: replay.ExpiresAt.Unix(), OrderAccessToken: replay.OrderAccessToken}, nil
 	}
 	if !quote && s.captcha != nil && claims == nil {
 		if err := s.captcha.VerifyScene(ctx, captcha.SceneOrder, req.GetCaptchaId(), req.GetCaptchaCode()); err != nil {
@@ -102,21 +107,33 @@ func (s *StoreOrderService) createOrder(ctx context.Context, req *storefrontv1.C
 		return nil, mapOrderErr(err)
 	}
 	return &storefrontv1.CreateOrderReply{
-		OrderNo: res.OrderNo, TotalCents: res.TotalCents, ShippingCents: res.ShippingCents, QuoteKey: res.QuoteKey, ExpiresAt: res.ExpiresAt.Unix(),
+		OrderNo: res.OrderNo, TotalCents: res.TotalCents, ShippingCents: res.ShippingCents, QuoteKey: res.QuoteKey, ExpiresAt: res.ExpiresAt.Unix(), OrderAccessToken: res.OrderAccessToken,
 	}, nil
 }
 
 // GetOrder 查单（单号+密码）。
 // 取货三重门之一二（ 补全）：查询密码 或 登录态本人——登录态本人免密码。
 func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetOrderRequest) (*storefrontv1.GetOrderReply, error) {
+	token := req.GetOrderAccessToken()
+	if token == "" {
+		if tr, ok := transport.FromServerContext(ctx); ok {
+			token = tr.RequestHeader().Get("X-Order-Access-Token")
+		}
+	}
 	o, err := s.uc.GetByOrderNo(ctx, req.GetOrderNo())
 	if ent.IsNotFound(err) {
+		if token != "" {
+			return nil, errors.NotFound("order.NOT_FOUND", "订单不存在或访问凭证无效")
+		}
 		return nil, orderaccess.PublicError(orderaccess.Verify(ctx, s.uc.Gate, req.GetOrderNo(), "", req.GetQueryPassword(), orderClientIP(ctx)))
 	}
 	if err != nil {
 		return nil, errors.InternalServer("order.GET_FAILED", "查询失败")
 	}
 	if o.SubsiteID != tenancy.FromContext(ctx).SubsiteID {
+		if token != "" {
+			return nil, errors.NotFound("order.NOT_FOUND", "订单不存在或访问凭证无效")
+		}
 		return nil, orderaccess.PublicError(orderaccess.Verify(ctx, s.uc.Gate, req.GetOrderNo(), "", req.GetQueryPassword(), orderClientIP(ctx)))
 	}
 	// 登录态本人：免查询密码（密码错与单号不存在对外表现一致的纪律不破坏——
@@ -124,9 +141,19 @@ func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetO
 	claims := identity.ClaimsFromContext(ctx)
 	isOwner := claims != nil && o.UserID != 0 && claims.Subject == o.UserID
 	if !isOwner {
-		// 查询密码校验（三重门之一：设置则必须匹配；错误与单号不存在表现一致）
-		if err := orderaccess.Verify(ctx, s.uc.Gate, o.OrderNo, o.QueryPasswordHash, req.GetQueryPassword(), orderClientIP(ctx)); err != nil {
-			return nil, orderaccess.PublicError(err)
+		if o.OrderAccessTokenHash != "" {
+			if !orderaccess.VerifyToken(o.OrderAccessTokenHash, o.SubsiteID, o.OrderNo, token) {
+				return nil, orderaccess.Required(ctx)
+			}
+		} else if token != "" {
+			if !orderaccess.VerifyToken(o.OrderAccessTokenHash, o.SubsiteID, o.OrderNo, token) {
+				return nil, errors.NotFound("order.NOT_FOUND", "订单不存在或访问凭证无效")
+			}
+		} else {
+			// 查询密码校验（三重门之一：设置则必须匹配；错误与单号不存在表现一致）
+			if err := orderaccess.Verify(ctx, s.uc.Gate, o.OrderNo, o.QueryPasswordHash, req.GetQueryPassword(), orderClientIP(ctx)); err != nil {
+				return nil, orderaccess.PublicError(err)
+			}
 		}
 	}
 	reply := &storefrontv1.GetOrderReply{
@@ -487,7 +514,7 @@ func toAdminOrderPB(o *ent.Order, items []*ent.OrderItem, lines []*ent.OrderAmou
 		out.ExpiryRetryAt = o.ExpiryRetryAt.Unix()
 	}
 	for _, it := range items {
-		pb := &adminv1.AdminOrderItem{GoodsType: it.GoodsType, PaidCents: it.PaidAmount, ShippingCents: it.ShippingAmount, RefundedCents: it.RefundedAmount, RefundedShippingCents: it.RefundedShipping, ShippedQuantity: it.ShippedQuantity, ReceivedQuantity: it.ReceivedQuantity, CanceledQuantity: it.CanceledQuantity, ReturnedQuantity: it.ReturnedQuantity,
+		pb := &adminv1.AdminOrderItem{InventoryTracked: proto.Bool(it.InventoryTracked), GoodsType: it.GoodsType, PaidCents: it.PaidAmount, ShippingCents: it.ShippingAmount, RefundedCents: it.RefundedAmount, RefundedShippingCents: it.RefundedShipping, ShippedQuantity: it.ShippedQuantity, ReceivedQuantity: it.ReceivedQuantity, CanceledQuantity: it.CanceledQuantity, ReturnedQuantity: it.ReturnedQuantity,
 			FormAnswersJson: answersJSON(it.FormAnswers), AssignedAdminId: it.AssignedAdminID,
 			ProductId: it.ProductID, SkuId: it.SkuID, Quantity: it.Quantity,
 			UnitPriceCents: it.UnitPrice, AmountCents: it.Amount,

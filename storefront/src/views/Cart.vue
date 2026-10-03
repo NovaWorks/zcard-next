@@ -74,8 +74,9 @@
             <div class="muted">{{ $t('优惠与实体运费将在结算时核算') }}</div>
           </div>
           <div class="cart-checkout-fields">
-            <input v-model="queryPwd" type="text" class="input" :placeholder="trade.queryPasswordRequired ? $t('查询密码 *（取货用，≥4 位）') : $t('查询密码（取货用，≥4 位）')" style="max-width: 170px;" />
-            <input v-if="(isGuestCart || trade.contactScope === 'all') && trade.contactRequired !== 'none'" v-model="contact" type="text" class="input" :placeholder="$t('联系方式 *（{0}）', [contactRequiredLabel(trade.contactRequired)])" style="max-width: 170px;" />
+            <input v-if="!physicalOnly" v-model="queryPwd" type="text" class="input" :placeholder="trade.queryPasswordRequired ? $t('查询密码 *（取货用，≥4 位）') : $t('查询密码（取货用，≥4 位）')" style="max-width: 170px;" />
+            <input v-if="physicalOnly && isGuestCart" v-model="contact" type="email" autocomplete="email" class="input" :placeholder="$t('邮箱（订单通知与找回）')" />
+            <input v-if="!physicalOnly && (isGuestCart || trade.contactScope === 'all') && trade.contactRequired !== 'none'" v-model="contact" type="text" class="input" :placeholder="$t('联系方式 *（{0}）', [contactRequiredLabel(trade.contactRequired)])" style="max-width: 170px;" />
             <input v-model="couponCode" type="text" class="input" :placeholder="$t('优惠券码（选填）')" style="max-width: 150px;" />
             <template v-if="isGuestCart && captchaCfg.order">
               <CaptchaInput ref="captchaRef" @update:code="captchaCode = $event" @update:captcha-id="captchaId = $event" />
@@ -151,6 +152,8 @@ const controlsNeeded = ref<{ productId: number; key: string; name: string; contr
 const validItems = computed(() => items.value.filter((i) => i.valid && !(flash.active(i.flash_sale) && (i.flash_sale?.remaining || 0) <= 0) && (i.stock ?? 0) !== 0 && i.stock >= -1));
 const allSelected = computed(() => validItems.value.length > 0 && selected.value.length === validItems.value.length);
 const selectedItems = computed(() => validItems.value.filter((i) => selected.value.includes(i.id)));
+const productProperties = ref<Record<number,string>>({});
+const physicalOnly = computed(() => selectedItems.value.length > 0 && selectedItems.value.every(i => productProperties.value[i.product_id] === 'physical'));
 function itemPrice(item: CartItem) { return flash.price(cartPriceCents(item.price_cents), item.flash_sale); }
 const rawTotal = computed(() => selectedItems.value.reduce((s, i) => s + itemPrice(i) * i.quantity, 0));
 const controlsComplete = computed(() =>
@@ -169,12 +172,13 @@ async function load() {
   items.value = list || [];
   isGuestCart.value = isGuest;
   selected.value = validItems.value.map((i) => i.id);
-  loaded.value = true;
-  const productIds = [...new Set(items.value.filter(i => i.sku_id).map(i => i.product_id))];
+  const productIds = [...new Set(items.value.map(i => i.product_id))];
   const details = new Map(await Promise.all(productIds.map(async id => [id, (await getProduct(id)).data] as const)));
+  productProperties.value=Object.fromEntries([...details].map(([id,p])=>[id,p?.product_property || p?.goods_type || 'virtual']));
   skuNames.value = Object.fromEntries(items.value.filter(i => i.sku_id).map(i => [
     i.id, details.get(i.product_id)?.skus?.find(s => Number(s.id) === Number(i.sku_id))?.name || '',
   ]));
+  loaded.value = true;
 }
 
 function toggleAll() {
@@ -206,11 +210,12 @@ async function remove(id: number) {
 async function checkout() {
   if (!(await refreshCartSetting(true))) return;
   // 交易设置校验（与后端同口径：查询密码强制 + 游客联系方式）
-  if (trade.value.queryPasswordRequired && queryPwd.value.trim().length < 4) {
+  if (!physicalOnly.value && trade.value.queryPasswordRequired && queryPwd.value.trim().length < 4) {
     alert($t("请设置查询密码（取货用，至少 4 位）"));
     return;
   }
-  if ((isGuestCart.value || trade.value.contactScope === 'all') && trade.value.contactRequired !== 'none') {
+  if (physicalOnly.value && isGuestCart.value && !contactValid(contact.value.trim(), 'email')) { alert($t('请填写有效邮箱，用于订单通知与找回')); return; }
+  if (!physicalOnly.value && (isGuestCart.value || trade.value.contactScope === 'all') && trade.value.contactRequired !== 'none') {
     if (!contact.value.trim()) {
       alert($t("请填写联系方式（{0}），用于订单查询与售后", [contactRequiredLabel(trade.value.contactRequired)]));
       return;
@@ -228,7 +233,7 @@ async function checkout() {
   for (const it of selectedItems.value) {
     const { data: p } = await getProduct(it.product_id);
     if (!p) { alert($t("读取商品填写信息失败，请重试")); return; }
- if(p.goods_type==='physical'){const current:string[]|null=checkoutCountries.value;checkoutCountries.value=current===null?[...(p.shipping_countries || [])]:(current as string[]).filter((c:string)=>(p.shipping_countries || []).includes(c))}
+ if((p.product_property || p.goods_type)==='physical'){const current:string[]|null=checkoutCountries.value;checkoutCountries.value=current===null?[...(p.shipping_countries || [])]:(current as string[]).filter((c:string)=>(p.shipping_countries || []).includes(c))}
  const req = p.controls || [];
  const key = `${it.product_id}:${it.sku_id || 0}`; controlAnswers.value[key] = {};
     if (req.length) needed.push({ productId: it.product_id, key, name: `${p.name} ${p.skus?.find(s => Number(s.id) === Number(it.sku_id))?.name || ""}`, controls: req });
@@ -247,7 +252,7 @@ async function doCheckout() {
   checkingOut.value = true;
   try {
     if (!(await refreshCartSetting(true))) return;
-    if (checkoutCountries.value !== null && isGuestCart.value && queryPwd.value.trim().length < 4) {
+    if (!physicalOnly.value && checkoutCountries.value !== null && isGuestCart.value && queryPwd.value.trim().length < 4) {
       alert($t("游客购买实体商品须设置至少4位查询密码"));
       return;
     }
@@ -255,7 +260,7 @@ async function doCheckout() {
     const input = {
       items: selectedItems.value.map((i) => ({ product_id: i.product_id, sku_id: i.sku_id || undefined, quantity: i.quantity, control_answers:controlAnswers.value[`${i.product_id}:${i.sku_id || 0}`] })),
       coupon_code: couponCode.value || undefined,
-      query_password: queryPwd.value,
+      query_password: physicalOnly.value ? undefined : queryPwd.value,
       ref_code: getRefCode() || undefined,
       captcha_id: (isGuestCart.value && captchaCfg.value.order) ? captchaId.value : undefined,
       captcha_code: (isGuestCart.value && captchaCfg.value.order) ? captchaCode.value : undefined,
