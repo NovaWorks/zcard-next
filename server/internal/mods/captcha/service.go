@@ -22,10 +22,10 @@ func NewStoreCaptchaService(svc *Service) *StoreCaptchaService {
 }
 
 // GetImage 生成验证码。
-func (s *StoreCaptchaService) GetImage(_ context.Context, _ *emptypb.Empty) (*storefrontv1.CaptchaImage, error) {
-	id, b64, err := s.svc.Get()
+func (s *StoreCaptchaService) GetImage(ctx context.Context, _ *emptypb.Empty) (*storefrontv1.CaptchaImage, error) {
+	img, err := s.svc.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &storefrontv1.CaptchaImage{CaptchaId: id, ImageBase64: b64}, nil
+	return &storefrontv1.CaptchaImage{CaptchaId: img.ID, ImageBase64: img.ImageBase64, Length: uint32(img.Length), Charset: img.Charset}, nil
 }

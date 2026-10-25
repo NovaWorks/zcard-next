@@ -101,6 +101,8 @@ message LoginRequest {
 message CaptchaImageReply {
   string captcha_id = 1; // 验证码 ID（提交时回传）
   string image_base64 = 2; // base64 PNG 图片（data:image/png;base64, 前缀）
+  uint32 length = 3; // 本次验证码位数（4–8）
+  string charset = 4; // 本次字符类型：digit / letter / mixed（字母不区分大小写）
 }
 
 message CaptchaConfigReply {

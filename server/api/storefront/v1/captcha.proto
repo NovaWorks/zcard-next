@@ -7,9 +7,9 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;st
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
-// StoreCaptchaService 图形验证码（免鉴权；4 位数字——settings.security.captcha_* 场景开关）。
+// StoreCaptchaService 图形验证码（免鉴权；settings.security.captcha_* 控制场景和格式）。
 service StoreCaptchaService {
-  // GetImage 生成验证码（{captcha_id, image_base64}；一次性消费）。
+  // GetImage 生成验证码和本次输入格式（一次性消费）。
   rpc GetImage(google.protobuf.Empty) returns (CaptchaImage) {
     option (google.api.http) = { get: "/api/v1/storefront/captcha/image" };
   }
@@ -18,4 +18,6 @@ service StoreCaptchaService {
 message CaptchaImage {
   string captcha_id = 1; // 验证码 ID（提交时回传）
   string image_base64 = 2; // 图片 data URL（<img src> 直用）
+  uint32 length = 3; // 本次验证码位数（4–8）
+  string charset = 4; // 本次字符类型：digit / letter / mixed（字母不区分大小写）
 }

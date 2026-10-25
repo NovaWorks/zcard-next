@@ -4,9 +4,12 @@
       class="input captcha-code-input"
       :value="code"
       type="text"
-      inputmode="numeric"
-      :placeholder="$t('4 位数字')"
-      maxlength="4"
+      :inputmode="charset === 'digit' ? 'numeric' : 'text'"
+      :placeholder="placeholder"
+      :maxlength="length"
+      :aria-label="$t('验证码')"
+      autocapitalize="off"
+      :spellcheck="false"
       @input="onInput"
     />
     <img
@@ -25,10 +28,10 @@
 import { t as $t } from '@/i18n';
 
 /**
- * 图形验证码输入（4 位数字）：图片自动加载 + 点击刷新 + 提交 payload 同步。
+ * 图形验证码输入（长度和字符格式随图片下发）：图片自动加载 + 点击刷新 + 提交 payload 同步。
  * 验证失败后父组件调 refresh() 自动换图。
  */
-import { ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { fetchCaptcha } from '@/api';
 
 const props = defineProps<{
@@ -43,6 +46,13 @@ const emit = defineEmits<{
 const code = ref('');
 const image = ref('');
 const captchaId = ref('');
+const length = ref(4);
+const charset = ref<'digit' | 'letter' | 'mixed'>('digit');
+const placeholder = computed(() => charset.value === 'letter'
+  ? $t('{0} 位字母（不区分大小写）', [length.value])
+  : charset.value === 'mixed'
+    ? $t('{0} 位数字和字母（不区分大小写）', [length.value])
+    : $t('{0} 位数字', [length.value]));
 let loaded = false;
 let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -60,6 +70,8 @@ async function refresh() {
       loaded = true;
       captchaId.value = data.captcha_id;
       image.value = data.image_base64;
+      length.value = Number.isInteger(data.length) && data.length! >= 4 && data.length! <= 8 ? data.length! : 4;
+      charset.value = data.charset === 'letter' || data.charset === 'mixed' ? data.charset : 'digit';
       code.value = '';
       emit('update:captchaId', data.captcha_id);
       emit('update:code', '');
@@ -68,7 +80,8 @@ async function refresh() {
 }
 
 function onInput(e: Event) {
-  const v = (e.target as HTMLInputElement).value.replace(/\D/g, '').slice(0, 4);
+  const invalid = charset.value === 'letter' ? /[^a-z]/gi : charset.value === 'mixed' ? /[^a-z0-9]/gi : /\D/g;
+  const v = (e.target as HTMLInputElement).value.replace(invalid, '').slice(0, length.value);
   code.value = v;
   (e.target as HTMLInputElement).value = v;
   emit('update:code', v);

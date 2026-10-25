@@ -243,9 +243,9 @@ export function sendRegisterCode(target: string, channel: 'email' | 'phone', cap
 
 // ── 图形验证码（settings.security.captcha_* 场景开关）──
 
-/** 获取图形验证码（4 位数字；一次性消费） */
+/** 获取图形验证码及该图片的输入格式；一次性消费。 */
 export function fetchCaptcha() {
-  return api.get<{ captcha_id: string; image_base64: string }>('/captcha/image');
+  return api.get<{ captcha_id: string; image_base64: string; length?: number; charset?: 'digit' | 'letter' | 'mixed' }>('/captcha/image');
 }
 
 /** 四场景开关（config 公开下发） */

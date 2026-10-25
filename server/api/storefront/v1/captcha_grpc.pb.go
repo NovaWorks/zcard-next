@@ -27,9 +27,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// StoreCaptchaService 图形验证码（免鉴权；4 位数字——settings.security.captcha_* 场景开关）。
+// StoreCaptchaService 图形验证码（免鉴权；settings.security.captcha_* 控制场景和格式）。
 type StoreCaptchaServiceClient interface {
-	// GetImage 生成验证码（{captcha_id, image_base64}；一次性消费）。
+	// GetImage 生成验证码和本次输入格式（一次性消费）。
 	GetImage(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CaptchaImage, error)
 }
 
@@ -55,9 +55,9 @@ func (c *storeCaptchaServiceClient) GetImage(ctx context.Context, in *emptypb.Em
 // All implementations must embed UnimplementedStoreCaptchaServiceServer
 // for forward compatibility.
 //
-// StoreCaptchaService 图形验证码（免鉴权；4 位数字——settings.security.captcha_* 场景开关）。
+// StoreCaptchaService 图形验证码（免鉴权；settings.security.captcha_* 控制场景和格式）。
 type StoreCaptchaServiceServer interface {
-	// GetImage 生成验证码（{captcha_id, image_base64}；一次性消费）。
+	// GetImage 生成验证码和本次输入格式（一次性消费）。
 	GetImage(context.Context, *emptypb.Empty) (*CaptchaImage, error)
 	mustEmbedUnimplementedStoreCaptchaServiceServer()
 }

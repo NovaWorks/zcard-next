@@ -425,6 +425,8 @@ const local: App.I18n.Schema = {
       captcha_order: "下单验证码",
       captcha_reset: "重置密码验证码",
       captcha_admin_login: "后台登录验证码",
+      captcha_length: "验证码位数",
+      captcha_charset: "验证码字符类型",
       username_min_len: "用户名最小长度",
       max_pending_per_ip: "单 IP 待付款订单上限",
       risk_enabled: "风控拦截",

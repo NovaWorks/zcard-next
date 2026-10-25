@@ -64,11 +64,11 @@ func (s *AdminAuthService) Login(ctx context.Context, req *adminv1.LoginRequest)
 
 // GetCaptchaImage 登录图形验证码（免鉴权）。
 func (s *AdminAuthService) GetCaptchaImage(ctx context.Context, _ *emptypb.Empty) (*adminv1.CaptchaImageReply, error) {
-	id, b64, err := s.cap.Get()
+	img, err := s.cap.Get(ctx)
 	if err != nil {
 		return nil, errors.InternalServer("identity.CAPTCHA_GEN_FAILED", "生成验证码失败")
 	}
-	return &adminv1.CaptchaImageReply{CaptchaId: id, ImageBase64: b64}, nil
+	return &adminv1.CaptchaImageReply{CaptchaId: img.ID, ImageBase64: img.ImageBase64, Length: uint32(img.Length), Charset: img.Charset}, nil
 }
 
 // GetCaptchaConfig 登录验证码开关（免鉴权；登录页条件渲染）。

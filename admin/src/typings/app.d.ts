@@ -645,6 +645,8 @@ declare namespace App {
           captcha_order: string;
           captcha_reset: string;
           captcha_admin_login: string;
+          captcha_length: string;
+          captcha_charset: string;
           username_min_len: string;
           max_pending_per_ip: string;
           risk_enabled: string;

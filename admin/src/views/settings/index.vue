@@ -608,6 +608,12 @@ onMounted(() => {
                       <p class="mt-6px text-12px text-gray-500">按实际发货规格判断。例如设置 5：库存 0–4 件提醒，5 件不提醒。TG 推送在「工单 / TG通知」单独开启；加速检查在货源渠道的定时计划中设置。</p>
                     </div>
                   </template>
+                  <template v-else-if="item.group === 'security' && item.key === 'captcha_length'">
+                    <div class="min-w-0 flex-1">
+                      <NInputNumber :value="getVal(item)" :min="4" :max="8" :precision="0" class="w-full max-w-200px" :input-props="{ 'aria-label': labelOf(item), 'aria-describedby': 'captcha-length-help' }" @update:value="(v: number | null) => v !== null && setVal(item, v)" />
+                      <p id="captcha-length-help" class="mt-6px text-12px text-gray-500">4–8 位，默认 4 位数字；保存后新生成的图形验证码生效，适用于前台与后台登录。</p>
+                    </div>
+                  </template>
                   <template v-else-if="typeof getVal(item) === 'number'">
                     <!-- 数字类设置：紧凑定宽输入（大厂模式——数值框不占满整行，标签后短输入即可） -->
                     <NInputNumber

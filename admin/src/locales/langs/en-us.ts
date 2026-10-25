@@ -432,6 +432,8 @@ const local: App.I18n.Schema = {
       captcha_order: "Checkout Captcha",
       captcha_reset: "Reset Password Captcha",
       captcha_admin_login: "Admin Login Captcha",
+      captcha_length: "Captcha Length",
+      captcha_charset: "Captcha Character Type",
       username_min_len: "Min Username Length",
       max_pending_per_ip: "Max Pending Orders per IP",
       risk_enabled: "Risk Control",

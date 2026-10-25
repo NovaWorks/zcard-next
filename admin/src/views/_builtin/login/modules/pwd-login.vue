@@ -68,6 +68,19 @@ const showCaptcha = ref(false);
 const captchaId = ref("");
 const captchaImage = ref("");
 const captchaCode = ref("");
+const captchaLength = ref(4);
+const captchaCharset = ref<"digit" | "letter" | "mixed">("digit");
+const captchaPlaceholder = computed(() => {
+  const format = captchaCharset.value === "letter" ? "字母，不区分大小写"
+    : captchaCharset.value === "mixed" ? "数字和字母，不区分大小写" : "数字";
+  return `图形验证码（${captchaLength.value} 位${format}）`;
+});
+
+function updateCaptchaCode(value: string) {
+  const invalid = captchaCharset.value === "letter" ? /[^a-z]/gi
+    : captchaCharset.value === "mixed" ? /[^a-z0-9]/gi : /\D/g;
+  captchaCode.value = value.replace(invalid, "").slice(0, captchaLength.value);
+}
 
 onMounted(async () => {
   loadRemembered();
@@ -87,6 +100,8 @@ async function loadCaptchaImage() {
     if (data?.captcha_id) {
       captchaId.value = data.captcha_id;
       captchaImage.value = data.image_base64;
+      captchaLength.value = Number.isInteger(data.length) && data.length! >= 4 && data.length! <= 8 ? data.length! : 4;
+      captchaCharset.value = data.charset === "letter" || data.charset === "mixed" ? data.charset : "digit";
       captchaCode.value = "";
     }
   } catch {
@@ -172,10 +187,12 @@ async function handleSubmit() {
       <NFormItem v-if="showCaptcha" path="captchaCode">
         <div class="flex w-full items-center gap-8px">
           <NInput
-            v-model:value="captchaCode"
+            :value="captchaCode"
             class="flex-1"
-            :maxlength="4"
-            placeholder="图形验证码（4 位数字）"
+            :maxlength="captchaLength"
+            :placeholder="captchaPlaceholder"
+            :input-props="{ inputmode: captchaCharset === 'digit' ? 'numeric' : 'text', 'aria-label': '图形验证码', autocapitalize: 'off', spellcheck: false }"
+            @update:value="updateCaptchaCode"
           />
           <img
             v-if="captchaImage"

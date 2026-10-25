@@ -11,7 +11,7 @@ export function fetchLogin(username: string, password: string, captcha?: { captc
 
 /** 登录图形验证码（免鉴权；GET /api/v1/admin/auth/captcha/image） */
 export function fetchAdminCaptchaImage() {
-  return request<{ captcha_id: string; image_base64: string }>({
+  return request<{ captcha_id: string; image_base64: string; length?: number; charset?: 'digit' | 'letter' | 'mixed' }>({
     url: "/api/v1/admin/auth/captcha/image",
   });
 }

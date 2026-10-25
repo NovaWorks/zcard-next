@@ -5951,7 +5951,7 @@ paths:
         get:
             tags:
                 - StoreCaptchaService
-            description: GetImage 生成验证码（{captcha_id, image_base64}；一次性消费）。
+            description: GetImage 生成验证码和本次输入格式（一次性消费）。
             operationId: StoreCaptchaService_GetImage
             responses:
                 "200":
@@ -8354,6 +8354,11 @@ components:
                 captchaId:
                     type: string
                 imageBase64:
+                    type: string
+                length:
+                    type: integer
+                    format: uint32
+                charset:
                     type: string
         zcard.api.admin.v1.CapturePaymentRequest:
             required:
@@ -13661,6 +13666,11 @@ components:
                     type: string
                 imageBase64:
                     type: string
+                length:
+                    type: integer
+                    format: uint32
+                charset:
+                    type: string
         zcard.api.storefront.v1.CartItem:
             type: object
             properties:
@@ -15909,7 +15919,7 @@ tags:
     - name: StoreAffiliateService
       description: StoreAffiliateService 我的分销：推广码/团队/佣金流水/统计。
     - name: StoreCaptchaService
-      description: StoreCaptchaService 图形验证码（免鉴权；4 位数字——settings.security.captcha_* 场景开关）。
+      description: StoreCaptchaService 图形验证码（免鉴权；settings.security.captcha_* 控制场景和格式）。
     - name: StoreCartService
       description: |-
         StoreCartService 购物车(销账）：登录态专属 CRUD；

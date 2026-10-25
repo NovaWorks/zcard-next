@@ -226,6 +226,8 @@ type CaptchaImageReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CaptchaId     string                 `protobuf:"bytes,1,opt,name=captcha_id,json=captchaId,proto3" json:"captcha_id,omitempty"`       // 验证码 ID（提交时回传）
 	ImageBase64   string                 `protobuf:"bytes,2,opt,name=image_base64,json=imageBase64,proto3" json:"image_base64,omitempty"` // base64 PNG 图片（data:image/png;base64, 前缀）
+	Length        uint32                 `protobuf:"varint,3,opt,name=length,proto3" json:"length,omitempty"`                             // 本次验证码位数（4–8）
+	Charset       string                 `protobuf:"bytes,4,opt,name=charset,proto3" json:"charset,omitempty"`                            // 本次字符类型：digit / letter / mixed（字母不区分大小写）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -270,6 +272,20 @@ func (x *CaptchaImageReply) GetCaptchaId() string {
 func (x *CaptchaImageReply) GetImageBase64() string {
 	if x != nil {
 		return x.ImageBase64
+	}
+	return ""
+}
+
+func (x *CaptchaImageReply) GetLength() uint32 {
+	if x != nil {
+		return x.Length
+	}
+	return 0
+}
+
+func (x *CaptchaImageReply) GetCharset() string {
+	if x != nil {
+		return x.Charset
 	}
 	return ""
 }
@@ -870,11 +886,13 @@ const file_admin_v1_auth_proto_rawDesc = "" +
 	"\ttotp_code\x18\x03 \x01(\tR\btotpCode\x12\x1d\n" +
 	"\n" +
 	"captcha_id\x18\x04 \x01(\tR\tcaptchaId\x12!\n" +
-	"\fcaptcha_code\x18\x05 \x01(\tR\vcaptchaCode\"U\n" +
+	"\fcaptcha_code\x18\x05 \x01(\tR\vcaptchaCode\"\x87\x01\n" +
 	"\x11CaptchaImageReply\x12\x1d\n" +
 	"\n" +
 	"captcha_id\x18\x01 \x01(\tR\tcaptchaId\x12!\n" +
-	"\fimage_base64\x18\x02 \x01(\tR\vimageBase64\".\n" +
+	"\fimage_base64\x18\x02 \x01(\tR\vimageBase64\x12\x16\n" +
+	"\x06length\x18\x03 \x01(\rR\x06length\x12\x18\n" +
+	"\acharset\x18\x04 \x01(\tR\acharset\".\n" +
 	"\x12CaptchaConfigReply\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\"4\n" +
 	"\rLogoutRequest\x12#\n" +

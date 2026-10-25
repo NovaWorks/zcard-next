@@ -154,12 +154,14 @@ var groups = map[string]*GroupDef{
 			"register_enabled": "开放注册", "register_method": "注册方式（多选）",
 			"captcha_register": "注册验证码", "captcha_login": "登录验证码", "captcha_order": "下单验证码（仅游客）",
 			"captcha_reset": "重置密码验证码", "captcha_admin_login": "后台登录验证码",
+			"captcha_length": "验证码位数", "captcha_charset": "验证码字符类型",
 			"username_min_len":   "用户名最小长度",
 			"max_pending_per_ip": "单 IP 待付款订单上限", "risk_enabled": "风控拦截",
 		},
 		Options: map[string]map[string]string{
 			// 多选（数组）：勾选的通道全部可用；至少含 username 才能免验证注册
 			"register_method": {"username": "用户名", "email": "邮箱验证", "phone": "手机验证"},
+			"captcha_charset": {"digit": "纯数字", "letter": "纯字母", "mixed": "数字字母混合"},
 		},
 		Defaults: map[string]any{
 			"register_enabled":    true,
@@ -169,6 +171,8 @@ var groups = map[string]*GroupDef{
 			"captcha_order":       false,
 			"captcha_reset":       true,
 			"captcha_admin_login": false,
+			"captcha_length":      4,
+			"captcha_charset":     "digit",
 			"username_min_len":    3,
 			"max_pending_per_ip":  3,
 			"risk_enabled":        true,

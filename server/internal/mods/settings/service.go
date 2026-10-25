@@ -80,6 +80,21 @@ func (s *AdminSettingsService) ListSettings(ctx context.Context, req *adminv1.Li
 // validateSettingValue 设置值业务校验（单键/批量共用）：
 // base_currency 必须存在、模板键必须在清单内。
 func (s *AdminSettingsService) validateSettingValue(ctx context.Context, group, key string, value json.RawMessage) error {
+	if group == "security" {
+		switch key {
+		case "captcha_length":
+			var n *int
+			if json.Unmarshal(value, &n) != nil || n == nil || *n < 4 || *n > 8 {
+				return errors.BadRequest("settings.INVALID_VALUE", "验证码位数须为 4–8 的整数")
+			}
+		case "captcha_charset":
+			var v string
+			g, _ := Group("security")
+			if json.Unmarshal(value, &v) != nil || g.Options[key][v] == "" {
+				return errors.BadRequest("settings.INVALID_VALUE", "验证码字符类型须为纯数字、纯字母或数字字母混合")
+			}
+		}
+	}
 	if group == "supply" && key == "low_stock_alert_enabled" {
 		var v *bool
 		if json.Unmarshal(value, &v) != nil || v == nil {

@@ -21,7 +21,7 @@ const _ = http.SupportPackageIsVersion3
 const OperationStoreCaptchaServiceGetImage = "/zcard.api.storefront.v1.StoreCaptchaService/GetImage"
 
 type StoreCaptchaServiceHTTPServer interface {
-	// GetImage GetImage 生成验证码（{captcha_id, image_base64}；一次性消费）。
+	// GetImage GetImage 生成验证码和本次输入格式（一次性消费）。
 	GetImage(context.Context, *emptypb.Empty) (*CaptchaImage, error)
 }
 
@@ -50,7 +50,7 @@ func _StoreCaptchaService_GetImage0_HTTP_Handler(srv StoreCaptchaServiceHTTPServ
 }
 
 type StoreCaptchaServiceHTTPClient interface {
-	// GetImage GetImage 生成验证码（{captcha_id, image_base64}；一次性消费）。
+	// GetImage GetImage 生成验证码和本次输入格式（一次性消费）。
 	GetImage(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *CaptchaImage, err error)
 }
 
@@ -62,7 +62,7 @@ func NewStoreCaptchaServiceHTTPClient(client *http.Client) StoreCaptchaServiceHT
 	return &StoreCaptchaServiceHTTPClientImpl{client}
 }
 
-// GetImage GetImage 生成验证码（{captcha_id, image_base64}；一次性消费）。
+// GetImage GetImage 生成验证码和本次输入格式（一次性消费）。
 func (c *StoreCaptchaServiceHTTPClientImpl) GetImage(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*CaptchaImage, error) {
 	var out CaptchaImage
 	pattern := "/api/v1/storefront/captcha/image"
