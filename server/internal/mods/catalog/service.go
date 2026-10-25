@@ -32,7 +32,7 @@ type StoreCatalogService struct {
 	// pricer 分站定价（：listing 与 checkout 共用同一 ResolveUnitPrice——1.x 铁律；
 	// nil = 主站直营形态不解析分站价）。
 	pricer resellerport.Pricer
-	// sold 批量已售数量（列表展示 + sales 排序；nil 容错降级 0）
+	// sold 批量已售数量（列表/详情展示 + sales 排序；nil 容错降级 0）
 	sold orderport.SoldCounter
 }
 
@@ -186,7 +186,11 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 	}
 	snapshots, _ := s.uc.repo.StockSnapshotBatch(ctx, []uint64{p.ID})
 	snapshot := snapshots[p.ID]
-	out := toStorefrontProduct(p, map[uint64]int64{p.ID: snapshot.Available}, 0)
+	var solds map[uint64]int64
+	if s.sold != nil {
+		solds, _ = s.sold.SoldBatch(ctx, []uint64{p.ID})
+	}
+	out := toStorefrontProduct(p, map[uint64]int64{p.ID: snapshot.Available}, solds[p.ID])
 	out.StockStatus = snapshot.Status
 	out.StockReference = snapshot.Quantity
 	if !snapshot.CheckedAt.IsZero() {
