@@ -20,15 +20,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminInventoryService_ImportPreview_FullMethodName    = "/zcard.api.admin.v1.AdminInventoryService/ImportPreview"
-	AdminInventoryService_ImportConfirm_FullMethodName    = "/zcard.api.admin.v1.AdminInventoryService/ImportConfirm"
-	AdminInventoryService_ListImports_FullMethodName      = "/zcard.api.admin.v1.AdminInventoryService/ListImports"
-	AdminInventoryService_CancelImport_FullMethodName     = "/zcard.api.admin.v1.AdminInventoryService/CancelImport"
-	AdminInventoryService_ListCards_FullMethodName        = "/zcard.api.admin.v1.AdminInventoryService/ListCards"
-	AdminInventoryService_ExportCards_FullMethodName      = "/zcard.api.admin.v1.AdminInventoryService/ExportCards"
-	AdminInventoryService_ToggleCard_FullMethodName       = "/zcard.api.admin.v1.AdminInventoryService/ToggleCard"
-	AdminInventoryService_ViewCardContent_FullMethodName  = "/zcard.api.admin.v1.AdminInventoryService/ViewCardContent"
-	AdminInventoryService_ListPremiumCards_FullMethodName = "/zcard.api.admin.v1.AdminInventoryService/ListPremiumCards"
+	AdminInventoryService_GetTargets_FullMethodName          = "/zcard.api.admin.v1.AdminInventoryService/GetTargets"
+	AdminInventoryService_AssignPreview_FullMethodName       = "/zcard.api.admin.v1.AdminInventoryService/AssignPreview"
+	AdminInventoryService_AssignCards_FullMethodName         = "/zcard.api.admin.v1.AdminInventoryService/AssignCards"
+	AdminInventoryService_PreviewCancelImport_FullMethodName = "/zcard.api.admin.v1.AdminInventoryService/PreviewCancelImport"
+	AdminInventoryService_ImportPreview_FullMethodName       = "/zcard.api.admin.v1.AdminInventoryService/ImportPreview"
+	AdminInventoryService_ImportConfirm_FullMethodName       = "/zcard.api.admin.v1.AdminInventoryService/ImportConfirm"
+	AdminInventoryService_ListImports_FullMethodName         = "/zcard.api.admin.v1.AdminInventoryService/ListImports"
+	AdminInventoryService_CancelImport_FullMethodName        = "/zcard.api.admin.v1.AdminInventoryService/CancelImport"
+	AdminInventoryService_ListCards_FullMethodName           = "/zcard.api.admin.v1.AdminInventoryService/ListCards"
+	AdminInventoryService_ExportCards_FullMethodName         = "/zcard.api.admin.v1.AdminInventoryService/ExportCards"
+	AdminInventoryService_ToggleCard_FullMethodName          = "/zcard.api.admin.v1.AdminInventoryService/ToggleCard"
+	AdminInventoryService_ViewCardContent_FullMethodName     = "/zcard.api.admin.v1.AdminInventoryService/ViewCardContent"
+	AdminInventoryService_ListPremiumCards_FullMethodName    = "/zcard.api.admin.v1.AdminInventoryService/ListPremiumCards"
 )
 
 // AdminInventoryServiceClient is the client API for AdminInventoryService service.
@@ -37,6 +41,10 @@ const (
 //
 // AdminInventoryService 卡密库存管理：导入/导出/列表/操作。
 type AdminInventoryServiceClient interface {
+	GetTargets(ctx context.Context, in *InventoryTargetsRequest, opts ...grpc.CallOption) (*InventoryTargetsReply, error)
+	AssignPreview(ctx context.Context, in *AssignPreviewRequest, opts ...grpc.CallOption) (*AssignPreviewReply, error)
+	AssignCards(ctx context.Context, in *AssignCardsRequest, opts ...grpc.CallOption) (*AssignCardsReply, error)
+	PreviewCancelImport(ctx context.Context, in *CancelImportRequest, opts ...grpc.CallOption) (*CancelImportPreviewReply, error)
 	// ImportPreview 上传预览（去重统计 + 样本预览）。
 	ImportPreview(ctx context.Context, in *ImportPreviewRequest, opts ...grpc.CallOption) (*ImportPreviewReply, error)
 	// ImportConfirm 确认导入（分片写入 + 批次追踪）。
@@ -63,6 +71,46 @@ type adminInventoryServiceClient struct {
 
 func NewAdminInventoryServiceClient(cc grpc.ClientConnInterface) AdminInventoryServiceClient {
 	return &adminInventoryServiceClient{cc}
+}
+
+func (c *adminInventoryServiceClient) GetTargets(ctx context.Context, in *InventoryTargetsRequest, opts ...grpc.CallOption) (*InventoryTargetsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InventoryTargetsReply)
+	err := c.cc.Invoke(ctx, AdminInventoryService_GetTargets_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminInventoryServiceClient) AssignPreview(ctx context.Context, in *AssignPreviewRequest, opts ...grpc.CallOption) (*AssignPreviewReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AssignPreviewReply)
+	err := c.cc.Invoke(ctx, AdminInventoryService_AssignPreview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminInventoryServiceClient) AssignCards(ctx context.Context, in *AssignCardsRequest, opts ...grpc.CallOption) (*AssignCardsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AssignCardsReply)
+	err := c.cc.Invoke(ctx, AdminInventoryService_AssignCards_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminInventoryServiceClient) PreviewCancelImport(ctx context.Context, in *CancelImportRequest, opts ...grpc.CallOption) (*CancelImportPreviewReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CancelImportPreviewReply)
+	err := c.cc.Invoke(ctx, AdminInventoryService_PreviewCancelImport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *adminInventoryServiceClient) ImportPreview(ctx context.Context, in *ImportPreviewRequest, opts ...grpc.CallOption) (*ImportPreviewReply, error) {
@@ -161,6 +209,10 @@ func (c *adminInventoryServiceClient) ListPremiumCards(ctx context.Context, in *
 //
 // AdminInventoryService 卡密库存管理：导入/导出/列表/操作。
 type AdminInventoryServiceServer interface {
+	GetTargets(context.Context, *InventoryTargetsRequest) (*InventoryTargetsReply, error)
+	AssignPreview(context.Context, *AssignPreviewRequest) (*AssignPreviewReply, error)
+	AssignCards(context.Context, *AssignCardsRequest) (*AssignCardsReply, error)
+	PreviewCancelImport(context.Context, *CancelImportRequest) (*CancelImportPreviewReply, error)
 	// ImportPreview 上传预览（去重统计 + 样本预览）。
 	ImportPreview(context.Context, *ImportPreviewRequest) (*ImportPreviewReply, error)
 	// ImportConfirm 确认导入（分片写入 + 批次追踪）。
@@ -189,6 +241,18 @@ type AdminInventoryServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAdminInventoryServiceServer struct{}
 
+func (UnimplementedAdminInventoryServiceServer) GetTargets(context.Context, *InventoryTargetsRequest) (*InventoryTargetsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTargets not implemented")
+}
+func (UnimplementedAdminInventoryServiceServer) AssignPreview(context.Context, *AssignPreviewRequest) (*AssignPreviewReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method AssignPreview not implemented")
+}
+func (UnimplementedAdminInventoryServiceServer) AssignCards(context.Context, *AssignCardsRequest) (*AssignCardsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method AssignCards not implemented")
+}
+func (UnimplementedAdminInventoryServiceServer) PreviewCancelImport(context.Context, *CancelImportRequest) (*CancelImportPreviewReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method PreviewCancelImport not implemented")
+}
 func (UnimplementedAdminInventoryServiceServer) ImportPreview(context.Context, *ImportPreviewRequest) (*ImportPreviewReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ImportPreview not implemented")
 }
@@ -235,6 +299,78 @@ func RegisterAdminInventoryServiceServer(s grpc.ServiceRegistrar, srv AdminInven
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AdminInventoryService_ServiceDesc, srv)
+}
+
+func _AdminInventoryService_GetTargets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InventoryTargetsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminInventoryServiceServer).GetTargets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminInventoryService_GetTargets_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminInventoryServiceServer).GetTargets(ctx, req.(*InventoryTargetsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminInventoryService_AssignPreview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AssignPreviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminInventoryServiceServer).AssignPreview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminInventoryService_AssignPreview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminInventoryServiceServer).AssignPreview(ctx, req.(*AssignPreviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminInventoryService_AssignCards_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AssignCardsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminInventoryServiceServer).AssignCards(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminInventoryService_AssignCards_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminInventoryServiceServer).AssignCards(ctx, req.(*AssignCardsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminInventoryService_PreviewCancelImport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelImportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminInventoryServiceServer).PreviewCancelImport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminInventoryService_PreviewCancelImport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminInventoryServiceServer).PreviewCancelImport(ctx, req.(*CancelImportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AdminInventoryService_ImportPreview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -406,6 +542,22 @@ var AdminInventoryService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.admin.v1.AdminInventoryService",
 	HandlerType: (*AdminInventoryServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetTargets",
+			Handler:    _AdminInventoryService_GetTargets_Handler,
+		},
+		{
+			MethodName: "AssignPreview",
+			Handler:    _AdminInventoryService_AssignPreview_Handler,
+		},
+		{
+			MethodName: "AssignCards",
+			Handler:    _AdminInventoryService_AssignCards_Handler,
+		},
+		{
+			MethodName: "PreviewCancelImport",
+			Handler:    _AdminInventoryService_PreviewCancelImport_Handler,
+		},
 		{
 			MethodName: "ImportPreview",
 			Handler:    _AdminInventoryService_ImportPreview_Handler,

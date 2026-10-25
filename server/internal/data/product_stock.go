@@ -52,6 +52,7 @@ func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product
 		}
 		localIDs, upIDs := []uint64{}, []uint64{}
 		byID := map[uint64]*ent.Product{}
+		cardPools := map[uint64]map[uint64]int64{}
 		for _, p := range products[start:end] {
 			byID[p.ID] = p
 			switch {
@@ -69,6 +70,9 @@ func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product
 					return nil, err
 				}
 				out[p.ID] = ProductStockSnapshot{Quantity: n, Status: "current"}
+				if p.StockType == "card" {
+					localIDs = append(localIDs, p.ID)
+				}
 			case p.UpstreamSourceID > 0:
 				out[p.ID] = ProductStockSnapshot{Quantity: -2, Status: "unknown"}
 				upIDs = append(upIDs, p.ID)
@@ -81,17 +85,25 @@ func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product
 		}
 		if len(localIDs) > 0 {
 			var counts []struct {
-				ProductID uint64 `json:"product_id"`
-				SubsiteID uint64 `json:"subsite_id"`
-				Count     int64  `json:"count"`
+				ProductID uint64  `json:"product_id"`
+				SubsiteID uint64  `json:"subsite_id"`
+				SkuID     *uint64 `json:"sku_id"`
+				Count     int64   `json:"count"`
 			}
-			err := client.Card.Query().Where(card.ProductIDIn(localIDs...), card.StatusEQ(card.StatusAvailable)).GroupBy(card.FieldProductID, card.FieldSubsiteID).Aggregate(ent.Count()).Scan(ctx, &counts)
+			err := client.Card.Query().Where(card.ProductIDIn(localIDs...), card.StatusEQ(card.StatusAvailable)).GroupBy(card.FieldProductID, card.FieldSubsiteID, card.FieldSkuID).Aggregate(ent.Count()).Scan(ctx, &counts)
 			if err != nil {
 				return nil, err
 			}
 			for _, c := range counts {
 				if p := byID[c.ProductID]; p != nil && p.SubsiteID == c.SubsiteID {
-					out[p.ID] = ProductStockSnapshot{Quantity: c.Count, Status: "current"}
+					if cardPools[p.ID] == nil {
+						cardPools[p.ID] = map[uint64]int64{}
+					}
+					var skuID uint64
+					if c.SkuID != nil {
+						skuID = *c.SkuID
+					}
+					cardPools[p.ID][skuID] += c.Count
 				}
 			}
 		}
@@ -106,10 +118,12 @@ func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product
 		}
 		grouped := map[uint64][]*ent.ProductSku{}
 		for _, sku := range skus {
-			grouped[sku.ProductID] = append(grouped[sku.ProductID], sku)
+			if p := byID[sku.ProductID]; p != nil && sku.SubsiteID == p.SubsiteID {
+				grouped[sku.ProductID] = append(grouped[sku.ProductID], sku)
+			}
 		}
 		for _, p := range byID {
-			if p.UpstreamSourceID > 0 || p.GoodsType == "physical" {
+			if p.UpstreamSourceID > 0 || p.GoodsType == "physical" || p.ProductKind == "sms_channel" {
 				continue
 			}
 			manual := p.FulfillmentMode == "manual" && len(grouped[p.ID]) == 0
@@ -125,6 +139,20 @@ func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product
 				}
 			}
 			if !manual {
+				// A product with SKUs can only sell those precise pools. Legacy
+				// NULL/0 cards (and cards of deleted SKUs) remain manageable stock,
+				// but must not make a selectable SKU appear available.
+				if p.StockType == "card" {
+					var count int64
+					if len(grouped[p.ID]) == 0 {
+						count = cardPools[p.ID][0]
+					} else {
+						for _, id := range autoIDs {
+							count += cardPools[p.ID][id]
+						}
+					}
+					out[p.ID] = ProductStockSnapshot{Quantity: count, Status: "current"}
+				}
 				continue
 			}
 			n, err := ManualAvailable(ctx, client, p)
@@ -178,7 +206,7 @@ func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product
 		if !local {
 			continue
 		}
-		skus, e := client.ProductSku.Query().Where(productsku.ProductID(p.ID)).All(ctx)
+		skus, e := client.ProductSku.Query().Where(productsku.ProductID(p.ID), productsku.SubsiteID(p.SubsiteID)).All(ctx)
 		if e != nil {
 			return nil, e
 		}
@@ -188,7 +216,14 @@ func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product
 		}
 		var total int64
 		unknown := false
+		manualCounted := false
 		for _, sk := range slots {
+			if StockSource(p, sk) == "manual" {
+				if manualCounted {
+					continue
+				}
+				manualCounted = true
+			}
 			n := int64(-2)
 			if StockSource(p, sk) == "upstream" {
 				if sk == nil {

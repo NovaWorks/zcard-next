@@ -143,9 +143,17 @@ func validImage(s string) bool {
 }
 
 // eligibleCard 同时用于发布与每次抽奖；不绕过商品来源、分类隐藏、规格或控件要求。
-func (r *Repo) eligibleCard(ctx context.Context, pid, sku uint64) (*ent.Product, error) {
+func (r *Repo) eligibleCard(ctx context.Context, pid, sku uint64, currentRead ...bool) (*ent.Product, error) {
 	c := data.Client(ctx, r.Data)
-	p, e := c.Product.Query().Where(product.ID(pid), product.SubsiteID(site(ctx)), product.Status(1)).Only(ctx)
+	// Saving prize references holds the parent product lock. Re-read the product
+	// and SKU as current rows after any wait, rather than using an older MySQL RR
+	// snapshot that may still contain a concurrently deleted SKU.
+	locked := len(currentRead) > 0 && currentRead[0] && r.Data.Dialect.Capabilities().SupportsForUpdate
+	pq := c.Product.Query().Where(product.ID(pid), product.SubsiteID(site(ctx)), product.Status(1))
+	if locked {
+		pq = pq.ForUpdate()
+	}
+	p, e := pq.Only(ctx)
 	if e != nil {
 		if ent.IsNotFound(e) {
 			return nil, bad("自动发奖商品不存在或已下架")
@@ -181,22 +189,22 @@ func (r *Repo) eligibleCard(ctx context.Context, pid, sku uint64) (*ent.Product,
 	if required {
 		return nil, bad("该商品有必填下单控件，请改用人工奖品")
 	}
+	sq := c.ProductSku.Query().Where(productsku.ProductID(pid), productsku.SubsiteID(site(ctx))).Limit(1)
 	if sku != 0 {
-		ok, e := c.ProductSku.Query().Where(productsku.ID(sku), productsku.ProductID(pid), productsku.SubsiteID(site(ctx))).Exist(ctx)
-		if e != nil {
-			return nil, e
-		}
-		if !ok {
-			return nil, bad("奖品规格不存在或不属于该商品")
-		}
-	} else {
-		n, e := c.ProductSku.Query().Where(productsku.ProductID(pid)).Count(ctx)
-		if e != nil {
-			return nil, e
-		}
-		if n > 0 {
-			return nil, bad("该商品有多个规格，请明确选择奖品规格")
-		}
+		sq = sq.Where(productsku.ID(sku))
+	}
+	if locked {
+		sq = sq.ForUpdate()
+	}
+	skus, e := sq.All(ctx)
+	if e != nil {
+		return nil, e
+	}
+	if sku != 0 && len(skus) == 0 {
+		return nil, bad("奖品规格不存在或不属于该商品")
+	}
+	if sku == 0 && len(skus) > 0 {
+		return nil, bad("该商品有多个规格，请明确选择奖品规格")
 	}
 	return p, nil
 }

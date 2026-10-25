@@ -28,6 +28,7 @@ type ImportPreviewRequest struct {
 	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	Lines         []string               `protobuf:"bytes,2,rep,name=lines,proto3" json:"lines,omitempty"`
 	Dedup         bool                   `protobuf:"varint,3,opt,name=dedup,proto3" json:"dedup,omitempty"`
+	SkuId         uint64                 `protobuf:"varint,4,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"` // 有规格商品必须明确选择；无规格商品使用 0。
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -83,6 +84,13 @@ func (x *ImportPreviewRequest) GetDedup() bool {
 	return false
 }
 
+func (x *ImportPreviewRequest) GetSkuId() uint64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
 type ImportPreviewReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Total         int32                  `protobuf:"varint,1,opt,name=total,proto3" json:"total,omitempty"`
@@ -91,6 +99,9 @@ type ImportPreviewReply struct {
 	Invalid       int32                  `protobuf:"varint,4,opt,name=invalid,proto3" json:"invalid,omitempty"`
 	Sample        []string               `protobuf:"bytes,5,rep,name=sample,proto3" json:"sample,omitempty"`
 	IsPremium     bool                   `protobuf:"varint,6,opt,name=is_premium,json=isPremium,proto3" json:"is_premium,omitempty"`
+	SkuId         uint64                 `protobuf:"varint,7,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	SkuName       string                 `protobuf:"bytes,8,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`
+	Revision      int64                  `protobuf:"varint,9,opt,name=revision,proto3" json:"revision,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -167,13 +178,36 @@ func (x *ImportPreviewReply) GetIsPremium() bool {
 	return false
 }
 
+func (x *ImportPreviewReply) GetSkuId() uint64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *ImportPreviewReply) GetSkuName() string {
+	if x != nil {
+		return x.SkuName
+	}
+	return ""
+}
+
+func (x *ImportPreviewReply) GetRevision() int64 {
+	if x != nil {
+		return x.Revision
+	}
+	return 0
+}
+
 type ImportConfirmRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	Lines         []string               `protobuf:"bytes,2,rep,name=lines,proto3" json:"lines,omitempty"`
-	Dedup         bool                   `protobuf:"varint,3,opt,name=dedup,proto3" json:"dedup,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	ProductId        uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	Lines            []string               `protobuf:"bytes,2,rep,name=lines,proto3" json:"lines,omitempty"`
+	Dedup            bool                   `protobuf:"varint,3,opt,name=dedup,proto3" json:"dedup,omitempty"`
+	SkuId            uint64                 `protobuf:"varint,4,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	ExpectedRevision *int64                 `protobuf:"varint,5,opt,name=expected_revision,json=expectedRevision,proto3,oneof" json:"expected_revision,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ImportConfirmRequest) Reset() {
@@ -227,6 +261,20 @@ func (x *ImportConfirmRequest) GetDedup() bool {
 	return false
 }
 
+func (x *ImportConfirmRequest) GetSkuId() uint64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *ImportConfirmRequest) GetExpectedRevision() int64 {
+	if x != nil && x.ExpectedRevision != nil {
+		return *x.ExpectedRevision
+	}
+	return 0
+}
+
 type ImportBatch struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -236,6 +284,10 @@ type ImportBatch struct {
 	Skipped       int32                  `protobuf:"varint,5,opt,name=skipped,proto3" json:"skipped,omitempty"`
 	Failed        int32                  `protobuf:"varint,6,opt,name=failed,proto3" json:"failed,omitempty"`
 	Status        string                 `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
+	SkuId         *uint64                `protobuf:"varint,8,opt,name=sku_id,json=skuId,proto3,oneof" json:"sku_id,omitempty"` // 导入时的目标；旧批次缺失表示历史未记录。
+	SkuName       string                 `protobuf:"bytes,9,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`  // 导入时名称快照。
+	ProductName   string                 `protobuf:"bytes,10,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
+	Remaining     []*InventorySkuCount   `protobuf:"bytes,11,rep,name=remaining,proto3" json:"remaining,omitempty"` // 当前卡密分布，不改写导入来源。
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -319,9 +371,39 @@ func (x *ImportBatch) GetStatus() string {
 	return ""
 }
 
+func (x *ImportBatch) GetSkuId() uint64 {
+	if x != nil && x.SkuId != nil {
+		return *x.SkuId
+	}
+	return 0
+}
+
+func (x *ImportBatch) GetSkuName() string {
+	if x != nil {
+		return x.SkuName
+	}
+	return ""
+}
+
+func (x *ImportBatch) GetProductName() string {
+	if x != nil {
+		return x.ProductName
+	}
+	return ""
+}
+
+func (x *ImportBatch) GetRemaining() []*InventorySkuCount {
+	if x != nil {
+		return x.Remaining
+	}
+	return nil
+}
+
 type ListImportsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	SkuId         *uint64                `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3,oneof" json:"sku_id,omitempty"`          // 按原导入目标筛选，省略为全部。
+	LegacyOnly    bool                   `protobuf:"varint,3,opt,name=legacy_only,json=legacyOnly,proto3" json:"legacy_only,omitempty"` // 仅历史未记录目标的批次。
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -361,6 +443,20 @@ func (x *ListImportsRequest) GetProductId() uint64 {
 		return x.ProductId
 	}
 	return 0
+}
+
+func (x *ListImportsRequest) GetSkuId() uint64 {
+	if x != nil && x.SkuId != nil {
+		return *x.SkuId
+	}
+	return 0
+}
+
+func (x *ListImportsRequest) GetLegacyOnly() bool {
+	if x != nil {
+		return x.LegacyOnly
+	}
+	return false
 }
 
 type ListImportsReply struct {
@@ -408,10 +504,11 @@ func (x *ListImportsReply) GetBatches() []*ImportBatch {
 }
 
 type CancelImportRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Id               uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ExpectedRevision string                 `protobuf:"bytes,2,opt,name=expected_revision,json=expectedRevision,proto3" json:"expected_revision,omitempty"` // 新界面使用预览返回的批次分布指纹。
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *CancelImportRequest) Reset() {
@@ -451,12 +548,21 @@ func (x *CancelImportRequest) GetId() uint64 {
 	return 0
 }
 
+func (x *CancelImportRequest) GetExpectedRevision() string {
+	if x != nil {
+		return x.ExpectedRevision
+	}
+	return ""
+}
+
 type ListCardsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"` // available | reserved | used | disabled
 	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	SkuId         *uint64                `protobuf:"varint,5,opt,name=sku_id,json=skuId,proto3,oneof" json:"sku_id,omitempty"` // 省略=全部，0=NULL/0 默认池，正数=指定规格。
+	ImportId      *uint64                `protobuf:"varint,6,opt,name=import_id,json=importId,proto3,oneof" json:"import_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -515,6 +621,20 @@ func (x *ListCardsRequest) GetPage() int32 {
 func (x *ListCardsRequest) GetPageSize() int32 {
 	if x != nil {
 		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListCardsRequest) GetSkuId() uint64 {
+	if x != nil && x.SkuId != nil {
+		return *x.SkuId
+	}
+	return 0
+}
+
+func (x *ListCardsRequest) GetImportId() uint64 {
+	if x != nil && x.ImportId != nil {
+		return *x.ImportId
 	}
 	return 0
 }
@@ -582,6 +702,9 @@ type CardInfo struct {
 	CreatedAt     int64                  `protobuf:"varint,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UsedAt        int64                  `protobuf:"varint,7,opt,name=used_at,json=usedAt,proto3" json:"used_at,omitempty"`
 	LotteryDrawNo string                 `protobuf:"bytes,8,opt,name=lottery_draw_no,json=lotteryDrawNo,proto3" json:"lottery_draw_no,omitempty"` // 抽奖发放的中奖编号，不改变卡密库存状态
+	SkuId         uint64                 `protobuf:"varint,9,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	SkuName       string                 `protobuf:"bytes,10,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`
+	ImportId      uint64                 `protobuf:"varint,11,opt,name=import_id,json=importId,proto3" json:"import_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -672,9 +795,31 @@ func (x *CardInfo) GetLotteryDrawNo() string {
 	return ""
 }
 
+func (x *CardInfo) GetSkuId() uint64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *CardInfo) GetSkuName() string {
+	if x != nil {
+		return x.SkuName
+	}
+	return ""
+}
+
+func (x *CardInfo) GetImportId() uint64 {
+	if x != nil {
+		return x.ImportId
+	}
+	return 0
+}
+
 type ExportCardsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	SkuId         *uint64                `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3,oneof" json:"sku_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -712,6 +857,13 @@ func (*ExportCardsRequest) Descriptor() ([]byte, []int) {
 func (x *ExportCardsRequest) GetProductId() uint64 {
 	if x != nil {
 		return x.ProductId
+	}
+	return 0
+}
+
+func (x *ExportCardsRequest) GetSkuId() uint64 {
+	if x != nil && x.SkuId != nil {
+		return *x.SkuId
 	}
 	return 0
 }
@@ -911,6 +1063,7 @@ func (x *ViewCardContentReply) GetContent() string {
 type ListPremiumCardsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	SkuId         *uint64                `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3,oneof" json:"sku_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -948,6 +1101,13 @@ func (*ListPremiumCardsRequest) Descriptor() ([]byte, []int) {
 func (x *ListPremiumCardsRequest) GetProductId() uint64 {
 	if x != nil {
 		return x.ProductId
+	}
+	return 0
+}
+
+func (x *ListPremiumCardsRequest) GetSkuId() uint64 {
+	if x != nil && x.SkuId != nil {
+		return *x.SkuId
 	}
 	return 0
 }
@@ -1014,6 +1174,9 @@ type PremiumCardInfo struct {
 	DraftCost     int64                  `protobuf:"varint,5,opt,name=draft_cost,json=draftCost,proto3" json:"draft_cost,omitempty"`            // 预选成本（分）
 	PriceCents    int64                  `protobuf:"varint,6,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`         // 靓号自选价（0=商品价+premium）
 	Status        string                 `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
+	SkuId         uint64                 `protobuf:"varint,8,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	SkuName       string                 `protobuf:"bytes,9,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`
+	ImportId      uint64                 `protobuf:"varint,10,opt,name=import_id,json=importId,proto3" json:"import_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1097,16 +1260,650 @@ func (x *PremiumCardInfo) GetStatus() string {
 	return ""
 }
 
+func (x *PremiumCardInfo) GetSkuId() uint64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *PremiumCardInfo) GetSkuName() string {
+	if x != nil {
+		return x.SkuName
+	}
+	return ""
+}
+
+func (x *PremiumCardInfo) GetImportId() uint64 {
+	if x != nil {
+		return x.ImportId
+	}
+	return 0
+}
+
+type InventoryTargetsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InventoryTargetsRequest) Reset() {
+	*x = InventoryTargetsRequest{}
+	mi := &file_admin_v1_inventory_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InventoryTargetsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InventoryTargetsRequest) ProtoMessage() {}
+
+func (x *InventoryTargetsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_inventory_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InventoryTargetsRequest.ProtoReflect.Descriptor instead.
+func (*InventoryTargetsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_inventory_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *InventoryTargetsRequest) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+type InventoryTarget struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SkuId         uint64                 `protobuf:"varint,1,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	SkuName       string                 `protobuf:"bytes,2,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`
+	CanImport     bool                   `protobuf:"varint,3,opt,name=can_import,json=canImport,proto3" json:"can_import,omitempty"`
+	Reason        string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	Available     int64                  `protobuf:"varint,5,opt,name=available,proto3" json:"available,omitempty"`
+	Reserved      int64                  `protobuf:"varint,6,opt,name=reserved,proto3" json:"reserved,omitempty"`
+	Disabled      int64                  `protobuf:"varint,7,opt,name=disabled,proto3" json:"disabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InventoryTarget) Reset() {
+	*x = InventoryTarget{}
+	mi := &file_admin_v1_inventory_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InventoryTarget) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InventoryTarget) ProtoMessage() {}
+
+func (x *InventoryTarget) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_inventory_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InventoryTarget.ProtoReflect.Descriptor instead.
+func (*InventoryTarget) Descriptor() ([]byte, []int) {
+	return file_admin_v1_inventory_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *InventoryTarget) GetSkuId() uint64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *InventoryTarget) GetSkuName() string {
+	if x != nil {
+		return x.SkuName
+	}
+	return ""
+}
+
+func (x *InventoryTarget) GetCanImport() bool {
+	if x != nil {
+		return x.CanImport
+	}
+	return false
+}
+
+func (x *InventoryTarget) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *InventoryTarget) GetAvailable() int64 {
+	if x != nil {
+		return x.Available
+	}
+	return 0
+}
+
+func (x *InventoryTarget) GetReserved() int64 {
+	if x != nil {
+		return x.Reserved
+	}
+	return 0
+}
+
+func (x *InventoryTarget) GetDisabled() int64 {
+	if x != nil {
+		return x.Disabled
+	}
+	return 0
+}
+
+type InventoryTargetsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	ProductName   string                 `protobuf:"bytes,2,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
+	Revision      int64                  `protobuf:"varint,3,opt,name=revision,proto3" json:"revision,omitempty"`
+	HasSkus       bool                   `protobuf:"varint,4,opt,name=has_skus,json=hasSkus,proto3" json:"has_skus,omitempty"`
+	Targets       []*InventoryTarget     `protobuf:"bytes,5,rep,name=targets,proto3" json:"targets,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InventoryTargetsReply) Reset() {
+	*x = InventoryTargetsReply{}
+	mi := &file_admin_v1_inventory_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InventoryTargetsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InventoryTargetsReply) ProtoMessage() {}
+
+func (x *InventoryTargetsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_inventory_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InventoryTargetsReply.ProtoReflect.Descriptor instead.
+func (*InventoryTargetsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_inventory_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *InventoryTargetsReply) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *InventoryTargetsReply) GetProductName() string {
+	if x != nil {
+		return x.ProductName
+	}
+	return ""
+}
+
+func (x *InventoryTargetsReply) GetRevision() int64 {
+	if x != nil {
+		return x.Revision
+	}
+	return 0
+}
+
+func (x *InventoryTargetsReply) GetHasSkus() bool {
+	if x != nil {
+		return x.HasSkus
+	}
+	return false
+}
+
+func (x *InventoryTargetsReply) GetTargets() []*InventoryTarget {
+	if x != nil {
+		return x.Targets
+	}
+	return nil
+}
+
+type InventorySkuCount struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SkuId         uint64                 `protobuf:"varint,1,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	SkuName       string                 `protobuf:"bytes,2,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`
+	Available     int64                  `protobuf:"varint,3,opt,name=available,proto3" json:"available,omitempty"`
+	Reserved      int64                  `protobuf:"varint,4,opt,name=reserved,proto3" json:"reserved,omitempty"`
+	Used          int64                  `protobuf:"varint,5,opt,name=used,proto3" json:"used,omitempty"`
+	Disabled      int64                  `protobuf:"varint,6,opt,name=disabled,proto3" json:"disabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InventorySkuCount) Reset() {
+	*x = InventorySkuCount{}
+	mi := &file_admin_v1_inventory_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InventorySkuCount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InventorySkuCount) ProtoMessage() {}
+
+func (x *InventorySkuCount) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_inventory_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InventorySkuCount.ProtoReflect.Descriptor instead.
+func (*InventorySkuCount) Descriptor() ([]byte, []int) {
+	return file_admin_v1_inventory_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *InventorySkuCount) GetSkuId() uint64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *InventorySkuCount) GetSkuName() string {
+	if x != nil {
+		return x.SkuName
+	}
+	return ""
+}
+
+func (x *InventorySkuCount) GetAvailable() int64 {
+	if x != nil {
+		return x.Available
+	}
+	return 0
+}
+
+func (x *InventorySkuCount) GetReserved() int64 {
+	if x != nil {
+		return x.Reserved
+	}
+	return 0
+}
+
+func (x *InventorySkuCount) GetUsed() int64 {
+	if x != nil {
+		return x.Used
+	}
+	return 0
+}
+
+func (x *InventorySkuCount) GetDisabled() int64 {
+	if x != nil {
+		return x.Disabled
+	}
+	return 0
+}
+
+type AssignPreviewRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	SkuId         uint64                 `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	CardIds       []uint64               `protobuf:"varint,3,rep,packed,name=card_ids,json=cardIds,proto3" json:"card_ids,omitempty"`
+	ImportId      uint64                 `protobuf:"varint,4,opt,name=import_id,json=importId,proto3" json:"import_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AssignPreviewRequest) Reset() {
+	*x = AssignPreviewRequest{}
+	mi := &file_admin_v1_inventory_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AssignPreviewRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AssignPreviewRequest) ProtoMessage() {}
+
+func (x *AssignPreviewRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_inventory_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AssignPreviewRequest.ProtoReflect.Descriptor instead.
+func (*AssignPreviewRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_inventory_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *AssignPreviewRequest) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *AssignPreviewRequest) GetSkuId() uint64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *AssignPreviewRequest) GetCardIds() []uint64 {
+	if x != nil {
+		return x.CardIds
+	}
+	return nil
+}
+
+func (x *AssignPreviewRequest) GetImportId() uint64 {
+	if x != nil {
+		return x.ImportId
+	}
+	return 0
+}
+
+type AssignPreviewReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CardIds       []uint64               `protobuf:"varint,1,rep,packed,name=card_ids,json=cardIds,proto3" json:"card_ids,omitempty"`
+	EligibleCount int64                  `protobuf:"varint,2,opt,name=eligible_count,json=eligibleCount,proto3" json:"eligible_count,omitempty"`
+	ExcludedCount int64                  `protobuf:"varint,3,opt,name=excluded_count,json=excludedCount,proto3" json:"excluded_count,omitempty"`
+	Revision      int64                  `protobuf:"varint,4,opt,name=revision,proto3" json:"revision,omitempty"`
+	SkuName       string                 `protobuf:"bytes,5,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AssignPreviewReply) Reset() {
+	*x = AssignPreviewReply{}
+	mi := &file_admin_v1_inventory_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AssignPreviewReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AssignPreviewReply) ProtoMessage() {}
+
+func (x *AssignPreviewReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_inventory_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AssignPreviewReply.ProtoReflect.Descriptor instead.
+func (*AssignPreviewReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_inventory_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *AssignPreviewReply) GetCardIds() []uint64 {
+	if x != nil {
+		return x.CardIds
+	}
+	return nil
+}
+
+func (x *AssignPreviewReply) GetEligibleCount() int64 {
+	if x != nil {
+		return x.EligibleCount
+	}
+	return 0
+}
+
+func (x *AssignPreviewReply) GetExcludedCount() int64 {
+	if x != nil {
+		return x.ExcludedCount
+	}
+	return 0
+}
+
+func (x *AssignPreviewReply) GetRevision() int64 {
+	if x != nil {
+		return x.Revision
+	}
+	return 0
+}
+
+func (x *AssignPreviewReply) GetSkuName() string {
+	if x != nil {
+		return x.SkuName
+	}
+	return ""
+}
+
+type AssignCardsRequest struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	ProductId        uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	SkuId            uint64                 `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	CardIds          []uint64               `protobuf:"varint,3,rep,packed,name=card_ids,json=cardIds,proto3" json:"card_ids,omitempty"`
+	ExpectedRevision *int64                 `protobuf:"varint,4,opt,name=expected_revision,json=expectedRevision,proto3,oneof" json:"expected_revision,omitempty"`
+	RequestKey       string                 `protobuf:"bytes,5,opt,name=request_key,json=requestKey,proto3" json:"request_key,omitempty"` // 审计关联标识。
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *AssignCardsRequest) Reset() {
+	*x = AssignCardsRequest{}
+	mi := &file_admin_v1_inventory_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AssignCardsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AssignCardsRequest) ProtoMessage() {}
+
+func (x *AssignCardsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_inventory_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AssignCardsRequest.ProtoReflect.Descriptor instead.
+func (*AssignCardsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_inventory_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *AssignCardsRequest) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *AssignCardsRequest) GetSkuId() uint64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *AssignCardsRequest) GetCardIds() []uint64 {
+	if x != nil {
+		return x.CardIds
+	}
+	return nil
+}
+
+func (x *AssignCardsRequest) GetExpectedRevision() int64 {
+	if x != nil && x.ExpectedRevision != nil {
+		return *x.ExpectedRevision
+	}
+	return 0
+}
+
+func (x *AssignCardsRequest) GetRequestKey() string {
+	if x != nil {
+		return x.RequestKey
+	}
+	return ""
+}
+
+type AssignCardsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Assigned      int64                  `protobuf:"varint,1,opt,name=assigned,proto3" json:"assigned,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AssignCardsReply) Reset() {
+	*x = AssignCardsReply{}
+	mi := &file_admin_v1_inventory_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AssignCardsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AssignCardsReply) ProtoMessage() {}
+
+func (x *AssignCardsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_inventory_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AssignCardsReply.ProtoReflect.Descriptor instead.
+func (*AssignCardsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_inventory_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *AssignCardsReply) GetAssigned() int64 {
+	if x != nil {
+		return x.Assigned
+	}
+	return 0
+}
+
+type CancelImportPreviewReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Batch         *ImportBatch           `protobuf:"bytes,1,opt,name=batch,proto3" json:"batch,omitempty"`
+	Revision      string                 `protobuf:"bytes,2,opt,name=revision,proto3" json:"revision,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelImportPreviewReply) Reset() {
+	*x = CancelImportPreviewReply{}
+	mi := &file_admin_v1_inventory_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelImportPreviewReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelImportPreviewReply) ProtoMessage() {}
+
+func (x *CancelImportPreviewReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_inventory_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelImportPreviewReply.ProtoReflect.Descriptor instead.
+func (*CancelImportPreviewReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_inventory_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *CancelImportPreviewReply) GetBatch() *ImportBatch {
+	if x != nil {
+		return x.Batch
+	}
+	return nil
+}
+
+func (x *CancelImportPreviewReply) GetRevision() string {
+	if x != nil {
+		return x.Revision
+	}
+	return ""
+}
+
 var File_admin_v1_inventory_proto protoreflect.FileDescriptor
 
 const file_admin_v1_inventory_proto_rawDesc = "" +
 	"\n" +
-	"\x18admin/v1/inventory.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"k\n" +
+	"\x18admin/v1/inventory.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x82\x01\n" +
 	"\x14ImportPreviewRequest\x12\"\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x19\n" +
 	"\x05lines\x18\x02 \x03(\tB\x03\xe0A\x02R\x05lines\x12\x14\n" +
-	"\x05dedup\x18\x03 \x01(\bR\x05dedup\"\xb7\x01\n" +
+	"\x05dedup\x18\x03 \x01(\bR\x05dedup\x12\x15\n" +
+	"\x06sku_id\x18\x04 \x01(\x04R\x05skuId\"\x85\x02\n" +
 	"\x12ImportPreviewReply\x12\x14\n" +
 	"\x05total\x18\x01 \x01(\x05R\x05total\x12\x1e\n" +
 	"\vdup_in_file\x18\x02 \x01(\x05R\tdupInFile\x12\x1a\n" +
@@ -1114,12 +1911,18 @@ const file_admin_v1_inventory_proto_rawDesc = "" +
 	"\ainvalid\x18\x04 \x01(\x05R\ainvalid\x12\x16\n" +
 	"\x06sample\x18\x05 \x03(\tR\x06sample\x12\x1d\n" +
 	"\n" +
-	"is_premium\x18\x06 \x01(\bR\tisPremium\"k\n" +
+	"is_premium\x18\x06 \x01(\bR\tisPremium\x12\x15\n" +
+	"\x06sku_id\x18\a \x01(\x04R\x05skuId\x12\x19\n" +
+	"\bsku_name\x18\b \x01(\tR\askuName\x12\x1a\n" +
+	"\brevision\x18\t \x01(\x03R\brevision\"\xca\x01\n" +
 	"\x14ImportConfirmRequest\x12\"\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x19\n" +
 	"\x05lines\x18\x02 \x03(\tB\x03\xe0A\x02R\x05lines\x12\x14\n" +
-	"\x05dedup\x18\x03 \x01(\bR\x05dedup\"\xb8\x01\n" +
+	"\x05dedup\x18\x03 \x01(\bR\x05dedup\x12\x15\n" +
+	"\x06sku_id\x18\x04 \x01(\x04R\x05skuId\x120\n" +
+	"\x11expected_revision\x18\x05 \x01(\x03H\x00R\x10expectedRevision\x88\x01\x01B\x14\n" +
+	"\x12_expected_revision\"\xe2\x02\n" +
 	"\vImportBatch\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
@@ -1128,23 +1931,39 @@ const file_admin_v1_inventory_proto_rawDesc = "" +
 	"\bimported\x18\x04 \x01(\x05R\bimported\x12\x18\n" +
 	"\askipped\x18\x05 \x01(\x05R\askipped\x12\x16\n" +
 	"\x06failed\x18\x06 \x01(\x05R\x06failed\x12\x16\n" +
-	"\x06status\x18\a \x01(\tR\x06status\"3\n" +
+	"\x06status\x18\a \x01(\tR\x06status\x12\x1a\n" +
+	"\x06sku_id\x18\b \x01(\x04H\x00R\x05skuId\x88\x01\x01\x12\x19\n" +
+	"\bsku_name\x18\t \x01(\tR\askuName\x12!\n" +
+	"\fproduct_name\x18\n" +
+	" \x01(\tR\vproductName\x12C\n" +
+	"\tremaining\x18\v \x03(\v2%.zcard.api.admin.v1.InventorySkuCountR\tremainingB\t\n" +
+	"\a_sku_id\"{\n" +
 	"\x12ListImportsRequest\x12\x1d\n" +
 	"\n" +
-	"product_id\x18\x01 \x01(\x04R\tproductId\"M\n" +
+	"product_id\x18\x01 \x01(\x04R\tproductId\x12\x1a\n" +
+	"\x06sku_id\x18\x02 \x01(\x04H\x00R\x05skuId\x88\x01\x01\x12\x1f\n" +
+	"\vlegacy_only\x18\x03 \x01(\bR\n" +
+	"legacyOnlyB\t\n" +
+	"\a_sku_id\"M\n" +
 	"\x10ListImportsReply\x129\n" +
-	"\abatches\x18\x01 \x03(\v2\x1f.zcard.api.admin.v1.ImportBatchR\abatches\"*\n" +
+	"\abatches\x18\x01 \x03(\v2\x1f.zcard.api.admin.v1.ImportBatchR\abatches\"W\n" +
 	"\x13CancelImportRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\x7f\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12+\n" +
+	"\x11expected_revision\x18\x02 \x01(\tR\x10expectedRevision\"\xd6\x01\n" +
 	"\x10ListCardsRequest\x12\"\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"Z\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x1a\n" +
+	"\x06sku_id\x18\x05 \x01(\x04H\x00R\x05skuId\x88\x01\x01\x12 \n" +
+	"\timport_id\x18\x06 \x01(\x04H\x01R\bimportId\x88\x01\x01B\t\n" +
+	"\a_sku_idB\f\n" +
+	"\n" +
+	"_import_id\"Z\n" +
 	"\x0eListCardsReply\x122\n" +
 	"\x05cards\x18\x01 \x03(\v2\x1c.zcard.api.admin.v1.CardInfoR\x05cards\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"\xec\x01\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xbb\x02\n" +
 	"\bCardInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
@@ -1155,10 +1974,16 @@ const file_admin_v1_inventory_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\x03R\tcreatedAt\x12\x17\n" +
 	"\aused_at\x18\a \x01(\x03R\x06usedAt\x12&\n" +
-	"\x0flottery_draw_no\x18\b \x01(\tR\rlotteryDrawNo\"8\n" +
+	"\x0flottery_draw_no\x18\b \x01(\tR\rlotteryDrawNo\x12\x15\n" +
+	"\x06sku_id\x18\t \x01(\x04R\x05skuId\x12\x19\n" +
+	"\bsku_name\x18\n" +
+	" \x01(\tR\askuName\x12\x1b\n" +
+	"\timport_id\x18\v \x01(\x04R\bimportId\"_\n" +
 	"\x12ExportCardsRequest\x12\"\n" +
 	"\n" +
-	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\"(\n" +
+	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x1a\n" +
+	"\x06sku_id\x18\x02 \x01(\x04H\x00R\x05skuId\x88\x01\x01B\t\n" +
+	"\a_sku_id\"(\n" +
 	"\x10ExportCardsReply\x12\x14\n" +
 	"\x05lines\x18\x01 \x03(\tR\x05lines\"E\n" +
 	"\x11ToggleCardRequest\x12\x13\n" +
@@ -1168,13 +1993,15 @@ const file_admin_v1_inventory_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"@\n" +
 	"\x14ViewCardContentReply\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\tR\acontent\"=\n" +
+	"\acontent\x18\x02 \x01(\tR\acontent\"d\n" +
 	"\x17ListPremiumCardsRequest\x12\"\n" +
 	"\n" +
-	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\"h\n" +
+	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x1a\n" +
+	"\x06sku_id\x18\x02 \x01(\x04H\x00R\x05skuId\x88\x01\x01B\t\n" +
+	"\a_sku_id\"h\n" +
 	"\x15ListPremiumCardsReply\x129\n" +
 	"\x05cards\x18\x01 \x03(\v2#.zcard.api.admin.v1.PremiumCardInfoR\x05cards\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"\xe4\x01\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xb3\x02\n" +
 	"\x0fPremiumCardInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
@@ -1185,9 +2012,69 @@ const file_admin_v1_inventory_proto_rawDesc = "" +
 	"draft_cost\x18\x05 \x01(\x03R\tdraftCost\x12\x1f\n" +
 	"\vprice_cents\x18\x06 \x01(\x03R\n" +
 	"priceCents\x12\x16\n" +
-	"\x06status\x18\a \x01(\tR\x06status2\x85\n" +
+	"\x06status\x18\a \x01(\tR\x06status\x12\x15\n" +
+	"\x06sku_id\x18\b \x01(\x04R\x05skuId\x12\x19\n" +
+	"\bsku_name\x18\t \x01(\tR\askuName\x12\x1b\n" +
+	"\timport_id\x18\n" +
+	" \x01(\x04R\bimportId\"8\n" +
+	"\x17InventoryTargetsRequest\x12\x1d\n" +
 	"\n" +
+	"product_id\x18\x01 \x01(\x04R\tproductId\"\xd0\x01\n" +
+	"\x0fInventoryTarget\x12\x15\n" +
+	"\x06sku_id\x18\x01 \x01(\x04R\x05skuId\x12\x19\n" +
+	"\bsku_name\x18\x02 \x01(\tR\askuName\x12\x1d\n" +
+	"\n" +
+	"can_import\x18\x03 \x01(\bR\tcanImport\x12\x16\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\x12\x1c\n" +
+	"\tavailable\x18\x05 \x01(\x03R\tavailable\x12\x1a\n" +
+	"\breserved\x18\x06 \x01(\x03R\breserved\x12\x1a\n" +
+	"\bdisabled\x18\a \x01(\x03R\bdisabled\"\xcf\x01\n" +
+	"\x15InventoryTargetsReply\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\x04R\tproductId\x12!\n" +
+	"\fproduct_name\x18\x02 \x01(\tR\vproductName\x12\x1a\n" +
+	"\brevision\x18\x03 \x01(\x03R\brevision\x12\x19\n" +
+	"\bhas_skus\x18\x04 \x01(\bR\ahasSkus\x12=\n" +
+	"\atargets\x18\x05 \x03(\v2#.zcard.api.admin.v1.InventoryTargetR\atargets\"\xaf\x01\n" +
+	"\x11InventorySkuCount\x12\x15\n" +
+	"\x06sku_id\x18\x01 \x01(\x04R\x05skuId\x12\x19\n" +
+	"\bsku_name\x18\x02 \x01(\tR\askuName\x12\x1c\n" +
+	"\tavailable\x18\x03 \x01(\x03R\tavailable\x12\x1a\n" +
+	"\breserved\x18\x04 \x01(\x03R\breserved\x12\x12\n" +
+	"\x04used\x18\x05 \x01(\x03R\x04used\x12\x1a\n" +
+	"\bdisabled\x18\x06 \x01(\x03R\bdisabled\"\x84\x01\n" +
+	"\x14AssignPreviewRequest\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\x04R\tproductId\x12\x15\n" +
+	"\x06sku_id\x18\x02 \x01(\x04R\x05skuId\x12\x19\n" +
+	"\bcard_ids\x18\x03 \x03(\x04R\acardIds\x12\x1b\n" +
+	"\timport_id\x18\x04 \x01(\x04R\bimportId\"\xb4\x01\n" +
+	"\x12AssignPreviewReply\x12\x19\n" +
+	"\bcard_ids\x18\x01 \x03(\x04R\acardIds\x12%\n" +
+	"\x0eeligible_count\x18\x02 \x01(\x03R\religibleCount\x12%\n" +
+	"\x0eexcluded_count\x18\x03 \x01(\x03R\rexcludedCount\x12\x1a\n" +
+	"\brevision\x18\x04 \x01(\x03R\brevision\x12\x19\n" +
+	"\bsku_name\x18\x05 \x01(\tR\askuName\"\xce\x01\n" +
+	"\x12AssignCardsRequest\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\x04R\tproductId\x12\x15\n" +
+	"\x06sku_id\x18\x02 \x01(\x04R\x05skuId\x12\x19\n" +
+	"\bcard_ids\x18\x03 \x03(\x04R\acardIds\x120\n" +
+	"\x11expected_revision\x18\x04 \x01(\x03H\x00R\x10expectedRevision\x88\x01\x01\x12\x1f\n" +
+	"\vrequest_key\x18\x05 \x01(\tR\n" +
+	"requestKeyB\x14\n" +
+	"\x12_expected_revision\".\n" +
+	"\x10AssignCardsReply\x12\x1a\n" +
+	"\bassigned\x18\x01 \x01(\x03R\bassigned\"m\n" +
+	"\x18CancelImportPreviewReply\x125\n" +
+	"\x05batch\x18\x01 \x01(\v2\x1f.zcard.api.admin.v1.ImportBatchR\x05batch\x12\x1a\n" +
+	"\brevision\x18\x02 \x01(\tR\brevision2\xda\x0e\n" +
 	"\x15AdminInventoryService\x12\x8d\x01\n" +
+	"\n" +
+	"GetTargets\x12+.zcard.api.admin.v1.InventoryTargetsRequest\x1a).zcard.api.admin.v1.InventoryTargetsReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/inventory/targets\x12\x94\x01\n" +
+	"\rAssignPreview\x12(.zcard.api.admin.v1.AssignPreviewRequest\x1a&.zcard.api.admin.v1.AssignPreviewReply\"1\x82\xd3\xe4\x93\x02+:\x01*\"&/api/v1/admin/inventory/assign-preview\x12\x86\x01\n" +
+	"\vAssignCards\x12&.zcard.api.admin.v1.AssignCardsRequest\x1a$.zcard.api.admin.v1.AssignCardsReply\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/inventory/assign\x12\xa2\x01\n" +
+	"\x13PreviewCancelImport\x12'.zcard.api.admin.v1.CancelImportRequest\x1a,.zcard.api.admin.v1.CancelImportPreviewReply\"4\x82\xd3\xe4\x93\x02.\x12,/api/v1/admin/inventory/imports/{id}/preview\x12\x8d\x01\n" +
 	"\rImportPreview\x12(.zcard.api.admin.v1.ImportPreviewRequest\x1a&.zcard.api.admin.v1.ImportPreviewReply\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/inventory/preview\x12\x85\x01\n" +
 	"\rImportConfirm\x12(.zcard.api.admin.v1.ImportConfirmRequest\x1a\x1f.zcard.api.admin.v1.ImportBatch\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/inventory/import\x12\x84\x01\n" +
 	"\vListImports\x12&.zcard.api.admin.v1.ListImportsRequest\x1a$.zcard.api.admin.v1.ListImportsReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/inventory/imports\x12\x87\x01\n" +
@@ -1211,55 +2098,75 @@ func file_admin_v1_inventory_proto_rawDescGZIP() []byte {
 	return file_admin_v1_inventory_proto_rawDescData
 }
 
-var file_admin_v1_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_admin_v1_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_admin_v1_inventory_proto_goTypes = []any{
-	(*ImportPreviewRequest)(nil),    // 0: zcard.api.admin.v1.ImportPreviewRequest
-	(*ImportPreviewReply)(nil),      // 1: zcard.api.admin.v1.ImportPreviewReply
-	(*ImportConfirmRequest)(nil),    // 2: zcard.api.admin.v1.ImportConfirmRequest
-	(*ImportBatch)(nil),             // 3: zcard.api.admin.v1.ImportBatch
-	(*ListImportsRequest)(nil),      // 4: zcard.api.admin.v1.ListImportsRequest
-	(*ListImportsReply)(nil),        // 5: zcard.api.admin.v1.ListImportsReply
-	(*CancelImportRequest)(nil),     // 6: zcard.api.admin.v1.CancelImportRequest
-	(*ListCardsRequest)(nil),        // 7: zcard.api.admin.v1.ListCardsRequest
-	(*ListCardsReply)(nil),          // 8: zcard.api.admin.v1.ListCardsReply
-	(*CardInfo)(nil),                // 9: zcard.api.admin.v1.CardInfo
-	(*ExportCardsRequest)(nil),      // 10: zcard.api.admin.v1.ExportCardsRequest
-	(*ExportCardsReply)(nil),        // 11: zcard.api.admin.v1.ExportCardsReply
-	(*ToggleCardRequest)(nil),       // 12: zcard.api.admin.v1.ToggleCardRequest
-	(*ViewCardContentRequest)(nil),  // 13: zcard.api.admin.v1.ViewCardContentRequest
-	(*ViewCardContentReply)(nil),    // 14: zcard.api.admin.v1.ViewCardContentReply
-	(*ListPremiumCardsRequest)(nil), // 15: zcard.api.admin.v1.ListPremiumCardsRequest
-	(*ListPremiumCardsReply)(nil),   // 16: zcard.api.admin.v1.ListPremiumCardsReply
-	(*PremiumCardInfo)(nil),         // 17: zcard.api.admin.v1.PremiumCardInfo
-	(*emptypb.Empty)(nil),           // 18: google.protobuf.Empty
+	(*ImportPreviewRequest)(nil),     // 0: zcard.api.admin.v1.ImportPreviewRequest
+	(*ImportPreviewReply)(nil),       // 1: zcard.api.admin.v1.ImportPreviewReply
+	(*ImportConfirmRequest)(nil),     // 2: zcard.api.admin.v1.ImportConfirmRequest
+	(*ImportBatch)(nil),              // 3: zcard.api.admin.v1.ImportBatch
+	(*ListImportsRequest)(nil),       // 4: zcard.api.admin.v1.ListImportsRequest
+	(*ListImportsReply)(nil),         // 5: zcard.api.admin.v1.ListImportsReply
+	(*CancelImportRequest)(nil),      // 6: zcard.api.admin.v1.CancelImportRequest
+	(*ListCardsRequest)(nil),         // 7: zcard.api.admin.v1.ListCardsRequest
+	(*ListCardsReply)(nil),           // 8: zcard.api.admin.v1.ListCardsReply
+	(*CardInfo)(nil),                 // 9: zcard.api.admin.v1.CardInfo
+	(*ExportCardsRequest)(nil),       // 10: zcard.api.admin.v1.ExportCardsRequest
+	(*ExportCardsReply)(nil),         // 11: zcard.api.admin.v1.ExportCardsReply
+	(*ToggleCardRequest)(nil),        // 12: zcard.api.admin.v1.ToggleCardRequest
+	(*ViewCardContentRequest)(nil),   // 13: zcard.api.admin.v1.ViewCardContentRequest
+	(*ViewCardContentReply)(nil),     // 14: zcard.api.admin.v1.ViewCardContentReply
+	(*ListPremiumCardsRequest)(nil),  // 15: zcard.api.admin.v1.ListPremiumCardsRequest
+	(*ListPremiumCardsReply)(nil),    // 16: zcard.api.admin.v1.ListPremiumCardsReply
+	(*PremiumCardInfo)(nil),          // 17: zcard.api.admin.v1.PremiumCardInfo
+	(*InventoryTargetsRequest)(nil),  // 18: zcard.api.admin.v1.InventoryTargetsRequest
+	(*InventoryTarget)(nil),          // 19: zcard.api.admin.v1.InventoryTarget
+	(*InventoryTargetsReply)(nil),    // 20: zcard.api.admin.v1.InventoryTargetsReply
+	(*InventorySkuCount)(nil),        // 21: zcard.api.admin.v1.InventorySkuCount
+	(*AssignPreviewRequest)(nil),     // 22: zcard.api.admin.v1.AssignPreviewRequest
+	(*AssignPreviewReply)(nil),       // 23: zcard.api.admin.v1.AssignPreviewReply
+	(*AssignCardsRequest)(nil),       // 24: zcard.api.admin.v1.AssignCardsRequest
+	(*AssignCardsReply)(nil),         // 25: zcard.api.admin.v1.AssignCardsReply
+	(*CancelImportPreviewReply)(nil), // 26: zcard.api.admin.v1.CancelImportPreviewReply
+	(*emptypb.Empty)(nil),            // 27: google.protobuf.Empty
 }
 var file_admin_v1_inventory_proto_depIdxs = []int32{
-	3,  // 0: zcard.api.admin.v1.ListImportsReply.batches:type_name -> zcard.api.admin.v1.ImportBatch
-	9,  // 1: zcard.api.admin.v1.ListCardsReply.cards:type_name -> zcard.api.admin.v1.CardInfo
-	17, // 2: zcard.api.admin.v1.ListPremiumCardsReply.cards:type_name -> zcard.api.admin.v1.PremiumCardInfo
-	0,  // 3: zcard.api.admin.v1.AdminInventoryService.ImportPreview:input_type -> zcard.api.admin.v1.ImportPreviewRequest
-	2,  // 4: zcard.api.admin.v1.AdminInventoryService.ImportConfirm:input_type -> zcard.api.admin.v1.ImportConfirmRequest
-	4,  // 5: zcard.api.admin.v1.AdminInventoryService.ListImports:input_type -> zcard.api.admin.v1.ListImportsRequest
-	6,  // 6: zcard.api.admin.v1.AdminInventoryService.CancelImport:input_type -> zcard.api.admin.v1.CancelImportRequest
-	7,  // 7: zcard.api.admin.v1.AdminInventoryService.ListCards:input_type -> zcard.api.admin.v1.ListCardsRequest
-	10, // 8: zcard.api.admin.v1.AdminInventoryService.ExportCards:input_type -> zcard.api.admin.v1.ExportCardsRequest
-	12, // 9: zcard.api.admin.v1.AdminInventoryService.ToggleCard:input_type -> zcard.api.admin.v1.ToggleCardRequest
-	13, // 10: zcard.api.admin.v1.AdminInventoryService.ViewCardContent:input_type -> zcard.api.admin.v1.ViewCardContentRequest
-	15, // 11: zcard.api.admin.v1.AdminInventoryService.ListPremiumCards:input_type -> zcard.api.admin.v1.ListPremiumCardsRequest
-	1,  // 12: zcard.api.admin.v1.AdminInventoryService.ImportPreview:output_type -> zcard.api.admin.v1.ImportPreviewReply
-	3,  // 13: zcard.api.admin.v1.AdminInventoryService.ImportConfirm:output_type -> zcard.api.admin.v1.ImportBatch
-	5,  // 14: zcard.api.admin.v1.AdminInventoryService.ListImports:output_type -> zcard.api.admin.v1.ListImportsReply
-	18, // 15: zcard.api.admin.v1.AdminInventoryService.CancelImport:output_type -> google.protobuf.Empty
-	8,  // 16: zcard.api.admin.v1.AdminInventoryService.ListCards:output_type -> zcard.api.admin.v1.ListCardsReply
-	11, // 17: zcard.api.admin.v1.AdminInventoryService.ExportCards:output_type -> zcard.api.admin.v1.ExportCardsReply
-	18, // 18: zcard.api.admin.v1.AdminInventoryService.ToggleCard:output_type -> google.protobuf.Empty
-	14, // 19: zcard.api.admin.v1.AdminInventoryService.ViewCardContent:output_type -> zcard.api.admin.v1.ViewCardContentReply
-	16, // 20: zcard.api.admin.v1.AdminInventoryService.ListPremiumCards:output_type -> zcard.api.admin.v1.ListPremiumCardsReply
-	12, // [12:21] is the sub-list for method output_type
-	3,  // [3:12] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	21, // 0: zcard.api.admin.v1.ImportBatch.remaining:type_name -> zcard.api.admin.v1.InventorySkuCount
+	3,  // 1: zcard.api.admin.v1.ListImportsReply.batches:type_name -> zcard.api.admin.v1.ImportBatch
+	9,  // 2: zcard.api.admin.v1.ListCardsReply.cards:type_name -> zcard.api.admin.v1.CardInfo
+	17, // 3: zcard.api.admin.v1.ListPremiumCardsReply.cards:type_name -> zcard.api.admin.v1.PremiumCardInfo
+	19, // 4: zcard.api.admin.v1.InventoryTargetsReply.targets:type_name -> zcard.api.admin.v1.InventoryTarget
+	3,  // 5: zcard.api.admin.v1.CancelImportPreviewReply.batch:type_name -> zcard.api.admin.v1.ImportBatch
+	18, // 6: zcard.api.admin.v1.AdminInventoryService.GetTargets:input_type -> zcard.api.admin.v1.InventoryTargetsRequest
+	22, // 7: zcard.api.admin.v1.AdminInventoryService.AssignPreview:input_type -> zcard.api.admin.v1.AssignPreviewRequest
+	24, // 8: zcard.api.admin.v1.AdminInventoryService.AssignCards:input_type -> zcard.api.admin.v1.AssignCardsRequest
+	6,  // 9: zcard.api.admin.v1.AdminInventoryService.PreviewCancelImport:input_type -> zcard.api.admin.v1.CancelImportRequest
+	0,  // 10: zcard.api.admin.v1.AdminInventoryService.ImportPreview:input_type -> zcard.api.admin.v1.ImportPreviewRequest
+	2,  // 11: zcard.api.admin.v1.AdminInventoryService.ImportConfirm:input_type -> zcard.api.admin.v1.ImportConfirmRequest
+	4,  // 12: zcard.api.admin.v1.AdminInventoryService.ListImports:input_type -> zcard.api.admin.v1.ListImportsRequest
+	6,  // 13: zcard.api.admin.v1.AdminInventoryService.CancelImport:input_type -> zcard.api.admin.v1.CancelImportRequest
+	7,  // 14: zcard.api.admin.v1.AdminInventoryService.ListCards:input_type -> zcard.api.admin.v1.ListCardsRequest
+	10, // 15: zcard.api.admin.v1.AdminInventoryService.ExportCards:input_type -> zcard.api.admin.v1.ExportCardsRequest
+	12, // 16: zcard.api.admin.v1.AdminInventoryService.ToggleCard:input_type -> zcard.api.admin.v1.ToggleCardRequest
+	13, // 17: zcard.api.admin.v1.AdminInventoryService.ViewCardContent:input_type -> zcard.api.admin.v1.ViewCardContentRequest
+	15, // 18: zcard.api.admin.v1.AdminInventoryService.ListPremiumCards:input_type -> zcard.api.admin.v1.ListPremiumCardsRequest
+	20, // 19: zcard.api.admin.v1.AdminInventoryService.GetTargets:output_type -> zcard.api.admin.v1.InventoryTargetsReply
+	23, // 20: zcard.api.admin.v1.AdminInventoryService.AssignPreview:output_type -> zcard.api.admin.v1.AssignPreviewReply
+	25, // 21: zcard.api.admin.v1.AdminInventoryService.AssignCards:output_type -> zcard.api.admin.v1.AssignCardsReply
+	26, // 22: zcard.api.admin.v1.AdminInventoryService.PreviewCancelImport:output_type -> zcard.api.admin.v1.CancelImportPreviewReply
+	1,  // 23: zcard.api.admin.v1.AdminInventoryService.ImportPreview:output_type -> zcard.api.admin.v1.ImportPreviewReply
+	3,  // 24: zcard.api.admin.v1.AdminInventoryService.ImportConfirm:output_type -> zcard.api.admin.v1.ImportBatch
+	5,  // 25: zcard.api.admin.v1.AdminInventoryService.ListImports:output_type -> zcard.api.admin.v1.ListImportsReply
+	27, // 26: zcard.api.admin.v1.AdminInventoryService.CancelImport:output_type -> google.protobuf.Empty
+	8,  // 27: zcard.api.admin.v1.AdminInventoryService.ListCards:output_type -> zcard.api.admin.v1.ListCardsReply
+	11, // 28: zcard.api.admin.v1.AdminInventoryService.ExportCards:output_type -> zcard.api.admin.v1.ExportCardsReply
+	27, // 29: zcard.api.admin.v1.AdminInventoryService.ToggleCard:output_type -> google.protobuf.Empty
+	14, // 30: zcard.api.admin.v1.AdminInventoryService.ViewCardContent:output_type -> zcard.api.admin.v1.ViewCardContentReply
+	16, // 31: zcard.api.admin.v1.AdminInventoryService.ListPremiumCards:output_type -> zcard.api.admin.v1.ListPremiumCardsReply
+	19, // [19:32] is the sub-list for method output_type
+	6,  // [6:19] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_inventory_proto_init() }
@@ -1267,13 +2174,20 @@ func file_admin_v1_inventory_proto_init() {
 	if File_admin_v1_inventory_proto != nil {
 		return
 	}
+	file_admin_v1_inventory_proto_msgTypes[2].OneofWrappers = []any{}
+	file_admin_v1_inventory_proto_msgTypes[3].OneofWrappers = []any{}
+	file_admin_v1_inventory_proto_msgTypes[4].OneofWrappers = []any{}
+	file_admin_v1_inventory_proto_msgTypes[7].OneofWrappers = []any{}
+	file_admin_v1_inventory_proto_msgTypes[10].OneofWrappers = []any{}
+	file_admin_v1_inventory_proto_msgTypes[15].OneofWrappers = []any{}
+	file_admin_v1_inventory_proto_msgTypes[24].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_inventory_proto_rawDesc), len(file_admin_v1_inventory_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

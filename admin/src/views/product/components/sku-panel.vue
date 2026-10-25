@@ -7,6 +7,7 @@
  *      新行逐条创建、已有行逐条更新、行内删除；不再用独立表单，杜绝溢出。
  */
 import { ref, computed, watch, h } from "vue";
+import { useRouter } from "vue-router";
 import {
   NButton,
   NTag,
@@ -23,6 +24,7 @@ import { fetchSkus, createSku, updateSku, deleteSku } from "@/service/api";
 import { centsToYuan, currencyUnit, yuanToFen } from "@/utils/money";
 
 const props = defineProps<{ productId: number; readonly?: boolean; physical?: boolean; inventoryTracked?: boolean }>();
+const router = useRouter();
 const emit = defineEmits<{ (e: "persisted"): void }>();
 
 interface SkuRow {
@@ -367,13 +369,16 @@ const allColumns: DataTableColumns<SkuRow> = [
   {
     title: "操作",
     key: "actions",
-    width: 118,
+    width: 215,
     render: (row) =>
       h(
         NSpace,
         { size: "small" },
         {
           default: () => [
+            !props.physical && row.id > 0 && checkAuth("inventory:import")
+              ? h(NButton, { size: "small", disabled: props.readonly || row.dirty || saving.value, onClick: () => router.push({ name: "inventory", query: { product_id: props.productId, sku_id: row.id, open_import: "1" } }) }, { default: () => "导入卡密" })
+              : null,
             !props.readonly && checkAuth("catalog:sku_write")
               ? h(
                   NButton,

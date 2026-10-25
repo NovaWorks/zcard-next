@@ -224,12 +224,14 @@ func (h *acgCompat) trade(w http.ResponseWriter, r *http.Request, account *ent.S
 		writeAcgErr(w, "参数缺失（shared_code/request_no 必填）")
 		return
 	}
-	p, ok := h.supplyProduct(r, account, code)
-	if !ok || p.Status != 1 {
+	productID, parseErr := strconv.ParseUint(code, 10, 64)
+	if parseErr != nil || productID == 0 {
 		writeAcgErr(w, "商品不存在或已下架")
 		return
 	}
-	out, err := h.svc.fulfillOrder(withAccount(r, account.ID), account.ID, p.ID, int32(num),
+	// The core checks the catalog only for a new order. A replay must retain
+	// the original receipt even if the product later gains SKUs or is hidden.
+	out, err := h.svc.fulfillOrder(withAccount(r, account.ID), account.ID, productID, int32(num),
 		acgOrderPrefix+requestNo, "", "acg-"+requestNo) // acg 协议无回调
 	if err != nil {
 		writeAcgErr(w, "下单失败，请稍后重试")
@@ -292,7 +294,7 @@ func (h *acgCompat) supplyProduct(r *http.Request, account *ent.SupplierAccount,
 	if err != nil || id == 0 {
 		return nil, false
 	}
-	p, err := h.svc.reader.GetForSupply(withAccount(r, account.ID), id)
+	p, err := h.svc.productForLegacySupply(withAccount(r, account.ID), id)
 	if err != nil {
 		return nil, false
 	}

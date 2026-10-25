@@ -6,6 +6,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 )
@@ -31,6 +32,18 @@ func (r *SupplierRepoImpl) lockCatalogProduct(ctx context.Context, id uint64, ac
 		return false, nil
 	}
 	return e == nil, e
+}
+
+// catalogHasSKU is supply-only: other consumers such as lotteries support
+// explicit SKUs. A locking read sees changes committed while waiting for the
+// parent product lock, including under MySQL REPEATABLE READ.
+func (r *SupplierRepoImpl) catalogHasSKU(ctx context.Context, id uint64, currentRead bool) (bool, error) {
+	q := data.Client(ctx, r.data).ProductSku.Query().Where(productsku.ProductID(id), productsku.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).Limit(1)
+	if currentRead && r.data.Dialect != db.SQLite {
+		q = q.ForUpdate()
+	}
+	rows, err := q.All(ctx)
+	return len(rows) > 0, err
 }
 func (r *SupplierRepoImpl) lockCatalogCategory(ctx context.Context, id uint64) (bool, error) {
 	c := data.Client(ctx, r.data)

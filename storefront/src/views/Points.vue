@@ -44,9 +44,9 @@
 <script setup lang="ts">
 import { uiText, t as $t, locale } from '@/i18n';
 
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { listProducts, getMyLevel, createOrder, type Product, type MyLevelReply } from '@/api';
+import { listProducts, getMyLevel, getProduct, createOrder, type Product, type MyLevelReply } from '@/api';
 import { getToken } from '@/api/client';
 import MemberTabs from '@/components/MemberTabs.vue';
 import { NO_IMAGE, onImgError } from '@/no-image';
@@ -58,6 +58,8 @@ const level = ref<MyLevelReply | null>(null);
 const loaded = ref(false);
 const error = ref('');
 const exchanging = ref<number>(0);
+let exchangeRequest = 0;
+onUnmounted(() => { exchangeRequest++; });
 
 // 库存口径（与后端 DTO 对齐）：-1=不限（上游代发/直发），>=0=有限库存；
 // proto3 省略零值仍为缺货；-2 待确认也暂停兑换。
@@ -99,6 +101,21 @@ onMounted(async () => {
 async function exchange(p: Product) {
   if (!getToken()) {
     router.push({ path: '/login', query: { redirect: '/points' } });
+    return;
+  }
+  if (exchanging.value) return;
+  const request = ++exchangeRequest;
+  exchanging.value = p.id;
+  const detail = await getProduct(p.id);
+  if (request !== exchangeRequest) return;
+  exchanging.value = 0;
+  if (detail.error || !detail.data) {
+    alert(detail.error || $t("加载失败，请检查网络后重试"));
+    return;
+  }
+  // 列表没有规格明细；有规格时进入详情选择，沿用现有兑换与订单校验。
+  if (detail.data.skus?.length) {
+    router.push(`/product/${p.id}`);
     return;
   }
   if (!confirm($t("确认用 {0} 积分兑换「{1}」？", [p.points_required, p.name]))) return;

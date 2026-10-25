@@ -18,7 +18,7 @@ onMounted(async () => {
  */
 import ListingManagement from "./components/listing-management.vue";
 import { ref, reactive, computed, onMounted, onBeforeUnmount, h, watch } from "vue";
-import { onBeforeRouteLeave, useRoute } from "vue-router";
+import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
 import { NButton, NTag, NSpace, NPopconfirm, NInputNumber, NPopover } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import {
@@ -57,6 +57,7 @@ const deleteTarget = ref<{ id: number; name: string } | null>(null);
 defineOptions({ name: "ProductManagement" });
 
 const route = useRoute();
+const router = useRouter();
 
 const loading = ref(false);
 const saving = ref(false);
@@ -954,6 +955,9 @@ const columns: DataTableColumns<any> = [
         { size: "small" },
         {
           default: () => [
+            checkAuth("inventory:import") && row.stock_type === "card" && (row.product_property || row.goods_type) !== "physical"
+              ? h(NButton, { size: "small", disabled: row.is_locked, onClick: () => router.push({ name: "inventory", query: { product_id: row.id, open_import: "1" } }) }, { default: () => "导入卡密" })
+              : null,
             checkAuth("catalog:write")
               ? h(
                   NButton,

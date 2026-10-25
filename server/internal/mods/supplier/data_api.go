@@ -132,9 +132,9 @@ func (s *SupplyAPIService) GetProduct(ctx context.Context, req *supplyv1.GetProd
 		return nil, errors.New("supplier.INVALID_PRODUCT_ID")
 	}
 	accountID := SupplyAccountID(ctx)
-	row, err := s.reader.GetForSupply(ctx, id)
+	row, err := s.productForLegacySupply(ctx, id)
 	if err != nil {
-		return nil, errors.New("supplier.PRODUCT_NOT_FOUND")
+		return nil, kerrors.NotFound("supplier.PRODUCT_NOT_FOUND", "商品不存在或不支持旧版供货接口")
 	}
 	pricing, err := s.repo.LoadPricing(ctx, accountID)
 	if err != nil {
@@ -153,8 +153,8 @@ func (s *SupplyAPIService) GetStock(ctx context.Context, req *supplyv1.GetStockR
 	if err != nil {
 		return nil, errors.New("supplier.INVALID_PRODUCT_ID")
 	}
-	if _, err := s.reader.GetForSupply(ctx, id); err != nil {
-		return nil, errors.New("supplier.PRODUCT_NOT_FOUND")
+	if _, err := s.productForLegacySupply(ctx, id); err != nil {
+		return nil, kerrors.NotFound("supplier.PRODUCT_NOT_FOUND", "商品不存在或不支持旧版供货接口")
 	}
 	stock, err := s.inv.Stock(ctx, id, 0)
 	if err != nil {
@@ -295,6 +295,13 @@ func (s *SupplyAPIService) fulfillOrderTx(ctx context.Context, accountID, produc
 	}
 	if !exists {
 		return &fulfillOutcome{rejected: true, errCode: "product_unavailable", errMsg: "商品不可用"}, false, nil
+	}
+	hasSKU, err := s.repo.catalogHasSKU(ctx, productID, true)
+	if err != nil {
+		return nil, false, err
+	}
+	if hasSKU {
+		return &fulfillOutcome{rejected: true, errCode: "product_unavailable", errMsg: "多规格商品不支持旧版供货接口"}, false, nil
 	}
 	p, err := s.reader.GetForSupply(ctx, productID)
 	if err != nil || p.Status != 1 {

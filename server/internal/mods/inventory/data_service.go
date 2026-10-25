@@ -38,15 +38,16 @@ func (s *AdminInventoryService) ImportPreview(ctx context.Context, req *adminv1.
 	}
 	p, err := s.repo.ParseLines(ctx, ImportInput{
 		ProductID: req.GetProductId(),
+		SkuID:     req.GetSkuId(),
 		Lines:     req.GetLines(),
 		Dedup:     req.GetDedup(),
 	})
 	if err != nil {
-		return nil, errors.InternalServer("inventory.PREVIEW_FAILED", "预览失败")
+		return nil, inventoryTransportError(err, "inventory.PREVIEW_FAILED", "预览失败")
 	}
 	return &adminv1.ImportPreviewReply{
 		Total: int32(p.Total), DupInFile: int32(p.DupInFile), DupInDb: int32(p.DupInDB),
-		Invalid: int32(p.Invalid), Sample: p.Sample, IsPremium: p.IsPremium,
+		Invalid: int32(p.Invalid), Sample: p.Sample, IsPremium: p.IsPremium, SkuId: p.SkuID, SkuName: p.SkuName, Revision: p.Revision,
 	}, nil
 }
 
@@ -56,45 +57,64 @@ func (s *AdminInventoryService) ImportConfirm(ctx context.Context, req *adminv1.
 		return nil, errors.BadRequest("inventory.INVALID_INPUT", "商品 ID 与卡密行必填")
 	}
 	imp, err := s.repo.ImportConfirm(ctx, ImportInput{
-		ProductID: req.GetProductId(),
-		Lines:     req.GetLines(),
-		Dedup:     req.GetDedup(),
+		ProductID:        req.GetProductId(),
+		SkuID:            req.GetSkuId(),
+		ExpectedRevision: req.ExpectedRevision,
+		Operator:         actorID(ctx),
+		Lines:            req.GetLines(),
+		Dedup:            req.GetDedup(),
 	})
 	if err != nil {
 		if data.IsProductLocked(err) || errors.Reason(err) == "inventory.PHYSICAL_PRODUCT" {
 			return nil, err
 		}
-		return nil, errors.InternalServer("inventory.IMPORT_FAILED", "导入失败")
+		return nil, inventoryTransportError(err, "inventory.IMPORT_FAILED", "导入失败")
 	}
-	return toImportBatch(imp), nil
+	// The write has committed; a metadata read failure must not turn it into an unknown import outcome.
+	infos, e := s.batchInfos(ctx, []*ent.CardImport{imp})
+	if e != nil {
+		return toImportBatch(imp), nil
+	}
+	return infos[0], nil
 }
 
 // ListImports 批次列表。
 func (s *AdminInventoryService) ListImports(ctx context.Context, req *adminv1.ListImportsRequest) (*adminv1.ListImportsReply, error) {
-	rows, err := s.repo.ListImports(ctx, req.GetProductId())
+	if req.GetLegacyOnly() && req.SkuId != nil {
+		return nil, errors.BadRequest("inventory.INVALID_INPUT", "历史未记录筛选不能同时指定导入规格")
+	}
+	rows, err := s.repo.ListImports(ctx, req.GetProductId(), req.SkuId, req.GetLegacyOnly())
 	if err != nil {
 		return nil, errors.InternalServer("inventory.LIST_FAILED", "读取批次失败")
 	}
-	reply := &adminv1.ListImportsReply{}
-	for _, r := range rows {
-		reply.Batches = append(reply.Batches, toImportBatch(r))
+	batches, err := s.batchInfos(ctx, rows)
+	if err != nil {
+		return nil, errors.InternalServer("inventory.LIST_FAILED", "读取批次失败")
 	}
-	return reply, nil
+	return &adminv1.ListImportsReply{Batches: batches}, nil
 }
 
 // CancelImport 撤销批次。
 func (s *AdminInventoryService) CancelImport(ctx context.Context, req *adminv1.CancelImportRequest) (*emptypb.Empty, error) {
-	if err := s.repo.CancelImport(ctx, req.GetId()); err != nil {
+	if err := s.repo.CancelImport(ctx, req.GetId(), req.GetExpectedRevision()); err != nil {
 		if data.IsProductLocked(err) || errors.Reason(err) == "inventory.PHYSICAL_PRODUCT" {
 			return nil, err
 		}
-		return nil, errors.InternalServer("inventory.CANCEL_FAILED", "撤销失败")
+		return nil, inventoryTransportError(err, "inventory.CANCEL_FAILED", "撤销失败")
 	}
 	return &emptypb.Empty{}, nil
 }
 
 // ListCards 卡密列表（掩码默认）。
 func (s *AdminInventoryService) ListCards(ctx context.Context, req *adminv1.ListCardsRequest) (*adminv1.ListCardsReply, error) {
+	p, err := s.repo.inventoryProduct(ctx, req.GetProductId())
+	if err != nil {
+		return nil, inventoryTransportError(err, "inventory.LIST_FAILED", "读取商品失败")
+	}
+	names, err := s.skuNames(ctx, p.ID, p.SubsiteID)
+	if err != nil {
+		return nil, err
+	}
 	page := int(req.GetPage())
 	size := int(req.GetPageSize())
 	if page < 1 {
@@ -104,7 +124,10 @@ func (s *AdminInventoryService) ListCards(ctx context.Context, req *adminv1.List
 		size = 20
 	}
 	q := data.Client(ctx, s.data).Card.Query().
-		Where(card.ProductID(req.GetProductId()))
+		Where(card.ProductID(req.GetProductId()), card.SubsiteID(p.SubsiteID), skuPredicate(req.SkuId))
+	if req.ImportId != nil {
+		q = q.Where(card.ImportID(req.GetImportId()))
+	}
 	if req.GetStatus() != "" {
 		q = q.Where(card.StatusEQ(card.Status(req.GetStatus())))
 	}
@@ -135,7 +158,7 @@ func (s *AdminInventoryService) ListCards(ctx context.Context, req *adminv1.List
 	reply := &adminv1.ListCardsReply{Total: int64(total)}
 	for _, r := range rows {
 		reply.Cards = append(reply.Cards, &adminv1.CardInfo{
-			Id: r.ID, ProductId: r.ProductID, Status: string(r.Status),
+			Id: r.ID, ProductId: r.ProductID, Status: string(r.Status), SkuId: r.SkuID, SkuName: skuLabel(names, r.SkuID), ImportId: r.ImportID, CreatedAt: r.CreatedAt.Unix(),
 			MaskedContent: s.maskPlain(r),
 			Note:          r.Note,
 			LotteryDrawNo: awards[r.ID],
@@ -158,9 +181,9 @@ func (s *AdminInventoryService) maskPlain(r *ent.Card) string {
 
 // ExportCards 导出（card:export 权限已在 middleware 校验；此处内容解密）。
 func (s *AdminInventoryService) ExportCards(ctx context.Context, req *adminv1.ExportCardsRequest) (*adminv1.ExportCardsReply, error) {
-	lines, err := s.repo.ExportCards(ctx, req.GetProductId())
+	lines, err := s.repo.ExportCards(ctx, req.GetProductId(), req.SkuId)
 	if err != nil {
-		return nil, errors.InternalServer("inventory.EXPORT_FAILED", "导出失败")
+		return nil, inventoryTransportError(err, "inventory.EXPORT_FAILED", "导出失败")
 	}
 	return &adminv1.ExportCardsReply{Lines: lines}, nil
 }
@@ -190,7 +213,7 @@ func (s *AdminInventoryService) toggleCard(ctx context.Context, req *adminv1.Tog
 
 // ViewCardContent 查看完整卡密（card:view_content 权限已在 middleware 校验；安全审计）。
 func (s *AdminInventoryService) ViewCardContent(ctx context.Context, req *adminv1.ViewCardContentRequest) (*adminv1.ViewCardContentReply, error) {
-	c, err := data.Client(ctx, s.data).Card.Get(ctx, req.GetId())
+	c, err := data.Client(ctx, s.data).Card.Query().Where(card.ID(req.GetId()), card.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, errors.NotFound("inventory.CARD_NOT_FOUND", "卡密不存在")
 	}
@@ -223,9 +246,17 @@ func (s *AdminInventoryService) ViewCardContent(ctx context.Context, req *adminv
 
 // ListPremiumCards 靓号列表（number_hash 命中 + 可用卡；card:premium 权限已在 middleware 校验）。
 func (s *AdminInventoryService) ListPremiumCards(ctx context.Context, req *adminv1.ListPremiumCardsRequest) (*adminv1.ListPremiumCardsReply, error) {
+	p, err := s.repo.inventoryProduct(ctx, req.GetProductId())
+	if err != nil {
+		return nil, err
+	}
+	names, err := s.skuNames(ctx, p.ID, p.SubsiteID)
+	if err != nil {
+		return nil, err
+	}
 	q := data.Client(ctx, s.data).Card.Query().
 		Where(
-			card.ProductID(req.GetProductId()),
+			card.ProductID(req.GetProductId()), card.SubsiteID(p.SubsiteID), skuPredicate(req.SkuId),
 			card.StatusEQ(card.StatusAvailable),
 			card.NumberHashNotNil(),
 		)
@@ -242,7 +273,7 @@ func (s *AdminInventoryService) ListPremiumCards(ctx context.Context, req *admin
 		reply.Cards = append(reply.Cards, &adminv1.PremiumCardInfo{
 			Id: r.ID, ProductId: r.ProductID, MaskedContent: s.maskPlain(r),
 			DraftPremium: r.DraftPremium, DraftCost: r.DraftCost,
-			PriceCents: r.Price, Status: string(r.Status),
+			PriceCents: r.Price, Status: string(r.Status), SkuId: r.SkuID, SkuName: skuLabel(names, r.SkuID), ImportId: r.ImportID,
 		})
 	}
 	return reply, nil
@@ -259,7 +290,7 @@ func nilOr(v uint64) *uint64 {
 
 func toImportBatch(imp *ent.CardImport) *adminv1.ImportBatch {
 	return &adminv1.ImportBatch{
-		Id: imp.ID, ProductId: imp.ProductID,
+		Id: imp.ID, ProductId: imp.ProductID, SkuId: imp.SkuID, SkuName: imp.SkuName,
 		Total: imp.Total, Imported: imp.Imported,
 		Skipped: imp.Skipped, Failed: imp.Failed,
 		Status: string(imp.Status),

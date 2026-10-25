@@ -161,7 +161,7 @@ func (s *AdminCatalogService) ListProducts(ctx context.Context, req *adminv1.Lis
 	reply := &adminv1.ListProductsReply{Products: make([]*adminv1.AdminProduct, 0, len(rows))}
 	for _, p := range rows {
 		if req.GetOptionsOnly() {
-			reply.Products = append(reply.Products, &adminv1.AdminProduct{Id: p.ID, Name: p.Name, CategoryId: p.CategoryID, PriceCents: p.Price, GoodsType: p.GoodsType, ProductProperty: p.ProductProperty, SalesVisible: &p.SalesVisible, TrackInventory: &p.TrackInventory, StockType: string(p.StockType), IsLocked: p.IsLocked, LockVersion: p.LockVersion, Status: int32(p.Status), Cover: p.Cover, UpstreamSourceId: p.UpstreamSourceID})
+			reply.Products = append(reply.Products, &adminv1.AdminProduct{Id: p.ID, Name: p.Name, CategoryId: p.CategoryID, PriceCents: p.Price, GoodsType: p.GoodsType, ProductProperty: p.ProductProperty, SalesVisible: &p.SalesVisible, TrackInventory: &p.TrackInventory, StockType: string(p.StockType), IsLocked: p.IsLocked, LockVersion: p.LockVersion, Status: int32(p.Status), Cover: p.Cover, UpstreamSourceId: p.UpstreamSourceID, FulfillmentMode: p.FulfillmentMode})
 		} else {
 			reply.Products = append(reply.Products, ToAdminPB(p))
 		}

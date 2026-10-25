@@ -368,20 +368,26 @@ func init() {
 	cardimportDescFilename := cardimportFields[2].Descriptor()
 	// cardimport.FilenameValidator is a validator for the "filename" field. It is called by the builders before save.
 	cardimport.FilenameValidator = cardimportDescFilename.Validators[0].(func(string) error)
+	// cardimportDescSkuName is the schema descriptor for sku_name field.
+	cardimportDescSkuName := cardimportFields[4].Descriptor()
+	// cardimport.DefaultSkuName holds the default value on creation for the sku_name field.
+	cardimport.DefaultSkuName = cardimportDescSkuName.Default.(string)
+	// cardimport.SkuNameValidator is a validator for the "sku_name" field. It is called by the builders before save.
+	cardimport.SkuNameValidator = cardimportDescSkuName.Validators[0].(func(string) error)
 	// cardimportDescTotal is the schema descriptor for total field.
-	cardimportDescTotal := cardimportFields[3].Descriptor()
+	cardimportDescTotal := cardimportFields[5].Descriptor()
 	// cardimport.DefaultTotal holds the default value on creation for the total field.
 	cardimport.DefaultTotal = cardimportDescTotal.Default.(int32)
 	// cardimportDescImported is the schema descriptor for imported field.
-	cardimportDescImported := cardimportFields[4].Descriptor()
+	cardimportDescImported := cardimportFields[6].Descriptor()
 	// cardimport.DefaultImported holds the default value on creation for the imported field.
 	cardimport.DefaultImported = cardimportDescImported.Default.(int32)
 	// cardimportDescSkipped is the schema descriptor for skipped field.
-	cardimportDescSkipped := cardimportFields[5].Descriptor()
+	cardimportDescSkipped := cardimportFields[7].Descriptor()
 	// cardimport.DefaultSkipped holds the default value on creation for the skipped field.
 	cardimport.DefaultSkipped = cardimportDescSkipped.Default.(int32)
 	// cardimportDescFailed is the schema descriptor for failed field.
-	cardimportDescFailed := cardimportFields[6].Descriptor()
+	cardimportDescFailed := cardimportFields[8].Descriptor()
 	// cardimport.DefaultFailed holds the default value on creation for the failed field.
 	cardimport.DefaultFailed = cardimportDescFailed.Default.(int32)
 	cartitemMixin := schema.CartItem{}.Mixin()

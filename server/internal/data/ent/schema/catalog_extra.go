@@ -162,6 +162,8 @@ func (CardImport) Fields() []ent.Field {
 		field.Uint64("id"),
 		field.Uint64("product_id"),
 		field.String("filename").MaxLen(255),
+		field.Uint64("sku_id").Optional().Nillable().Immutable().Comment("导入目标规格快照：NULL=历史未记录，0=商品默认池"),
+		field.String("sku_name").MaxLen(100).Default("").Immutable().Comment("导入时规格名称"),
 		field.Int32("total").Default(0).Comment("文件总行数"),
 		field.Int32("imported").Default(0).Comment("已导入（进度回填）"),
 		field.Int32("skipped").Default(0).Comment("重复跳过"),

@@ -27,6 +27,10 @@ type CardImport struct {
 	ProductID uint64 `json:"product_id,omitempty"`
 	// Filename holds the value of the "filename" field.
 	Filename string `json:"filename,omitempty"`
+	// 导入目标规格快照：NULL=历史未记录，0=商品默认池
+	SkuID *uint64 `json:"sku_id,omitempty"`
+	// 导入时规格名称
+	SkuName string `json:"sku_name,omitempty"`
 	// 文件总行数
 	Total int32 `json:"total,omitempty"`
 	// 已导入（进度回填）
@@ -47,9 +51,9 @@ func (*CardImport) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case cardimport.FieldID, cardimport.FieldSubsiteID, cardimport.FieldProductID, cardimport.FieldTotal, cardimport.FieldImported, cardimport.FieldSkipped, cardimport.FieldFailed, cardimport.FieldOperatorID:
+		case cardimport.FieldID, cardimport.FieldSubsiteID, cardimport.FieldProductID, cardimport.FieldSkuID, cardimport.FieldTotal, cardimport.FieldImported, cardimport.FieldSkipped, cardimport.FieldFailed, cardimport.FieldOperatorID:
 			values[i] = new(sql.NullInt64)
-		case cardimport.FieldFilename, cardimport.FieldStatus:
+		case cardimport.FieldFilename, cardimport.FieldSkuName, cardimport.FieldStatus:
 			values[i] = new(sql.NullString)
 		case cardimport.FieldCreatedAt, cardimport.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -103,6 +107,19 @@ func (_m *CardImport) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field filename", values[i])
 			} else if value.Valid {
 				_m.Filename = value.String
+			}
+		case cardimport.FieldSkuID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field sku_id", values[i])
+			} else if value.Valid {
+				_m.SkuID = new(uint64)
+				*_m.SkuID = uint64(value.Int64)
+			}
+		case cardimport.FieldSkuName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field sku_name", values[i])
+			} else if value.Valid {
+				_m.SkuName = value.String
 			}
 		case cardimport.FieldTotal:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -190,6 +207,14 @@ func (_m *CardImport) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("filename=")
 	builder.WriteString(_m.Filename)
+	builder.WriteString(", ")
+	if v := _m.SkuID; v != nil {
+		builder.WriteString("sku_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("sku_name=")
+	builder.WriteString(_m.SkuName)
 	builder.WriteString(", ")
 	builder.WriteString("total=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Total))

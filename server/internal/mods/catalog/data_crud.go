@@ -119,7 +119,7 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 		q = q.Offset((int(f.Page) - 1) * int(f.PageSize)).Limit(int(f.PageSize))
 	}
 	if f.OptionsOnly {
-		q.Select(product.FieldID, product.FieldName, product.FieldCategoryID, product.FieldPrice, product.FieldStockType, product.FieldGoodsType, product.FieldProductProperty, product.FieldSalesVisible, product.FieldTrackInventory, product.FieldSort, product.FieldIsLocked, product.FieldLockVersion, product.FieldStatus, product.FieldCover, product.FieldUpstreamSourceID)
+		q.Select(product.FieldID, product.FieldName, product.FieldCategoryID, product.FieldPrice, product.FieldStockType, product.FieldGoodsType, product.FieldProductProperty, product.FieldSalesVisible, product.FieldTrackInventory, product.FieldSort, product.FieldIsLocked, product.FieldLockVersion, product.FieldStatus, product.FieldCover, product.FieldUpstreamSourceID, product.FieldFulfillmentMode)
 	}
 	rows, err := q.All(ctx)
 	return rows, int64(total), err
@@ -1218,14 +1218,9 @@ func (r *ProductRepoImpl) ListForSupply(ctx context.Context, f port.AdminFilter)
 	for _, v := range controls {
 		blocked = append(blocked, v.ProductID)
 	}
-	skus, e := c.ProductSku.Query().Where(productsku.FulfillmentModeIn("manual", "local", "reuse")).All(ctx)
-	if e != nil {
-		return nil, 0, e
-	}
-	for _, v := range skus {
-		blocked = append(blocked, v.ProductID)
-	}
-	q := data.Client(ctx, r.data).Product.Query().Where(product.DeliveryKind("card"), product.GoodsTypeNEQ("physical"), product.StatusGTE(0), data.VisibleProductCategory(hidden)).Where(product.FulfillmentModeNotIn("manual", "local", "reuse"), product.IDNotIn(blocked...))
+	// Legacy supply protocols identify only a product, never a real SKU.
+	// Do not advertise a total that their default-pool orders cannot consume.
+	q := data.Client(ctx, r.data).Product.Query().Where(product.SubsiteID(tenancy.FromContext(ctx).SubsiteID), product.DeliveryKind("card"), product.GoodsTypeNEQ("physical"), product.StatusGTE(0), data.VisibleProductCategory(hidden)).Where(product.FulfillmentModeNotIn("manual", "local", "reuse"), product.IDNotIn(blocked...), product.Not(product.HasSkusWith(productsku.SubsiteID(tenancy.FromContext(ctx).SubsiteID))))
 	if f.Status >= 0 {
 		q = q.Where(product.Status(int8(f.Status)))
 	}
@@ -1256,6 +1251,11 @@ func (r *ProductRepoImpl) GetForSupply(ctx context.Context, productID uint64) (*
 	}
 	if row.DeliveryKind != "card" {
 		return nil, fmt.Errorf("接码商品不支持二级供货")
+	}
+	if hasSKU, e := data.Client(ctx, r.data).ProductSku.Query().Where(productsku.ProductID(row.ID), productsku.SubsiteID(row.SubsiteID)).Exist(ctx); e != nil {
+		return nil, e
+	} else if hasSKU {
+		return nil, fmt.Errorf("多规格商品不支持旧版供货接口")
 	}
 	if yes, e := data.HasLocalDelivery(ctx, data.Client(ctx, r.data), row); e != nil {
 		return nil, e

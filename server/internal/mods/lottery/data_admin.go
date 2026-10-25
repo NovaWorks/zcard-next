@@ -13,6 +13,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryrevision"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"sort"
 	"strings"
 	"time"
 )
@@ -104,6 +105,24 @@ func (s *AdminService) SaveLotteryActivity(ctx context.Context, v *adminv1.Lotte
 			return e
 		}
 		id = a.ID
+		// Share product locks with SKU deletion before writing prize references.
+		// Lock products in a fixed order so multi-product activities cannot deadlock.
+		products := map[uint64]bool{}
+		for _, prize := range v.Prizes {
+			if prize.Mode == "card" {
+				products[prize.ProductId] = true
+			}
+		}
+		ids := make([]uint64, 0, len(products))
+		for pid := range products {
+			ids = append(ids, pid)
+		}
+		sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+		for _, pid := range ids {
+			if _, e = data.GuardProductWrite(ctx, s.repo.Data, pid); e != nil {
+				return e
+			}
+		}
 		update := c.LotteryActivity.UpdateOneID(id).SetName(strings.TrimSpace(v.Name)).SetDescription(v.Description).SetImage(v.Image).SetStartAt(time.Unix(v.StartAt, 0)).SetEndAt(time.Unix(v.EndAt, 0)).SetTimezone(v.Timezone).SetChanceMode(v.ChanceMode).SetChanceCount(v.ChanceCount)
 		if v.Id != 0 {
 			update = update.AddRevision(1)
@@ -117,7 +136,7 @@ func (s *AdminService) SaveLotteryActivity(ctx context.Context, v *adminv1.Lotte
 		}
 		for i, p := range v.Prizes {
 			if p.Mode == "card" {
-				if _, e = s.repo.eligibleCard(ctx, p.ProductId, p.SkuId); e != nil {
+				if _, e = s.repo.eligibleCard(ctx, p.ProductId, p.SkuId, true); e != nil {
 					return e
 				}
 			}

@@ -24,6 +24,10 @@ const (
 	FieldProductID = "product_id"
 	// FieldFilename holds the string denoting the filename field in the database.
 	FieldFilename = "filename"
+	// FieldSkuID holds the string denoting the sku_id field in the database.
+	FieldSkuID = "sku_id"
+	// FieldSkuName holds the string denoting the sku_name field in the database.
+	FieldSkuName = "sku_name"
 	// FieldTotal holds the string denoting the total field in the database.
 	FieldTotal = "total"
 	// FieldImported holds the string denoting the imported field in the database.
@@ -48,6 +52,8 @@ var Columns = []string{
 	FieldSubsiteID,
 	FieldProductID,
 	FieldFilename,
+	FieldSkuID,
+	FieldSkuName,
 	FieldTotal,
 	FieldImported,
 	FieldSkipped,
@@ -77,6 +83,10 @@ var (
 	DefaultSubsiteID uint64
 	// FilenameValidator is a validator for the "filename" field. It is called by the builders before save.
 	FilenameValidator func(string) error
+	// DefaultSkuName holds the default value on creation for the "sku_name" field.
+	DefaultSkuName string
+	// SkuNameValidator is a validator for the "sku_name" field. It is called by the builders before save.
+	SkuNameValidator func(string) error
 	// DefaultTotal holds the default value on creation for the "total" field.
 	DefaultTotal int32
 	// DefaultImported holds the default value on creation for the "imported" field.
@@ -147,6 +157,16 @@ func ByProductID(opts ...sql.OrderTermOption) OrderOption {
 // ByFilename orders the results by the filename field.
 func ByFilename(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFilename, opts...).ToFunc()
+}
+
+// BySkuID orders the results by the sku_id field.
+func BySkuID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSkuID, opts...).ToFunc()
+}
+
+// BySkuName orders the results by the sku_name field.
+func BySkuName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSkuName, opts...).ToFunc()
 }
 
 // ByTotal orders the results by the total field.

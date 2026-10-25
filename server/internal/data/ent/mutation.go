@@ -7365,6 +7365,9 @@ type CardImportMutation struct {
 	product_id     *uint64
 	addproduct_id  *int64
 	filename       *string
+	sku_id         *uint64
+	addsku_id      *int64
+	sku_name       *string
 	total          *int32
 	addtotal       *int32
 	imported       *int32
@@ -7704,6 +7707,112 @@ func (m *CardImportMutation) OldFilename(ctx context.Context) (v string, err err
 // ResetFilename resets all changes to the "filename" field.
 func (m *CardImportMutation) ResetFilename() {
 	m.filename = nil
+}
+
+// SetSkuID sets the "sku_id" field.
+func (m *CardImportMutation) SetSkuID(u uint64) {
+	m.sku_id = &u
+	m.addsku_id = nil
+}
+
+// SkuID returns the value of the "sku_id" field in the mutation.
+func (m *CardImportMutation) SkuID() (r uint64, exists bool) {
+	v := m.sku_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkuID returns the old "sku_id" field's value of the CardImport entity.
+// If the CardImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CardImportMutation) OldSkuID(ctx context.Context) (v *uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkuID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkuID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkuID: %w", err)
+	}
+	return oldValue.SkuID, nil
+}
+
+// AddSkuID adds u to the "sku_id" field.
+func (m *CardImportMutation) AddSkuID(u int64) {
+	if m.addsku_id != nil {
+		*m.addsku_id += u
+	} else {
+		m.addsku_id = &u
+	}
+}
+
+// AddedSkuID returns the value that was added to the "sku_id" field in this mutation.
+func (m *CardImportMutation) AddedSkuID() (r int64, exists bool) {
+	v := m.addsku_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSkuID clears the value of the "sku_id" field.
+func (m *CardImportMutation) ClearSkuID() {
+	m.sku_id = nil
+	m.addsku_id = nil
+	m.clearedFields[cardimport.FieldSkuID] = struct{}{}
+}
+
+// SkuIDCleared returns if the "sku_id" field was cleared in this mutation.
+func (m *CardImportMutation) SkuIDCleared() bool {
+	_, ok := m.clearedFields[cardimport.FieldSkuID]
+	return ok
+}
+
+// ResetSkuID resets all changes to the "sku_id" field.
+func (m *CardImportMutation) ResetSkuID() {
+	m.sku_id = nil
+	m.addsku_id = nil
+	delete(m.clearedFields, cardimport.FieldSkuID)
+}
+
+// SetSkuName sets the "sku_name" field.
+func (m *CardImportMutation) SetSkuName(s string) {
+	m.sku_name = &s
+}
+
+// SkuName returns the value of the "sku_name" field in the mutation.
+func (m *CardImportMutation) SkuName() (r string, exists bool) {
+	v := m.sku_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkuName returns the old "sku_name" field's value of the CardImport entity.
+// If the CardImport object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CardImportMutation) OldSkuName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkuName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkuName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkuName: %w", err)
+	}
+	return oldValue.SkuName, nil
+}
+
+// ResetSkuName resets all changes to the "sku_name" field.
+func (m *CardImportMutation) ResetSkuName() {
+	m.sku_name = nil
 }
 
 // SetTotal sets the "total" field.
@@ -8070,7 +8179,7 @@ func (m *CardImportMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CardImportMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, cardimport.FieldCreatedAt)
 	}
@@ -8085,6 +8194,12 @@ func (m *CardImportMutation) Fields() []string {
 	}
 	if m.filename != nil {
 		fields = append(fields, cardimport.FieldFilename)
+	}
+	if m.sku_id != nil {
+		fields = append(fields, cardimport.FieldSkuID)
+	}
+	if m.sku_name != nil {
+		fields = append(fields, cardimport.FieldSkuName)
 	}
 	if m.total != nil {
 		fields = append(fields, cardimport.FieldTotal)
@@ -8122,6 +8237,10 @@ func (m *CardImportMutation) Field(name string) (ent.Value, bool) {
 		return m.ProductID()
 	case cardimport.FieldFilename:
 		return m.Filename()
+	case cardimport.FieldSkuID:
+		return m.SkuID()
+	case cardimport.FieldSkuName:
+		return m.SkuName()
 	case cardimport.FieldTotal:
 		return m.Total()
 	case cardimport.FieldImported:
@@ -8153,6 +8272,10 @@ func (m *CardImportMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldProductID(ctx)
 	case cardimport.FieldFilename:
 		return m.OldFilename(ctx)
+	case cardimport.FieldSkuID:
+		return m.OldSkuID(ctx)
+	case cardimport.FieldSkuName:
+		return m.OldSkuName(ctx)
 	case cardimport.FieldTotal:
 		return m.OldTotal(ctx)
 	case cardimport.FieldImported:
@@ -8208,6 +8331,20 @@ func (m *CardImportMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFilename(v)
+		return nil
+	case cardimport.FieldSkuID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkuID(v)
+		return nil
+	case cardimport.FieldSkuName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkuName(v)
 		return nil
 	case cardimport.FieldTotal:
 		v, ok := value.(int32)
@@ -8265,6 +8402,9 @@ func (m *CardImportMutation) AddedFields() []string {
 	if m.addproduct_id != nil {
 		fields = append(fields, cardimport.FieldProductID)
 	}
+	if m.addsku_id != nil {
+		fields = append(fields, cardimport.FieldSkuID)
+	}
 	if m.addtotal != nil {
 		fields = append(fields, cardimport.FieldTotal)
 	}
@@ -8292,6 +8432,8 @@ func (m *CardImportMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedSubsiteID()
 	case cardimport.FieldProductID:
 		return m.AddedProductID()
+	case cardimport.FieldSkuID:
+		return m.AddedSkuID()
 	case cardimport.FieldTotal:
 		return m.AddedTotal()
 	case cardimport.FieldImported:
@@ -8324,6 +8466,13 @@ func (m *CardImportMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddProductID(v)
+		return nil
+	case cardimport.FieldSkuID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkuID(v)
 		return nil
 	case cardimport.FieldTotal:
 		v, ok := value.(int32)
@@ -8368,6 +8517,9 @@ func (m *CardImportMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *CardImportMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(cardimport.FieldSkuID) {
+		fields = append(fields, cardimport.FieldSkuID)
+	}
 	if m.FieldCleared(cardimport.FieldOperatorID) {
 		fields = append(fields, cardimport.FieldOperatorID)
 	}
@@ -8385,6 +8537,9 @@ func (m *CardImportMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *CardImportMutation) ClearField(name string) error {
 	switch name {
+	case cardimport.FieldSkuID:
+		m.ClearSkuID()
+		return nil
 	case cardimport.FieldOperatorID:
 		m.ClearOperatorID()
 		return nil
@@ -8410,6 +8565,12 @@ func (m *CardImportMutation) ResetField(name string) error {
 		return nil
 	case cardimport.FieldFilename:
 		m.ResetFilename()
+		return nil
+	case cardimport.FieldSkuID:
+		m.ResetSkuID()
+		return nil
+	case cardimport.FieldSkuName:
+		m.ResetSkuName()
 		return nil
 	case cardimport.FieldTotal:
 		m.ResetTotal()

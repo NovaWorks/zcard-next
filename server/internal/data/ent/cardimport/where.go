@@ -79,6 +79,16 @@ func Filename(v string) predicate.CardImport {
 	return predicate.CardImport(sql.FieldEQ(FieldFilename, v))
 }
 
+// SkuID applies equality check predicate on the "sku_id" field. It's identical to SkuIDEQ.
+func SkuID(v uint64) predicate.CardImport {
+	return predicate.CardImport(sql.FieldEQ(FieldSkuID, v))
+}
+
+// SkuName applies equality check predicate on the "sku_name" field. It's identical to SkuNameEQ.
+func SkuName(v string) predicate.CardImport {
+	return predicate.CardImport(sql.FieldEQ(FieldSkuName, v))
+}
+
 // Total applies equality check predicate on the "total" field. It's identical to TotalEQ.
 func Total(v int32) predicate.CardImport {
 	return predicate.CardImport(sql.FieldEQ(FieldTotal, v))
@@ -327,6 +337,121 @@ func FilenameEqualFold(v string) predicate.CardImport {
 // FilenameContainsFold applies the ContainsFold predicate on the "filename" field.
 func FilenameContainsFold(v string) predicate.CardImport {
 	return predicate.CardImport(sql.FieldContainsFold(FieldFilename, v))
+}
+
+// SkuIDEQ applies the EQ predicate on the "sku_id" field.
+func SkuIDEQ(v uint64) predicate.CardImport {
+	return predicate.CardImport(sql.FieldEQ(FieldSkuID, v))
+}
+
+// SkuIDNEQ applies the NEQ predicate on the "sku_id" field.
+func SkuIDNEQ(v uint64) predicate.CardImport {
+	return predicate.CardImport(sql.FieldNEQ(FieldSkuID, v))
+}
+
+// SkuIDIn applies the In predicate on the "sku_id" field.
+func SkuIDIn(vs ...uint64) predicate.CardImport {
+	return predicate.CardImport(sql.FieldIn(FieldSkuID, vs...))
+}
+
+// SkuIDNotIn applies the NotIn predicate on the "sku_id" field.
+func SkuIDNotIn(vs ...uint64) predicate.CardImport {
+	return predicate.CardImport(sql.FieldNotIn(FieldSkuID, vs...))
+}
+
+// SkuIDGT applies the GT predicate on the "sku_id" field.
+func SkuIDGT(v uint64) predicate.CardImport {
+	return predicate.CardImport(sql.FieldGT(FieldSkuID, v))
+}
+
+// SkuIDGTE applies the GTE predicate on the "sku_id" field.
+func SkuIDGTE(v uint64) predicate.CardImport {
+	return predicate.CardImport(sql.FieldGTE(FieldSkuID, v))
+}
+
+// SkuIDLT applies the LT predicate on the "sku_id" field.
+func SkuIDLT(v uint64) predicate.CardImport {
+	return predicate.CardImport(sql.FieldLT(FieldSkuID, v))
+}
+
+// SkuIDLTE applies the LTE predicate on the "sku_id" field.
+func SkuIDLTE(v uint64) predicate.CardImport {
+	return predicate.CardImport(sql.FieldLTE(FieldSkuID, v))
+}
+
+// SkuIDIsNil applies the IsNil predicate on the "sku_id" field.
+func SkuIDIsNil() predicate.CardImport {
+	return predicate.CardImport(sql.FieldIsNull(FieldSkuID))
+}
+
+// SkuIDNotNil applies the NotNil predicate on the "sku_id" field.
+func SkuIDNotNil() predicate.CardImport {
+	return predicate.CardImport(sql.FieldNotNull(FieldSkuID))
+}
+
+// SkuNameEQ applies the EQ predicate on the "sku_name" field.
+func SkuNameEQ(v string) predicate.CardImport {
+	return predicate.CardImport(sql.FieldEQ(FieldSkuName, v))
+}
+
+// SkuNameNEQ applies the NEQ predicate on the "sku_name" field.
+func SkuNameNEQ(v string) predicate.CardImport {
+	return predicate.CardImport(sql.FieldNEQ(FieldSkuName, v))
+}
+
+// SkuNameIn applies the In predicate on the "sku_name" field.
+func SkuNameIn(vs ...string) predicate.CardImport {
+	return predicate.CardImport(sql.FieldIn(FieldSkuName, vs...))
+}
+
+// SkuNameNotIn applies the NotIn predicate on the "sku_name" field.
+func SkuNameNotIn(vs ...string) predicate.CardImport {
+	return predicate.CardImport(sql.FieldNotIn(FieldSkuName, vs...))
+}
+
+// SkuNameGT applies the GT predicate on the "sku_name" field.
+func SkuNameGT(v string) predicate.CardImport {
+	return predicate.CardImport(sql.FieldGT(FieldSkuName, v))
+}
+
+// SkuNameGTE applies the GTE predicate on the "sku_name" field.
+func SkuNameGTE(v string) predicate.CardImport {
+	return predicate.CardImport(sql.FieldGTE(FieldSkuName, v))
+}
+
+// SkuNameLT applies the LT predicate on the "sku_name" field.
+func SkuNameLT(v string) predicate.CardImport {
+	return predicate.CardImport(sql.FieldLT(FieldSkuName, v))
+}
+
+// SkuNameLTE applies the LTE predicate on the "sku_name" field.
+func SkuNameLTE(v string) predicate.CardImport {
+	return predicate.CardImport(sql.FieldLTE(FieldSkuName, v))
+}
+
+// SkuNameContains applies the Contains predicate on the "sku_name" field.
+func SkuNameContains(v string) predicate.CardImport {
+	return predicate.CardImport(sql.FieldContains(FieldSkuName, v))
+}
+
+// SkuNameHasPrefix applies the HasPrefix predicate on the "sku_name" field.
+func SkuNameHasPrefix(v string) predicate.CardImport {
+	return predicate.CardImport(sql.FieldHasPrefix(FieldSkuName, v))
+}
+
+// SkuNameHasSuffix applies the HasSuffix predicate on the "sku_name" field.
+func SkuNameHasSuffix(v string) predicate.CardImport {
+	return predicate.CardImport(sql.FieldHasSuffix(FieldSkuName, v))
+}
+
+// SkuNameEqualFold applies the EqualFold predicate on the "sku_name" field.
+func SkuNameEqualFold(v string) predicate.CardImport {
+	return predicate.CardImport(sql.FieldEqualFold(FieldSkuName, v))
+}
+
+// SkuNameContainsFold applies the ContainsFold predicate on the "sku_name" field.
+func SkuNameContainsFold(v string) predicate.CardImport {
+	return predicate.CardImport(sql.FieldContainsFold(FieldSkuName, v))
 }
 
 // TotalEQ applies the EQ predicate on the "total" field.

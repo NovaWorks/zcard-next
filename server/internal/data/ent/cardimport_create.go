@@ -76,6 +76,34 @@ func (_c *CardImportCreate) SetFilename(v string) *CardImportCreate {
 	return _c
 }
 
+// SetSkuID sets the "sku_id" field.
+func (_c *CardImportCreate) SetSkuID(v uint64) *CardImportCreate {
+	_c.mutation.SetSkuID(v)
+	return _c
+}
+
+// SetNillableSkuID sets the "sku_id" field if the given value is not nil.
+func (_c *CardImportCreate) SetNillableSkuID(v *uint64) *CardImportCreate {
+	if v != nil {
+		_c.SetSkuID(*v)
+	}
+	return _c
+}
+
+// SetSkuName sets the "sku_name" field.
+func (_c *CardImportCreate) SetSkuName(v string) *CardImportCreate {
+	_c.mutation.SetSkuName(v)
+	return _c
+}
+
+// SetNillableSkuName sets the "sku_name" field if the given value is not nil.
+func (_c *CardImportCreate) SetNillableSkuName(v *string) *CardImportCreate {
+	if v != nil {
+		_c.SetSkuName(*v)
+	}
+	return _c
+}
+
 // SetTotal sets the "total" field.
 func (_c *CardImportCreate) SetTotal(v int32) *CardImportCreate {
 	_c.mutation.SetTotal(v)
@@ -213,6 +241,10 @@ func (_c *CardImportCreate) defaults() {
 		v := cardimport.DefaultSubsiteID
 		_c.mutation.SetSubsiteID(v)
 	}
+	if _, ok := _c.mutation.SkuName(); !ok {
+		v := cardimport.DefaultSkuName
+		_c.mutation.SetSkuName(v)
+	}
 	if _, ok := _c.mutation.Total(); !ok {
 		v := cardimport.DefaultTotal
 		_c.mutation.SetTotal(v)
@@ -255,6 +287,14 @@ func (_c *CardImportCreate) check() error {
 	if v, ok := _c.mutation.Filename(); ok {
 		if err := cardimport.FilenameValidator(v); err != nil {
 			return &ValidationError{Name: "filename", err: fmt.Errorf(`ent: validator failed for field "CardImport.filename": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkuName(); !ok {
+		return &ValidationError{Name: "sku_name", err: errors.New(`ent: missing required field "CardImport.sku_name"`)}
+	}
+	if v, ok := _c.mutation.SkuName(); ok {
+		if err := cardimport.SkuNameValidator(v); err != nil {
+			return &ValidationError{Name: "sku_name", err: fmt.Errorf(`ent: validator failed for field "CardImport.sku_name": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Total(); !ok {
@@ -329,6 +369,14 @@ func (_c *CardImportCreate) createSpec() (*CardImport, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Filename(); ok {
 		_spec.SetField(cardimport.FieldFilename, field.TypeString, value)
 		_node.Filename = value
+	}
+	if value, ok := _c.mutation.SkuID(); ok {
+		_spec.SetField(cardimport.FieldSkuID, field.TypeUint64, value)
+		_node.SkuID = &value
+	}
+	if value, ok := _c.mutation.SkuName(); ok {
+		_spec.SetField(cardimport.FieldSkuName, field.TypeString, value)
+		_node.SkuName = value
 	}
 	if value, ok := _c.mutation.Total(); ok {
 		_spec.SetField(cardimport.FieldTotal, field.TypeInt32, value)
@@ -593,6 +641,12 @@ func (u *CardImportUpsertOne) UpdateNewValues() *CardImportUpsertOne {
 		}
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(cardimport.FieldCreatedAt)
+		}
+		if _, exists := u.create.mutation.SkuID(); exists {
+			s.SetIgnore(cardimport.FieldSkuID)
+		}
+		if _, exists := u.create.mutation.SkuName(); exists {
+			s.SetIgnore(cardimport.FieldSkuName)
 		}
 	}))
 	return u
@@ -1005,6 +1059,12 @@ func (u *CardImportUpsertBulk) UpdateNewValues() *CardImportUpsertBulk {
 			}
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(cardimport.FieldCreatedAt)
+			}
+			if _, exists := b.mutation.SkuID(); exists {
+				s.SetIgnore(cardimport.FieldSkuID)
+			}
+			if _, exists := b.mutation.SkuName(); exists {
+				s.SetIgnore(cardimport.FieldSkuName)
 			}
 		}
 	}))

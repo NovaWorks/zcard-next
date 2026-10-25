@@ -186,6 +186,14 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminCatalogService/DeleteMemberGroup", Method: "DELETE", Path: "/api/v1/admin/member-groups/{id}"},
 
 		// ── 卡密库存（inventory，）────────────────
+		Perm{Code: "inventory:read", Desc: "库存规格选项", Domain: "inventory",
+			Op: "zcard.api.admin.v1.AdminInventoryService/GetTargets", Method: "GET", Path: "/api/v1/admin/inventory/targets"},
+		Perm{Code: "inventory:write", Desc: "卡密归属预览（超管）", Domain: "inventory", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminInventoryService/AssignPreview", Method: "POST", Path: "/api/v1/admin/inventory/assign-preview"},
+		Perm{Code: "inventory:write", Desc: "分配默认库存到规格（超管）", Domain: "inventory", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminInventoryService/AssignCards", Method: "POST", Path: "/api/v1/admin/inventory/assign"},
+		Perm{Code: "inventory:import", Desc: "批次撤销预览（超管）", Domain: "inventory", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminInventoryService/PreviewCancelImport", Method: "GET", Path: "/api/v1/admin/inventory/imports/{id}/preview"},
 		Perm{Code: "inventory:read", Desc: "查看卡密", Domain: "inventory",
 			Op: "zcard.api.admin.v1.AdminInventoryService/ListCards", Method: "GET", Path: "/api/v1/admin/inventory/cards"},
 		Perm{Code: "inventory:import", Desc: "导入预览（超管）", Domain: "inventory", AdminOnly: true,

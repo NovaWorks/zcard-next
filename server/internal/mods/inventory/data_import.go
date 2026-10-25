@@ -8,6 +8,7 @@ package inventory
 
 import (
 	"context"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 	kerrors "github.com/go-kratos/kratos/v3/errors"
 	"strings"
 
@@ -27,15 +28,21 @@ type ImportPreview struct {
 	Invalid   int      `json:"invalid"`     // 格式非法行
 	Sample    []string `json:"sample"`      // 前 50 行预览
 	IsPremium bool     `json:"is_premium"`  // 是否靓号格式（含 ---分隔）
+	SkuID     uint64
+	SkuName   string
+	Revision  int64
 }
 
 // ImportInput 导入参数。
 type ImportInput struct {
-	ProductID uint64
-	SkuID     uint64
-	Lines     []string // 原始行（每行一条卡密；靓号「卡密---价格---备注」三段）
-	Dedup     bool     // 去重开关（false=重复行报错）
-	Operator  uint64
+	ProductID        uint64
+	SkuID            uint64
+	Lines            []string // 原始行（每行一条卡密；靓号「卡密---价格---备注」三段）
+	Dedup            bool     // 去重开关（false=重复行报错）
+	Operator         uint64
+	ExpectedRevision *int64
+	SubsiteID        uint64
+	SkuName          string
 }
 
 // dedupChunk IN 批查单批上限（500：IN 列表与唯一索引扫描的平衡点）。
@@ -50,7 +57,7 @@ func (r *CardRepoImpl) existingHashes(ctx context.Context, client *ent.Client, p
 			end = len(hashes)
 		}
 		rows, err := client.Card.Query().
-			Where(card.ProductID(productID), card.ContentHashIn(hashes[i:end]...)).
+			Where(card.ProductID(productID), card.SubsiteID(tenancy.FromContext(ctx).SubsiteID), card.ContentHashIn(hashes[i:end]...)).
 			Select(card.FieldContentHash).
 			Strings(ctx)
 		if err != nil {
@@ -65,7 +72,18 @@ func (r *CardRepoImpl) existingHashes(ctx context.Context, client *ent.Client, p
 
 // ParseLines 解析原始行（靓号三段式检测 + 去重 + 预览统计）。
 func (r *CardRepoImpl) ParseLines(ctx context.Context, in ImportInput) (*ImportPreview, error) {
-	p := &ImportPreview{Sample: make([]string, 0, 50)}
+	product, err := r.inventoryProduct(ctx, in.ProductID)
+	if err != nil {
+		return nil, err
+	}
+	name, err := r.importTarget(ctx, product, in.SkuID, false)
+	if err != nil {
+		return nil, err
+	}
+	if r.Cipher == nil {
+		return nil, kerrors.InternalServer("inventory.CIPHER_MISSING", "卡密密钥未配置")
+	}
+	p := &ImportPreview{Sample: make([]string, 0, 50), SkuID: in.SkuID, SkuName: name, Revision: product.LockVersion}
 	seen := map[string]bool{}
 	client := data.Client(ctx, r.data)
 
@@ -131,6 +149,9 @@ func (r *CardRepoImpl) importConfirm(ctx context.Context, in ImportInput) (*ent.
 	// 创建批次
 	imp, err := client.CardImport.Create().
 		SetProductID(in.ProductID).
+		SetSubsiteID(in.SubsiteID).
+		SetSkuID(in.SkuID).
+		SetSkuName(in.SkuName).
 		SetFilename("api-import").
 		SetTotal(int32(len(in.Lines))).
 		SetStatus(cardimport.StatusProcessing).
@@ -176,7 +197,7 @@ func (r *CardRepoImpl) importConfirm(ctx context.Context, in ImportInput) (*ent.
 			seen[number] = true
 
 			// 加密 + keyed hash
-			enc, err := r.Cipher.Seal(number, in.ProductID, 0)
+			enc, err := r.Cipher.Seal(number, in.ProductID, in.SubsiteID)
 			if err != nil {
 				failed++
 				continue
@@ -186,12 +207,11 @@ func (r *CardRepoImpl) importConfirm(ctx context.Context, in ImportInput) (*ent.
 
 			create := client.Card.Create().
 				SetProductID(in.ProductID).
+				SetSubsiteID(in.SubsiteID).
 				SetContent(enc).
 				SetContentHash(hash).
 				SetStatus(card.StatusAvailable)
-			if in.SkuID > 0 {
-				create.SetSkuID(in.SkuID)
-			}
+			create.SetSkuID(in.SkuID)
 			if imp.ID > 0 {
 				create.SetImportID(imp.ID)
 			}
@@ -227,7 +247,12 @@ func (r *CardRepoImpl) importConfirm(ctx context.Context, in ImportInput) (*ent.
 				Exec(ctx); err != nil {
 				return nil, err
 			}
-			imported += int32(len(creates))
+			actual, e := client.Card.Query().Where(card.ImportID(imp.ID), card.SubsiteID(in.SubsiteID)).Count(ctx)
+			if e != nil {
+				return nil, e
+			}
+			skipped += int32(len(creates)) - (int32(actual) - imported)
+			imported = int32(actual)
 		}
 	}
 
@@ -245,12 +270,17 @@ func (r *CardRepoImpl) importConfirm(ctx context.Context, in ImportInput) (*ent.
 }
 
 // ListImports 导入批次列表。
-func (r *CardRepoImpl) ListImports(ctx context.Context, productID uint64) ([]*ent.CardImport, error) {
-	q := data.Client(ctx, r.data).CardImport.Query().
+func (r *CardRepoImpl) ListImports(ctx context.Context, productID uint64, skuID *uint64, legacyOnly bool) ([]*ent.CardImport, error) {
+	q := data.Client(ctx, r.data).CardImport.Query().Where(cardimport.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
 		Order(ent.Desc(cardimport.FieldCreatedAt)).
 		Limit(50)
 	if productID > 0 {
 		q = q.Where(cardimport.ProductID(productID))
+	}
+	if legacyOnly {
+		q = q.Where(cardimport.SkuIDIsNil())
+	} else if skuID != nil {
+		q = q.Where(cardimport.SkuID(*skuID))
 	}
 	return q.All(ctx)
 }
@@ -259,7 +289,7 @@ func (r *CardRepoImpl) ListImports(ctx context.Context, productID uint64) ([]*en
 func (r *CardRepoImpl) cancelImport(ctx context.Context, importID uint64) error {
 	client := data.Client(ctx, r.data)
 	n, err := client.Card.Delete().
-		Where(card.ImportID(importID), card.StatusEQ(card.StatusAvailable)).
+		Where(card.ImportID(importID), card.SubsiteID(tenancy.FromContext(ctx).SubsiteID), card.StatusEQ(card.StatusAvailable)).
 		Exec(ctx)
 	if err != nil {
 		return err
@@ -282,9 +312,12 @@ func CsvSafe(s string) string {
 }
 
 // ExportCards 导出 available 卡密（返回解密明文行；需 card:export 权限 + 审计）。
-func (r *CardRepoImpl) ExportCards(ctx context.Context, productID uint64) ([]string, error) {
+func (r *CardRepoImpl) ExportCards(ctx context.Context, productID uint64, skuID *uint64) ([]string, error) {
+	if _, err := r.inventoryProduct(ctx, productID); err != nil {
+		return nil, err
+	}
 	rows, err := data.Client(ctx, r.data).Card.Query().
-		Where(card.ProductID(productID), card.StatusEQ(card.StatusAvailable)).
+		Where(card.ProductID(productID), card.SubsiteID(tenancy.FromContext(ctx).SubsiteID), card.StatusEQ(card.StatusAvailable), skuPredicate(skuID)).
 		Order(ent.Asc(card.FieldID)).
 		Limit(10000). // 导出上限
 		All(ctx)
@@ -308,23 +341,38 @@ func (r *CardRepoImpl) ImportConfirm(ctx context.Context, in ImportInput) (out *
 		if e != nil {
 			return e
 		}
-		if p.GoodsType == "physical" {
-			return kerrors.BadRequest("inventory.PHYSICAL_PRODUCT", "实体商品不能导入卡密，请调整实物库存")
+		if in.ExpectedRevision != nil && p.LockVersion != *in.ExpectedRevision {
+			return kerrors.Conflict("inventory.CONFIG_CHANGED", "商品设置已变化，请重新预览")
 		}
-
+		name, e := r.importTarget(ctx, p, in.SkuID, true)
+		if e != nil {
+			return e
+		}
+		if r.Cipher == nil {
+			return kerrors.InternalServer("inventory.CIPHER_MISSING", "卡密密钥未配置")
+		}
+		in.SubsiteID = p.SubsiteID
+		in.SkuName = name
 		out, e = r.importConfirm(ctx, in)
 		return e
 	})
 	return
 }
-func (r *CardRepoImpl) CancelImport(ctx context.Context, id uint64) error {
+func (r *CardRepoImpl) CancelImport(ctx context.Context, id uint64, expected ...string) error {
 	return data.Tx(ctx, r.data, func(ctx context.Context) error {
-		row, e := data.Client(ctx, r.data).CardImport.Get(ctx, id)
+		row, e := data.Client(ctx, r.data).CardImport.Query().Where(cardimport.ID(id), cardimport.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).Only(ctx)
 		if e != nil {
 			return e
 		}
 		if _, e = data.GuardProductWrite(ctx, r.data, row.ProductID); e != nil {
 			return e
+		}
+		current, e := r.batchCards(ctx, row, true)
+		if e != nil {
+			return e
+		}
+		if len(expected) > 0 && expected[0] != "" && expected[0] != cancellationRevision(current) {
+			return kerrors.Conflict("inventory.BATCH_CHANGED", "批次库存已变化，请重新预览撤销范围")
 		}
 		return r.cancelImport(ctx, id)
 	})

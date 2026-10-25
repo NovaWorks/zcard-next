@@ -230,6 +230,8 @@ var (
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
 		{Name: "product_id", Type: field.TypeUint64},
 		{Name: "filename", Type: field.TypeString, Size: 255},
+		{Name: "sku_id", Type: field.TypeUint64, Nullable: true},
+		{Name: "sku_name", Type: field.TypeString, Size: 100, Default: ""},
 		{Name: "total", Type: field.TypeInt32, Default: 0},
 		{Name: "imported", Type: field.TypeInt32, Default: 0},
 		{Name: "skipped", Type: field.TypeInt32, Default: 0},

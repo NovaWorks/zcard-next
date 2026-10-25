@@ -88,6 +88,7 @@ test:
 test-integration:
 	go test -tags=integration -count=1 -timeout 15m ./internal/testint/...
 	go test -tags=integration -count=1 -timeout 15m ./internal/mods/supply -run '^TestCatalogSnapshotMySQLLargePayloadReuse$$'
+	go test -tags=integration -count=1 -timeout 15m ./internal/mods/supplier -run '^TestLegacySupplySKUCurrentRead(MySQL|PG)$$'
 
 .PHONY: lint
 # 静态检查（gofmt：生成物豁免；CI 起接 golangci-lint）

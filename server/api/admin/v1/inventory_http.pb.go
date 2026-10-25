@@ -18,21 +18,28 @@ var _ = new(context.Context)
 
 const _ = http.SupportPackageIsVersion3
 
+const OperationAdminInventoryServiceAssignCards = "/zcard.api.admin.v1.AdminInventoryService/AssignCards"
+const OperationAdminInventoryServiceAssignPreview = "/zcard.api.admin.v1.AdminInventoryService/AssignPreview"
 const OperationAdminInventoryServiceCancelImport = "/zcard.api.admin.v1.AdminInventoryService/CancelImport"
 const OperationAdminInventoryServiceExportCards = "/zcard.api.admin.v1.AdminInventoryService/ExportCards"
+const OperationAdminInventoryServiceGetTargets = "/zcard.api.admin.v1.AdminInventoryService/GetTargets"
 const OperationAdminInventoryServiceImportConfirm = "/zcard.api.admin.v1.AdminInventoryService/ImportConfirm"
 const OperationAdminInventoryServiceImportPreview = "/zcard.api.admin.v1.AdminInventoryService/ImportPreview"
 const OperationAdminInventoryServiceListCards = "/zcard.api.admin.v1.AdminInventoryService/ListCards"
 const OperationAdminInventoryServiceListImports = "/zcard.api.admin.v1.AdminInventoryService/ListImports"
 const OperationAdminInventoryServiceListPremiumCards = "/zcard.api.admin.v1.AdminInventoryService/ListPremiumCards"
+const OperationAdminInventoryServicePreviewCancelImport = "/zcard.api.admin.v1.AdminInventoryService/PreviewCancelImport"
 const OperationAdminInventoryServiceToggleCard = "/zcard.api.admin.v1.AdminInventoryService/ToggleCard"
 const OperationAdminInventoryServiceViewCardContent = "/zcard.api.admin.v1.AdminInventoryService/ViewCardContent"
 
 type AdminInventoryServiceHTTPServer interface {
+	AssignCards(context.Context, *AssignCardsRequest) (*AssignCardsReply, error)
+	AssignPreview(context.Context, *AssignPreviewRequest) (*AssignPreviewReply, error)
 	// CancelImport CancelImport 撤销批次（删除本批 available 卡）。
 	CancelImport(context.Context, *CancelImportRequest) (*emptypb.Empty, error)
 	// ExportCards ExportCards 导出卡密（card:export 权限 + 审计 + 限流 + CsvSafe）。
 	ExportCards(context.Context, *ExportCardsRequest) (*ExportCardsReply, error)
+	GetTargets(context.Context, *InventoryTargetsRequest) (*InventoryTargetsReply, error)
 	// ImportConfirm ImportConfirm 确认导入（分片写入 + 批次追踪）。
 	ImportConfirm(context.Context, *ImportConfirmRequest) (*ImportBatch, error)
 	// ImportPreview ImportPreview 上传预览（去重统计 + 样本预览）。
@@ -43,6 +50,7 @@ type AdminInventoryServiceHTTPServer interface {
 	ListImports(context.Context, *ListImportsRequest) (*ListImportsReply, error)
 	// ListPremiumCards ListPremiumCards 靓号列表（number_hash 命中 + 可用卡；card:premium 权限）。
 	ListPremiumCards(context.Context, *ListPremiumCardsRequest) (*ListPremiumCardsReply, error)
+	PreviewCancelImport(context.Context, *CancelImportRequest) (*CancelImportPreviewReply, error)
 	// ToggleCard ToggleCard 禁用/启用单张卡。
 	ToggleCard(context.Context, *ToggleCardRequest) (*emptypb.Empty, error)
 	// ViewCardContent ViewCardContent 查看完整卡密（card:view_content 权限 + 安全审计）。
@@ -51,6 +59,10 @@ type AdminInventoryServiceHTTPServer interface {
 
 func RegisterAdminInventoryServiceHTTPServer(s *http.Server, srv AdminInventoryServiceHTTPServer) {
 	r := s.Route("/")
+	r.Handle("GET", "/api/v1/admin/inventory/targets", _AdminInventoryService_GetTargets0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/inventory/assign-preview", _AdminInventoryService_AssignPreview0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/inventory/assign", _AdminInventoryService_AssignCards0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/inventory/imports/{id}/preview", _AdminInventoryService_PreviewCancelImport0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/inventory/preview", _AdminInventoryService_ImportPreview0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/inventory/import", _AdminInventoryService_ImportConfirm0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/inventory/imports", _AdminInventoryService_ListImports0_HTTP_Handler(srv))
@@ -60,6 +72,85 @@ func RegisterAdminInventoryServiceHTTPServer(s *http.Server, srv AdminInventoryS
 	r.Handle("PUT", "/api/v1/admin/inventory/cards/{id}/toggle", _AdminInventoryService_ToggleCard0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/inventory/cards/{id}/content", _AdminInventoryService_ViewCardContent0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/inventory/cards/premium", _AdminInventoryService_ListPremiumCards0_HTTP_Handler(srv))
+}
+
+func _AdminInventoryService_GetTargets0_HTTP_Handler(srv AdminInventoryServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in InventoryTargetsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminInventoryServiceGetTargets)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetTargets(ctx, req.(*InventoryTargetsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*InventoryTargetsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminInventoryService_AssignPreview0_HTTP_Handler(srv AdminInventoryServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in AssignPreviewRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminInventoryServiceAssignPreview)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.AssignPreview(ctx, req.(*AssignPreviewRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*AssignPreviewReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminInventoryService_AssignCards0_HTTP_Handler(srv AdminInventoryServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in AssignCardsRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminInventoryServiceAssignCards)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.AssignCards(ctx, req.(*AssignCardsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*AssignCardsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminInventoryService_PreviewCancelImport0_HTTP_Handler(srv AdminInventoryServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CancelImportRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminInventoryServicePreviewCancelImport)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.PreviewCancelImport(ctx, req.(*CancelImportRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*CancelImportPreviewReply)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _AdminInventoryService_ImportPreview0_HTTP_Handler(srv AdminInventoryServiceHTTPServer) func(ctx http.Context) error {
@@ -243,10 +334,13 @@ func _AdminInventoryService_ListPremiumCards0_HTTP_Handler(srv AdminInventorySer
 }
 
 type AdminInventoryServiceHTTPClient interface {
+	AssignCards(ctx context.Context, req *AssignCardsRequest, opts ...http.CallOption) (rsp *AssignCardsReply, err error)
+	AssignPreview(ctx context.Context, req *AssignPreviewRequest, opts ...http.CallOption) (rsp *AssignPreviewReply, err error)
 	// CancelImport CancelImport 撤销批次（删除本批 available 卡）。
 	CancelImport(ctx context.Context, req *CancelImportRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// ExportCards ExportCards 导出卡密（card:export 权限 + 审计 + 限流 + CsvSafe）。
 	ExportCards(ctx context.Context, req *ExportCardsRequest, opts ...http.CallOption) (rsp *ExportCardsReply, err error)
+	GetTargets(ctx context.Context, req *InventoryTargetsRequest, opts ...http.CallOption) (rsp *InventoryTargetsReply, err error)
 	// ImportConfirm ImportConfirm 确认导入（分片写入 + 批次追踪）。
 	ImportConfirm(ctx context.Context, req *ImportConfirmRequest, opts ...http.CallOption) (rsp *ImportBatch, err error)
 	// ImportPreview ImportPreview 上传预览（去重统计 + 样本预览）。
@@ -257,6 +351,7 @@ type AdminInventoryServiceHTTPClient interface {
 	ListImports(ctx context.Context, req *ListImportsRequest, opts ...http.CallOption) (rsp *ListImportsReply, err error)
 	// ListPremiumCards ListPremiumCards 靓号列表（number_hash 命中 + 可用卡；card:premium 权限）。
 	ListPremiumCards(ctx context.Context, req *ListPremiumCardsRequest, opts ...http.CallOption) (rsp *ListPremiumCardsReply, err error)
+	PreviewCancelImport(ctx context.Context, req *CancelImportRequest, opts ...http.CallOption) (rsp *CancelImportPreviewReply, err error)
 	// ToggleCard ToggleCard 禁用/启用单张卡。
 	ToggleCard(ctx context.Context, req *ToggleCardRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// ViewCardContent ViewCardContent 查看完整卡密（card:view_content 权限 + 安全审计）。
@@ -269,6 +364,40 @@ type AdminInventoryServiceHTTPClientImpl struct {
 
 func NewAdminInventoryServiceHTTPClient(client *http.Client) AdminInventoryServiceHTTPClient {
 	return &AdminInventoryServiceHTTPClientImpl{client}
+}
+
+func (c *AdminInventoryServiceHTTPClientImpl) AssignCards(ctx context.Context, in *AssignCardsRequest, opts ...http.CallOption) (*AssignCardsReply, error) {
+	var out AssignCardsReply
+	pattern := "/api/v1/admin/inventory/assign"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminInventoryServiceAssignCards),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminInventoryServiceHTTPClientImpl) AssignPreview(ctx context.Context, in *AssignPreviewRequest, opts ...http.CallOption) (*AssignPreviewReply, error) {
+	var out AssignPreviewReply
+	pattern := "/api/v1/admin/inventory/assign-preview"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminInventoryServiceAssignPreview),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // CancelImport CancelImport 撤销批次（删除本批 available 卡）。
@@ -301,6 +430,22 @@ func (c *AdminInventoryServiceHTTPClientImpl) ExportCards(ctx context.Context, i
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminInventoryServiceHTTPClientImpl) GetTargets(ctx context.Context, in *InventoryTargetsRequest, opts ...http.CallOption) (*InventoryTargetsReply, error) {
+	var out InventoryTargetsReply
+	pattern := "/api/v1/admin/inventory/targets"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminInventoryServiceGetTargets),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -385,6 +530,22 @@ func (c *AdminInventoryServiceHTTPClientImpl) ListPremiumCards(ctx context.Conte
 	opts = append([]http.CallOption{
 		http.Accept("application/protojson"),
 		http.Operation(OperationAdminInventoryServiceListPremiumCards),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminInventoryServiceHTTPClientImpl) PreviewCancelImport(ctx context.Context, in *CancelImportRequest, opts ...http.CallOption) (*CancelImportPreviewReply, error) {
+	var out CancelImportPreviewReply
+	pattern := "/api/v1/admin/inventory/imports/{id}/preview"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminInventoryServicePreviewCancelImport),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)

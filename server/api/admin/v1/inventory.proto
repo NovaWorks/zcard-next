@@ -10,6 +10,18 @@ import "google/protobuf/empty.proto";
 
 // AdminInventoryService 卡密库存管理：导入/导出/列表/操作。
 service AdminInventoryService {
+  rpc GetTargets(InventoryTargetsRequest) returns (InventoryTargetsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/inventory/targets" };
+  }
+  rpc AssignPreview(AssignPreviewRequest) returns (AssignPreviewReply) {
+    option (google.api.http) = { post: "/api/v1/admin/inventory/assign-preview" body: "*" };
+  }
+  rpc AssignCards(AssignCardsRequest) returns (AssignCardsReply) {
+    option (google.api.http) = { post: "/api/v1/admin/inventory/assign" body: "*" };
+  }
+  rpc PreviewCancelImport(CancelImportRequest) returns (CancelImportPreviewReply) {
+    option (google.api.http) = { get: "/api/v1/admin/inventory/imports/{id}/preview" };
+  }
   // ImportPreview 上传预览（去重统计 + 样本预览）。
   rpc ImportPreview(ImportPreviewRequest) returns (ImportPreviewReply) {
     option (google.api.http) = {
@@ -64,6 +76,7 @@ message ImportPreviewRequest {
   uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
   repeated string lines = 2 [(google.api.field_behavior) = REQUIRED];
   bool dedup = 3;
+  uint64 sku_id = 4; // 有规格商品必须明确选择；无规格商品使用 0。
 }
 
 message ImportPreviewReply {
@@ -73,12 +86,17 @@ message ImportPreviewReply {
   int32 invalid = 4;
   repeated string sample = 5;
   bool is_premium = 6;
+  uint64 sku_id = 7;
+  string sku_name = 8;
+  int64 revision = 9;
 }
 
 message ImportConfirmRequest {
   uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
   repeated string lines = 2 [(google.api.field_behavior) = REQUIRED];
   bool dedup = 3;
+  uint64 sku_id = 4;
+  optional int64 expected_revision = 5;
 }
 
 message ImportBatch {
@@ -89,10 +107,16 @@ message ImportBatch {
   int32 skipped = 5;
   int32 failed = 6;
   string status = 7;
+  optional uint64 sku_id = 8; // 导入时的目标；旧批次缺失表示历史未记录。
+  string sku_name = 9; // 导入时名称快照。
+  string product_name = 10;
+  repeated InventorySkuCount remaining = 11; // 当前卡密分布，不改写导入来源。
 }
 
 message ListImportsRequest {
   uint64 product_id = 1;
+  optional uint64 sku_id = 2; // 按原导入目标筛选，省略为全部。
+  bool legacy_only = 3; // 仅历史未记录目标的批次。
 }
 
 message ListImportsReply {
@@ -101,6 +125,7 @@ message ListImportsReply {
 
 message CancelImportRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string expected_revision = 2; // 新界面使用预览返回的批次分布指纹。
 }
 
 message ListCardsRequest {
@@ -108,6 +133,8 @@ message ListCardsRequest {
   string status = 2; // available | reserved | used | disabled
   int32 page = 3;
   int32 page_size = 4;
+  optional uint64 sku_id = 5; // 省略=全部，0=NULL/0 默认池，正数=指定规格。
+  optional uint64 import_id = 6;
 }
 
 message ListCardsReply {
@@ -125,10 +152,14 @@ message CardInfo {
   int64 created_at = 6;
   int64 used_at = 7;
   string lottery_draw_no = 8; // 抽奖发放的中奖编号，不改变卡密库存状态
+  uint64 sku_id = 9;
+  string sku_name = 10;
+  uint64 import_id = 11;
 }
 
 message ExportCardsRequest {
   uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
+  optional uint64 sku_id = 2;
 }
 
 message ExportCardsReply {
@@ -151,6 +182,7 @@ message ViewCardContentReply {
 
 message ListPremiumCardsRequest {
   uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
+  optional uint64 sku_id = 2;
 }
 
 message ListPremiumCardsReply {
@@ -167,4 +199,58 @@ message PremiumCardInfo {
   int64 draft_cost = 5; // 预选成本（分）
   int64 price_cents = 6; // 靓号自选价（0=商品价+premium）
   string status = 7;
+  uint64 sku_id = 8;
+  string sku_name = 9;
+  uint64 import_id = 10;
+}
+
+message InventoryTargetsRequest { uint64 product_id = 1; }
+message InventoryTarget {
+  uint64 sku_id = 1;
+  string sku_name = 2;
+  bool can_import = 3;
+  string reason = 4;
+  int64 available = 5;
+  int64 reserved = 6;
+  int64 disabled = 7;
+}
+message InventoryTargetsReply {
+  uint64 product_id = 1;
+  string product_name = 2;
+  int64 revision = 3;
+  bool has_skus = 4;
+  repeated InventoryTarget targets = 5;
+}
+message InventorySkuCount {
+  uint64 sku_id = 1;
+  string sku_name = 2;
+  int64 available = 3;
+  int64 reserved = 4;
+  int64 used = 5;
+  int64 disabled = 6;
+}
+message AssignPreviewRequest {
+  uint64 product_id = 1;
+  uint64 sku_id = 2;
+  repeated uint64 card_ids = 3;
+  uint64 import_id = 4;
+}
+message AssignPreviewReply {
+  repeated uint64 card_ids = 1;
+  int64 eligible_count = 2;
+  int64 excluded_count = 3;
+  int64 revision = 4;
+  string sku_name = 5;
+}
+message AssignCardsRequest {
+  uint64 product_id = 1;
+  uint64 sku_id = 2;
+  repeated uint64 card_ids = 3;
+  optional int64 expected_revision = 4;
+  string request_key = 5; // 审计关联标识。
+}
+message AssignCardsReply { int64 assigned = 1; }
+message CancelImportPreviewReply {
+  ImportBatch batch = 1;
+  string revision = 2;
 }

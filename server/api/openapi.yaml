@@ -1892,6 +1892,42 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.TestInstallConnectionReply'
+    /api/v1/admin/inventory/assign:
+        post:
+            tags:
+                - AdminInventoryService
+            operationId: AdminInventoryService_AssignCards
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.AssignCardsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.AssignCardsReply'
+    /api/v1/admin/inventory/assign-preview:
+        post:
+            tags:
+                - AdminInventoryService
+            operationId: AdminInventoryService_AssignPreview
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.AssignPreviewRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.AssignPreviewReply'
     /api/v1/admin/inventory/cards:
         get:
             tags:
@@ -1917,6 +1953,14 @@ paths:
                   schema:
                     type: integer
                     format: int32
+                - name: skuId
+                  in: query
+                  schema:
+                    type: string
+                - name: importId
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -1932,6 +1976,10 @@ paths:
             operationId: AdminInventoryService_ListPremiumCards
             parameters:
                 - name: productId
+                  in: query
+                  schema:
+                    type: string
+                - name: skuId
                   in: query
                   schema:
                     type: string
@@ -2032,6 +2080,14 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: skuId
+                  in: query
+                  schema:
+                    type: string
+                - name: legacyOnly
+                  in: query
+                  schema:
+                    type: boolean
             responses:
                 "200":
                     description: OK
@@ -2061,6 +2117,28 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/inventory/imports/{id}/preview:
+        get:
+            tags:
+                - AdminInventoryService
+            operationId: AdminInventoryService_PreviewCancelImport
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: expectedRevision
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.CancelImportPreviewReply'
     /api/v1/admin/inventory/preview:
         post:
             tags:
@@ -2080,6 +2158,23 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.ImportPreviewReply'
+    /api/v1/admin/inventory/targets:
+        get:
+            tags:
+                - AdminInventoryService
+            operationId: AdminInventoryService_GetTargets
+            parameters:
+                - name: productId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.InventoryTargetsReply'
     /api/v1/admin/license:
         get:
             tags:
@@ -8082,6 +8177,54 @@ components:
             properties:
                 id:
                     type: string
+        zcard.api.admin.v1.AssignCardsReply:
+            type: object
+            properties:
+                assigned:
+                    type: string
+        zcard.api.admin.v1.AssignCardsRequest:
+            type: object
+            properties:
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                cardIds:
+                    type: array
+                    items:
+                        type: string
+                expectedRevision:
+                    type: string
+                requestKey:
+                    type: string
+        zcard.api.admin.v1.AssignPreviewReply:
+            type: object
+            properties:
+                cardIds:
+                    type: array
+                    items:
+                        type: string
+                eligibleCount:
+                    type: string
+                excludedCount:
+                    type: string
+                revision:
+                    type: string
+                skuName:
+                    type: string
+        zcard.api.admin.v1.AssignPreviewRequest:
+            type: object
+            properties:
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                cardIds:
+                    type: array
+                    items:
+                        type: string
+                importId:
+                    type: string
         zcard.api.admin.v1.AssignUserLevelRequest:
             type: object
             properties:
@@ -8319,12 +8462,21 @@ components:
             properties:
                 id:
                     type: string
+        zcard.api.admin.v1.CancelImportPreviewReply:
+            type: object
+            properties:
+                batch:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.ImportBatch'
+                revision:
+                    type: string
         zcard.api.admin.v1.CancelImportRequest:
             required:
                 - id
             type: object
             properties:
                 id:
+                    type: string
+                expectedRevision:
                     type: string
         zcard.api.admin.v1.CancelOrderRequest:
             required:
@@ -8385,6 +8537,12 @@ components:
                 usedAt:
                     type: string
                 lotteryDrawNo:
+                    type: string
+                skuId:
+                    type: string
+                skuName:
+                    type: string
+                importId:
                     type: string
             description: CardInfo 卡密信息（内容默认掩码 ****尾4位）。
         zcard.api.admin.v1.Category:
@@ -9685,6 +9843,8 @@ components:
             properties:
                 productId:
                     type: string
+                skuId:
+                    type: string
         zcard.api.admin.v1.ExportCouponsReply:
             type: object
             properties:
@@ -9868,6 +10028,16 @@ components:
                     format: int32
                 status:
                     type: string
+                skuId:
+                    type: string
+                skuName:
+                    type: string
+                productName:
+                    type: string
+                remaining:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.InventorySkuCount'
         zcard.api.admin.v1.ImportCategoryDraft:
             type: object
             properties:
@@ -9891,6 +10061,10 @@ components:
                         type: string
                 dedup:
                     type: boolean
+                skuId:
+                    type: string
+                expectedRevision:
+                    type: string
         zcard.api.admin.v1.ImportMediaRequest:
             required:
                 - url
@@ -9921,6 +10095,12 @@ components:
                         type: string
                 isPremium:
                     type: boolean
+                skuId:
+                    type: string
+                skuName:
+                    type: string
+                revision:
+                    type: string
         zcard.api.admin.v1.ImportPreviewRequest:
             required:
                 - productId
@@ -9935,6 +10115,8 @@ components:
                         type: string
                 dedup:
                     type: boolean
+                skuId:
+                    type: string
         zcard.api.admin.v1.ImportProductsReply:
             type: object
             properties:
@@ -10036,6 +10218,53 @@ components:
                 dataBase64:
                     type: string
             description: InstallTemplateRequest 主题安装（zip base64，对齐 media 上传模式）。
+        zcard.api.admin.v1.InventorySkuCount:
+            type: object
+            properties:
+                skuId:
+                    type: string
+                skuName:
+                    type: string
+                available:
+                    type: string
+                reserved:
+                    type: string
+                used:
+                    type: string
+                disabled:
+                    type: string
+        zcard.api.admin.v1.InventoryTarget:
+            type: object
+            properties:
+                skuId:
+                    type: string
+                skuName:
+                    type: string
+                canImport:
+                    type: boolean
+                reason:
+                    type: string
+                available:
+                    type: string
+                reserved:
+                    type: string
+                disabled:
+                    type: string
+        zcard.api.admin.v1.InventoryTargetsReply:
+            type: object
+            properties:
+                productId:
+                    type: string
+                productName:
+                    type: string
+                revision:
+                    type: string
+                hasSkus:
+                    type: boolean
+                targets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.InventoryTarget'
         zcard.api.admin.v1.LedgerEntry:
             type: object
             properties:
@@ -11366,6 +11595,12 @@ components:
                 priceCents:
                     type: string
                 status:
+                    type: string
+                skuId:
+                    type: string
+                skuName:
+                    type: string
+                importId:
                     type: string
             description: PremiumCardInfo 靓号卡（内容掩码；draft_premium 预选加价）。
         zcard.api.admin.v1.PreviewBatchProductContentRequest:

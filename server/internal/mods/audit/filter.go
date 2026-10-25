@@ -147,6 +147,38 @@ func ReadBodyJSON(r *http.Request) map[string]any {
 	if err := json.Unmarshal(body, &m); err != nil {
 		return nil
 	}
+	if strings.HasPrefix(r.URL.Path, "/api/v1/admin/inventory/") {
+		// Import lines contain saleable credentials. Keep only inventory
+		// identifiers and counters; the restored body still reaches the handler.
+		metadata := map[string]any{}
+		for key, value := range m {
+			switch strings.ToLower(strings.ReplaceAll(key, "_", "")) {
+			case "productid", "skuid", "importid", "id", "expectedrevision":
+				if inventoryAuditID(value) {
+					metadata[key] = value
+				}
+			case "cardids":
+				if ids, ok := value.([]any); ok {
+					valid := true
+					for _, id := range ids {
+						valid = valid && inventoryAuditID(id)
+					}
+					if valid {
+						metadata[key] = value
+					}
+				}
+			case "dedup", "enable":
+				if _, ok := value.(bool); ok {
+					metadata[key] = value
+				}
+			case "lines":
+				if lines, ok := value.([]any); ok {
+					metadata["line_count"] = len(lines)
+				}
+			}
+		}
+		m = metadata
+	}
 	// 抽奖配置的 content 包含私密奖品；仅保留规则元数据，原请求体已恢复。
 	if strings.HasPrefix(r.URL.Path, "/api/v1/admin/lottery/") {
 		if prizes, ok := m["prizes"].([]any); ok {
@@ -177,6 +209,26 @@ func ReadBodyJSON(r *http.Request) map[string]any {
 		}
 	}
 	return redact(m)
+}
+
+// Protobuf JSON accepts decimal strings for uint64 IDs. Unknown aliases may
+// also reach the filter, so never copy arbitrary strings or nested objects.
+func inventoryAuditID(value any) bool {
+	switch v := value.(type) {
+	case float64:
+		return v >= 0
+	case string:
+		if v == "" || len(v) > 20 {
+			return false
+		}
+		for _, digit := range v {
+			if digit < '0' || digit > '9' {
+				return false
+			}
+		}
+		return true
+	}
+	return false
 }
 
 // redact 敏感字段脱敏（凭据/密码/密钥永不入审计快照）。

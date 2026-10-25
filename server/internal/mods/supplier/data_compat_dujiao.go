@@ -190,7 +190,7 @@ func (h *dujiaoCompat) productDetail(w http.ResponseWriter, r *http.Request, acc
 		writeDujiaoErr(w, http.StatusBadRequest, "bad_request", "商品 ID 非法")
 		return
 	}
-	p, err := h.svc.reader.GetForSupply(r.Context(), id)
+	p, err := h.svc.productForLegacySupply(r.Context(), id)
 	if err != nil {
 		writeDujiaoErr(w, http.StatusNotFound, "product_not_found", "商品不存在")
 		return

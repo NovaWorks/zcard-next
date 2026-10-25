@@ -10,9 +10,9 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryactivity"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryprize"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productdeliverysource"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
@@ -214,7 +214,11 @@ func (r *ProductRepoImpl) updateSku(ctx context.Context, id uint64, in SkuInput)
 // DeleteSku 删除 SKU。
 func (r *ProductRepoImpl) deleteSku(ctx context.Context, id uint64) error {
 	c := data.Client(ctx, r.data)
-	sk, e := c.ProductSku.Get(ctx, id)
+	query := c.ProductSku.Query().Where(productsku.ID(id))
+	if r.data.Dialect.Capabilities().SupportsForUpdate {
+		query = query.ForUpdate()
+	}
+	sk, e := query.Only(ctx)
 	if e != nil {
 		return e
 	}
@@ -222,28 +226,37 @@ func (r *ProductRepoImpl) deleteSku(ctx context.Context, id uint64) error {
 	if e != nil {
 		return e
 	}
-	if p.GoodsType == "physical" {
-		if sk.PhysicalStock != 0 {
-			return fmt.Errorf("规格仍有可售库存，请先调整库存为零再删除")
-		}
-		used, e := c.OrderItem.Query().Where(orderitem.SkuID(id)).Exist(ctx)
-		if e != nil {
-			return e
-		}
-		if used {
-			return fmt.Errorf("实体规格已有订单，不能删除")
-		}
+	if p.GoodsType == "physical" && sk.PhysicalStock != 0 {
+		return fmt.Errorf("规格仍有可售库存，请先调整库存为零再删除")
 	}
-	activities, err := c.LotteryActivity.Query().Where(lotteryactivity.Published(true), lotteryactivity.StatusNotIn("ended", "archived")).IDs(ctx)
-	if err != nil {
+	// Use current locking reads after the product lock. A plain Exists can see a
+	// snapshot from before waiting for a concurrent importer under MySQL RR.
+	cards := c.Card.Query().Where(card.ProductID(p.ID), card.SubsiteID(p.SubsiteID), card.SkuID(id), card.StatusIn(card.StatusAvailable, card.StatusReserved, card.StatusDisabled)).Limit(1)
+	orders := c.OrderItem.Query().Where(orderitem.ProductID(p.ID), orderitem.SubsiteID(p.SubsiteID), orderitem.SkuID(id)).Limit(1)
+	prizes := c.LotteryPrize.Query().Where(lotteryprize.ProductID(p.ID), lotteryprize.SubsiteID(p.SubsiteID), lotteryprize.SkuID(id), lotteryprize.Enabled(true)).Limit(1)
+	sources := c.ProductDeliverySource.Query().Where(productdeliverysource.ProductID(p.ID), productdeliverysource.SubsiteID(p.SubsiteID), productdeliverysource.SkuID(id), productdeliverysource.Or(productdeliverysource.CurrentKeyNotNil(), productdeliverysource.StatusIn("submitting", "polling", "uncertain"))).Limit(1)
+	if r.data.Dialect.Capabilities().SupportsForUpdate {
+		cards, orders, prizes, sources = cards.ForUpdate(), orders.ForUpdate(), prizes.ForUpdate(), sources.ForUpdate()
+	}
+	if rows, err := cards.All(ctx); err != nil {
 		return err
+	} else if len(rows) > 0 {
+		return fmt.Errorf("规格仍有未售或预占卡密，不能删除")
 	}
-	linked, err := c.LotteryPrize.Query().Where(lotteryprize.SkuID(id), lotteryprize.Enabled(true), lotteryprize.ActivityIDIn(activities...)).Exist(ctx)
-	if err != nil {
+	if rows, err := orders.All(ctx); err != nil {
 		return err
+	} else if len(rows) > 0 {
+		return fmt.Errorf("规格已有订单引用，不能删除")
 	}
-	if linked {
-		return fmt.Errorf("该规格用于已发布的抽奖活动，请先结束或归档活动")
+	if rows, err := prizes.All(ctx); err != nil {
+		return err
+	} else if len(rows) > 0 {
+		return fmt.Errorf("该规格用于抽奖奖品，请先更换或移除奖品来源")
+	}
+	if rows, err := sources.All(ctx); err != nil {
+		return err
+	} else if len(rows) > 0 {
+		return fmt.Errorf("规格仍有发货来源记录，不能删除")
 	}
 
 	n, err := data.Client(ctx, r.data).ProductSku.Delete().Where(productsku.ID(id)).Exec(ctx)

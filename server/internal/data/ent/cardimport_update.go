@@ -301,6 +301,9 @@ func (_u *CardImportUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	if value, ok := _u.mutation.Filename(); ok {
 		_spec.SetField(cardimport.FieldFilename, field.TypeString, value)
 	}
+	if _u.mutation.SkuIDCleared() {
+		_spec.ClearField(cardimport.FieldSkuID, field.TypeUint64)
+	}
 	if value, ok := _u.mutation.Total(); ok {
 		_spec.SetField(cardimport.FieldTotal, field.TypeInt32, value)
 	}
@@ -659,6 +662,9 @@ func (_u *CardImportUpdateOne) sqlSave(ctx context.Context) (_node *CardImport, 
 	}
 	if value, ok := _u.mutation.Filename(); ok {
 		_spec.SetField(cardimport.FieldFilename, field.TypeString, value)
+	}
+	if _u.mutation.SkuIDCleared() {
+		_spec.ClearField(cardimport.FieldSkuID, field.TypeUint64)
 	}
 	if value, ok := _u.mutation.Total(); ok {
 		_spec.SetField(cardimport.FieldTotal, field.TypeInt32, value)
