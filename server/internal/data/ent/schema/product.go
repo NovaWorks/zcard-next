@@ -24,6 +24,7 @@ func (Product) Fields() []ent.Field {
 		field.String("product_kind").Default("standard"),
 		field.String("delivery_kind").Default("card"),
 		field.JSON("sms_product", map[string]string{}).Optional(),
+		field.JSON("social_schema", map[string]any{}).Optional(),
 		field.Uint64("category_id").Optional().Comment("分类（软外键，仅索引）"),
 		field.Bool("category_protected").Default(false),
 		field.String("name").MaxLen(1024),

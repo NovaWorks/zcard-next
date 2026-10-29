@@ -39,7 +39,7 @@ func importFingerprint(c *ent.SupplyConnection) string {
 	return hex.EncodeToString(h[:])
 }
 func productRevision(p *ent.Product) string {
-	fields := []any{p.ID, p.Name, p.Price, p.FactoryPrice, p.CategoryID, p.Status, p.Cover, p.Description, p.Images, p.MemberPrice, p.CoverProtected, p.DescriptionProtected, p.IsLocked, p.LockVersion, p.CategoryProtected, p.FulfillmentMode}
+	fields := []any{p.ID, p.Name, p.Price, p.FactoryPrice, p.CategoryID, p.Status, p.Cover, p.Description, p.Images, p.MemberPrice, p.CoverProtected, p.DescriptionProtected, p.IsLocked, p.LockVersion, p.CategoryProtected, p.FulfillmentMode, p.SocialSchema}
 	// Preserve old checkpoints for untouched products while fencing a later
 	// manual listing action or automation opt-in from pending import activation.
 	if p.AutoListing || p.ListingChangedAt != 0 {

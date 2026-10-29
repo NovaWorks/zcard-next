@@ -271,7 +271,7 @@ func (s *SyncService) validateImportItem(ctx context.Context, conn *ent.SupplyCo
 	if e := data.GuardUpstreamDelivery(ctx, c, p); e != nil {
 		return e
 	}
-	if p.ProductKind == "sms_channel" {
+	if p.ProductKind == "sms_channel" || p.ProductKind == "social_service" {
 		return nil // Channel entries have dynamic prices, never a static-price baseline.
 	}
 	if item.Saved {
@@ -408,7 +408,7 @@ func (s *SyncService) importStock(ctx context.Context, task *ent.SupplySyncTask,
 	}
 	var stock int32
 	var err error
-	if local.ProductKind == "sms_channel" {
+	if local.ProductKind == "sms_channel" || local.ProductKind == "social_service" {
 		stock = -2
 	} else {
 		stock, err = a.GetStock(stockCtx, item.Code, "")
@@ -417,7 +417,7 @@ func (s *SyncService) importStock(ctx context.Context, task *ent.SupplySyncTask,
 	if err != nil {
 		return err
 	}
-	if stock < -1 && local.ProductKind != "sms_channel" {
+	if stock < -1 && local.ProductKind != "sms_channel" && local.ProductKind != "social_service" {
 		return fmt.Errorf("货源库存无效")
 	}
 	return data.Tx(ctx, s.repo.data, func(ctx context.Context) error {

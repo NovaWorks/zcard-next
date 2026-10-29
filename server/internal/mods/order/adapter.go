@@ -41,3 +41,7 @@ func ProvideOrderLifecycle(uc *OrderUsecase) port.OrderLifecycle {
 func (a lifecycleAdapter) ValidateSMSPayment(ctx context.Context, orderID uint64) error {
 	return a.uc.validateSMSPayment(ctx, orderID)
 }
+
+func (a lifecycleAdapter) ValidateSocialPayment(ctx context.Context, orderID uint64) error {
+	return a.uc.validateSocialPayment(ctx, orderID)
+}

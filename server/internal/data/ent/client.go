@@ -94,6 +94,9 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsintent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsoperation"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsretailquote"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/socialoperation"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/socialquote"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/socialtask"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/stockalert"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
@@ -282,6 +285,12 @@ type Client struct {
 	Setting *SettingClient
 	// Shipment is the client for interacting with the Shipment builders.
 	Shipment *ShipmentClient
+	// SocialOperation is the client for interacting with the SocialOperation builders.
+	SocialOperation *SocialOperationClient
+	// SocialQuote is the client for interacting with the SocialQuote builders.
+	SocialQuote *SocialQuoteClient
+	// SocialTask is the client for interacting with the SocialTask builders.
+	SocialTask *SocialTaskClient
 	// StockAlert is the client for interacting with the StockAlert builders.
 	StockAlert *StockAlertClient
 	// SupplierAccount is the client for interacting with the SupplierAccount builders.
@@ -418,6 +427,9 @@ func (c *Client) init() {
 	c.Session = NewSessionClient(c.config)
 	c.Setting = NewSettingClient(c.config)
 	c.Shipment = NewShipmentClient(c.config)
+	c.SocialOperation = NewSocialOperationClient(c.config)
+	c.SocialQuote = NewSocialQuoteClient(c.config)
+	c.SocialTask = NewSocialTaskClient(c.config)
 	c.StockAlert = NewStockAlertClient(c.config)
 	c.SupplierAccount = NewSupplierAccountClient(c.config)
 	c.SupplierLedgerEntry = NewSupplierLedgerEntryClient(c.config)
@@ -612,6 +624,9 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Session:                  NewSessionClient(cfg),
 		Setting:                  NewSettingClient(cfg),
 		Shipment:                 NewShipmentClient(cfg),
+		SocialOperation:          NewSocialOperationClient(cfg),
+		SocialQuote:              NewSocialQuoteClient(cfg),
+		SocialTask:               NewSocialTaskClient(cfg),
 		StockAlert:               NewStockAlertClient(cfg),
 		SupplierAccount:          NewSupplierAccountClient(cfg),
 		SupplierLedgerEntry:      NewSupplierLedgerEntryClient(cfg),
@@ -733,6 +748,9 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Session:                  NewSessionClient(cfg),
 		Setting:                  NewSettingClient(cfg),
 		Shipment:                 NewShipmentClient(cfg),
+		SocialOperation:          NewSocialOperationClient(cfg),
+		SocialQuote:              NewSocialQuoteClient(cfg),
+		SocialTask:               NewSocialTaskClient(cfg),
 		StockAlert:               NewStockAlertClient(cfg),
 		SupplierAccount:          NewSupplierAccountClient(cfg),
 		SupplierLedgerEntry:      NewSupplierLedgerEntryClient(cfg),
@@ -802,13 +820,13 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
 		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
 		c.RiskLockKey, c.RolePermission, c.SMSIntent, c.SMSOperation, c.SMSRetailQuote,
-		c.SecurityAuditLog, c.Session, c.Setting, c.Shipment, c.StockAlert,
-		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
-		c.SupplyCatalogSnapshot, c.SupplyConnection, c.SupplyImportItem,
-		c.SupplyMapping, c.SupplyNonce, c.SupplyOrder, c.SupplySyncTask, c.Tag,
-		c.Ticket, c.TicketMessage, c.User, c.UserGroup, c.UserSession, c.V1IDMap,
-		c.VirtualReview, c.VisitLog, c.WalletAccount, c.WalletTransaction,
-		c.Withdrawal,
+		c.SecurityAuditLog, c.Session, c.Setting, c.Shipment, c.SocialOperation,
+		c.SocialQuote, c.SocialTask, c.StockAlert, c.SupplierAccount,
+		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyCatalogSnapshot,
+		c.SupplyConnection, c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce,
+		c.SupplyOrder, c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User,
+		c.UserGroup, c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog,
+		c.WalletAccount, c.WalletTransaction, c.Withdrawal,
 	} {
 		n.Use(hooks...)
 	}
@@ -835,13 +853,13 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
 		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
 		c.RiskLockKey, c.RolePermission, c.SMSIntent, c.SMSOperation, c.SMSRetailQuote,
-		c.SecurityAuditLog, c.Session, c.Setting, c.Shipment, c.StockAlert,
-		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
-		c.SupplyCatalogSnapshot, c.SupplyConnection, c.SupplyImportItem,
-		c.SupplyMapping, c.SupplyNonce, c.SupplyOrder, c.SupplySyncTask, c.Tag,
-		c.Ticket, c.TicketMessage, c.User, c.UserGroup, c.UserSession, c.V1IDMap,
-		c.VirtualReview, c.VisitLog, c.WalletAccount, c.WalletTransaction,
-		c.Withdrawal,
+		c.SecurityAuditLog, c.Session, c.Setting, c.Shipment, c.SocialOperation,
+		c.SocialQuote, c.SocialTask, c.StockAlert, c.SupplierAccount,
+		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyCatalogSnapshot,
+		c.SupplyConnection, c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce,
+		c.SupplyOrder, c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User,
+		c.UserGroup, c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog,
+		c.WalletAccount, c.WalletTransaction, c.Withdrawal,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -1008,6 +1026,12 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Setting.mutate(ctx, m)
 	case *ShipmentMutation:
 		return c.Shipment.mutate(ctx, m)
+	case *SocialOperationMutation:
+		return c.SocialOperation.mutate(ctx, m)
+	case *SocialQuoteMutation:
+		return c.SocialQuote.mutate(ctx, m)
+	case *SocialTaskMutation:
+		return c.SocialTask.mutate(ctx, m)
 	case *StockAlertMutation:
 		return c.StockAlert.mutate(ctx, m)
 	case *SupplierAccountMutation:
@@ -11823,6 +11847,405 @@ func (c *ShipmentClient) mutate(ctx context.Context, m *ShipmentMutation) (Value
 	}
 }
 
+// SocialOperationClient is a client for the SocialOperation schema.
+type SocialOperationClient struct {
+	config
+}
+
+// NewSocialOperationClient returns a client for the SocialOperation from the given config.
+func NewSocialOperationClient(c config) *SocialOperationClient {
+	return &SocialOperationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `socialoperation.Hooks(f(g(h())))`.
+func (c *SocialOperationClient) Use(hooks ...Hook) {
+	c.hooks.SocialOperation = append(c.hooks.SocialOperation, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `socialoperation.Intercept(f(g(h())))`.
+func (c *SocialOperationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SocialOperation = append(c.inters.SocialOperation, interceptors...)
+}
+
+// Create returns a builder for creating a SocialOperation entity.
+func (c *SocialOperationClient) Create() *SocialOperationCreate {
+	mutation := newSocialOperationMutation(c.config, OpCreate)
+	return &SocialOperationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SocialOperation entities.
+func (c *SocialOperationClient) CreateBulk(builders ...*SocialOperationCreate) *SocialOperationCreateBulk {
+	return &SocialOperationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SocialOperationClient) MapCreateBulk(slice any, setFunc func(*SocialOperationCreate, int)) *SocialOperationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SocialOperationCreateBulk{err: fmt.Errorf("calling to SocialOperationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SocialOperationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SocialOperationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SocialOperation.
+func (c *SocialOperationClient) Update() *SocialOperationUpdate {
+	mutation := newSocialOperationMutation(c.config, OpUpdate)
+	return &SocialOperationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SocialOperationClient) UpdateOne(_m *SocialOperation) *SocialOperationUpdateOne {
+	mutation := newSocialOperationMutation(c.config, OpUpdateOne, withSocialOperation(_m))
+	return &SocialOperationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SocialOperationClient) UpdateOneID(id string) *SocialOperationUpdateOne {
+	mutation := newSocialOperationMutation(c.config, OpUpdateOne, withSocialOperationID(id))
+	return &SocialOperationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SocialOperation.
+func (c *SocialOperationClient) Delete() *SocialOperationDelete {
+	mutation := newSocialOperationMutation(c.config, OpDelete)
+	return &SocialOperationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SocialOperationClient) DeleteOne(_m *SocialOperation) *SocialOperationDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SocialOperationClient) DeleteOneID(id string) *SocialOperationDeleteOne {
+	builder := c.Delete().Where(socialoperation.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SocialOperationDeleteOne{builder}
+}
+
+// Query returns a query builder for SocialOperation.
+func (c *SocialOperationClient) Query() *SocialOperationQuery {
+	return &SocialOperationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSocialOperation},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SocialOperation entity by its id.
+func (c *SocialOperationClient) Get(ctx context.Context, id string) (*SocialOperation, error) {
+	return c.Query().Where(socialoperation.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SocialOperationClient) GetX(ctx context.Context, id string) *SocialOperation {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SocialOperationClient) Hooks() []Hook {
+	return c.hooks.SocialOperation
+}
+
+// Interceptors returns the client interceptors.
+func (c *SocialOperationClient) Interceptors() []Interceptor {
+	return c.inters.SocialOperation
+}
+
+func (c *SocialOperationClient) mutate(ctx context.Context, m *SocialOperationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SocialOperationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SocialOperationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SocialOperationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SocialOperationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SocialOperation mutation op: %q", m.Op())
+	}
+}
+
+// SocialQuoteClient is a client for the SocialQuote schema.
+type SocialQuoteClient struct {
+	config
+}
+
+// NewSocialQuoteClient returns a client for the SocialQuote from the given config.
+func NewSocialQuoteClient(c config) *SocialQuoteClient {
+	return &SocialQuoteClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `socialquote.Hooks(f(g(h())))`.
+func (c *SocialQuoteClient) Use(hooks ...Hook) {
+	c.hooks.SocialQuote = append(c.hooks.SocialQuote, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `socialquote.Intercept(f(g(h())))`.
+func (c *SocialQuoteClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SocialQuote = append(c.inters.SocialQuote, interceptors...)
+}
+
+// Create returns a builder for creating a SocialQuote entity.
+func (c *SocialQuoteClient) Create() *SocialQuoteCreate {
+	mutation := newSocialQuoteMutation(c.config, OpCreate)
+	return &SocialQuoteCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SocialQuote entities.
+func (c *SocialQuoteClient) CreateBulk(builders ...*SocialQuoteCreate) *SocialQuoteCreateBulk {
+	return &SocialQuoteCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SocialQuoteClient) MapCreateBulk(slice any, setFunc func(*SocialQuoteCreate, int)) *SocialQuoteCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SocialQuoteCreateBulk{err: fmt.Errorf("calling to SocialQuoteClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SocialQuoteCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SocialQuoteCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SocialQuote.
+func (c *SocialQuoteClient) Update() *SocialQuoteUpdate {
+	mutation := newSocialQuoteMutation(c.config, OpUpdate)
+	return &SocialQuoteUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SocialQuoteClient) UpdateOne(_m *SocialQuote) *SocialQuoteUpdateOne {
+	mutation := newSocialQuoteMutation(c.config, OpUpdateOne, withSocialQuote(_m))
+	return &SocialQuoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SocialQuoteClient) UpdateOneID(id string) *SocialQuoteUpdateOne {
+	mutation := newSocialQuoteMutation(c.config, OpUpdateOne, withSocialQuoteID(id))
+	return &SocialQuoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SocialQuote.
+func (c *SocialQuoteClient) Delete() *SocialQuoteDelete {
+	mutation := newSocialQuoteMutation(c.config, OpDelete)
+	return &SocialQuoteDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SocialQuoteClient) DeleteOne(_m *SocialQuote) *SocialQuoteDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SocialQuoteClient) DeleteOneID(id string) *SocialQuoteDeleteOne {
+	builder := c.Delete().Where(socialquote.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SocialQuoteDeleteOne{builder}
+}
+
+// Query returns a query builder for SocialQuote.
+func (c *SocialQuoteClient) Query() *SocialQuoteQuery {
+	return &SocialQuoteQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSocialQuote},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SocialQuote entity by its id.
+func (c *SocialQuoteClient) Get(ctx context.Context, id string) (*SocialQuote, error) {
+	return c.Query().Where(socialquote.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SocialQuoteClient) GetX(ctx context.Context, id string) *SocialQuote {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SocialQuoteClient) Hooks() []Hook {
+	return c.hooks.SocialQuote
+}
+
+// Interceptors returns the client interceptors.
+func (c *SocialQuoteClient) Interceptors() []Interceptor {
+	return c.inters.SocialQuote
+}
+
+func (c *SocialQuoteClient) mutate(ctx context.Context, m *SocialQuoteMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SocialQuoteCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SocialQuoteUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SocialQuoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SocialQuoteDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SocialQuote mutation op: %q", m.Op())
+	}
+}
+
+// SocialTaskClient is a client for the SocialTask schema.
+type SocialTaskClient struct {
+	config
+}
+
+// NewSocialTaskClient returns a client for the SocialTask from the given config.
+func NewSocialTaskClient(c config) *SocialTaskClient {
+	return &SocialTaskClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `socialtask.Hooks(f(g(h())))`.
+func (c *SocialTaskClient) Use(hooks ...Hook) {
+	c.hooks.SocialTask = append(c.hooks.SocialTask, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `socialtask.Intercept(f(g(h())))`.
+func (c *SocialTaskClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SocialTask = append(c.inters.SocialTask, interceptors...)
+}
+
+// Create returns a builder for creating a SocialTask entity.
+func (c *SocialTaskClient) Create() *SocialTaskCreate {
+	mutation := newSocialTaskMutation(c.config, OpCreate)
+	return &SocialTaskCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SocialTask entities.
+func (c *SocialTaskClient) CreateBulk(builders ...*SocialTaskCreate) *SocialTaskCreateBulk {
+	return &SocialTaskCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SocialTaskClient) MapCreateBulk(slice any, setFunc func(*SocialTaskCreate, int)) *SocialTaskCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SocialTaskCreateBulk{err: fmt.Errorf("calling to SocialTaskClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SocialTaskCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SocialTaskCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SocialTask.
+func (c *SocialTaskClient) Update() *SocialTaskUpdate {
+	mutation := newSocialTaskMutation(c.config, OpUpdate)
+	return &SocialTaskUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SocialTaskClient) UpdateOne(_m *SocialTask) *SocialTaskUpdateOne {
+	mutation := newSocialTaskMutation(c.config, OpUpdateOne, withSocialTask(_m))
+	return &SocialTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SocialTaskClient) UpdateOneID(id string) *SocialTaskUpdateOne {
+	mutation := newSocialTaskMutation(c.config, OpUpdateOne, withSocialTaskID(id))
+	return &SocialTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SocialTask.
+func (c *SocialTaskClient) Delete() *SocialTaskDelete {
+	mutation := newSocialTaskMutation(c.config, OpDelete)
+	return &SocialTaskDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SocialTaskClient) DeleteOne(_m *SocialTask) *SocialTaskDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SocialTaskClient) DeleteOneID(id string) *SocialTaskDeleteOne {
+	builder := c.Delete().Where(socialtask.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SocialTaskDeleteOne{builder}
+}
+
+// Query returns a query builder for SocialTask.
+func (c *SocialTaskClient) Query() *SocialTaskQuery {
+	return &SocialTaskQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSocialTask},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SocialTask entity by its id.
+func (c *SocialTaskClient) Get(ctx context.Context, id string) (*SocialTask, error) {
+	return c.Query().Where(socialtask.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SocialTaskClient) GetX(ctx context.Context, id string) *SocialTask {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SocialTaskClient) Hooks() []Hook {
+	return c.hooks.SocialTask
+}
+
+// Interceptors returns the client interceptors.
+func (c *SocialTaskClient) Interceptors() []Interceptor {
+	return c.inters.SocialTask
+}
+
+func (c *SocialTaskClient) mutate(ctx context.Context, m *SocialTaskMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SocialTaskCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SocialTaskUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SocialTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SocialTaskDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SocialTask mutation op: %q", m.Op())
+	}
+}
+
 // StockAlertClient is a client for the StockAlert schema.
 type StockAlertClient struct {
 	config
@@ -14900,11 +15323,12 @@ type (
 		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
 		ResellerRelatedAccount, ResellerSite, Review, RiskLockKey, RolePermission,
 		SMSIntent, SMSOperation, SMSRetailQuote, SecurityAuditLog, Session, Setting,
-		Shipment, StockAlert, SupplierAccount, SupplierLedgerEntry,
-		SupplierProductPrice, SupplyCatalogSnapshot, SupplyConnection,
-		SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag,
-		Ticket, TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview,
-		VisitLog, WalletAccount, WalletTransaction, Withdrawal []ent.Hook
+		Shipment, SocialOperation, SocialQuote, SocialTask, StockAlert,
+		SupplierAccount, SupplierLedgerEntry, SupplierProductPrice,
+		SupplyCatalogSnapshot, SupplyConnection, SupplyImportItem, SupplyMapping,
+		SupplyNonce, SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User,
+		UserGroup, UserSession, V1IDMap, VirtualReview, VisitLog, WalletAccount,
+		WalletTransaction, Withdrawal []ent.Hook
 	}
 	inters struct {
 		AdminRole, AdminUser, AffiliateCommission, AuditLog, Banner, Card, CardImport,
@@ -14922,10 +15346,11 @@ type (
 		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
 		ResellerRelatedAccount, ResellerSite, Review, RiskLockKey, RolePermission,
 		SMSIntent, SMSOperation, SMSRetailQuote, SecurityAuditLog, Session, Setting,
-		Shipment, StockAlert, SupplierAccount, SupplierLedgerEntry,
-		SupplierProductPrice, SupplyCatalogSnapshot, SupplyConnection,
-		SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag,
-		Ticket, TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview,
-		VisitLog, WalletAccount, WalletTransaction, Withdrawal []ent.Interceptor
+		Shipment, SocialOperation, SocialQuote, SocialTask, StockAlert,
+		SupplierAccount, SupplierLedgerEntry, SupplierProductPrice,
+		SupplyCatalogSnapshot, SupplyConnection, SupplyImportItem, SupplyMapping,
+		SupplyNonce, SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User,
+		UserGroup, UserSession, V1IDMap, VirtualReview, VisitLog, WalletAccount,
+		WalletTransaction, Withdrawal []ent.Interceptor
 	}
 )

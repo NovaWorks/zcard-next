@@ -9,7 +9,8 @@
       <span class="pd-crumb-current">{{ p.name }}</span>
     </div>
 
-    <SMSProduct v-if="p.product_kind === 'sms_channel'" :key="p.id" :product="p" />
+    <SocialProduct v-if="p.delivery_kind === 'social_service'" :key="p.id" :product="p" />
+    <SMSProduct v-else-if="p.product_kind === 'sms_channel'" :key="p.id" :product="p" />
     <div v-else class="pd-main">
       <!-- 左栏：商品图 -->
       <div class="pd-gallery">
@@ -200,6 +201,7 @@ import ThemeIcon from '@/components/ThemeIcon.vue';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import SMSProduct from '@/components/SMSProduct.vue';
+import SocialProduct from '@/components/SocialProduct.vue';
 import { getProduct, createOrder, rememberOrderPassword, fetchTradeConfig, contactRequiredLabel, contactValid, type Product, type TradeConfig } from '@/api';
 import { formatMoney, getToken, getBaseCurrency, initCurrency } from '@/api/client';
 import { NO_IMAGE, onImgError } from '@/no-image';

@@ -124,6 +124,8 @@ func (OrderItem) Fields() []ent.Field {
 		field.Uint64("sku_id").Optional(),
 		field.String("product_name").Default(""),
 		field.String("delivery_kind").Default("card"),
+		field.Text("social_purchase_snapshot").Default(""),
+		field.JSON("social_schema", map[string]any{}).Optional(),
 		field.JSON("sms_product", map[string]string{}).Optional(),
 		field.Text("sms_purchase_snapshot").Optional(),
 		field.JSON("form_answers", []map[string]string{}).Optional(),

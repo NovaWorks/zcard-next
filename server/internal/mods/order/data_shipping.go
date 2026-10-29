@@ -57,6 +57,9 @@ func orderRequestHash(in CreateOrderInput) string {
 	if in.SMSQuoteID != "" {
 		values = append(values, in.SMSQuoteID)
 	}
+	if in.SocialQuoteID != "" {
+		values = append(values, "social_service", in.SocialQuoteID)
+	}
 	b, _ := json.Marshal(values)
 	return fmt.Sprintf("%x", sha256.Sum256(b))
 }

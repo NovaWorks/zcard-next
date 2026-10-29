@@ -14,9 +14,10 @@
         <div class="pc-name" :title="p.name">{{ p.name }}</div>
         <span v-if="p.is_recommend || p.category_recommend" class="pc-recommend-tag">{{ $t('推荐') }}</span>
       </div>
-      <div v-if="p.product_kind === 'sms_channel'" class="pc-price">{{ $t('进入选价') }}</div>
+      <div v-if="p.delivery_kind === 'social_service'" class="pc-price">{{ $t('按填写内容报价') }}</div>
+      <div v-else-if="p.product_kind === 'sms_channel'" class="pc-price">{{ $t('进入选价') }}</div>
       <div v-else class="pc-price">{{ formatMoney(flash.price(p.price_cents, p.flash_sale)) }}<span v-if="flash.active(p.flash_sale)" class="pc-flash-label">{{ (p.flash_sale?.remaining || 0) > 0 ? $t('秒杀') : $t('已抢完') }}</span></div>
-      <div v-if="p.product_kind !== 'sms_channel' && (salesShown || stockShown)" class="pc-meta">
+      <div v-if="p.product_kind !== 'sms_channel' && p.delivery_kind !== 'social_service' && (salesShown || stockShown)" class="pc-meta">
         <span v-if="salesShown" class="pc-sales">{{ $t('已售') }} {{ p.sales_count || 0 }}</span>
         <span v-if="stockShown && p.stock_status === 'stale'" class="pc-stock-reference" :title="stockHint(p)">{{ p.stock_reference === -1 ? $t('上次库存不限') : $t('参考库存 {0}', [p.stock_reference ?? 0]) }}</span>
         <span v-else-if="stockShown && stockValue(p) >= 0">{{ stockValue(p) === 0 ? $t('暂时售罄') : $t('库存 {0}', [stockValue(p)]) }}</span>
@@ -38,7 +39,7 @@ const flash = useFlashOffers();
 import { formatMoney } from '@/api/client';
 import { NO_IMAGE, onImgError } from '@/no-image';
 function stockValue(p: Product) { return p.stock ?? (p.stock_status === 'unknown' || p.stock_status === 'stale' ? -2 : 0); }
-function buyLabel(p: Product, mode?: string) { if(p.product_kind === 'sms_channel') return $t("选价接码"); return mode !== 'list' ? $t("查看详情") : stockValue(p) === 0 ? $t("查看") : stockValue(p) < -1 ? $t("查看详情") : $t("购买"); }
+function buyLabel(p: Product, mode?: string) { if(p.delivery_kind === 'social_service') return $t("填写信息报价"); if(p.product_kind === 'sms_channel') return $t("选价接码"); return mode !== 'list' ? $t("查看详情") : stockValue(p) === 0 ? $t("查看") : stockValue(p) < -1 ? $t("查看详情") : $t("购买"); }
 function stockHint(p: Product) {
   const date = p.stock_checked_at ? new Date(p.stock_checked_at * 1000).toLocaleString(localeTag.value) : '';
   return $t("上次同步{0}，仅供参考；进入商品详情重新核对库存", [date ? '：' + date : '']);

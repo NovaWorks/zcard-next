@@ -59,6 +59,9 @@ func (r *PaymentRepoImpl) RefundToWallet(ctx context.Context, orderID uint64, am
 		if err := data.GuardSMSRefund(ctx, c, o.ID); err != nil {
 			return refundInvalid(err.Error())
 		}
+		if err := data.GuardSocialRefund(ctx, c, o.ID); err != nil {
+			return refundInvalid(err.Error())
+		}
 		if o.CommerceVersion == 1 {
 			return refundInvalid("该订单必须按商品项退款")
 		}
@@ -84,6 +87,13 @@ func (r *PaymentRepoImpl) RefundToWallet(ctx context.Context, orderID uint64, am
 			if rf.Status == refundorder.StatusProcessing || (rf.Status == refundorder.StatusCreated && rf.Channel != refundorder.ChannelWallet) {
 				return refundInvalid("存在待核对的其他渠道退款，请先核对，避免重复退款")
 			}
+		}
+		limit, hasSocial, socialErr := data.SocialRetailRefundLimit(ctx, c, o.ID)
+		if socialErr != nil {
+			return refundInvalid(socialErr.Error())
+		}
+		if hasSocial && (refunded > limit || amount > limit-refunded) {
+			return refundInvalid("退款超过已确认服务额度")
 		}
 		paid, payErr := c.Payment.Query().Where(payment.OrderID(o.ID), payment.StatusEQ(payment.StatusSuccess), payment.ReviewReasonEQ("")).Order(ent.Asc(payment.FieldID)).First(ctx)
 		if payErr != nil && !ent.IsNotFound(payErr) {

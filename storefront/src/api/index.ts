@@ -1,3 +1,4 @@
+import type { SocialSchema } from "./social";
 import { locale as activeLocale } from '@/i18n';
 import { t as $t } from '@/i18n';
 import { loadPublicConfig } from '@/config';
@@ -36,6 +37,7 @@ export interface Sku {
 }
 
 export interface Product {
+ social_schema?:SocialSchema;
  product_property?: 'virtual' | 'physical'; track_inventory?:boolean; sales_visible?:boolean;
  product_kind?: string;
  delivery_kind?:string; sms_product?:Record<string,string>; sms_sales_enabled?:boolean;
@@ -407,6 +409,7 @@ export function listGuestOrders(contact: string) {
 // ── 订单详情（GetOrder：登录态本人或查询密码）──
 
 export interface OrderItemReply {
+ social_schema?:SocialSchema;
  delivery_kind?:string; sms_product?:Record<string,string>;
  goods_type?:string;paid_cents?:number;shipping_cents?:number;shipped_quantity?:number;received_quantity?:number;canceled_quantity?:number;returned_quantity?:number;
  id?: number; sku_name?: string; fulfillment_type?: string; fulfillment_status?: string; form_answers_json?: string; amount_cents?: number;

@@ -93,6 +93,7 @@ func NewCron(catalogPreview *supply.AdminSupplyService, notifyDisp *notify.Dispa
 		}
 	})
 	c.AddEvery("procurement.sms", 5*time.Second, procure.RunSMS)
+	c.AddEvery("procurement.social", 5*time.Second, procure.RunSocial)
 	c.AddEvery("procurement.patrol", 30*time.Minute, procure.Patrol)
 	// ：供货 nonce 过期清理（每小时）
 	c.AddEvery("supplier.nonce_cleanup", time.Hour, func(ctx context.Context) {

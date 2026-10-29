@@ -91,6 +91,9 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsintent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsoperation"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/smsretailquote"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/socialoperation"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/socialquote"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/socialtask"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/stockalert"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
@@ -253,6 +256,9 @@ func checkColumn(t, c string) error {
 			session.Table:                  session.ValidColumn,
 			setting.Table:                  setting.ValidColumn,
 			shipment.Table:                 shipment.ValidColumn,
+			socialoperation.Table:          socialoperation.ValidColumn,
+			socialquote.Table:              socialquote.ValidColumn,
+			socialtask.Table:               socialtask.ValidColumn,
 			stockalert.Table:               stockalert.ValidColumn,
 			supplieraccount.Table:          supplieraccount.ValidColumn,
 			supplierledgerentry.Table:      supplierledgerentry.ValidColumn,

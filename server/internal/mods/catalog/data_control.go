@@ -28,7 +28,7 @@ func (r *ProductRepoImpl) createProductControl(ctx context.Context, productID, s
 	if e != nil {
 		return nil, e
 	}
-	if p.ProductKind == "sms_channel" {
+	if p.ProductKind == "sms_channel" || p.DeliveryKind == "social_service" {
 		return nil, fmt.Errorf("渠道接码不能添加普通下单控件")
 	}
 	reuse, e := c.ProductSku.Query().Where(productsku.ProductID(productID), productsku.FulfillmentMode("reuse")).Exist(ctx)

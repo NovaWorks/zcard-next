@@ -555,6 +555,16 @@ func SmsProductNotNil() predicate.Product {
 	return predicate.Product(sql.FieldNotNull(FieldSmsProduct))
 }
 
+// SocialSchemaIsNil applies the IsNil predicate on the "social_schema" field.
+func SocialSchemaIsNil() predicate.Product {
+	return predicate.Product(sql.FieldIsNull(FieldSocialSchema))
+}
+
+// SocialSchemaNotNil applies the NotNil predicate on the "social_schema" field.
+func SocialSchemaNotNil() predicate.Product {
+	return predicate.Product(sql.FieldNotNull(FieldSocialSchema))
+}
+
 // CategoryIDEQ applies the EQ predicate on the "category_id" field.
 func CategoryIDEQ(v uint64) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldCategoryID, v))

@@ -119,6 +119,26 @@ func (_c *OrderItemCreate) SetNillableDeliveryKind(v *string) *OrderItemCreate {
 	return _c
 }
 
+// SetSocialPurchaseSnapshot sets the "social_purchase_snapshot" field.
+func (_c *OrderItemCreate) SetSocialPurchaseSnapshot(v string) *OrderItemCreate {
+	_c.mutation.SetSocialPurchaseSnapshot(v)
+	return _c
+}
+
+// SetNillableSocialPurchaseSnapshot sets the "social_purchase_snapshot" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableSocialPurchaseSnapshot(v *string) *OrderItemCreate {
+	if v != nil {
+		_c.SetSocialPurchaseSnapshot(*v)
+	}
+	return _c
+}
+
+// SetSocialSchema sets the "social_schema" field.
+func (_c *OrderItemCreate) SetSocialSchema(v map[string]interface{}) *OrderItemCreate {
+	_c.mutation.SetSocialSchema(v)
+	return _c
+}
+
 // SetSmsProduct sets the "sms_product" field.
 func (_c *OrderItemCreate) SetSmsProduct(v map[string]string) *OrderItemCreate {
 	_c.mutation.SetSmsProduct(v)
@@ -457,6 +477,10 @@ func (_c *OrderItemCreate) defaults() {
 		v := orderitem.DefaultDeliveryKind
 		_c.mutation.SetDeliveryKind(v)
 	}
+	if _, ok := _c.mutation.SocialPurchaseSnapshot(); !ok {
+		v := orderitem.DefaultSocialPurchaseSnapshot
+		_c.mutation.SetSocialPurchaseSnapshot(v)
+	}
 	if _, ok := _c.mutation.AssignedAdminID(); !ok {
 		v := orderitem.DefaultAssignedAdminID
 		_c.mutation.SetAssignedAdminID(v)
@@ -533,6 +557,9 @@ func (_c *OrderItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.DeliveryKind(); !ok {
 		return &ValidationError{Name: "delivery_kind", err: errors.New(`ent: missing required field "OrderItem.delivery_kind"`)}
+	}
+	if _, ok := _c.mutation.SocialPurchaseSnapshot(); !ok {
+		return &ValidationError{Name: "social_purchase_snapshot", err: errors.New(`ent: missing required field "OrderItem.social_purchase_snapshot"`)}
 	}
 	if _, ok := _c.mutation.AssignedAdminID(); !ok {
 		return &ValidationError{Name: "assigned_admin_id", err: errors.New(`ent: missing required field "OrderItem.assigned_admin_id"`)}
@@ -663,6 +690,14 @@ func (_c *OrderItemCreate) createSpec() (*OrderItem, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.DeliveryKind(); ok {
 		_spec.SetField(orderitem.FieldDeliveryKind, field.TypeString, value)
 		_node.DeliveryKind = value
+	}
+	if value, ok := _c.mutation.SocialPurchaseSnapshot(); ok {
+		_spec.SetField(orderitem.FieldSocialPurchaseSnapshot, field.TypeString, value)
+		_node.SocialPurchaseSnapshot = value
+	}
+	if value, ok := _c.mutation.SocialSchema(); ok {
+		_spec.SetField(orderitem.FieldSocialSchema, field.TypeJSON, value)
+		_node.SocialSchema = value
 	}
 	if value, ok := _c.mutation.SmsProduct(); ok {
 		_spec.SetField(orderitem.FieldSmsProduct, field.TypeJSON, value)
@@ -934,6 +969,36 @@ func (u *OrderItemUpsert) SetDeliveryKind(v string) *OrderItemUpsert {
 // UpdateDeliveryKind sets the "delivery_kind" field to the value that was provided on create.
 func (u *OrderItemUpsert) UpdateDeliveryKind() *OrderItemUpsert {
 	u.SetExcluded(orderitem.FieldDeliveryKind)
+	return u
+}
+
+// SetSocialPurchaseSnapshot sets the "social_purchase_snapshot" field.
+func (u *OrderItemUpsert) SetSocialPurchaseSnapshot(v string) *OrderItemUpsert {
+	u.Set(orderitem.FieldSocialPurchaseSnapshot, v)
+	return u
+}
+
+// UpdateSocialPurchaseSnapshot sets the "social_purchase_snapshot" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateSocialPurchaseSnapshot() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldSocialPurchaseSnapshot)
+	return u
+}
+
+// SetSocialSchema sets the "social_schema" field.
+func (u *OrderItemUpsert) SetSocialSchema(v map[string]interface{}) *OrderItemUpsert {
+	u.Set(orderitem.FieldSocialSchema, v)
+	return u
+}
+
+// UpdateSocialSchema sets the "social_schema" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateSocialSchema() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldSocialSchema)
+	return u
+}
+
+// ClearSocialSchema clears the value of the "social_schema" field.
+func (u *OrderItemUpsert) ClearSocialSchema() *OrderItemUpsert {
+	u.SetNull(orderitem.FieldSocialSchema)
 	return u
 }
 
@@ -1525,6 +1590,41 @@ func (u *OrderItemUpsertOne) SetDeliveryKind(v string) *OrderItemUpsertOne {
 func (u *OrderItemUpsertOne) UpdateDeliveryKind() *OrderItemUpsertOne {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.UpdateDeliveryKind()
+	})
+}
+
+// SetSocialPurchaseSnapshot sets the "social_purchase_snapshot" field.
+func (u *OrderItemUpsertOne) SetSocialPurchaseSnapshot(v string) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetSocialPurchaseSnapshot(v)
+	})
+}
+
+// UpdateSocialPurchaseSnapshot sets the "social_purchase_snapshot" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateSocialPurchaseSnapshot() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateSocialPurchaseSnapshot()
+	})
+}
+
+// SetSocialSchema sets the "social_schema" field.
+func (u *OrderItemUpsertOne) SetSocialSchema(v map[string]interface{}) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetSocialSchema(v)
+	})
+}
+
+// UpdateSocialSchema sets the "social_schema" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateSocialSchema() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateSocialSchema()
+	})
+}
+
+// ClearSocialSchema clears the value of the "social_schema" field.
+func (u *OrderItemUpsertOne) ClearSocialSchema() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.ClearSocialSchema()
 	})
 }
 
@@ -2351,6 +2451,41 @@ func (u *OrderItemUpsertBulk) SetDeliveryKind(v string) *OrderItemUpsertBulk {
 func (u *OrderItemUpsertBulk) UpdateDeliveryKind() *OrderItemUpsertBulk {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.UpdateDeliveryKind()
+	})
+}
+
+// SetSocialPurchaseSnapshot sets the "social_purchase_snapshot" field.
+func (u *OrderItemUpsertBulk) SetSocialPurchaseSnapshot(v string) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetSocialPurchaseSnapshot(v)
+	})
+}
+
+// UpdateSocialPurchaseSnapshot sets the "social_purchase_snapshot" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateSocialPurchaseSnapshot() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateSocialPurchaseSnapshot()
+	})
+}
+
+// SetSocialSchema sets the "social_schema" field.
+func (u *OrderItemUpsertBulk) SetSocialSchema(v map[string]interface{}) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetSocialSchema(v)
+	})
+}
+
+// UpdateSocialSchema sets the "social_schema" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateSocialSchema() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateSocialSchema()
+	})
+}
+
+// ClearSocialSchema clears the value of the "social_schema" field.
+func (u *OrderItemUpsertBulk) ClearSocialSchema() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.ClearSocialSchema()
 	})
 }
 

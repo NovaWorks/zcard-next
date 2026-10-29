@@ -509,6 +509,13 @@ func (r *PaymentRepoImpl) CreatePayment(ctx context.Context, orderID uint64, cha
 			return nil, err
 		}
 	}
+	if preflight, ok := r.lifecycle.(interface {
+		ValidateSocialPayment(context.Context, uint64) error
+	}); ok {
+		if err := preflight.ValidateSocialPayment(ctx, orderID); err != nil {
+			return nil, err
+		}
+	}
 	var result *ent.Payment
 	err := data.Tx(ctx, r.data, func(ctx context.Context) error {
 		client := data.Client(ctx, r.data)
@@ -536,6 +543,13 @@ func (r *PaymentRepoImpl) CreatePayment(ctx context.Context, orderID uint64, cha
 		}
 		if hasSMS && (ch.Driver != "wallet" || !data.SMSSalesEnabled() || o.UserID == 0 || o.BaseCurrency != "CNY" || ch.Fee != 0) {
 			return fmt.Errorf("payment.SMS_WALLET_ONLY: 接码仅支持会员余额付款，请确认销售已启用")
+		}
+		hasSocial, socialErr := data.HasSocialOrder(ctx, client, o.ID)
+		if socialErr != nil {
+			return socialErr
+		}
+		if hasSocial && (ch.Driver != "wallet" || o.UserID == 0 || o.BaseCurrency != "CNY" || ch.Fee != 0) {
+			return fmt.Errorf("payment.SOCIAL_WALLET_ONLY: 服务仅支持会员余额付款")
 		}
 		if !ch.Enabled {
 			return fmt.Errorf("payment.CHANNEL_DISABLED")

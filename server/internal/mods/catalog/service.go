@@ -201,7 +201,7 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 		return nil, errors.InternalServer("catalog.FLASH_FAILED", "读取活动价格失败，请重试")
 	}
 	out.FlashSale = toFlashOffer(offers[couponport.FlashKey{ProductID: p.ID}])
-	if p.ProductKind != "sms_channel" && p.UpstreamSourceID != 0 && s.stockLookup != nil {
+	if p.DeliveryKind != "social_service" && p.ProductKind != "sms_channel" && p.UpstreamSourceID != 0 && s.stockLookup != nil {
 		n, err := s.stockLookup.DisplayStock(ctx, p.UpstreamSourceID, p.UpstreamProductCode)
 		if err != nil || n < -1 {
 			out.Stock = -2
@@ -277,7 +277,7 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 
 	return &storefrontv1.Product{
 		ProductProperty: p.ProductProperty, SalesVisible: &p.SalesVisible, TrackInventory: &p.TrackInventory,
-		ProductKind: p.ProductKind, DeliveryKind: p.DeliveryKind, SmsProduct: p.SMSProduct, SmsSalesEnabled: data.SMSSalesEnabled(),
+		SocialSchema: socialStruct(p.SocialSchema), ProductKind: p.ProductKind, DeliveryKind: p.DeliveryKind, SmsProduct: p.SMSProduct, SmsSalesEnabled: data.SMSSalesEnabled(),
 		GoodsType: p.GoodsType, ShippingMode: p.ShippingMode, ShippingFeeCents: p.ShippingFee, ShippingCountries: p.ShippingCountries,
 		Id:              p.ID,
 		Name:            name,

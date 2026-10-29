@@ -300,6 +300,7 @@ type zCardProduct struct {
 	ProductKind    string             `json:"product_kind"`
 	DeliveryKind   string             `json:"delivery_kind"`
 	SMSProduct     map[string]string  `json:"sms_product"`
+	SocialSchema   map[string]any     `json:"social_schema"`
 	ID             any                `json:"id"`
 	Name           string             `json:"name"`
 	Price          supplyport.Integer `json:"price"`
@@ -314,7 +315,7 @@ type zCardProduct struct {
 
 func (p zCardProduct) toProduct() Product {
 	return Product{
-		ProductKind: normalizedProductKind(p.ProductKind), DeliveryKind: normalizedDeliveryKind(p.DeliveryKind), SMSProduct: publicSMSProduct(p.SMSProduct),
+		ProductKind: normalizedProductKind(p.ProductKind), DeliveryKind: normalizedDeliveryKind(p.DeliveryKind), SMSProduct: publicSMSProduct(p.SMSProduct), SocialSchema: p.SocialSchema,
 		ID:             idString(p.ID),
 		Name:           p.Name,
 		CategoryID:     idString(p.CategoryID),
@@ -385,7 +386,7 @@ func decodeZCard(raw []byte, v any) error {
 	return d.Decode(v)
 }
 func smsCatalogQuery() url.Values {
-	return url.Values{"capabilities": {supplyport.SMSCapability, supplyport.SMSProductCatalog, supplyport.SMSProductPurchase}}
+	return url.Values{"capabilities": {supplyport.SMSCapability, supplyport.SMSProductCatalog, supplyport.SMSProductPurchase, supplyport.SocialCapability}}
 }
 func normalizedDeliveryKind(v string) string {
 	if v == "" {

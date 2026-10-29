@@ -235,6 +235,13 @@ func (r *ProductRepoImpl) createProduct(ctx context.Context, in port.ProductInpu
 
 // SetDirectContent 回填直发内容密文（创建后由 service 按真实 productID 加密调用）。
 func (r *ProductRepoImpl) SetDirectContent(ctx context.Context, id uint64, ciphered []byte) error {
+	p, e := data.Client(ctx, r.data).Product.Get(ctx, id)
+	if e != nil {
+		return e
+	}
+	if p.DeliveryKind == "social_service" {
+		return fmt.Errorf("社交服务使用绑定货源交付，不能设置直发内容")
+	}
 	return data.Client(ctx, r.data).Product.UpdateOneID(id).
 		Where(product.GoodsTypeNEQ("physical")).
 		SetDirectContent(ciphered).Exec(ctx)
@@ -244,6 +251,9 @@ func (r *ProductRepoImpl) SetDirectContent(ctx context.Context, id uint64, ciphe
 func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.ProductInput) (*ent.Product, error) {
 	current, err := data.Client(ctx, r.data).Product.Get(ctx, id)
 	if err != nil {
+		return nil, err
+	}
+	if err := validateSocialProduct(current, &in); err != nil {
 		return nil, err
 	}
 	if current.ProductKind == "sms_channel" {
@@ -361,6 +371,9 @@ func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.
 	}
 	if in.PointsRequiredSet {
 		q.SetPointsRequired(in.PointsRequired) // 含 0=移出积分商城（PUT 全量语义）
+	}
+	if current.DeliveryKind == "social_service" {
+		q.SetPrice(0).SetFactoryPrice(0).SetPointsRequired(0).AddLockVersion(1)
 	}
 	if err := q.Exec(ctx); err != nil {
 		return nil, err
@@ -775,7 +788,7 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 	if in.ProductKind == "" {
 		in.ProductKind = "standard"
 	}
-	if in.ProductKind != "standard" && in.ProductKind != "sms_channel" {
+	if in.ProductKind != "standard" && in.ProductKind != "sms_channel" && in.ProductKind != "social_service" {
 		return 0, false, fmt.Errorf("商品类型无效")
 	}
 	if in.ProductKind == "sms_channel" && (in.DeliveryKind != "sms_activation" || len(in.SKUs) > 0) {
@@ -784,11 +797,20 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 	if in.DeliveryKind == "" {
 		in.DeliveryKind = "card"
 	}
-	if in.DeliveryKind != "card" && in.DeliveryKind != "sms_activation" {
+	if in.DeliveryKind != "card" && in.DeliveryKind != "sms_activation" && in.DeliveryKind != "social_service" {
 		return 0, false, fmt.Errorf("不支持的上游交付类型")
 	}
 	if in.DeliveryKind == "sms_activation" && len(in.SKUs) > 0 {
 		return 0, false, fmt.Errorf("接码商品不支持规格")
+	}
+	if in.ProductKind == "social_service" && in.DeliveryKind != "social_service" {
+		return 0, false, fmt.Errorf("社交服务交付类型不匹配")
+	}
+	if in.DeliveryKind == "social_service" {
+		if in.ProductKind != "social_service" || len(in.SocialSchema) == 0 || len(in.SKUs) != 0 {
+			return 0, false, fmt.Errorf("社交服务购买规则缺失或商品类型不匹配")
+		}
+		in.Price, in.FactoryPrice = 0, 0
 	}
 	tc := tenancy.FromContext(ctx)
 	existing, err := data.Client(ctx, r.data).Product.Query().
@@ -881,7 +903,7 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 			SetSlug(slug).
 			SetPrice(price).
 			SetFactoryPrice(max(in.FactoryPrice, 0)).
-			SetProductKind(in.ProductKind).SetDeliveryKind(in.DeliveryKind).SetSmsProduct(in.SMSProduct).
+			SetProductKind(in.ProductKind).SetDeliveryKind(in.DeliveryKind).SetSmsProduct(in.SMSProduct).SetSocialSchema(in.SocialSchema).
 			SetStockType(product.StockTypeCard).
 			SetStatus(status).
 			SetUpstreamSourceID(in.ConnectionID).
@@ -944,7 +966,10 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 	if existing.DeliveryKind != in.DeliveryKind {
 		return 0, false, fmt.Errorf("上游交付类型变化，请新建商品映射")
 	}
-	upd.SetSmsProduct(in.SMSProduct)
+	upd.SetSmsProduct(in.SMSProduct).SetSocialSchema(in.SocialSchema)
+	if in.DeliveryKind == "social_service" && !sameSocialSchema(existing.SocialSchema, in.SocialSchema) {
+		upd.AddLockVersion(1)
+	}
 	if in.FactoryPrice >= 0 {
 		upd.SetFactoryPrice(in.FactoryPrice)
 	}

@@ -170,6 +170,12 @@ type Tx struct {
 	Setting *SettingClient
 	// Shipment is the client for interacting with the Shipment builders.
 	Shipment *ShipmentClient
+	// SocialOperation is the client for interacting with the SocialOperation builders.
+	SocialOperation *SocialOperationClient
+	// SocialQuote is the client for interacting with the SocialQuote builders.
+	SocialQuote *SocialQuoteClient
+	// SocialTask is the client for interacting with the SocialTask builders.
+	SocialTask *SocialTaskClient
 	// StockAlert is the client for interacting with the StockAlert builders.
 	StockAlert *StockAlertClient
 	// SupplierAccount is the client for interacting with the SupplierAccount builders.
@@ -426,6 +432,9 @@ func (tx *Tx) init() {
 	tx.Session = NewSessionClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
 	tx.Shipment = NewShipmentClient(tx.config)
+	tx.SocialOperation = NewSocialOperationClient(tx.config)
+	tx.SocialQuote = NewSocialQuoteClient(tx.config)
+	tx.SocialTask = NewSocialTaskClient(tx.config)
 	tx.StockAlert = NewStockAlertClient(tx.config)
 	tx.SupplierAccount = NewSupplierAccountClient(tx.config)
 	tx.SupplierLedgerEntry = NewSupplierLedgerEntryClient(tx.config)

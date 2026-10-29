@@ -23,13 +23,14 @@
         </div>
       </div>
 
-      <div v-if="!order.items.some(i=>i.delivery_kind==='sms_activation') && ['paid', 'fulfilling', 'partially_delivered'].includes(order.status)" class="card">
+      <div v-if="!order.items.some(i=>['sms_activation','social_service'].includes(i.delivery_kind || '')) && ['paid', 'fulfilling', 'partially_delivered'].includes(order.status)" class="card">
         <p>{{ order.status === 'partially_delivered' ? $t('已付款，部分商品已发货，其余商品正在安排发货。请勿重复付款；长时间未发货请凭订单号联系客服。') : $t('已付款，商品正在安排发货。请勿重复付款；长时间未发货请凭订单号联系客服。') }}</p>
         <button class="btn secondary" @click="loadOrder">{{ $t('刷新订单状态') }}</button>
       </div>
       <SMSOrder v-if="order.items.some(i=>i.delivery_kind==='sms_activation') && !['pending_payment','canceled','expired'].includes(order.status)" :order-no="order.order_no" :metadata="order.items.find(i=>i.delivery_kind==='sms_activation')?.sms_product" />
+      <SocialOrder v-if="order.items.some(i=>i.delivery_kind==='social_service') && !['pending_payment','canceled','expired'].includes(order.status)" :order-no="order.order_no" @refresh="loadOrder" />
       <ShippingDetails v-if="Number(order.commerce_version)===1" :order="order" :password="password" @refresh="loadOrder" />
-      <div class="od-body">
+      <div class="od-body" :class="{'od-social-body':order.items.some(i=>i.delivery_kind==='social_service')}">
         <!-- 左列：商品清单（grid 行式：PC 四列对齐表头；移动端每行两行块状——大厂订单详情同构） -->
         <div class="card od-items">
           <div class="od-section-title">{{ $t('商品清单（{0}）', [order.items.length]) }}</div>
@@ -45,7 +46,7 @@
                 <dl v-if="answers(it.form_answers_json).length" class="od-answers"><div v-for="(a,j) in answers(it.form_answers_json)" :key="j"><dt>{{a.name}}</dt><dd>{{a.value}}</dd></div></dl>
               </div>
               <div class="od-item-price">{{ formatMoney(it.unit_price_cents) }}</div>
-              <div class="od-item-qty">{{ $t('购买 ×') }}{{ it.quantity }}</div>
+              <div class="od-item-qty"><template v-if="it.delivery_kind==='social_service'">{{ $t('按填写配置') }}</template><template v-else>{{ $t('购买 ×') }}{{ it.quantity }}</template></div>
               <div class="od-item-sub">{{ formatMoney(Number(order.commerce_version)===1?it.paid_cents || 0:it.amount_cents ?? it.unit_price_cents * it.quantity) }}</div>
             </div>
           </div>
@@ -63,14 +64,14 @@
             <p v-if="Number(order.refunded_cents) > 0 || Number(order.refunded_fee_cents) > 0" class="muted">{{ $t('已退款') }} {{ formatMoney(Number(order.refunded_cents || 0) + Number(order.refunded_fee_cents || 0)) }}{{ $t('（含已退手续费') }} {{formatMoney(order.refunded_fee_cents || 0)}}）</p>
             <p class="muted">{{ $t('商品小计为下单优惠后的金额；手续费与整单优惠以订单金额为准。') }}</p>
           </div>
-          <div v-if="!order.items.some(i=>i.delivery_kind==='sms_activation') || order.status==='pending_payment'" class="card">
+          <div v-if="!order.items.some(i=>['sms_activation','social_service'].includes(i.delivery_kind || '')) || order.status==='pending_payment'" class="card">
             <div class="od-section-title">{{ $t('可用操作') }}</div>
             <div class="od-actions">
               <router-link class="btn od-action-btn" :to="`/payment/${order.order_no}`" v-if="order.status === 'pending_payment'">{{ $t('去支付') }}</router-link>
               <router-link
                 class="btn secondary od-action-btn"
                 :to="`/fetch?order_no=${order.order_no}`"
-                v-if="order.items.some(it=>it.goods_type!=='physical' && it.delivery_kind!=='sms_activation') && ['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(order.status)"
+                v-if="order.items.some(it=>it.goods_type!=='physical' && !['sms_activation','social_service'].includes(it.delivery_kind || '')) && ['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(order.status)"
               >{{ $t('查看交付结果') }}</router-link>
               <button class="btn secondary od-action-btn" v-if="isLoggedIn && order.status === 'pending_payment'" @click="cancelOrder">{{ $t('取消订单') }}</button>
             </div>
@@ -88,6 +89,7 @@ import { uiText, t as $t, localeTag } from '@/i18n';
 
 import OrderAccessRecovery from '@/components/OrderAccessRecovery.vue';
 import SMSOrder from '@/components/SMSOrder.vue';
+import SocialOrder from '@/components/SocialOrder.vue';
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { getOrder, getOrderPassword, getOrderAccessToken, orderAccessLink, rememberOrderPassword, cancelMyOrder, type OrderDetail } from '@/api';
@@ -126,8 +128,10 @@ async function cancelOrder() {
 }
 
 function answers(raw?:string):{name:string;value:string}[]{try{const x=JSON.parse(raw || '[]');return Array.isArray(x)?x:[]}catch{return []}}
-function itemStatus(s?:string){return ({get shipped() { return $t("已发货"); },get received() { return $t("已收货"); },get pending() { return $t("待处理"); },get delivering() { return $t("处理中"); },get manual() { return $t("待人工核对"); },get failed() { return $t("处理异常"); },get delivered() { return $t("已完成交付"); },get refunded() { return $t("已退款"); }} as Record<string,string>)[s || 'pending'] || s;}
+function itemStatus(s?:string){return ({get partial() { return $t("部分完成"); },get shipped() { return $t("已发货"); },get received() { return $t("已收货"); },get pending() { return $t("待处理"); },get delivering() { return $t("处理中"); },get manual() { return $t("待人工核对"); },get failed() { return $t("处理异常"); },get delivered() { return $t("已完成交付"); },get refunded() { return $t("已退款"); }} as Record<string,string>)[s || 'pending'] || s;}
 function statusText(s: string): string {
+  if(order.value?.items.some(i=>i.delivery_kind==='social_service')){if(s==='delivered')return $t('已完成');if(s==='partially_delivered')return $t('部分完成');}
+
   return ({
     get pending_payment() { return $t("待支付"); }, get paid() { return $t("已支付"); }, get fulfilling() { return $t("履约中"); }, get partially_delivered() { return $t("部分发货"); },
     get delivered() { return $t("已发货"); }, get completed() { return $t("已完成"); }, get canceled() { return $t("已取消"); }, get expired() { return $t("已过期"); },
@@ -168,6 +172,7 @@ function fmtTime(ts: number): string {
 .od-side { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; }
 @media (max-width: 860px) {
   .od-body { flex-direction: column; }
+  .od-social-body .od-items { width: 100%; box-sizing: border-box; }
   .od-side { width: 100%; order: -1; } /* 摘要+操作置顶：先看到金额与操作再看清单（大厂移动端订单详情） */
 }
 

@@ -147,6 +147,32 @@ func (_u *OrderItemUpdate) SetNillableDeliveryKind(v *string) *OrderItemUpdate {
 	return _u
 }
 
+// SetSocialPurchaseSnapshot sets the "social_purchase_snapshot" field.
+func (_u *OrderItemUpdate) SetSocialPurchaseSnapshot(v string) *OrderItemUpdate {
+	_u.mutation.SetSocialPurchaseSnapshot(v)
+	return _u
+}
+
+// SetNillableSocialPurchaseSnapshot sets the "social_purchase_snapshot" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableSocialPurchaseSnapshot(v *string) *OrderItemUpdate {
+	if v != nil {
+		_u.SetSocialPurchaseSnapshot(*v)
+	}
+	return _u
+}
+
+// SetSocialSchema sets the "social_schema" field.
+func (_u *OrderItemUpdate) SetSocialSchema(v map[string]interface{}) *OrderItemUpdate {
+	_u.mutation.SetSocialSchema(v)
+	return _u
+}
+
+// ClearSocialSchema clears the value of the "social_schema" field.
+func (_u *OrderItemUpdate) ClearSocialSchema() *OrderItemUpdate {
+	_u.mutation.ClearSocialSchema()
+	return _u
+}
+
 // SetSmsProduct sets the "sms_product" field.
 func (_u *OrderItemUpdate) SetSmsProduct(v map[string]string) *OrderItemUpdate {
 	_u.mutation.SetSmsProduct(v)
@@ -714,6 +740,15 @@ func (_u *OrderItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.DeliveryKind(); ok {
 		_spec.SetField(orderitem.FieldDeliveryKind, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.SocialPurchaseSnapshot(); ok {
+		_spec.SetField(orderitem.FieldSocialPurchaseSnapshot, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SocialSchema(); ok {
+		_spec.SetField(orderitem.FieldSocialSchema, field.TypeJSON, value)
+	}
+	if _u.mutation.SocialSchemaCleared() {
+		_spec.ClearField(orderitem.FieldSocialSchema, field.TypeJSON)
+	}
 	if value, ok := _u.mutation.SmsProduct(); ok {
 		_spec.SetField(orderitem.FieldSmsProduct, field.TypeJSON, value)
 	}
@@ -1017,6 +1052,32 @@ func (_u *OrderItemUpdateOne) SetNillableDeliveryKind(v *string) *OrderItemUpdat
 	if v != nil {
 		_u.SetDeliveryKind(*v)
 	}
+	return _u
+}
+
+// SetSocialPurchaseSnapshot sets the "social_purchase_snapshot" field.
+func (_u *OrderItemUpdateOne) SetSocialPurchaseSnapshot(v string) *OrderItemUpdateOne {
+	_u.mutation.SetSocialPurchaseSnapshot(v)
+	return _u
+}
+
+// SetNillableSocialPurchaseSnapshot sets the "social_purchase_snapshot" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableSocialPurchaseSnapshot(v *string) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetSocialPurchaseSnapshot(*v)
+	}
+	return _u
+}
+
+// SetSocialSchema sets the "social_schema" field.
+func (_u *OrderItemUpdateOne) SetSocialSchema(v map[string]interface{}) *OrderItemUpdateOne {
+	_u.mutation.SetSocialSchema(v)
+	return _u
+}
+
+// ClearSocialSchema clears the value of the "social_schema" field.
+func (_u *OrderItemUpdateOne) ClearSocialSchema() *OrderItemUpdateOne {
+	_u.mutation.ClearSocialSchema()
 	return _u
 }
 
@@ -1616,6 +1677,15 @@ func (_u *OrderItemUpdateOne) sqlSave(ctx context.Context) (_node *OrderItem, er
 	}
 	if value, ok := _u.mutation.DeliveryKind(); ok {
 		_spec.SetField(orderitem.FieldDeliveryKind, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SocialPurchaseSnapshot(); ok {
+		_spec.SetField(orderitem.FieldSocialPurchaseSnapshot, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SocialSchema(); ok {
+		_spec.SetField(orderitem.FieldSocialSchema, field.TypeJSON, value)
+	}
+	if _u.mutation.SocialSchemaCleared() {
+		_spec.ClearField(orderitem.FieldSocialSchema, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.SmsProduct(); ok {
 		_spec.SetField(orderitem.FieldSmsProduct, field.TypeJSON, value)

@@ -31,6 +31,10 @@ const (
 	FieldProductName = "product_name"
 	// FieldDeliveryKind holds the string denoting the delivery_kind field in the database.
 	FieldDeliveryKind = "delivery_kind"
+	// FieldSocialPurchaseSnapshot holds the string denoting the social_purchase_snapshot field in the database.
+	FieldSocialPurchaseSnapshot = "social_purchase_snapshot"
+	// FieldSocialSchema holds the string denoting the social_schema field in the database.
+	FieldSocialSchema = "social_schema"
 	// FieldSmsProduct holds the string denoting the sms_product field in the database.
 	FieldSmsProduct = "sms_product"
 	// FieldSmsPurchaseSnapshot holds the string denoting the sms_purchase_snapshot field in the database.
@@ -103,6 +107,8 @@ var Columns = []string{
 	FieldSkuID,
 	FieldProductName,
 	FieldDeliveryKind,
+	FieldSocialPurchaseSnapshot,
+	FieldSocialSchema,
 	FieldSmsProduct,
 	FieldSmsPurchaseSnapshot,
 	FieldFormAnswers,
@@ -152,6 +158,8 @@ var (
 	DefaultProductName string
 	// DefaultDeliveryKind holds the default value on creation for the "delivery_kind" field.
 	DefaultDeliveryKind string
+	// DefaultSocialPurchaseSnapshot holds the default value on creation for the "social_purchase_snapshot" field.
+	DefaultSocialPurchaseSnapshot string
 	// DefaultAssignedAdminID holds the default value on creation for the "assigned_admin_id" field.
 	DefaultAssignedAdminID uint64
 	// SkuNameValidator is a validator for the "sku_name" field. It is called by the builders before save.
@@ -256,6 +264,11 @@ func ByProductName(opts ...sql.OrderTermOption) OrderOption {
 // ByDeliveryKind orders the results by the delivery_kind field.
 func ByDeliveryKind(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDeliveryKind, opts...).ToFunc()
+}
+
+// BySocialPurchaseSnapshot orders the results by the social_purchase_snapshot field.
+func BySocialPurchaseSnapshot(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSocialPurchaseSnapshot, opts...).ToFunc()
 }
 
 // BySmsPurchaseSnapshot orders the results by the sms_purchase_snapshot field.

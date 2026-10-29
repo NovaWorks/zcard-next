@@ -113,6 +113,7 @@ func (uc *OrderUsecase) SetStockGate(g orderport.UpstreamStockGate) {
 
 // CreateOrderInput 下单输入。
 type CreateOrderInput struct {
+	SocialQuoteID   string
 	SMSQuoteID      string
 	ShippingAddress map[string]string
 	QuoteKey        string
@@ -151,6 +152,9 @@ type CreateOrderResult struct {
 
 // CreateOrder 下单（单事务编排）。
 func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*CreateOrderResult, error) {
+	if in.SocialQuoteID != "" {
+		return uc.createSocialOrder(ctx, in)
+	}
 	tc := tenancy.FromContext(ctx)
 	if in.SubsiteID == 0 {
 		in.SubsiteID = tc.SubsiteID
@@ -973,6 +977,9 @@ func (uc *OrderUsecase) markPaid(ctx context.Context, orderNo string) error {
 	if o.Status == order.StatusPaid {
 		return nil
 	}
+	if err := uc.validateSocialPayment(ctx, o.ID); err != nil {
+		return err
+	}
 	if !Allow(string(o.Status), string(order.StatusPaid)) {
 		return fmt.Errorf("order.TRANSITION_NOT_ALLOWED: %s → paid", o.Status)
 	}
@@ -1011,6 +1018,9 @@ func (uc *OrderUsecase) markPaid(ctx context.Context, orderNo string) error {
 	if err := uc.createSMSIntents(ctx, o); err != nil {
 		return err
 	}
+	if err := uc.createSocialTasks(ctx, o); err != nil {
+		return err
+	}
 	return uc.publishPaid(ctx, client, o)
 }
 
@@ -1041,6 +1051,9 @@ func (uc *OrderUsecase) publishPaid(ctx context.Context, client *ent.Client, o *
 			SkuID:       it.SkuID,
 			Quantity:    it.Quantity,
 			FulfillmentType: func() string {
+				if it.DeliveryKind == "social_service" {
+					return "social_service"
+				}
 				if it.DeliveryKind == "sms_activation" {
 					return "sms_activation"
 				}

@@ -95,6 +95,11 @@ func DeliveryKind(v string) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldDeliveryKind, v))
 }
 
+// SocialPurchaseSnapshot applies equality check predicate on the "social_purchase_snapshot" field. It's identical to SocialPurchaseSnapshotEQ.
+func SocialPurchaseSnapshot(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldSocialPurchaseSnapshot, v))
+}
+
 // SmsPurchaseSnapshot applies equality check predicate on the "sms_purchase_snapshot" field. It's identical to SmsPurchaseSnapshotEQ.
 func SmsPurchaseSnapshot(v string) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldSmsPurchaseSnapshot, v))
@@ -548,6 +553,81 @@ func DeliveryKindEqualFold(v string) predicate.OrderItem {
 // DeliveryKindContainsFold applies the ContainsFold predicate on the "delivery_kind" field.
 func DeliveryKindContainsFold(v string) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldContainsFold(FieldDeliveryKind, v))
+}
+
+// SocialPurchaseSnapshotEQ applies the EQ predicate on the "social_purchase_snapshot" field.
+func SocialPurchaseSnapshotEQ(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldSocialPurchaseSnapshot, v))
+}
+
+// SocialPurchaseSnapshotNEQ applies the NEQ predicate on the "social_purchase_snapshot" field.
+func SocialPurchaseSnapshotNEQ(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldSocialPurchaseSnapshot, v))
+}
+
+// SocialPurchaseSnapshotIn applies the In predicate on the "social_purchase_snapshot" field.
+func SocialPurchaseSnapshotIn(vs ...string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldSocialPurchaseSnapshot, vs...))
+}
+
+// SocialPurchaseSnapshotNotIn applies the NotIn predicate on the "social_purchase_snapshot" field.
+func SocialPurchaseSnapshotNotIn(vs ...string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldSocialPurchaseSnapshot, vs...))
+}
+
+// SocialPurchaseSnapshotGT applies the GT predicate on the "social_purchase_snapshot" field.
+func SocialPurchaseSnapshotGT(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldSocialPurchaseSnapshot, v))
+}
+
+// SocialPurchaseSnapshotGTE applies the GTE predicate on the "social_purchase_snapshot" field.
+func SocialPurchaseSnapshotGTE(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldSocialPurchaseSnapshot, v))
+}
+
+// SocialPurchaseSnapshotLT applies the LT predicate on the "social_purchase_snapshot" field.
+func SocialPurchaseSnapshotLT(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldSocialPurchaseSnapshot, v))
+}
+
+// SocialPurchaseSnapshotLTE applies the LTE predicate on the "social_purchase_snapshot" field.
+func SocialPurchaseSnapshotLTE(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldSocialPurchaseSnapshot, v))
+}
+
+// SocialPurchaseSnapshotContains applies the Contains predicate on the "social_purchase_snapshot" field.
+func SocialPurchaseSnapshotContains(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldContains(FieldSocialPurchaseSnapshot, v))
+}
+
+// SocialPurchaseSnapshotHasPrefix applies the HasPrefix predicate on the "social_purchase_snapshot" field.
+func SocialPurchaseSnapshotHasPrefix(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldHasPrefix(FieldSocialPurchaseSnapshot, v))
+}
+
+// SocialPurchaseSnapshotHasSuffix applies the HasSuffix predicate on the "social_purchase_snapshot" field.
+func SocialPurchaseSnapshotHasSuffix(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldHasSuffix(FieldSocialPurchaseSnapshot, v))
+}
+
+// SocialPurchaseSnapshotEqualFold applies the EqualFold predicate on the "social_purchase_snapshot" field.
+func SocialPurchaseSnapshotEqualFold(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEqualFold(FieldSocialPurchaseSnapshot, v))
+}
+
+// SocialPurchaseSnapshotContainsFold applies the ContainsFold predicate on the "social_purchase_snapshot" field.
+func SocialPurchaseSnapshotContainsFold(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldContainsFold(FieldSocialPurchaseSnapshot, v))
+}
+
+// SocialSchemaIsNil applies the IsNil predicate on the "social_schema" field.
+func SocialSchemaIsNil() predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIsNull(FieldSocialSchema))
+}
+
+// SocialSchemaNotNil applies the NotNil predicate on the "social_schema" field.
+func SocialSchemaNotNil() predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotNull(FieldSocialSchema))
 }
 
 // SmsProductIsNil applies the IsNil predicate on the "sms_product" field.

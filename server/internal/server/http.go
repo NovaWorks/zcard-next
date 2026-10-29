@@ -52,7 +52,6 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/web"
 
 	"github.com/go-kratos/kratos/v3/log"
-	"github.com/go-kratos/kratos/v3/middleware/logging"
 	"github.com/go-kratos/kratos/v3/middleware/recovery"
 	"github.com/go-kratos/kratos/v3/middleware/selector"
 	"github.com/go-kratos/kratos/v3/middleware/validate"
@@ -80,6 +79,8 @@ func NewHTTPServer(
 	procureAdminSvc *procurement.AdminProcurementService,
 	smsSvc *procurement.StoreSMSService,
 	smsChannelSvc *supply.StoreSMSChannelService,
+	socialProductSvc *order.StoreSocialProductService,
+	socialOrderSvc *procurement.StoreSocialOrderService,
 	supplyAPISvc *supplier.SupplyAPIService,
 	supplierAdminSvc *supplier.AdminSupplierService,
 	supplierStoreSvc *supplier.StoreSupplierService,
@@ -165,7 +166,7 @@ func NewHTTPServer(
 		),
 		khttp.Middleware(
 			recovery.Recovery(),
-			logging.Server(log.Default()),
+			requestLogging(log.Default()),
 			validate.Validator(func(req any) error {
 				if msg, ok := req.(proto.Message); ok {
 					return fieldbehavior.ValidateRequiredFields(msg)
@@ -237,6 +238,8 @@ func NewHTTPServer(
 	supplyv1.RegisterSupplyServiceHTTPServer(srv, supplyAPISvc)
 	adminv1.RegisterAdminSupplyServiceHTTPServer(srv, supplyAdminSvc)
 	adminv1.RegisterAdminProcurementServiceHTTPServer(srv, procureAdminSvc)
+	storefrontv1.RegisterStoreSocialProductServiceHTTPServer(srv, socialProductSvc)
+	storefrontv1.RegisterStoreSocialOrderServiceHTTPServer(srv, socialOrderSvc)
 	storefrontv1.RegisterStoreSMSServiceHTTPServer(srv, smsSvc)
 	storefrontv1.RegisterStoreSMSChannelServiceHTTPServer(srv, smsChannelSvc)
 	adminv1.RegisterAdminSupplierServiceHTTPServer(srv, supplierAdminSvc)

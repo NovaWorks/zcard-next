@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+import "storefront/v1/order.proto";
+
+// Retail endpoints always derive the buyer from the authenticated user realm.
+service StoreSocialProductService {
+  rpc Schema(SocialProductRequest) returns (google.protobuf.Struct) {
+    option (google.api.http) = {get: "/api/v1/storefront/products/{product_id}/social/schema"};
+  }
+  rpc Quote(SocialRetailQuoteRequest) returns (SocialRetailQuoteReply) {
+    option (google.api.http) = {post: "/api/v1/storefront/products/{product_id}/social/quotes" body: "*"};
+  }
+  rpc Buy(SocialRetailBuyRequest) returns (CreateOrderReply) {
+    option (google.api.http) = {post: "/api/v1/storefront/products/{product_id}/social/orders" body: "*"};
+  }
+}
+
+service StoreSocialOrderService {
+  rpc Get(SocialRetailOrderRequest) returns (SocialRetailOrderReply) {
+    option (google.api.http) = {get: "/api/v1/storefront/orders/{order_no}/social"};
+  }
+  rpc Act(SocialRetailActionRequest) returns (SocialRetailOrderReply) {
+    option (google.api.http) = {post: "/api/v1/storefront/orders/{order_no}/social/{action}" body: "*"};
+  }
+}
+
+message SocialProductRequest { uint64 product_id = 1; }
+message SocialRetailQuoteRequest {
+  uint64 product_id = 1;
+  string schema_revision = 2;
+  map<string,string> parameters = 3;
+}
+message SocialRetailQuoteReply {
+  string quote_id = 1;
+  int64 amount_cents = 2;
+  string currency = 3;
+  int64 expires_at = 4;
+  optional int64 quantity = 5;
+}
+message SocialRetailBuyRequest { uint64 product_id = 1; string quote_id = 2; string request_id = 3; }
+message SocialRetailOrderRequest { string order_no = 1; }
+message SocialRetailActionRequest { string order_no = 1; string action = 2; string request_id = 3; }
+message SocialRetailOrderReply {
+  string state = 1;
+  string phase = 2;
+  google.protobuf.Struct snapshot = 3;
+  int64 paid_amount_cents = 4;
+  int64 refunded_amount_cents = 5;
+  string refund_status = 6;
+  bool can_cancel = 7;
+  bool can_refill = 8;
+  bool active = 9;
+  string message = 10;
+  string operation_status = 11;
+  string operation_action = 12;
+  string operation_request_id = 13;
+}

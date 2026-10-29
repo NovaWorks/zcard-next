@@ -15,6 +15,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/adminrole"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
@@ -93,7 +94,7 @@ func Install(ctx context.Context, d *data.Data, in InstallInput) error {
 			return err
 		}
 		// 3) 管理员（super_admin）
-		role, err := client.AdminRole.Query().Where().First(ctx)
+		role, err := client.AdminRole.Query().Where(adminrole.Code("super_admin")).Only(ctx)
 		if err != nil {
 			return err
 		}

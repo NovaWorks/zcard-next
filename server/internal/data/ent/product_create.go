@@ -100,6 +100,12 @@ func (_c *ProductCreate) SetSmsProduct(v map[string]string) *ProductCreate {
 	return _c
 }
 
+// SetSocialSchema sets the "social_schema" field.
+func (_c *ProductCreate) SetSocialSchema(v map[string]interface{}) *ProductCreate {
+	_c.mutation.SetSocialSchema(v)
+	return _c
+}
+
 // SetCategoryID sets the "category_id" field.
 func (_c *ProductCreate) SetCategoryID(v uint64) *ProductCreate {
 	_c.mutation.SetCategoryID(v)
@@ -1202,6 +1208,10 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 		_spec.SetField(product.FieldSmsProduct, field.TypeJSON, value)
 		_node.SmsProduct = value
 	}
+	if value, ok := _c.mutation.SocialSchema(); ok {
+		_spec.SetField(product.FieldSocialSchema, field.TypeJSON, value)
+		_node.SocialSchema = value
+	}
 	if value, ok := _c.mutation.CategoryID(); ok {
 		_spec.SetField(product.FieldCategoryID, field.TypeUint64, value)
 		_node.CategoryID = value
@@ -1551,6 +1561,24 @@ func (u *ProductUpsert) UpdateSmsProduct() *ProductUpsert {
 // ClearSmsProduct clears the value of the "sms_product" field.
 func (u *ProductUpsert) ClearSmsProduct() *ProductUpsert {
 	u.SetNull(product.FieldSmsProduct)
+	return u
+}
+
+// SetSocialSchema sets the "social_schema" field.
+func (u *ProductUpsert) SetSocialSchema(v map[string]interface{}) *ProductUpsert {
+	u.Set(product.FieldSocialSchema, v)
+	return u
+}
+
+// UpdateSocialSchema sets the "social_schema" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateSocialSchema() *ProductUpsert {
+	u.SetExcluded(product.FieldSocialSchema)
+	return u
+}
+
+// ClearSocialSchema clears the value of the "social_schema" field.
+func (u *ProductUpsert) ClearSocialSchema() *ProductUpsert {
+	u.SetNull(product.FieldSocialSchema)
 	return u
 }
 
@@ -2454,6 +2482,27 @@ func (u *ProductUpsertOne) UpdateSmsProduct() *ProductUpsertOne {
 func (u *ProductUpsertOne) ClearSmsProduct() *ProductUpsertOne {
 	return u.Update(func(s *ProductUpsert) {
 		s.ClearSmsProduct()
+	})
+}
+
+// SetSocialSchema sets the "social_schema" field.
+func (u *ProductUpsertOne) SetSocialSchema(v map[string]interface{}) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetSocialSchema(v)
+	})
+}
+
+// UpdateSocialSchema sets the "social_schema" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateSocialSchema() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateSocialSchema()
+	})
+}
+
+// ClearSocialSchema clears the value of the "social_schema" field.
+func (u *ProductUpsertOne) ClearSocialSchema() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.ClearSocialSchema()
 	})
 }
 
@@ -3651,6 +3700,27 @@ func (u *ProductUpsertBulk) UpdateSmsProduct() *ProductUpsertBulk {
 func (u *ProductUpsertBulk) ClearSmsProduct() *ProductUpsertBulk {
 	return u.Update(func(s *ProductUpsert) {
 		s.ClearSmsProduct()
+	})
+}
+
+// SetSocialSchema sets the "social_schema" field.
+func (u *ProductUpsertBulk) SetSocialSchema(v map[string]interface{}) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetSocialSchema(v)
+	})
+}
+
+// UpdateSocialSchema sets the "social_schema" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateSocialSchema() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateSocialSchema()
+	})
+}
+
+// ClearSocialSchema clears the value of the "social_schema" field.
+func (u *ProductUpsertBulk) ClearSocialSchema() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.ClearSocialSchema()
 	})
 }
 

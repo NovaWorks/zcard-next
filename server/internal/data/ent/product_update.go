@@ -98,6 +98,18 @@ func (_u *ProductUpdate) ClearSmsProduct() *ProductUpdate {
 	return _u
 }
 
+// SetSocialSchema sets the "social_schema" field.
+func (_u *ProductUpdate) SetSocialSchema(v map[string]interface{}) *ProductUpdate {
+	_u.mutation.SetSocialSchema(v)
+	return _u
+}
+
+// ClearSocialSchema clears the value of the "social_schema" field.
+func (_u *ProductUpdate) ClearSocialSchema() *ProductUpdate {
+	_u.mutation.ClearSocialSchema()
+	return _u
+}
+
 // SetCategoryID sets the "category_id" field.
 func (_u *ProductUpdate) SetCategoryID(v uint64) *ProductUpdate {
 	_u.mutation.ResetCategoryID()
@@ -1156,6 +1168,12 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.SmsProductCleared() {
 		_spec.ClearField(product.FieldSmsProduct, field.TypeJSON)
 	}
+	if value, ok := _u.mutation.SocialSchema(); ok {
+		_spec.SetField(product.FieldSocialSchema, field.TypeJSON, value)
+	}
+	if _u.mutation.SocialSchemaCleared() {
+		_spec.ClearField(product.FieldSocialSchema, field.TypeJSON)
+	}
 	if value, ok := _u.mutation.CategoryID(); ok {
 		_spec.SetField(product.FieldCategoryID, field.TypeUint64, value)
 	}
@@ -1577,6 +1595,18 @@ func (_u *ProductUpdateOne) SetSmsProduct(v map[string]string) *ProductUpdateOne
 // ClearSmsProduct clears the value of the "sms_product" field.
 func (_u *ProductUpdateOne) ClearSmsProduct() *ProductUpdateOne {
 	_u.mutation.ClearSmsProduct()
+	return _u
+}
+
+// SetSocialSchema sets the "social_schema" field.
+func (_u *ProductUpdateOne) SetSocialSchema(v map[string]interface{}) *ProductUpdateOne {
+	_u.mutation.SetSocialSchema(v)
+	return _u
+}
+
+// ClearSocialSchema clears the value of the "social_schema" field.
+func (_u *ProductUpdateOne) ClearSocialSchema() *ProductUpdateOne {
+	_u.mutation.ClearSocialSchema()
 	return _u
 }
 
@@ -2667,6 +2697,12 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if _u.mutation.SmsProductCleared() {
 		_spec.ClearField(product.FieldSmsProduct, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.SocialSchema(); ok {
+		_spec.SetField(product.FieldSocialSchema, field.TypeJSON, value)
+	}
+	if _u.mutation.SocialSchemaCleared() {
+		_spec.ClearField(product.FieldSocialSchema, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.CategoryID(); ok {
 		_spec.SetField(product.FieldCategoryID, field.TypeUint64, value)

@@ -70,6 +70,10 @@ func (s *SyncService) productPrices(ctx context.Context, conn *ent.SupplyConnect
 		rule = &productPricingRule{Mode: PriceModeChannel}
 		o["rule"] = rule
 	}
+	if p.ProductKind == "social_service" {
+		o["last_synced_price"] = int64(0)
+		return 0, nil, o, nil
+	}
 	if p.ProductKind == "sms_channel" {
 		if len(p.SKUs) > 0 || conn.Driver != "zcard" || conn.ExchangeRate != 1 {
 			return -1, nil, nil, fmt.Errorf("渠道接码商品配置无效")
@@ -159,7 +163,7 @@ func (s *SyncService) lockProductPricing(ctx context.Context, m *ent.SupplyMappi
 }
 
 func accountCost(conn *ent.SupplyConnection, p *adapter.Product) int64 {
-	if p.ProductKind == "sms_channel" {
+	if p.ProductKind == "sms_channel" || p.ProductKind == "social_service" {
 		return 0
 	}
 	if p.FactoryPrice <= 0 {

@@ -35,6 +35,10 @@ type OrderItem struct {
 	ProductName string `json:"product_name,omitempty"`
 	// DeliveryKind holds the value of the "delivery_kind" field.
 	DeliveryKind string `json:"delivery_kind,omitempty"`
+	// SocialPurchaseSnapshot holds the value of the "social_purchase_snapshot" field.
+	SocialPurchaseSnapshot string `json:"social_purchase_snapshot,omitempty"`
+	// SocialSchema holds the value of the "social_schema" field.
+	SocialSchema map[string]interface{} `json:"social_schema,omitempty"`
 	// SmsProduct holds the value of the "sms_product" field.
 	SmsProduct map[string]string `json:"sms_product,omitempty"`
 	// SmsPurchaseSnapshot holds the value of the "sms_purchase_snapshot" field.
@@ -114,13 +118,13 @@ func (*OrderItem) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case orderitem.FieldSmsProduct, orderitem.FieldFormAnswers, orderitem.FieldCommissionSnapshot, orderitem.FieldProfitSnapshot:
+		case orderitem.FieldSocialSchema, orderitem.FieldSmsProduct, orderitem.FieldFormAnswers, orderitem.FieldCommissionSnapshot, orderitem.FieldProfitSnapshot:
 			values[i] = new([]byte)
 		case orderitem.FieldInventoryTracked:
 			values[i] = new(sql.NullBool)
 		case orderitem.FieldID, orderitem.FieldSubsiteID, orderitem.FieldOrderID, orderitem.FieldProductID, orderitem.FieldSkuID, orderitem.FieldAssignedAdminID, orderitem.FieldUnitPrice, orderitem.FieldQuantity, orderitem.FieldAmount, orderitem.FieldCost, orderitem.FieldPaidAmount, orderitem.FieldShippingAmount, orderitem.FieldRefundedAmount, orderitem.FieldRefundedShipping, orderitem.FieldCanceledQuantity, orderitem.FieldShippedQuantity, orderitem.FieldReceivedQuantity, orderitem.FieldReturnedQuantity, orderitem.FieldDeliverySourceID:
 			values[i] = new(sql.NullInt64)
-		case orderitem.FieldProductName, orderitem.FieldDeliveryKind, orderitem.FieldSmsPurchaseSnapshot, orderitem.FieldSkuName, orderitem.FieldGoodsType, orderitem.FieldFulfillmentType, orderitem.FieldFulfillmentStatus:
+		case orderitem.FieldProductName, orderitem.FieldDeliveryKind, orderitem.FieldSocialPurchaseSnapshot, orderitem.FieldSmsPurchaseSnapshot, orderitem.FieldSkuName, orderitem.FieldGoodsType, orderitem.FieldFulfillmentType, orderitem.FieldFulfillmentStatus:
 			values[i] = new(sql.NullString)
 		case orderitem.FieldCreatedAt, orderitem.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -192,6 +196,20 @@ func (_m *OrderItem) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field delivery_kind", values[i])
 			} else if value.Valid {
 				_m.DeliveryKind = value.String
+			}
+		case orderitem.FieldSocialPurchaseSnapshot:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field social_purchase_snapshot", values[i])
+			} else if value.Valid {
+				_m.SocialPurchaseSnapshot = value.String
+			}
+		case orderitem.FieldSocialSchema:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field social_schema", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.SocialSchema); err != nil {
+					return fmt.Errorf("unmarshal field social_schema: %w", err)
+				}
 			}
 		case orderitem.FieldSmsProduct:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -409,6 +427,12 @@ func (_m *OrderItem) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("delivery_kind=")
 	builder.WriteString(_m.DeliveryKind)
+	builder.WriteString(", ")
+	builder.WriteString("social_purchase_snapshot=")
+	builder.WriteString(_m.SocialPurchaseSnapshot)
+	builder.WriteString(", ")
+	builder.WriteString("social_schema=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SocialSchema))
 	builder.WriteString(", ")
 	builder.WriteString("sms_product=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SmsProduct))

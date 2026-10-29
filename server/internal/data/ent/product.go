@@ -30,6 +30,8 @@ type Product struct {
 	DeliveryKind string `json:"delivery_kind,omitempty"`
 	// SmsProduct holds the value of the "sms_product" field.
 	SmsProduct map[string]string `json:"sms_product,omitempty"`
+	// SocialSchema holds the value of the "social_schema" field.
+	SocialSchema map[string]interface{} `json:"social_schema,omitempty"`
 	// 分类（软外键，仅索引）
 	CategoryID uint64 `json:"category_id,omitempty"`
 	// CategoryProtected holds the value of the "category_protected" field.
@@ -168,7 +170,7 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case product.FieldSmsProduct, product.FieldShippingCountries, product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig:
+		case product.FieldSmsProduct, product.FieldSocialSchema, product.FieldShippingCountries, product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig:
 			values[i] = new([]byte)
 		case product.FieldCategoryProtected, product.FieldTrackInventory, product.FieldSalesVisible, product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend, product.FieldAutoListing, product.FieldListingRestocked, product.FieldIsLocked:
 			values[i] = new(sql.NullBool)
@@ -235,6 +237,14 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 			} else if value != nil && len(*value) > 0 {
 				if err := json.Unmarshal(*value, &_m.SmsProduct); err != nil {
 					return fmt.Errorf("unmarshal field sms_product: %w", err)
+				}
+			}
+		case product.FieldSocialSchema:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field social_schema", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.SocialSchema); err != nil {
+					return fmt.Errorf("unmarshal field social_schema: %w", err)
 				}
 			}
 		case product.FieldCategoryID:
@@ -603,6 +613,9 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sms_product=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SmsProduct))
+	builder.WriteString(", ")
+	builder.WriteString("social_schema=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SocialSchema))
 	builder.WriteString(", ")
 	builder.WriteString("category_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CategoryID))

@@ -56,7 +56,7 @@ func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product
 		for _, p := range products[start:end] {
 			byID[p.ID] = p
 			switch {
-			case p.ProductKind == "sms_channel":
+			case p.ProductKind == "sms_channel" || p.DeliveryKind == "social_service":
 				out[p.ID] = ProductStockSnapshot{Quantity: -2, Status: "unknown"}
 			case p.GoodsType == "physical":
 				n, e := PhysicalAvailable(ctx, client, p)

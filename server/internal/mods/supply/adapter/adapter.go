@@ -81,6 +81,7 @@ type Product struct {
 	ProductKind    string
 	DeliveryKind   string
 	SMSProduct     map[string]string
+	SocialSchema   map[string]any
 	ID             string
 	Name           string
 	CategoryID     string

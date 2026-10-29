@@ -28,6 +28,8 @@ const (
 	FieldDeliveryKind = "delivery_kind"
 	// FieldSmsProduct holds the string denoting the sms_product field in the database.
 	FieldSmsProduct = "sms_product"
+	// FieldSocialSchema holds the string denoting the social_schema field in the database.
+	FieldSocialSchema = "social_schema"
 	// FieldCategoryID holds the string denoting the category_id field in the database.
 	FieldCategoryID = "category_id"
 	// FieldCategoryProtected holds the string denoting the category_protected field in the database.
@@ -157,6 +159,7 @@ var Columns = []string{
 	FieldProductKind,
 	FieldDeliveryKind,
 	FieldSmsProduct,
+	FieldSocialSchema,
 	FieldCategoryID,
 	FieldCategoryProtected,
 	FieldName,

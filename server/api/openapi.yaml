@@ -6826,6 +6826,53 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.SMSOrderReply'
+    /api/v1/storefront/orders/{orderNo}/social:
+        get:
+            tags:
+                - StoreSocialOrderService
+            operationId: StoreSocialOrderService_Get
+            parameters:
+                - name: orderNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SocialRetailOrderReply'
+    /api/v1/storefront/orders/{orderNo}/social/{action}:
+        post:
+            tags:
+                - StoreSocialOrderService
+            operationId: StoreSocialOrderService_Act
+            parameters:
+                - name: orderNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: action
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.SocialRetailActionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SocialRetailOrderReply'
     /api/v1/storefront/payment/channels:
         get:
             tags:
@@ -7149,6 +7196,72 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.SMSProductHistoryReply'
+    /api/v1/storefront/products/{productId}/social/orders:
+        post:
+            tags:
+                - StoreSocialProductService
+            operationId: StoreSocialProductService_Buy
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.SocialRetailBuyRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.CreateOrderReply'
+    /api/v1/storefront/products/{productId}/social/quotes:
+        post:
+            tags:
+                - StoreSocialProductService
+            operationId: StoreSocialProductService_Quote
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.SocialRetailQuoteRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SocialRetailQuoteReply'
+    /api/v1/storefront/products/{productId}/social/schema:
+        get:
+            tags:
+                - StoreSocialProductService
+            operationId: StoreSocialProductService_Schema
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                type: object
     /api/v1/storefront/shipping/regions:
         get:
             tags:
@@ -15251,6 +15364,8 @@ components:
                     type: boolean
                 categoryPinned:
                     type: boolean
+                socialSchema:
+                    type: object
         zcard.api.storefront.v1.ProductControl:
             type: object
             properties:
@@ -15631,6 +15746,77 @@ components:
                 flashSale:
                     $ref: '#/components/schemas/zcard.api.storefront.v1.FlashOffer'
             description: Sku 顾客视角多规格（只下发 id/名称/价格）。
+        zcard.api.storefront.v1.SocialRetailActionRequest:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                action:
+                    type: string
+                requestId:
+                    type: string
+        zcard.api.storefront.v1.SocialRetailBuyRequest:
+            type: object
+            properties:
+                productId:
+                    type: string
+                quoteId:
+                    type: string
+                requestId:
+                    type: string
+        zcard.api.storefront.v1.SocialRetailOrderReply:
+            type: object
+            properties:
+                state:
+                    type: string
+                phase:
+                    type: string
+                snapshot:
+                    type: object
+                paidAmountCents:
+                    type: string
+                refundedAmountCents:
+                    type: string
+                refundStatus:
+                    type: string
+                canCancel:
+                    type: boolean
+                canRefill:
+                    type: boolean
+                active:
+                    type: boolean
+                message:
+                    type: string
+                operationStatus:
+                    type: string
+                operationAction:
+                    type: string
+                operationRequestId:
+                    type: string
+        zcard.api.storefront.v1.SocialRetailQuoteReply:
+            type: object
+            properties:
+                quoteId:
+                    type: string
+                amountCents:
+                    type: string
+                currency:
+                    type: string
+                expiresAt:
+                    type: string
+                quantity:
+                    type: string
+        zcard.api.storefront.v1.SocialRetailQuoteRequest:
+            type: object
+            properties:
+                productId:
+                    type: string
+                schemaRevision:
+                    type: string
+                parameters:
+                    type: object
+                    additionalProperties:
+                        type: string
         zcard.api.storefront.v1.StoreBanner:
             type: object
             properties:
@@ -16190,6 +16376,9 @@ tags:
     - name: StoreReviewService
     - name: StoreSMSChannelService
     - name: StoreSMSService
+    - name: StoreSocialOrderService
+    - name: StoreSocialProductService
+      description: Retail endpoints always derive the buyer from the authenticated user realm.
     - name: StoreSupplierService
       description: |-
         StoreSupplierService 前台对接申请（个人中心）：申请成为供货商户 →

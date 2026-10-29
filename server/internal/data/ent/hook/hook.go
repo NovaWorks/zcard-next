@@ -957,6 +957,42 @@ func (f ShipmentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ShipmentMutation", m)
 }
 
+// The SocialOperationFunc type is an adapter to allow the use of ordinary
+// function as SocialOperation mutator.
+type SocialOperationFunc func(context.Context, *ent.SocialOperationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SocialOperationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SocialOperationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SocialOperationMutation", m)
+}
+
+// The SocialQuoteFunc type is an adapter to allow the use of ordinary
+// function as SocialQuote mutator.
+type SocialQuoteFunc func(context.Context, *ent.SocialQuoteMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SocialQuoteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SocialQuoteMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SocialQuoteMutation", m)
+}
+
+// The SocialTaskFunc type is an adapter to allow the use of ordinary
+// function as SocialTask mutator.
+type SocialTaskFunc func(context.Context, *ent.SocialTaskMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SocialTaskFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SocialTaskMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SocialTaskMutation", m)
+}
+
 // The StockAlertFunc type is an adapter to allow the use of ordinary
 // function as StockAlert mutator.
 type StockAlertFunc func(context.Context, *ent.StockAlertMutation) (ent.Value, error)

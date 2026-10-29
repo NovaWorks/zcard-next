@@ -141,6 +141,9 @@ func (a *zCardAdapter) RefreshProduct(ctx context.Context, source *Product) (*Pr
 		return nil, fmt.Errorf("adapter.zcard: product kind changed")
 	}
 	copy.ProductKind = normalizedProductKind(p.ProductKind)
+	if p.SocialSchema != nil {
+		copy.SocialSchema = p.SocialSchema
+	}
 	copy.Price = int64(p.Price)
 	copy.FactoryPrice = int64(p.Price)
 	copy.IsActive = p.IsActive
@@ -163,6 +166,9 @@ func (a *zCardAdapter) RefreshProduct(ctx context.Context, source *Product) (*Pr
 	}
 	if p.SMSProduct != nil {
 		copy.SMSProduct = publicSMSProduct(p.SMSProduct)
+	}
+	if p.SocialSchema != nil {
+		copy.SocialSchema = p.SocialSchema
 	}
 	return &copy, nil
 }

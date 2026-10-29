@@ -42,13 +42,14 @@
 
       <div v-if="Number(order?.paid_fee_cents) > 0" class="muted">{{ $t('含支付手续费') }} {{ formatBaseMoney(order?.paid_fee_cents || 0) }}</div>
       <!-- 自动取货：卡密直接展示（会话内记忆查询密码；失败降级提示去取货页） -->
-      <DeliveryResults v-if="!order?.items.some(i=>i.delivery_kind==='sms_activation') && delivery?.items.length" :items="delivery.items" />
+      <DeliveryResults v-if="!order?.items.some(i=>['sms_activation','social_service'].includes(i.delivery_kind || '')) && delivery?.items.length" :items="delivery.items" />
       <p v-if="Number(order?.commerce_version)===1" class="muted">{{ $t('实体商品已进入配送流程，请在订单详情查看包裹并确认收货。') }}</p>
-      <div v-if="order?.items.some(i=>i.goods_type!=='physical' && i.delivery_kind!=='sms_activation')" class="pay-fetch-hint">
+      <div v-if="order?.items.some(i=>i.goods_type!=='physical' && !['sms_activation','social_service'].includes(i.delivery_kind || ''))" class="pay-fetch-hint">
         <span>{{ ['delivered', 'completed'].includes(order?.status || '') ? $t('交付已完成，凭订单号与查询密码查看结果') : $t('已付款，正在安排交付。人工服务请在订单详情查看进度，请勿重复付款。') }}</span>
         <router-link class="btn btn-primary" :to="`/fetch?order_no=${orderNo}`">{{ $t('前往取货') }}</router-link>
       </div>
 
+      <p v-if="order?.items.some(i=>i.delivery_kind==='social_service')" class="muted">{{ $t('付款已确认，请前往订单详情查看服务进度与退款状态。') }}</p>
       <p v-if="order?.items.some(i=>i.delivery_kind==='sms_activation')" class="muted">{{ $t('正在获取号码，请前往订单详情查看短信和取消/完成状态。') }}</p>
       <p v-if="physicalOnly" class="muted">{{ $t('请保存订单访问链接，换设备可通过邮箱验证找回') }}</p>
       <p v-else class="muted">{{ $t('请保存订单号和下单时的查询密码，游客也可随时查询、取货，无需注册。') }}</p>
@@ -301,7 +302,7 @@ async function initializePayment() {
   if (phase.value === 'closed') return;
   const { data } = await fetchPaymentChannels();
   if (disposed) return;
-  channels.value = (data?.channels || []).filter(c=>!order.value?.items.some(i=>i.delivery_kind==='sms_activation') || c.driver==='wallet');
+  channels.value = (data?.channels || []).filter(c=>!order.value?.items.some(i=>['sms_activation','social_service'].includes(i.delivery_kind || '')) || c.driver==='wallet');
   await refreshBalance();
   if (disposed) return;
   const first = payOptions.value.find(o => !o.disabled);

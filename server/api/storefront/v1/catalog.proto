@@ -7,6 +7,7 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;st
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
 import "common/v1/common.proto";
 
 // StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划)。
@@ -125,6 +126,7 @@ message Product {
   FlashOffer flash_sale = 20;
   bool category_recommend = 23;
   bool category_pinned = 24;
+  google.protobuf.Struct social_schema = 55;
 
 }
 

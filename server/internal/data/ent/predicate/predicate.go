@@ -243,6 +243,15 @@ type Setting func(*sql.Selector)
 // Shipment is the predicate function for shipment builders.
 type Shipment func(*sql.Selector)
 
+// SocialOperation is the predicate function for socialoperation builders.
+type SocialOperation func(*sql.Selector)
+
+// SocialQuote is the predicate function for socialquote builders.
+type SocialQuote func(*sql.Selector)
+
+// SocialTask is the predicate function for socialtask builders.
+type SocialTask func(*sql.Selector)
+
 // StockAlert is the predicate function for stockalert builders.
 type StockAlert func(*sql.Selector)
 

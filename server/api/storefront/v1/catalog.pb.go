@@ -12,6 +12,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -456,13 +457,14 @@ type Product struct {
 	// 积分兑换价（0=常规商品；>0=积分商城商品，下单走积分兑换分支；）
 	PointsRequired int64 `protobuf:"varint,15,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
 	// 运营推荐（首页推荐位标记）
-	IsRecommend       bool        `protobuf:"varint,16,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
-	StockStatus       string      `protobuf:"bytes,17,opt,name=stock_status,json=stockStatus,proto3" json:"stock_status,omitempty"`             // current | stale | unknown
-	StockReference    int64       `protobuf:"varint,18,opt,name=stock_reference,json=stockReference,proto3" json:"stock_reference,omitempty"`   // 仅供展示的上次库存，不作为购买校验依据
-	StockCheckedAt    int64       `protobuf:"varint,19,opt,name=stock_checked_at,json=stockCheckedAt,proto3" json:"stock_checked_at,omitempty"` // 上次库存查询时间
-	FlashSale         *FlashOffer `protobuf:"bytes,20,opt,name=flash_sale,json=flashSale,proto3" json:"flash_sale,omitempty"`
-	CategoryRecommend bool        `protobuf:"varint,23,opt,name=category_recommend,json=categoryRecommend,proto3" json:"category_recommend,omitempty"`
-	CategoryPinned    bool        `protobuf:"varint,24,opt,name=category_pinned,json=categoryPinned,proto3" json:"category_pinned,omitempty"`
+	IsRecommend       bool             `protobuf:"varint,16,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
+	StockStatus       string           `protobuf:"bytes,17,opt,name=stock_status,json=stockStatus,proto3" json:"stock_status,omitempty"`             // current | stale | unknown
+	StockReference    int64            `protobuf:"varint,18,opt,name=stock_reference,json=stockReference,proto3" json:"stock_reference,omitempty"`   // 仅供展示的上次库存，不作为购买校验依据
+	StockCheckedAt    int64            `protobuf:"varint,19,opt,name=stock_checked_at,json=stockCheckedAt,proto3" json:"stock_checked_at,omitempty"` // 上次库存查询时间
+	FlashSale         *FlashOffer      `protobuf:"bytes,20,opt,name=flash_sale,json=flashSale,proto3" json:"flash_sale,omitempty"`
+	CategoryRecommend bool             `protobuf:"varint,23,opt,name=category_recommend,json=categoryRecommend,proto3" json:"category_recommend,omitempty"`
+	CategoryPinned    bool             `protobuf:"varint,24,opt,name=category_pinned,json=categoryPinned,proto3" json:"category_pinned,omitempty"`
+	SocialSchema      *structpb.Struct `protobuf:"bytes,55,opt,name=social_schema,json=socialSchema,proto3" json:"social_schema,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -749,6 +751,13 @@ func (x *Product) GetCategoryPinned() bool {
 	return false
 }
 
+func (x *Product) GetSocialSchema() *structpb.Struct {
+	if x != nil {
+		return x.SocialSchema
+	}
+	return nil
+}
+
 // ProductControl 自定义控件定义（下单表单渲染）。
 type ProductControl struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1032,7 +1041,7 @@ var File_storefront_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\x1bstorefront/v1/catalog.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x16common/v1/common.proto\"\\\n" +
+	"\x1bstorefront/v1/catalog.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x16common/v1/common.proto\"\\\n" +
 	"\x13ListCategoriesReply\x12E\n" +
 	"\n" +
 	"categories\x18\x01 \x03(\v2%.zcard.api.storefront.v1.CategoryItemR\n" +
@@ -1065,7 +1074,7 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"priceCents\x12\x15\n" +
 	"\x06end_at\x18\x02 \x01(\x03R\x05endAt\x12\x1c\n" +
 	"\tremaining\x18\x03 \x01(\x05R\tremaining\x12$\n" +
-	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\xa6\f\n" +
+	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\xe4\f\n" +
 	"\aProduct\x12)\n" +
 	"\x10product_property\x18G \x01(\tR\x0fproductProperty\x12,\n" +
 	"\x0ftrack_inventory\x18H \x01(\bH\x00R\x0etrackInventory\x88\x01\x01\x12(\n" +
@@ -1110,7 +1119,8 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\n" +
 	"flash_sale\x18\x14 \x01(\v2#.zcard.api.storefront.v1.FlashOfferR\tflashSale\x12-\n" +
 	"\x12category_recommend\x18\x17 \x01(\bR\x11categoryRecommend\x12'\n" +
-	"\x0fcategory_pinned\x18\x18 \x01(\bR\x0ecategoryPinned\x1a=\n" +
+	"\x0fcategory_pinned\x18\x18 \x01(\bR\x0ecategoryPinned\x12<\n" +
+	"\rsocial_schema\x187 \x01(\v2\x17.google.protobuf.StructR\fsocialSchema\x1a=\n" +
 	"\x0fSmsProductEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x12\n" +
@@ -1180,7 +1190,8 @@ var file_storefront_v1_catalog_proto_goTypes = []any{
 	(*ReviewItem)(nil),          // 8: zcard.api.storefront.v1.ReviewItem
 	(*Sku)(nil),                 // 9: zcard.api.storefront.v1.Sku
 	nil,                         // 10: zcard.api.storefront.v1.Product.SmsProductEntry
-	(*emptypb.Empty)(nil),       // 11: google.protobuf.Empty
+	(*structpb.Struct)(nil),     // 11: google.protobuf.Struct
+	(*emptypb.Empty)(nil),       // 12: google.protobuf.Empty
 }
 var file_storefront_v1_catalog_proto_depIdxs = []int32{
 	1,  // 0: zcard.api.storefront.v1.ListCategoriesReply.categories:type_name -> zcard.api.storefront.v1.CategoryItem
@@ -1190,18 +1201,19 @@ var file_storefront_v1_catalog_proto_depIdxs = []int32{
 	8,  // 4: zcard.api.storefront.v1.Product.reviews:type_name -> zcard.api.storefront.v1.ReviewItem
 	9,  // 5: zcard.api.storefront.v1.Product.skus:type_name -> zcard.api.storefront.v1.Sku
 	5,  // 6: zcard.api.storefront.v1.Product.flash_sale:type_name -> zcard.api.storefront.v1.FlashOffer
-	5,  // 7: zcard.api.storefront.v1.Sku.flash_sale:type_name -> zcard.api.storefront.v1.FlashOffer
-	2,  // 8: zcard.api.storefront.v1.StoreCatalogService.ListProducts:input_type -> zcard.api.storefront.v1.ListProductsRequest
-	4,  // 9: zcard.api.storefront.v1.StoreCatalogService.GetProduct:input_type -> zcard.api.storefront.v1.GetProductRequest
-	11, // 10: zcard.api.storefront.v1.StoreCatalogService.ListCategories:input_type -> google.protobuf.Empty
-	3,  // 11: zcard.api.storefront.v1.StoreCatalogService.ListProducts:output_type -> zcard.api.storefront.v1.ListProductsReply
-	6,  // 12: zcard.api.storefront.v1.StoreCatalogService.GetProduct:output_type -> zcard.api.storefront.v1.Product
-	0,  // 13: zcard.api.storefront.v1.StoreCatalogService.ListCategories:output_type -> zcard.api.storefront.v1.ListCategoriesReply
-	11, // [11:14] is the sub-list for method output_type
-	8,  // [8:11] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	11, // 7: zcard.api.storefront.v1.Product.social_schema:type_name -> google.protobuf.Struct
+	5,  // 8: zcard.api.storefront.v1.Sku.flash_sale:type_name -> zcard.api.storefront.v1.FlashOffer
+	2,  // 9: zcard.api.storefront.v1.StoreCatalogService.ListProducts:input_type -> zcard.api.storefront.v1.ListProductsRequest
+	4,  // 10: zcard.api.storefront.v1.StoreCatalogService.GetProduct:input_type -> zcard.api.storefront.v1.GetProductRequest
+	12, // 11: zcard.api.storefront.v1.StoreCatalogService.ListCategories:input_type -> google.protobuf.Empty
+	3,  // 12: zcard.api.storefront.v1.StoreCatalogService.ListProducts:output_type -> zcard.api.storefront.v1.ListProductsReply
+	6,  // 13: zcard.api.storefront.v1.StoreCatalogService.GetProduct:output_type -> zcard.api.storefront.v1.Product
+	0,  // 14: zcard.api.storefront.v1.StoreCatalogService.ListCategories:output_type -> zcard.api.storefront.v1.ListCategoriesReply
+	12, // [12:15] is the sub-list for method output_type
+	9,  // [9:12] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_catalog_proto_init() }

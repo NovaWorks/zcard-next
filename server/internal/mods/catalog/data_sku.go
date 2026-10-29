@@ -50,7 +50,7 @@ func (r *ProductRepoImpl) createSku(ctx context.Context, in SkuInput) (*ent.Prod
 	if e != nil {
 		return nil, e
 	}
-	if parent.ProductKind == "sms_channel" {
+	if parent.ProductKind == "sms_channel" || parent.DeliveryKind == "social_service" {
 		return nil, fmt.Errorf("渠道接码不生成 SKU，请在商品页面选择选项")
 	}
 	if parent.GoodsType == "physical" {
