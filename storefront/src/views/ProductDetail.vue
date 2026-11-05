@@ -23,7 +23,12 @@
 
       <!-- 右栏：购买区 -->
       <div class="pd-buy">
-<p v-if="physicalProduct" class="muted">{{ $t('实体商品 ·') }} {{p.shipping_mode==='fixed'?$t('运费 {0} / 商品 / 订单', [formatMoney(p.shipping_fee_cents || 0)]):$t('包邮')}}</p>
+<p v-if="physicalProduct" class="muted">
+  {{ $t('实体商品 ·') }}
+  <template v-if="p.shipping_mode === 'fixed'">{{ $t('运费 {0} / 商品 / 订单', [formatMoney(p.shipping_fee_cents || 0)]) }}</template>
+  <template v-else-if="p.shipping_mode === 'collect'">{{ $t('运费到付') }}</template>
+  <template v-else>{{ $t('包邮') }}</template>
+</p>
         <h1 class="pd-name">{{ p.name }}</h1>
         <div class="pd-sub">
           <span class="tag">{{ physicalProduct ? $t('实体商品') : manualDelivery ? $t('人工服务') : stockTypeLabel(p.stock_type) }}</span>

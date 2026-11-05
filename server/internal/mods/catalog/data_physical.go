@@ -73,7 +73,7 @@ func (r *ProductRepoImpl) validatePhysicalProduct(ctx context.Context, p *ent.Pr
 			return fmt.Errorf("重新开启库存管理前，请核对并填写可售库存")
 		}
 	}
-	mode := "free"
+	mode := shipping.ModeFree
 	fee := int64(0)
 	countries := in.ShippingCountries
 	if p != nil {
@@ -89,16 +89,16 @@ func (r *ProductRepoImpl) validatePhysicalProduct(ctx context.Context, p *ent.Pr
 	if in.ShippingFee != nil {
 		fee = *in.ShippingFee
 	}
-	if mode != "free" && mode != "fixed" {
+	if mode != shipping.ModeFree && mode != shipping.ModeFixed && mode != shipping.ModeCollect {
 		return fmt.Errorf("运费方式无效")
 	}
 	if !money.ValidCents(fee) {
 		return fmt.Errorf("运费金额无效")
 	}
-	if mode == "free" {
+	if mode != shipping.ModeFixed {
 		fee = 0
 	}
-	if mode == "fixed" && fee == 0 {
+	if mode == shipping.ModeFixed && fee == 0 {
 		return fmt.Errorf("固定运费必须大于0；免运费请选择包邮")
 	}
 	if len(countries) == 0 {

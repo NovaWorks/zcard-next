@@ -236,13 +236,15 @@ func (x *OrderItemInput) GetQuantity() int32 {
 }
 
 type CreateOrderReply struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	OrderAccessToken string                 `protobuf:"bytes,6,opt,name=order_access_token,json=orderAccessToken,proto3" json:"order_access_token,omitempty"`
-	ShippingCents    int64                  `protobuf:"varint,4,opt,name=shipping_cents,json=shippingCents,proto3" json:"shipping_cents,omitempty"`
-	QuoteKey         string                 `protobuf:"bytes,5,opt,name=quote_key,json=quoteKey,proto3" json:"quote_key,omitempty"`
-	OrderNo          string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	TotalCents       int64                  `protobuf:"varint,2,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
-	ExpiresAt        int64                  `protobuf:"varint,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// At least one item has shipping payable to the carrier on delivery.
+	ShippingCollect  bool   `protobuf:"varint,7,opt,name=shipping_collect,json=shippingCollect,proto3" json:"shipping_collect,omitempty"`
+	OrderAccessToken string `protobuf:"bytes,6,opt,name=order_access_token,json=orderAccessToken,proto3" json:"order_access_token,omitempty"`
+	ShippingCents    int64  `protobuf:"varint,4,opt,name=shipping_cents,json=shippingCents,proto3" json:"shipping_cents,omitempty"`
+	QuoteKey         string `protobuf:"bytes,5,opt,name=quote_key,json=quoteKey,proto3" json:"quote_key,omitempty"`
+	OrderNo          string `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	TotalCents       int64  `protobuf:"varint,2,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
+	ExpiresAt        int64  `protobuf:"varint,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -275,6 +277,13 @@ func (x *CreateOrderReply) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateOrderReply.ProtoReflect.Descriptor instead.
 func (*CreateOrderReply) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_order_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CreateOrderReply) GetShippingCollect() bool {
+	if x != nil {
+		return x.ShippingCollect
+	}
+	return false
 }
 
 func (x *CreateOrderReply) GetOrderAccessToken() string {
@@ -537,6 +546,7 @@ func (x *GetOrderReply) GetPaidFeeCents() int64 {
 
 type OrderItemReply struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
+	ShippingCollect   bool                   `protobuf:"varint,32,opt,name=shipping_collect,json=shippingCollect,proto3" json:"shipping_collect,omitempty"`
 	DeliveryKind      string                 `protobuf:"bytes,30,opt,name=delivery_kind,json=deliveryKind,proto3" json:"delivery_kind,omitempty"`
 	SmsProduct        map[string]string      `protobuf:"bytes,31,rep,name=sms_product,json=smsProduct,proto3" json:"sms_product,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	GoodsType         string                 `protobuf:"bytes,11,opt,name=goods_type,json=goodsType,proto3" json:"goods_type,omitempty"`
@@ -588,6 +598,13 @@ func (x *OrderItemReply) ProtoReflect() protoreflect.Message {
 // Deprecated: Use OrderItemReply.ProtoReflect.Descriptor instead.
 func (*OrderItemReply) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_order_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *OrderItemReply) GetShippingCollect() bool {
+	if x != nil {
+		return x.ShippingCollect
+	}
+	return false
 }
 
 func (x *OrderItemReply) GetDeliveryKind() string {
@@ -1927,8 +1944,9 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\bquantity\x18\x03 \x01(\x05B\x03\xe0A\x02R\bquantity\x1aA\n" +
 	"\x13ControlAnswersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xdf\x01\n" +
-	"\x10CreateOrderReply\x12,\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x8a\x02\n" +
+	"\x10CreateOrderReply\x12)\n" +
+	"\x10shipping_collect\x18\a \x01(\bR\x0fshippingCollect\x12,\n" +
 	"\x12order_access_token\x18\x06 \x01(\tR\x10orderAccessToken\x12%\n" +
 	"\x0eshipping_cents\x18\x04 \x01(\x03R\rshippingCents\x12\x1b\n" +
 	"\tquote_key\x18\x05 \x01(\tR\bquoteKey\x12\x19\n" +
@@ -1963,8 +1981,9 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\x0epaid_fee_cents\x18\b \x01(\x03R\fpaidFeeCents\x1aB\n" +
 	"\x14ShippingAddressEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xc1\x06\n" +
-	"\x0eOrderItemReply\x12#\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xec\x06\n" +
+	"\x0eOrderItemReply\x12)\n" +
+	"\x10shipping_collect\x18  \x01(\bR\x0fshippingCollect\x12#\n" +
 	"\rdelivery_kind\x18\x1e \x01(\tR\fdeliveryKind\x12X\n" +
 	"\vsms_product\x18\x1f \x03(\v27.zcard.api.storefront.v1.OrderItemReply.SmsProductEntryR\n" +
 	"smsProduct\x12\x1d\n" +

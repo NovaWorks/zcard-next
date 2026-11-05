@@ -9,6 +9,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -95,7 +96,7 @@ func (s *StoreOrderService) createOrder(ctx context.Context, req *storefrontv1.C
 	if replay, e := s.uc.ReplayOrder(ctx, input); e != nil {
 		return nil, mapOrderErr(e)
 	} else if replay != nil {
-		return &storefrontv1.CreateOrderReply{OrderNo: replay.OrderNo, TotalCents: replay.TotalCents, ShippingCents: replay.ShippingCents, ExpiresAt: replay.ExpiresAt.Unix(), OrderAccessToken: replay.OrderAccessToken}, nil
+		return &storefrontv1.CreateOrderReply{OrderNo: replay.OrderNo, TotalCents: replay.TotalCents, ShippingCents: replay.ShippingCents, ShippingCollect: replay.ShippingCollect, ExpiresAt: replay.ExpiresAt.Unix(), OrderAccessToken: replay.OrderAccessToken}, nil
 	}
 	if !quote && s.captcha != nil && claims == nil {
 		if err := s.captcha.VerifyScene(ctx, captcha.SceneOrder, req.GetCaptchaId(), req.GetCaptchaCode()); err != nil {
@@ -107,7 +108,7 @@ func (s *StoreOrderService) createOrder(ctx context.Context, req *storefrontv1.C
 		return nil, mapOrderErr(err)
 	}
 	return &storefrontv1.CreateOrderReply{
-		OrderNo: res.OrderNo, TotalCents: res.TotalCents, ShippingCents: res.ShippingCents, QuoteKey: res.QuoteKey, ExpiresAt: res.ExpiresAt.Unix(), OrderAccessToken: res.OrderAccessToken,
+		OrderNo: res.OrderNo, TotalCents: res.TotalCents, ShippingCents: res.ShippingCents, ShippingCollect: res.ShippingCollect, QuoteKey: res.QuoteKey, ExpiresAt: res.ExpiresAt.Unix(), OrderAccessToken: res.OrderAccessToken,
 	}, nil
 }
 
@@ -194,7 +195,10 @@ func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetO
 		if it.SkuName != "" {
 			name += " / " + it.SkuName
 		}
-		reply.Items = append(reply.Items, &storefrontv1.OrderItemReply{DeliveryKind: it.DeliveryKind, SmsProduct: it.SmsProduct, GoodsType: it.GoodsType, PaidCents: it.PaidAmount, ShippingCents: it.ShippingAmount, ShippedQuantity: it.ShippedQuantity, ReceivedQuantity: it.ReceivedQuantity, CanceledQuantity: it.CanceledQuantity, ReturnedQuantity: it.ReturnedQuantity, Id: it.ID, ProductId: it.ProductID, ProductName: name, Quantity: it.Quantity, UnitPriceCents: it.UnitPrice, AmountCents: it.Amount, SkuName: it.SkuName, FulfillmentType: string(it.FulfillmentType), FulfillmentStatus: it.FulfillmentStatus, FormAnswersJson: answersJSON(it.FormAnswers)})
+		reply.Items = append(reply.Items, &storefrontv1.OrderItemReply{
+			ShippingCollect: shippingCollectProducts(o)[strconv.FormatUint(it.ProductID, 10)] == true,
+			DeliveryKind:    it.DeliveryKind, SmsProduct: it.SmsProduct, GoodsType: it.GoodsType, PaidCents: it.PaidAmount, ShippingCents: it.ShippingAmount, ShippedQuantity: it.ShippedQuantity, ReceivedQuantity: it.ReceivedQuantity, CanceledQuantity: it.CanceledQuantity, ReturnedQuantity: it.ReturnedQuantity, Id: it.ID, ProductId: it.ProductID, ProductName: name, Quantity: it.Quantity, UnitPriceCents: it.UnitPrice, AmountCents: it.Amount, SkuName: it.SkuName, FulfillmentType: string(it.FulfillmentType), FulfillmentStatus: it.FulfillmentStatus, FormAnswersJson: answersJSON(it.FormAnswers),
+		})
 	}
 	refunds, e := data.Client(ctx, s.uc.Data).RefundOrder.Query().Where(refundorder.OrderID(o.ID), refundorder.StatusEQ(refundorder.StatusSucceeded)).All(ctx)
 	if e != nil {
@@ -509,6 +513,7 @@ func toAdminOrderPB(o *ent.Order, items []*ent.OrderItem, lines []*ent.OrderAmou
 	}
 	for _, it := range items {
 		pb := &adminv1.AdminOrderItem{InventoryTracked: proto.Bool(it.InventoryTracked), GoodsType: it.GoodsType, PaidCents: it.PaidAmount, ShippingCents: it.ShippingAmount, RefundedCents: it.RefundedAmount, RefundedShippingCents: it.RefundedShipping, ShippedQuantity: it.ShippedQuantity, ReceivedQuantity: it.ReceivedQuantity, CanceledQuantity: it.CanceledQuantity, ReturnedQuantity: it.ReturnedQuantity,
+			ShippingCollect: shippingCollectProducts(o)[strconv.FormatUint(it.ProductID, 10)] == true,
 			FormAnswersJson: answersJSON(it.FormAnswers), AssignedAdminId: it.AssignedAdminID,
 			ProductId: it.ProductID, SkuId: it.SkuID, Quantity: it.Quantity,
 			UnitPriceCents: it.UnitPrice, AmountCents: it.Amount,

@@ -2,14 +2,16 @@ package order
 
 import (
 	"context"
+	"testing"
+	"time"
+
+	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	entorder "github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/coupon"
-	"testing"
-	"time"
 )
 
 func physicalAddress() map[string]string {
@@ -128,6 +130,59 @@ func TestPhysicalRejectStaleQuoteAndAtomicOversell(t *testing.T) {
 	bad.QuoteOnly = true
 	if _, e := uc.CreateOrder(ctx, bad); e == nil {
 		t.Fatal("foreign region accepted")
+	}
+}
+
+func TestPhysicalShippingCollectQuoteAndSnapshot(t *testing.T) {
+	ctx := context.Background()
+	d, uc := seedPhysical(t)
+	fixed := d.Client.Product.Create().SetName("Fixed shipping").SetSlug("fixed-shipping").SetPrice(700).
+		SetGoodsType("physical").SetShippingMode("fixed").SetShippingFee(200).
+		SetShippingCountries([]string{"US"}).SetPhysicalStock(2).SetStatus(1).SaveX(ctx)
+	d.Client.Product.UpdateOneID(1).SetShippingMode("free").ExecX(ctx)
+	in := physicalInput()
+	in.IdempotencyKey = "shipping-collect-order"
+	in.Items = append(in.Items, OrderItemInput{ProductID: fixed.ID, Quantity: 1})
+	in = quotePhysical(t, uc, in)
+	// Free and collect have the same online amount. A change still requires a new quote.
+	d.Client.Product.UpdateOneID(1).SetShippingMode("collect").ExecX(ctx)
+	if _, err := uc.CreateOrder(ctx, in); err == nil {
+		t.Fatal("accepted a free-shipping quote for a collect shipment")
+	}
+
+	in.QuoteOnly = true
+	quote, err := uc.CreateOrder(ctx, in)
+	if err != nil || !quote.ShippingCollect || quote.TotalCents != 1900 || quote.ShippingCents != 200 {
+		t.Fatalf("incorrect mixed shipping quote: %+v, %v", quote, err)
+	}
+	in.QuoteOnly = false
+	in.QuoteKey = quote.QuoteKey
+	created, err := uc.CreateOrder(ctx, in)
+	if err != nil || !created.ShippingCollect || created.TotalCents != quote.TotalCents {
+		t.Fatalf("incorrect order: %+v, %v", created, err)
+	}
+	d.Client.Product.UpdateOneID(1).SetShippingMode("free").ExecX(ctx)
+	replay, err := uc.ReplayOrder(ctx, in)
+	if err != nil || replay == nil || replay.OrderNo != created.OrderNo || !replay.ShippingCollect {
+		t.Fatalf("replay lost original shipping terms: %+v, %v", replay, err)
+	}
+	buyer, err := NewStoreOrderService(uc, nil).GetOrder(ctx, &storefrontv1.GetOrderRequest{
+		OrderNo: created.OrderNo, QueryPassword: in.QueryPassword,
+	})
+	if err != nil || len(buyer.Items) != 2 {
+		t.Fatalf("cannot read order: %+v, %v", buyer, err)
+	}
+	for _, item := range buyer.Items {
+		if item.ShippingCollect != (item.ProductId == 1) || item.ShippingCollect && item.ShippingCents != 0 {
+			t.Fatalf("wrong buyer shipping snapshot: %+v", item)
+		}
+	}
+	row := d.Client.Order.Query().OnlyX(ctx)
+	items := d.Client.OrderItem.Query().AllX(ctx)
+	for _, item := range toAdminOrderPB(row, items, nil, nil, nil, nil).Items {
+		if item.ShippingCollect != (item.ProductId == 1) || item.ShippingCollect && item.ShippingCents != 0 {
+			t.Fatalf("wrong admin shipping snapshot: %+v", item)
+		}
 	}
 }
 func TestPhysicalExpiryAndZeroPayable(t *testing.T) {

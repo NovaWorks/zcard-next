@@ -506,6 +506,7 @@ func (x *AdminOrder) GetExpiryReason() string {
 
 type AdminOrderItem struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
+	ShippingCollect       bool                   `protobuf:"varint,40,opt,name=shipping_collect,json=shippingCollect,proto3" json:"shipping_collect,omitempty"`
 	GoodsType             string                 `protobuf:"bytes,30,opt,name=goods_type,json=goodsType,proto3" json:"goods_type,omitempty"`
 	PaidCents             int64                  `protobuf:"varint,31,opt,name=paid_cents,json=paidCents,proto3" json:"paid_cents,omitempty"`
 	ShippingCents         int64                  `protobuf:"varint,32,opt,name=shipping_cents,json=shippingCents,proto3" json:"shipping_cents,omitempty"`
@@ -567,6 +568,13 @@ func (x *AdminOrderItem) ProtoReflect() protoreflect.Message {
 // Deprecated: Use AdminOrderItem.ProtoReflect.Descriptor instead.
 func (*AdminOrderItem) Descriptor() ([]byte, []int) {
 	return file_admin_v1_order_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *AdminOrderItem) GetShippingCollect() bool {
+	if x != nil {
+		return x.ShippingCollect
+	}
+	return false
 }
 
 func (x *AdminOrderItem) GetGoodsType() string {
@@ -1093,8 +1101,9 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"\rexpiry_reason\x18\x13 \x01(\tR\fexpiryReason\x1aB\n" +
 	"\x14ShippingAddressEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xf6\b\n" +
-	"\x0eAdminOrderItem\x12\x1d\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa1\t\n" +
+	"\x0eAdminOrderItem\x12)\n" +
+	"\x10shipping_collect\x18( \x01(\bR\x0fshippingCollect\x12\x1d\n" +
 	"\n" +
 	"goods_type\x18\x1e \x01(\tR\tgoodsType\x12\x1d\n" +
 	"\n" +

@@ -10,6 +10,12 @@ import (
 	"unicode/utf8"
 )
 
+const (
+	ModeFree    = "free"
+	ModeFixed   = "fixed"
+	ModeCollect = "collect"
+)
+
 //go:embed regions.json
 var RegionsJSON []byte
 var Regions map[string]map[string]string

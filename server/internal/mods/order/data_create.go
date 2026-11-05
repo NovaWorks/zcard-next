@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/shipping"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -144,6 +145,7 @@ type OrderItemInput struct {
 type CreateOrderResult struct {
 	OrderAccessToken string
 	ShippingCents    int64
+	ShippingCollect  bool
 	QuoteKey         string
 	OrderNo          string
 	TotalCents       int64
@@ -188,6 +190,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 	hasPhysical := false
 	hasVirtual := false
 	shippingByProduct := map[uint64]int64{}
+	collectProducts := map[string]any{}
 	var shippingTotal int64
 	for _, item := range in.Items {
 		p, err := data.ProductForDelivery(ctx, data.Client(ctx, uc.Data), in.SubsiteID, item.ProductID)
@@ -263,8 +266,11 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			}
 			if _, ok := shippingByProduct[p.ID]; !ok {
 				fee := int64(0)
-				if p.ShippingMode == "fixed" {
+				switch p.ShippingMode {
+				case shipping.ModeFixed:
 					fee = p.ShippingFee
+				case shipping.ModeCollect:
+					collectProducts[strconv.FormatUint(p.ID, 10)] = true
 				}
 				if !money.ValidCents(fee) {
 					return nil, fmt.Errorf("order.FORM_INVALID: 商品运费无效")
@@ -624,7 +630,11 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		for _, r := range results {
 			quotePrices = append(quotePrices, int64(r.res.Total))
 		}
-		quoteBytes, _ := json.Marshal([]any{requestHash, totalCents, shippingTotal, couponValue, quotePrices, shippingByProduct, revisions})
+		quoteParts := []any{requestHash, totalCents, shippingTotal, couponValue, quotePrices, shippingByProduct, revisions}
+		if len(collectProducts) > 0 {
+			quoteParts = append(quoteParts, collectProducts)
+		}
+		quoteBytes, _ := json.Marshal(quoteParts)
 		quoteKey := fmt.Sprintf("%x", sha256.Sum256(quoteBytes))
 		if hasPhysical && !in.QuoteOnly && in.QuoteKey != quoteKey {
 			return fmt.Errorf("order.FORM_INVALID: 请重新确认订单金额和运费")
@@ -675,6 +685,9 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			}
 		}
 		extra := map[string]any{}
+		if len(collectProducts) > 0 {
+			extra[shippingCollectProductsKey] = collectProducts
+		}
 		if len(flashReservations) > 0 {
 			extra["flash_reservations"] = flashReservations
 		}
@@ -907,7 +920,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			Save(txCtx)
 
 		if in.QuoteOnly {
-			result = &CreateOrderResult{TotalCents: totalCents, ShippingCents: shippingTotal, QuoteKey: quoteKey}
+			result = &CreateOrderResult{TotalCents: totalCents, ShippingCents: shippingTotal, ShippingCollect: len(collectProducts) > 0, QuoteKey: quoteKey}
 			return errQuoteRollback
 		}
 		if hasPhysical && totalCents == 0 {
@@ -937,6 +950,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		result = &CreateOrderResult{
 			OrderAccessToken: accessToken,
 			OrderNo:          orderNo,
+			ShippingCollect:  len(collectProducts) > 0,
 			ShippingCents:    shippingTotal, QuoteKey: quoteKey,
 			TotalCents: totalCents,
 			ExpiresAt:  exp,

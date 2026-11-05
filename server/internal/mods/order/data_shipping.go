@@ -21,6 +21,13 @@ import (
 
 var errQuoteRollback = errors.New("quote rollback")
 
+const shippingCollectProductsKey = "shipping_collect_products"
+
+func shippingCollectProducts(o *ent.Order) map[string]any {
+	products, _ := o.Extra[shippingCollectProductsKey].(map[string]any)
+	return products
+}
+
 func allocateCents(total, before, after, base int64) int64 {
 	if base <= 0 {
 		return 0
@@ -107,7 +114,7 @@ func (uc *OrderUsecase) ReplayOrder(ctx context.Context, in CreateOrderInput) (*
 
 // A token is re-issued only for the same unpredictable request key and complete payload.
 func (uc *OrderUsecase) replayOrderResult(prev *ent.Order, in CreateOrderInput) (*CreateOrderResult, error) {
-	result := &CreateOrderResult{OrderNo: prev.OrderNo, TotalCents: prev.TotalAmount, ShippingCents: prev.ShippingAmount, ExpiresAt: prev.ExpiredAt}
+	result := &CreateOrderResult{OrderNo: prev.OrderNo, TotalCents: prev.TotalAmount, ShippingCents: prev.ShippingAmount, ShippingCollect: len(shippingCollectProducts(prev)) > 0, ExpiresAt: prev.ExpiredAt}
 	if prev.OrderAccessTokenHash != "" {
 		if !orderaccess.SecureRequestKey(in.IdempotencyKey) || prev.RequestHash == "" || prev.RequestHash != orderRequestHash(in) || uc.AccessCipher == nil {
 			return nil, fmt.Errorf("order.FORM_INVALID: 无法恢复此订单授权，请通过邮箱查询订单")

@@ -3,13 +3,15 @@ import { uiText, t as $t } from '@/i18n';
 
 import { computed, ref } from "vue";
 import { api, formatMoney } from "@/api/client";
-import { getOrderAccessToken } from "@/api";
+import { getOrderAccessToken, type OrderDetail } from "@/api";
 import { shippingStatus, shipments, addressLines } from "../../../packages/shipping";
-const props = defineProps<{ order: any; password: string }>();
+const props = defineProps<{ order: OrderDetail; password: string }>();
 const emit = defineEmits<{ refresh: [] }>();
 const busy = ref(false);
 const error = ref("");
 const packages = computed(() => shipments(props.order.shipments_json));
+const physicalItems = computed(() => (props.order.items || []).filter(item => item.goods_type === "physical"));
+const hasCollectShipping = computed(() => physicalItems.value.some(item => item.shipping_collect));
 async function receive(id: number) {
   if (busy.value || !confirm($t("确认已收到此包裹中的商品？"))) return;
   busy.value = true;
@@ -32,9 +34,11 @@ async function receive(id: number) {
     <h3>{{ $t('实体配送 ·') }} {{ $t(shippingStatus(order.shipping_status) || '') }}</h3>
     <p>{{ order.shipping_address?.name }} · {{ order.shipping_address?.phone }}</p>
     <p v-for="(line, index) in addressLines(order.shipping_address || {})" :key="index">{{ line }}</p>
-    <p>{{ $t('运费') }} {{ formatMoney(order.shipping_cents || 0) }}</p>
-    <p v-for="it in (order.items || []).filter((i: any) => i.goods_type === 'physical')" :key="it.id" class="muted">
+    <p>{{ $t(hasCollectShipping ? '在线支付运费' : '运费') }} {{ formatMoney(order.shipping_cents || 0) }}</p>
+    <p v-if="hasCollectShipping">{{ $t('到付商品的运费由快递在收货时收取。') }}</p>
+    <p v-for="it in physicalItems" :key="it.id" class="muted">
       {{ it.product_name }}{{ $t('：购买') }} {{ it.quantity }} {{ $t('件 · 已发') }} {{ it.shipped_quantity || 0 }} {{ $t('件 · 已收') }} {{ it.received_quantity || 0 }} {{ $t('件') }}<span v-if="it.canceled_quantity"> {{ $t('· 已取消') }} {{ it.canceled_quantity }} {{ $t('件') }}</span><span v-if="it.returned_quantity"> {{ $t('· 已退货') }} {{ it.returned_quantity }} {{ $t('件') }}</span>
+      <strong v-if="it.shipping_collect"> · {{ $t('运费到付') }}</strong>
     </p>
     <p v-if="!packages.length" class="muted">
       {{

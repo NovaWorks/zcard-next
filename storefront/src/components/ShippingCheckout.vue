@@ -214,9 +214,10 @@ defineExpose({ open });
           >{{ $t('优惠后商品金额') }} {{
             formatMoney(Number(quote.total_cents || 0) - Number(quote.shipping_cents || 0))
           }}</span
-        ><span>{{ $t('运费') }} {{ formatMoney(quote.shipping_cents || 0) }}</span
+        ><span>{{ $t(quote.shipping_collect ? '在线支付运费' : '运费') }} {{ formatMoney(quote.shipping_cents || 0) }}</span
         ><strong>{{ $t('合计') }} {{ formatMoney(quote.total_cents || 0) }}</strong
-        ><small class="muted">{{ $t('支付渠道手续费将在支付前单独显示。') }}</small>
+        ><span v-if="quote.shipping_collect">{{ $t('到付商品的运费由快递在收货时收取。') }}</span>
+        <small class="muted">{{ $t('支付渠道手续费将在支付前单独显示。') }}</small>
       </div>
       <button
         v-if="quote"

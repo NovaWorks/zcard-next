@@ -82,7 +82,7 @@ export interface ListProductsReply {
 
 export interface CreateOrderReply {
  order_access_token?:string;
- shipping_cents?:number;quote_key?:string;
+ shipping_cents?:number;shipping_collect?:boolean;quote_key?:string;
   order_no: string;
   total_cents: number;
   expires_at: number;
@@ -411,7 +411,7 @@ export function listGuestOrders(contact: string) {
 export interface OrderItemReply {
  social_schema?:SocialSchema;
  delivery_kind?:string; sms_product?:Record<string,string>;
- goods_type?:string;paid_cents?:number;shipping_cents?:number;shipped_quantity?:number;received_quantity?:number;canceled_quantity?:number;returned_quantity?:number;
+ goods_type?:string;paid_cents?:number;shipping_cents?:number;shipping_collect?:boolean;shipped_quantity?:number;received_quantity?:number;canceled_quantity?:number;returned_quantity?:number;
  id?: number; sku_name?: string; fulfillment_type?: string; fulfillment_status?: string; form_answers_json?: string; amount_cents?: number;
   product_id: number;
   product_name: string;

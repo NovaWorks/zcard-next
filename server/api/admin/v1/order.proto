@@ -90,6 +90,7 @@ message AdminOrder {
 }
 
 message AdminOrderItem {
+  bool shipping_collect = 40;
   string goods_type = 30;
   int64 paid_cents = 31;
   int64 shipping_cents = 32;

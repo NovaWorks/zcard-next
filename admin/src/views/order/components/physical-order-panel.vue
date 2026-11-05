@@ -38,6 +38,9 @@ const carrier = ref("");
 const tracking = ref("");
 let shipKey = "";
 const packages = computed(() => shipments(props.order.shipments_json));
+const collectItemIds = computed(() => new Set(
+  (props.order.items || []).filter((item: any) => item.shipping_collect).map((item: any) => String(item.id)),
+));
 const editable = computed(() =>
   [
     "paid",
@@ -313,8 +316,11 @@ async function restock() {
   <NCard title="实体配送" size="small" class="my-16px">
     <NSpace class="mb-12px"
       ><NTag type="info">{{ shippingStatus(order.shipping_status) }}</NTag
-      ><span>运费 {{ formatMoney(order.shipping_cents || 0) }}</span></NSpace
+      ><span>{{ collectItemIds.size ? "在线支付运费" : "运费" }} {{ formatMoney(order.shipping_cents || 0) }}</span></NSpace
     >
+    <NAlert v-if="collectItemIds.size" type="info" class="mb-12px">
+      本单含运费到付商品。请按商品项核对，发货时向承运公司选择运费到付。
+    </NAlert>
     <p class="break-all">{{ order.shipping_address?.name }} · {{ order.shipping_address?.phone }}</p>
     <p v-for="(line, index) in addressLines(order.shipping_address || {})" :key="index" class="break-all">{{ line }}</p>
     <NButton
@@ -359,6 +365,7 @@ async function restock() {
       <p v-for="(qty, id) in p.items" :key="id">
         {{ refundItemName(id) }}
         × {{ qty }}
+        <strong v-if="collectItemIds.has(String(id))"> · 运费到付</strong>
       </p>
       <NSpace v-if="checkAuth('order:deliver') && p.status === 'shipped'"
         ><NButton size="small" @click="editPackage(p)">更正快递信息</NButton
@@ -424,7 +431,7 @@ async function restock() {
             Number(it.quantity) -
             Number(it.canceled_quantity || 0) -
             Number(it.shipped_quantity || 0)
-          }}</NCheckbox
+          }}<strong v-if="it.shipping_collect"> · 运费到付</strong></NCheckbox
         >
       </div>
       <div class="shipping-grid">

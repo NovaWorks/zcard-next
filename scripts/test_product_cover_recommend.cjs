@@ -20,7 +20,7 @@ const server = http.createServer((req, res) => {
       const errors = [], writes = [];
       let failSave = false, permissions = ['*'];
       const baseProduct = { name: '补封面测试商品', category_id: 7, product_kind: 'standard', cover: '', images: ['/uploads/original-detail.png'], price_cents: 1000, factory_price_cents: 200, points_required: 8, status: 1, stock_type: 'card', fulfillment_mode: 'auto', manual_stock: -1, stock_visible: true, dedup: true, is_recommend: true };
-      const products = [{ ...baseProduct, id: 1 }, { ...baseProduct, id: 2, name: '锁定商品', is_locked: true }, { ...baseProduct, id: 3, name: '社交服务', product_kind: 'social_service', price_cents: 0, factory_price_cents: 0, points_required: 0 }];
+      const products = [{ ...baseProduct, id: 1 }, { ...baseProduct, id: 2, name: '锁定商品', is_locked: true, goods_type: 'physical', track_inventory: true, physical_stock: 25, shipping_mode: 'collect', shipping_countries: ['CN'], description: '<p>商品描述样例</p>' }, { ...baseProduct, id: 3, name: '社交服务', product_kind: 'social_service', price_cents: 0, factory_price_cents: 0, points_required: 0 }];
       const asset = { id: 1, name: '封面样例', url: '/uploads/fixture-cover.png', mime: 'image/png', ref_count: 0 };
       page.on('pageerror', e => errors.push(e.message));
       await page.addInitScript(() => { localStorage.setItem('token', JSON.stringify('fixture')); localStorage.setItem('refreshToken', JSON.stringify('fixture')); });
@@ -113,6 +113,32 @@ const server = http.createServer((req, res) => {
       assert.equal(social.body.price_cents, 0);
       assert.equal(social.body.is_recommend, true);
       for (const field of ['manual_stock', 'physical_stock', 'direct_content']) assert.equal(Object.hasOwn(social.body, field), false, `social edit must omit ${field}`);
+      const copy = page.locator('.n-modal').filter({ hasText: '复制商品' });
+      const copyButton = page.getByRole('row').filter({ hasText: '锁定商品' }).getByRole('button', { name: '复制', exact: true });
+      await expect(page.getByRole('row').filter({ hasText: '社交服务' }).getByRole('button', { name: '复制', exact: true })).toHaveCount(0);
+      const beforeCopy = writes.length;
+      await copyButton.click();
+      await expect(copy.getByPlaceholder('请输入商品名称')).toHaveValue('锁定商品（副本）');
+      await expect(copy.getByText('运费到付', { exact: true })).toBeVisible();
+      await copy.getByRole('button', { name: '取消', exact: true }).click();
+      await expect(copy).not.toBeVisible();
+      assert.equal(writes.length, beforeCopy, 'opening and canceling a copy must not create a product');
+      await copyButton.click();
+      await copy.getByPlaceholder('请输入商品名称').fill('新的实体商品');
+      await copy.getByText('规格与控件', { exact: true }).click();
+      await copy.getByRole('button', { name: '创建', exact: true }).click();
+      await expect(copy).not.toBeVisible();
+      assert.equal(writes.length, beforeCopy + 1);
+      const duplicated = writes.at(-1);
+      assert.equal(duplicated.method, 'POST');
+      assert.equal(duplicated.path, '/api/v1/admin/products');
+      for (const [key, value] of Object.entries({
+        name: '新的实体商品', category_id: 7, price_cents: 1000, factory_price_cents: 200, status: 0,
+        is_recommend: false, goods_type: 'physical', physical_stock: 0, shipping_mode: 'collect',
+        shipping_fee_cents: 0, shipping_countries: ['CN'], description: '<p>商品描述样例</p>',
+        images: ['/uploads/original-detail.png'],
+      })) assert.deepEqual(duplicated.body[key], value, key);
+      for (const key of ['id', 'direct_content', 'upstream_source_id', 'is_locked']) assert.equal(Object.hasOwn(duplicated.body, key), false, key);
       const savedCount = writes.length;
       await page.getByRole('button', { name: '新增商品', exact: true }).click();
       await page.getByPlaceholder('请输入商品名称', { exact: true }).fill('未保存的新商品');
@@ -128,8 +154,9 @@ const server = http.createServer((req, res) => {
       await page.getByText('补封面测试商品', { exact: true }).first().waitFor();
       await expect(page.getByRole('button', { name: /^补封面：|^更换封面：/ })).toHaveCount(0);
       await expect(page.getByRole('button', { name: '编辑', exact: true })).toHaveCount(0);
+      await expect(page.getByRole('button', { name: '复制', exact: true })).toHaveCount(0);
       assert.equal(errors.length, 0, errors.join('\n'));
-      console.log(JSON.stringify({ width, editVisible: true, coverSavedWithoutRecreation: true, failedSaveRetained: true, recommendationPreserved: true, socialCoverSaved: true, permissionsAndLocks: true, pageErrors: errors }));
+      console.log(JSON.stringify({ width, editVisible: true, coverSavedWithoutRecreation: true, failedSaveRetained: true, recommendationPreserved: true, socialCoverSaved: true, copiedAsUnlisted: true, permissionsAndLocks: true, pageErrors: errors }));
       await page.close();
     }
   } finally { await browser.close(); server.close(); }

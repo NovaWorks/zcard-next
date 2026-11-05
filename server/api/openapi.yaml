@@ -8025,6 +8025,8 @@ components:
         zcard.api.admin.v1.AdminOrderItem:
             type: object
             properties:
+                shippingCollect:
+                    type: boolean
                 goodsType:
                     type: string
                 paidCents:
@@ -14199,6 +14201,9 @@ components:
         zcard.api.storefront.v1.CreateOrderReply:
             type: object
             properties:
+                shippingCollect:
+                    type: boolean
+                    description: At least one item has shipping payable to the carrier on delivery.
                 orderAccessToken:
                     type: string
                 shippingCents:
@@ -15199,6 +15204,8 @@ components:
         zcard.api.storefront.v1.OrderItemReply:
             type: object
             properties:
+                shippingCollect:
+                    type: boolean
                 deliveryKind:
                     type: string
                 smsProduct:

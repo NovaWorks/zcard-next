@@ -8,7 +8,38 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
+
+func TestPhysicalProductShippingCollectRoundTrip(t *testing.T) {
+	_, svc := newStatsEnv(t)
+	ctx := context.Background()
+	product, err := svc.CreateProduct(ctx, &adminv1.CreateProductRequest{
+		Name: "Parcel", PriceCents: 500, Status: 1, ProductProperty: proto.String("physical"),
+		ShippingMode: proto.String("collect"), ShippingFeeCents: proto.Int64(300),
+		ShippingCountries: []string{"US"},
+	})
+	if err != nil || product.ShippingMode != "collect" || product.ShippingFeeCents != 0 {
+		t.Fatalf("create collect shipping: %+v, %v", product, err)
+	}
+	for _, change := range []struct {
+		mode string
+		fee  int64
+		want int64
+	}{
+		{"fixed", 200, 200},
+		{"collect", 200, 0},
+		{"free", 200, 0},
+	} {
+		updated, err := svc.UpdateProduct(ctx, &adminv1.UpdateProductRequest{
+			Id: product.Id, ShippingMode: proto.String(change.mode),
+			ShippingFeeCents: proto.Int64(change.fee), ShippingCountries: []string{"US"}, Status: 1,
+		})
+		if err != nil || updated.ShippingMode != change.mode || updated.ShippingFeeCents != change.want {
+			t.Fatalf("update shipping to %s: %+v, %v", change.mode, updated, err)
+		}
+	}
+}
 
 func TestUpdateProductStockTypeRoundTrip(t *testing.T) {
 	d, svc := newStatsEnv(t)

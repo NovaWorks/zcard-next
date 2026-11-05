@@ -78,6 +78,8 @@ message OrderItemInput {
 }
 
 message CreateOrderReply {
+  // At least one item has shipping payable to the carrier on delivery.
+  bool shipping_collect = 7;
   string order_access_token = 6;
   int64 shipping_cents = 4;
   string quote_key = 5;
@@ -111,6 +113,7 @@ message GetOrderReply {
 }
 
 message OrderItemReply {
+  bool shipping_collect = 32;
  string delivery_kind = 30;
  map<string,string> sms_product = 31;
   string goods_type = 11;

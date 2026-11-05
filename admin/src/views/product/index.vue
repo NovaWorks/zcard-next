@@ -64,6 +64,8 @@ const saving = ref(false);
 const showCreate = ref(false);
 const skuPanel = ref<InstanceType<typeof SkuPanel> | null>(null);
 const editingId = ref(0);
+const copying = ref(false);
+const openingProduct = ref(false);
 const deliveryProduct = ref<any>(null);
 const showDeliverySources = ref(false);
 function openDeliverySources(row: any) {
@@ -985,6 +987,13 @@ const columns: DataTableColumns<any> = [
                   { default: () => (row.is_locked ? "查看" : "编辑") },
                 )
               : null,
+            checkAuth("catalog:write") && canCopyProduct(row)
+              ? h(
+                  NButton,
+                  { size: "small", disabled: openingProduct.value, onClick: () => openProduct(row, 1, true) },
+                  { default: () => "复制" },
+                )
+              : null,
             checkAuth("catalog:write") && row.upstream_source_id && row.product_kind !== "social_service"
               ? h(
                   NButton,
@@ -1214,6 +1223,7 @@ async function handleBatchDelete() {
 }
 
 function resetForm() {
+  copying.value = false;
   editingProduct.value = null;
   independentlySaved.value = false;
   contentProtection.value = { cover: false, description: false };
@@ -1251,16 +1261,42 @@ function resetForm() {
   initialProduct.value = JSON.stringify(buildPayload());
 }
 
-async function handleEdit(row: any, initialStep = 1) {
-  // 编辑取详情（列表行可能缺全字段）
-  const { data, error } = await fetchProduct(row.id);
-  if (error || !data) return;
-  const p = data;
-  editingProduct.value = p;
-  editingId.value = p.id;
-  contentProtection.value = { cover: !!p.cover_protected, description: !!p.description_protected };
+function canCopyProduct(p: any) {
+  return (!p.product_kind || p.product_kind === "standard") && p.delivery_kind !== "social_service";
+}
+
+function handleEdit(row: any, initialStep = 1) {
+  return openProduct(row, initialStep, false);
+}
+
+async function openProduct(row: any, initialStep: number, copy: boolean) {
+  if (openingProduct.value || showCreate.value) return;
+  openingProduct.value = true;
+  try {
+    // 列表可能不含详情和完整交付设置。
+    const { data, error } = await fetchProduct(row.id);
+    if (error || !data || showCreate.value) return;
+    if (copy && !canCopyProduct(data)) {
+      window.$message?.warning("此商品由货源动态报价，请从货源管理添加");
+      return;
+    }
+    fillProductForm(data, copy);
+    copying.value = copy;
+    step.value = initialStep;
+    independentlySaved.value = false;
+    initialProduct.value = JSON.stringify(buildPayload());
+    showCreate.value = true;
+  } finally {
+    openingProduct.value = false;
+  }
+}
+
+function fillProductForm(p: any, copy: boolean) {
+  editingProduct.value = copy ? null : p;
+  editingId.value = copy ? 0 : p.id;
+  contentProtection.value = { cover: !copy && !!p.cover_protected, description: !copy && !!p.description_protected };
   Object.assign(formData, {
-    name: p.name,
+    name: copy ? `${p.name}（副本）` : p.name,
     category_id: p.category_id || null,
     description: p.description || "",
     cover: p.cover ? [p.cover] : [],
@@ -1274,13 +1310,12 @@ async function handleEdit(row: any, initialStep = 1) {
     sales_visible: p.sales_visible !== false,
     shipping_mode: p.shipping_mode || "free",
     shipping_fee_yuan: centsToYuan(p.shipping_fee_cents || 0),
-    shipping_countries: p.shipping_countries || [],
+    shipping_countries: [...(p.shipping_countries || [])],
     physical_stock: Number(p.physical_stock || 0),
     stock_type: p.stock_type,
     fulfillment_mode: p.fulfillment_mode || "auto",
     manual_stock: Number(p.manual_stock ?? -1),
     direct_content: "",
-    directContentSet: undefined,
     delivery_mode: p.delivery_mode || "status",
     stock_visible: p.stock_visible !== false,
     dedup: p.dedup !== false,
@@ -1288,11 +1323,17 @@ async function handleEdit(row: any, initialStep = 1) {
     status: p.status,
     is_recommend: !!p.is_recommend,
   });
-  directContentSet.value = !!p.has_direct_content;
-  step.value = initialStep;
-  independentlySaved.value = false;
-  initialProduct.value = JSON.stringify(buildPayload());
-  showCreate.value = true;
+  if (copy) {
+    const manual = p.fulfillment_mode === "manual";
+    Object.assign(formData, {
+      physical_stock: 0,
+      fulfillment_mode: manual ? "manual" : "auto",
+      manual_stock: manual ? 0 : -1,
+      status: 0,
+      is_recommend: false,
+    });
+  }
+  directContentSet.value = !copy && !!p.has_direct_content;
 }
 
 function buildPayload() {
@@ -1313,7 +1354,7 @@ function buildPayload() {
     track_inventory: physical ? formData.track_inventory : true,
     sales_visible: formData.sales_visible,
     shipping_mode: formData.shipping_mode,
-    shipping_fee_cents: yuanToFen(formData.shipping_fee_yuan || 0),
+    shipping_fee_cents: physical && formData.shipping_mode === "fixed" ? yuanToFen(formData.shipping_fee_yuan || 0) : 0,
     shipping_countries: formData.shipping_countries,
     ...(physical && formData.track_inventory
       ? {
@@ -1391,6 +1432,7 @@ async function saveAndContinue() {
       const created = (data as any) || {};
       if (created.id) {
         editingId.value = created.id;
+        copying.value = false;
         editingProduct.value = created;
         initialProduct.value = JSON.stringify(buildPayload());
         independentlySaved.value = true;
@@ -1783,7 +1825,7 @@ onMounted(() => {
       :close-on-esc="!editorBusy"
       @after-leave="afterEditorLeave"
       preset="card"
-      :title="editingId ? '编辑商品' : '新增商品'"
+      :title="editingId ? '编辑商品' : copying ? '复制商品' : '新增商品'"
       class="w-780px"
       :style="{
         width: step === 3 || step === 4 ? '880px' : undefined,
@@ -1805,6 +1847,9 @@ onMounted(() => {
         ><span v-else>请联系有解锁权限的管理员。</span>
       </NAlert>
       <div :inert="editorBusy || undefined">
+        <NAlert v-if="copying" type="info" class="mb-12px">
+          核对资料后保存为新商品，默认下架。库存、规格、下单控件、货源和直发内容需单独配置。
+        </NAlert>
         <NAlert v-if="independentlySaved" type="info" class="mb-12px"
           >已有内容单独保存并生效；关闭只放弃尚未保存的输入。</NAlert
         >
@@ -1872,8 +1917,12 @@ onMounted(() => {
                   :options="[
                     { label: '包邮', value: 'free' },
                     { label: '固定运费', value: 'fixed' },
+                    { label: '运费到付', value: 'collect' },
                   ]"
               /></NFormItem>
+              <NAlert v-if="formData.shipping_mode === 'collect'" type="info" class="mb-12px">
+                买家收货时向快递支付运费。发货时请向承运公司选择运费到付。
+              </NAlert>
               <NFormItem v-if="formData.shipping_mode === 'fixed'" :label="`运费（${currencyUnit()}）`"
                 ><NInputNumber
                   v-model:value="formData.shipping_fee_yuan"
