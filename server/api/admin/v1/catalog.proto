@@ -252,6 +252,7 @@ message AdminProduct {
 }
 
 message CreateProductRequest {
+  uint64 copy_from_product_id = 74; // 同站点原商品，按权限复制 SKU 和下单控件
   optional string product_property = 71;
   optional bool track_inventory = 72;
   optional bool sales_visible = 73;

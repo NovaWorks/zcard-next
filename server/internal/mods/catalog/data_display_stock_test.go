@@ -22,7 +22,7 @@ func TestStoreRefreshAndAdminCachedStock(t *testing.T) {
 	ctx := context.Background()
 	repo := NewProductRepoImpl(d, nil)
 	store := NewStoreCatalogService(NewCatalogUsecase(repo), nil, nil)
-	admin := NewAdminCatalogService(repo, nil, nil, nil)
+	admin := NewAdminCatalogService(repo, nil, nil, nil, nil)
 	ids := map[string]uint64{}
 	for _, name := range []string{"stale", "unknown", "zero", "unlimited", "failed", "fresh"} {
 		p := d.Client.Product.Create().SetName(name).SetSlug(name).SetStatus(1).SetStockVisible(true).SetUpstreamSourceID(9).SetUpstreamProductCode(name).SaveX(ctx)

@@ -16,7 +16,7 @@ func TestCatalogDeleteAfterPricingPG(t *testing.T)    { catalogDeleteAfterPricin
 func catalogDeleteAfterPricing(h *Harness) {
 	t, d, ctx := h.T, h.Data, context.Background()
 	repo := catalog.NewProductRepoImpl(d, nil)
-	svc := catalog.NewAdminCatalogService(repo, nil, nil, nil)
+	svc := catalog.NewAdminCatalogService(repo, nil, nil, nil, nil)
 	pricing := supplier.NewSupplierRepoImpl(d, nil)
 	acc := d.Client.SupplierAccount.Create().SetName("fixture").SetAPIKey("fixture").SetAPISecret([]byte("fixture")).SaveX(ctx)
 	cat := d.Client.Category.Create().SetName("fixture").SaveX(ctx)
@@ -58,7 +58,7 @@ func TestCategoryCascadePG(t *testing.T)    { categoryCascade(PG(t)) }
 func categoryCascade(h *Harness) {
 	t, d, ctx := h.T, h.Data, context.Background()
 	repo := catalog.NewProductRepoImpl(d, nil)
-	svc := catalog.NewAdminCatalogService(repo, nil, nil, nil)
+	svc := catalog.NewAdminCatalogService(repo, nil, nil, nil, nil)
 	root := d.Client.Category.Create().SetName("root").SaveX(ctx)
 	child := d.Client.Category.Create().SetName("child").SetParentID(root.ID).SaveX(ctx)
 	keep := d.Client.Category.Create().SetName("keep").SaveX(ctx)

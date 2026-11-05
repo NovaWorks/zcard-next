@@ -15,7 +15,7 @@ func TestDeletedCategoryOrdersStillFulfillAndFetch(t *testing.T) {
 			pid, o := seedPaidOrderWithCards(t, d, cipher, mode, 2)
 			cat := d.Client.Category.Create().SetName("removed category").SaveX(ctx)
 			d.Client.Product.UpdateOneID(pid).SetCategoryID(cat.ID).SetIsLocked(true).ExecX(ctx)
-			catalogService := catalog.NewAdminCatalogService(catalog.NewProductRepoImpl(d, nil), nil, nil, cipher)
+			catalogService := catalog.NewAdminCatalogService(catalog.NewProductRepoImpl(d, nil), nil, nil, cipher, nil)
 			if _, err := catalogService.DeleteCategory(ctx, &adminv1.DeleteCategoryRequest{Id: cat.ID}); err != nil {
 				t.Fatal(err)
 			}

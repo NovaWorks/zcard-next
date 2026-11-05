@@ -734,6 +734,7 @@ func (x *AdminProduct) GetLowStockMessage() string {
 
 type CreateProductRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
+	CopyFromProductId uint64                 `protobuf:"varint,74,opt,name=copy_from_product_id,json=copyFromProductId,proto3" json:"copy_from_product_id,omitempty"` // 同站点原商品，按权限复制 SKU 和下单控件
 	ProductProperty   *string                `protobuf:"bytes,71,opt,name=product_property,json=productProperty,proto3,oneof" json:"product_property,omitempty"`
 	TrackInventory    *bool                  `protobuf:"varint,72,opt,name=track_inventory,json=trackInventory,proto3,oneof" json:"track_inventory,omitempty"`
 	SalesVisible      *bool                  `protobuf:"varint,73,opt,name=sales_visible,json=salesVisible,proto3,oneof" json:"sales_visible,omitempty"`
@@ -795,6 +796,13 @@ func (x *CreateProductRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateProductRequest.ProtoReflect.Descriptor instead.
 func (*CreateProductRequest) Descriptor() ([]byte, []int) {
 	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CreateProductRequest) GetCopyFromProductId() uint64 {
+	if x != nil {
+		return x.CopyFromProductId
+	}
+	return 0
 }
 
 func (x *CreateProductRequest) GetProductProperty() string {
@@ -6057,8 +6065,9 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x10_track_inventoryB\x10\n" +
 	"\x0e_sales_visibleB\x0f\n" +
 	"\r_manual_stockB\x10\n" +
-	"\x0e_stock_visible\"\xe7\b\n" +
-	"\x14CreateProductRequest\x12.\n" +
+	"\x0e_stock_visible\"\x98\t\n" +
+	"\x14CreateProductRequest\x12/\n" +
+	"\x14copy_from_product_id\x18J \x01(\x04R\x11copyFromProductId\x12.\n" +
 	"\x10product_property\x18G \x01(\tH\x00R\x0fproductProperty\x88\x01\x01\x12,\n" +
 	"\x0ftrack_inventory\x18H \x01(\bH\x01R\x0etrackInventory\x88\x01\x01\x12(\n" +
 	"\rsales_visible\x18I \x01(\bH\x02R\fsalesVisible\x88\x01\x01\x12\"\n" +

@@ -29,7 +29,7 @@ func TestProductLockPlacementSQLDialects(t *testing.T) {
 			if err = d.Client.Schema.Create(ctx); err != nil {
 				t.Fatal(err)
 			}
-			svc := NewAdminCatalogService(NewProductRepoImpl(d, nil), nil, nil, nil)
+			svc := NewAdminCatalogService(NewProductRepoImpl(d, nil), nil, nil, nil, nil)
 			root := d.Client.Category.Create().SetName("parent").SaveX(ctx)
 			child := d.Client.Category.Create().SetName("child").SetParentID(root.ID).SaveX(ctx)
 			a := d.Client.Product.Create().SetName("pinned").SetSlug("dialect-pinned").SetCategoryID(child.ID).SetPrice(200).SaveX(ctx)

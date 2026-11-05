@@ -18,7 +18,7 @@ func TestListingSQLDialects(t *testing.T) {
 			h := open(t)
 			d := h.Data
 			ctx := batchContext()
-			s := NewAdminCatalogService(NewProductRepoImpl(d, nil), nil, nil, nil)
+			s := NewAdminCatalogService(NewProductRepoImpl(d, nil), nil, nil, nil, nil)
 			conn := d.Client.SupplyConnection.Create().SetName("test").SetDriver("zcard").SetBaseURL("https://example.com").SetCredentials([]byte("test")).SaveX(ctx)
 			p := d.Client.Product.Create().SetName("listing").SetSlug("listing").SetPrice(100).SetStatus(2).SetUpstreamSourceID(conn.ID).SetUpstreamProductCode("p").SaveX(ctx)
 			preview, e := s.ManageProductListing(ctx, &adminv1.ManageProductListingRequest{Action: "enable", Ids: []uint64{p.ID}})

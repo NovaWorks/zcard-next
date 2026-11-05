@@ -12,7 +12,9 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	authzport "github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
@@ -29,11 +31,12 @@ type AdminCatalogService struct {
 	sold     orderport.SoldCounter // 批量已售数量（nil 容错降级 0）
 	settings port.SettingsReader   // 低库存阈值等（通道 A；nil = 默认值）
 	cipher   *inventory.CardCipher // 直发内容加密（url/code 商品；nil = 直发不可用）
+	authz    authzport.Authorizer
 }
 
 // NewAdminCatalogService 构造。
-func NewAdminCatalogService(repo *ProductRepoImpl, sold orderport.SoldCounter, settings port.SettingsReader, cipher *inventory.CardCipher) *AdminCatalogService {
-	return &AdminCatalogService{repo: repo, sold: sold, settings: settings, cipher: cipher}
+func NewAdminCatalogService(repo *ProductRepoImpl, sold orderport.SoldCounter, settings port.SettingsReader, cipher *inventory.CardCipher, authz authzport.Authorizer) *AdminCatalogService {
+	return &AdminCatalogService{repo: repo, sold: sold, settings: settings, cipher: cipher, authz: authz}
 }
 
 // sealDirect 直发内容加密（AAD 绑定 product+subsite）。
@@ -239,23 +242,56 @@ func (s *AdminCatalogService) CreateProduct(ctx context.Context, req *adminv1.Cr
 	if *in.GoodsType == "physical" && req.GetDirectContent() != "" {
 		return nil, errors.BadRequest("catalog.INVALID_INPUT", "实体商品不能配置虚拟直发内容")
 	}
-	p, err := s.repo.CreateProduct(ctx, in)
-	if err != nil {
-		return nil, errors.InternalServer("catalog.CREATE_FAILED", "创建失败: "+err.Error())
+	copyFrom := req.GetCopyFromProductId()
+	var copySKUs, copyControls bool
+	if copyFrom != 0 {
+		claims := identity.ClaimsFromContext(ctx)
+		if claims == nil || s.authz == nil || !s.authz.Allowed(ctx, claims.RoleID, "catalog:read_detail") {
+			return nil, errors.Forbidden("authz.PERMISSION_DENIED", "没有读取原商品的权限")
+		}
+		copySKUs = s.authz.Allowed(ctx, claims.RoleID, "catalog:sku_read") && s.authz.Allowed(ctx, claims.RoleID, "catalog:sku_write")
+		copyControls = s.authz.Allowed(ctx, claims.RoleID, "catalog:control_read") && s.authz.Allowed(ctx, claims.RoleID, "catalog:control_write")
+		if !copySKUs && !copyControls {
+			return nil, errors.Forbidden("authz.PERMISSION_DENIED", "没有复制规格或下单控件的权限")
+		}
 	}
-	// 直发内容（url/code）：AAD 绑定 product_id，须在商品落库拿到 ID 后加密回填
-	if req.GetStockType() != "card" && req.GetDirectContent() != "" {
-		if s.cipher == nil {
-			return nil, errors.InternalServer("catalog.CIPHER_UNAVAILABLE", "直发加密不可用")
+
+	var p *ent.Product
+	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
+		var err error
+		p, err = s.repo.CreateProduct(ctx, in)
+		if err != nil {
+			return errors.InternalServer("catalog.CREATE_FAILED", "创建失败: "+err.Error())
 		}
-		ciphered, serr := s.sealDirect(ctx, req.GetDirectContent(), p.ID)
-		if serr != nil {
-			return nil, errors.InternalServer("catalog.DIRECT_SEAL_FAILED", "直发内容加密失败")
+		if copyFrom != 0 {
+			if err := s.repo.copyProductConfiguration(ctx, p, copyFrom, copySKUs, copyControls); err != nil {
+				if e := errors.FromError(err); e.Code < 500 {
+					return e
+				}
+				return errors.InternalServer("catalog.COPY_CONFIGURATION_FAILED", "复制规格或下单控件失败，请重试")
+			}
 		}
-		if err := s.repo.SetDirectContent(ctx, p.ID, ciphered); err != nil {
-			return nil, errors.InternalServer("catalog.DIRECT_SAVE_FAILED", "直发内容保存失败")
+		// 直发内容使用新商品 ID 加密，与商品及复制的配置一起提交。
+		if req.GetStockType() != "card" && req.GetDirectContent() != "" {
+			if s.cipher == nil {
+				return errors.InternalServer("catalog.CIPHER_UNAVAILABLE", "直发加密不可用")
+			}
+			ciphered, err := s.sealDirect(ctx, req.GetDirectContent(), p.ID)
+			if err != nil {
+				return errors.InternalServer("catalog.DIRECT_SEAL_FAILED", "直发内容加密失败")
+			}
+			if err := s.repo.SetDirectContent(ctx, p.ID, ciphered); err != nil {
+				return errors.InternalServer("catalog.DIRECT_SAVE_FAILED", "直发内容保存失败")
+			}
+			p.DirectContent = ciphered
 		}
-		p.DirectContent = ciphered
+		return nil
+	})
+	if err != nil {
+		if e := errors.FromError(err); e.Reason != "" {
+			return nil, e
+		}
+		return nil, errors.InternalServer("catalog.CREATE_FAILED", "创建商品失败，请重试")
 	}
 	return ToAdminPB(p), nil
 }
@@ -586,10 +622,13 @@ func (s *AdminCatalogService) CreateSku(ctx context.Context, req *adminv1.Create
 		StockOffset: req.GetStockOffset(), UpstreamSkuID: req.GetUpstreamSkuId(), FulfillmentMode: req.GetFulfillmentMode(),
 	})
 	if err != nil {
-		if data.IsProductLocked(err) {
-			return nil, err
+		if e := errors.FromError(err); e.Code < 500 {
+			return nil, e
 		}
-		return nil, errors.InternalServer("catalog.SKU_CREATE_FAILED", "创建失败（规格名可能重复）")
+		if ent.IsValidationError(err) {
+			return nil, errors.BadRequest("catalog.SKU_INVALID", "规格名称或设置无效")
+		}
+		return nil, errors.InternalServer("catalog.SKU_CREATE_FAILED", "创建规格失败，请重试")
 	}
 	return toSkuPB(sku), nil
 }
@@ -606,8 +645,8 @@ func (s *AdminCatalogService) UpdateSku(ctx context.Context, req *adminv1.Update
 		return nil, errors.NotFound("catalog.SKU_NOT_FOUND", "SKU 不存在")
 	}
 	if err != nil {
-		if data.IsProductLocked(err) {
-			return nil, err
+		if e := errors.FromError(err); e.Code < 500 {
+			return nil, e
 		}
 		return nil, errors.InternalServer("catalog.SKU_UPDATE_FAILED", "更新失败")
 	}

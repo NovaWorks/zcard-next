@@ -37,7 +37,7 @@ func newStatsEnv(t *testing.T) (*data.Data, *AdminCatalogService) {
 	d := &data.Data{Client: client, DB: handle, Dialect: db.SQLite}
 	gen, _ := id.NewGenerator(1)
 	uc := &ordermod.OrderUsecase{Data: d, Gen: gen}
-	svc := NewAdminCatalogService(NewProductRepoImpl(d, nil), uc, nil, nil)
+	svc := NewAdminCatalogService(NewProductRepoImpl(d, nil), uc, nil, nil, nil)
 	return d, svc
 }
 

@@ -133,7 +133,7 @@ const server = http.createServer((req, res) => {
       assert.equal(duplicated.method, 'POST');
       assert.equal(duplicated.path, '/api/v1/admin/products');
       for (const [key, value] of Object.entries({
-        name: '新的实体商品', category_id: 7, price_cents: 1000, factory_price_cents: 200, status: 0,
+        name: '新的实体商品', copy_from_product_id: 2, category_id: 7, price_cents: 1000, factory_price_cents: 200, status: 0,
         is_recommend: false, goods_type: 'physical', physical_stock: 0, shipping_mode: 'collect',
         shipping_fee_cents: 0, shipping_countries: ['CN'], description: '<p>商品描述样例</p>',
         images: ['/uploads/original-detail.png'],

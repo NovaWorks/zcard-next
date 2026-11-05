@@ -355,7 +355,7 @@ func TestCatalogGuardsAndLiveEligibility(t *testing.T) {
 		t.Fatal("award inventory label", rows, e)
 	}
 	c.Product.UpdateOneID(p.ID).SetStatus(0).ExecX(ctx)
-	svc := catalog.NewAdminCatalogService(cat, nil, nil, nil)
+	svc := catalog.NewAdminCatalogService(cat, nil, nil, nil, nil)
 	pre, e := svc.PreviewDeleteProduct(ctx, &adminv1.GetProductRequest{Id: p.ID})
 	if e != nil || pre.DeleteBlockReason != "" || pre.DeleteOrdersBlockReason == "" {
 		t.Fatal("lottery history purge guard", pre, e)

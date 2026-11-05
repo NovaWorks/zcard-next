@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
@@ -17,6 +18,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
+	"github.com/go-kratos/kratos/v3/errors"
 )
 
 // SkuInput SKU 创建/更新输入（price_cents=0 表示继承商品价）。
@@ -69,24 +71,30 @@ func (r *ProductRepoImpl) createSku(ctx context.Context, in SkuInput) (*ent.Prod
 			if err != nil {
 				return nil, err
 			}
-			if parent.PhysicalStock != 0 || used {
-				return nil, fmt.Errorf("新增实体规格前须清空商品级库存；已有无规格订单的商品请新建商品，避免取消和退货库存归属改变")
+			if used {
+				return nil, errors.Conflict("catalog.SKU_BASE_ORDERS", "该实体商品已有无规格订单，请复制为新商品后添加规格")
+			}
+			if parent.PhysicalStock != 0 {
+				if !parent.TrackInventory {
+					return nil, errors.Conflict("catalog.SKU_BASE_STOCK", "请先开启库存管理，将商品级可售库存设为 0，再添加规格")
+				}
+				return nil, errors.Conflict("catalog.SKU_BASE_STOCK", "请先将商品级可售库存设为 0，再添加规格并分配库存")
 			}
 		}
 
 		in.FulfillmentMode = "follow"
 		if in.PhysicalStock != nil && (*in.PhysicalStock < 0 || *in.PhysicalStock > 100000000) {
-			return nil, fmt.Errorf("库存不能为负")
+			return nil, errors.BadRequest("catalog.SKU_INVALID", "规格库存须在 0 至 100000000 之间")
 		}
 	}
 	if parent.FulfillmentMode == "reuse" || parent.FulfillmentMode == "local" {
-		return nil, fmt.Errorf("默认规格已配置本地发货，请先切换发货来源，再新增规格")
+		return nil, errors.Conflict("catalog.SKU_DELIVERY_CONFLICT", "默认规格已配置本地发货，请先切换发货来源，再新增规格")
 	}
 	if in.FulfillmentMode == "local" || in.FulfillmentMode == "reuse" {
-		return nil, fmt.Errorf("请先保存规格，再在发货设置中配置内容来源")
+		return nil, errors.BadRequest("catalog.SKU_INVALID", "请先保存规格，再在发货设置中配置内容来源")
 	}
 	if err := validateServiceConfig(in.FulfillmentMode, nil, true); err != nil {
-		return nil, err
+		return nil, errors.BadRequest("catalog.SKU_INVALID", err.Error())
 	}
 	if in.FulfillmentMode == "manual" {
 		p, err := data.Client(ctx, r.data).Product.Get(ctx, in.ProductID)
@@ -94,10 +102,13 @@ func (r *ProductRepoImpl) createSku(ctx context.Context, in SkuInput) (*ent.Prod
 			return nil, err
 		}
 		if p.UpstreamSourceID > 0 {
-			return nil, fmt.Errorf("上游规格不能改为本地人工交付")
+			return nil, errors.BadRequest("catalog.SKU_INVALID", "上游规格不能改为本地人工交付")
 		}
 	}
 	tc := tenancy.FromContext(ctx)
+	if in.SpecValues == nil {
+		in.SpecValues = map[string]string{}
+	}
 	create := data.Client(ctx, r.data).ProductSku.Create().
 		SetSubsiteID(tc.SubsiteID).
 		SetProductID(in.ProductID).
@@ -117,7 +128,11 @@ func (r *ProductRepoImpl) createSku(ctx context.Context, in SkuInput) (*ent.Prod
 	if in.UpstreamSkuID != "" {
 		create.SetUpstreamSkuID(in.UpstreamSkuID)
 	}
-	return create.Save(ctx)
+	row, err := create.Save(ctx)
+	if sqlgraph.IsUniqueConstraintError(err) {
+		return nil, errors.Conflict("catalog.SKU_NAME_DUPLICATE", "该商品已有同名规格，请修改规格名")
+	}
+	return row, err
 }
 
 // UpdateSku applies explicitly supplied zero values (price 0 inherits product price).
@@ -206,6 +221,9 @@ func (r *ProductRepoImpl) updateSku(ctx context.Context, id uint64, in SkuInput)
 		q.SetUpstreamSkuID(in.UpstreamSkuID)
 	}
 	if err := q.Exec(ctx); err != nil {
+		if sqlgraph.IsUniqueConstraintError(err) {
+			return nil, errors.Conflict("catalog.SKU_NAME_DUPLICATE", "该商品已有同名规格，请修改规格名")
+		}
 		return nil, err
 	}
 	return data.Client(ctx, r.data).ProductSku.Get(ctx, id)

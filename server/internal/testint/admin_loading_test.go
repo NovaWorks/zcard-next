@@ -21,7 +21,7 @@ func runAdminLoading(h *Harness) {
 	for i := 0; i < 107; i++ {
 		c.Product.Create().SetName(fmt.Sprintf("option-%d", i)).SetSlug(fmt.Sprintf("option-%d", i)).SetPrice(123).SetDescription("description").SetStockType("url").SetStatus(1).SaveX(ctx)
 	}
-	svc := catalog.NewAdminCatalogService(catalog.NewProductRepoImpl(h.Data, nil), nil, nil, nil)
+	svc := catalog.NewAdminCatalogService(catalog.NewProductRepoImpl(h.Data, nil), nil, nil, nil, nil)
 	reply, err := svc.ListProducts(ctx, &adminv1.ListProductsRequest{OptionsOnly: true, Page: 2, PageSize: 100})
 	if err != nil || reply.Total != 107 || len(reply.Products) != 7 || reply.Products[0].Description != "" || reply.Products[0].PriceCents != 123 {
 		t.Fatalf("options=%+v err=%v", reply, err)

@@ -15,7 +15,7 @@ func runBatchCategory(h *Harness) {
 	t := h.T
 	ctx := context.Background()
 	c := h.Data.Client
-	svc := catalog.NewAdminCatalogService(catalog.NewProductRepoImpl(h.Data, nil), nil, nil, nil)
+	svc := catalog.NewAdminCatalogService(catalog.NewProductRepoImpl(h.Data, nil), nil, nil, nil, nil)
 	target := c.Category.Create().SetName("目标分类").SaveX(ctx)
 	p := c.Product.Create().SetName("商品").SetSlug("batch").SaveX(ctx)
 	req := &adminv1.BatchUpdateProductCategoryRequest{Ids: []uint64{p.ID}, CategoryId: target.ID}

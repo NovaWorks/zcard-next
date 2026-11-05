@@ -9348,6 +9348,8 @@ components:
                 - stockType
             type: object
             properties:
+                copyFromProductId:
+                    type: string
                 productProperty:
                     type: string
                 trackInventory:

@@ -23,7 +23,7 @@ func runBatchContent(h *Harness) {
 	ctx := identity.WithClaims(context.Background(), &authn.Claims{Subject: 1, Realm: authn.RealmAdmin})
 	c := h.Data.Client
 	repo := catalog.NewProductRepoImpl(h.Data, nil)
-	svc := catalog.NewAdminCatalogService(repo, nil, nil, nil)
+	svc := catalog.NewAdminCatalogService(repo, nil, nil, nil, nil)
 	image := c.Media.Create().SetName("shared").SetPath("batch.png").SetMime("image/png").SetSize(1).SaveX(ctx)
 	a := c.Product.Create().SetName("A").SetSlug("a").SetUpstreamSourceID(1).SetUpstreamProductCode("a").SetPrice(42).SaveX(ctx)
 	b := c.Product.Create().SetName("B").SetSlug("b").SaveX(ctx)

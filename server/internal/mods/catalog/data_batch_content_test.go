@@ -84,7 +84,7 @@ func TestBatchContentAtomicAndIdempotent(t *testing.T) {
 		t.Fatal("incorrect release count")
 	}
 	// A reconstructed service can retrieve the durable receipt.
-	restored := NewAdminCatalogService(NewProductRepoImpl(d, nil), nil, nil, nil)
+	restored := NewAdminCatalogService(NewProductRepoImpl(d, nil), nil, nil, nil, nil)
 	result, err := restored.GetBatchProductContentResult(ctx, &adminv1.BatchProductContentRequest{RequestId: v.RequestId})
 	if err != nil || !result.Completed {
 		t.Fatalf("receipt %v %v", result, err)

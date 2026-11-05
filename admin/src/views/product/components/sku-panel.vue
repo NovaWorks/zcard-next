@@ -9,6 +9,7 @@
 import { ref, computed, watch, h } from "vue";
 import { useRouter } from "vue-router";
 import {
+  NAlert,
   NButton,
   NTag,
   NSpace,
@@ -23,7 +24,7 @@ import { checkAuth } from "@/directives";
 import { fetchSkus, createSku, updateSku, deleteSku } from "@/service/api";
 import { centsToYuan, currencyUnit, yuanToFen } from "@/utils/money";
 
-const props = defineProps<{ productId: number; readonly?: boolean; physical?: boolean; inventoryTracked?: boolean }>();
+const props = defineProps<{ productId: number; readonly?: boolean; physical?: boolean; inventoryTracked?: boolean; basePhysicalStock?: number }>();
 const router = useRouter();
 const emit = defineEmits<{ (e: "persisted"): void }>();
 
@@ -49,6 +50,9 @@ const definitionsDirty = ref(false);
 const specs = ref<{ name: string; values: string }[]>([]);
 
 const pendingRows = computed(() => rows.value.filter((r) => r.id === 0 || r.dirty));
+const baseStockBlocksFirstSku = computed(() =>
+  props.physical && (props.basePhysicalStock ?? 0) > 0 && !rows.value.some((r) => r.id > 0),
+);
 
 function specKey(spec: Record<string, string>) {
   return Object.entries(spec || {})
@@ -425,7 +429,7 @@ const columns = computed(() => allColumns.filter((column) => !("key" in column) 
     <NCard size="small" class="mb-12px" title="规格设置">
       <template #header-extra>
         <NButton
-          :disabled="props.readonly"
+          :disabled="props.readonly || loading || baseStockBlocksFirstSku"
           v-auth="'catalog:sku_write'"
           size="tiny"
           quaternary
@@ -434,8 +438,12 @@ const columns = computed(() => allColumns.filter((column) => !("key" in column) 
           >+ 添加规格</NButton
         >
       </template>
+      <NAlert v-if="!loading && baseStockBlocksFirstSku" type="warning" class="mb-8px">
+        <template v-if="props.inventoryTracked === false">请在「基础信息」开启库存管理，将商品级可售库存设为 0 后保存商品，再添加规格。</template>
+        <template v-else>请在「基础信息」将商品级可售库存设为 0 并保存商品，再添加规格和分配库存。</template>
+      </NAlert>
       <NEmpty
-        v-if="!specs.length"
+        v-else-if="!specs.length"
         size="small"
         description="尚无规格维度——添加「规格名 + 规格值」后生成组合，如 时长：月卡,季卡,年卡"
       />
@@ -469,7 +477,7 @@ const columns = computed(() => allColumns.filter((column) => !("key" in column) 
       </div>
       <div class="mt-8px flex flex-wrap items-center gap-8px">
         <NButton
-          :disabled="props.readonly"
+          :disabled="props.readonly || loading || baseStockBlocksFirstSku"
           v-auth="'catalog:sku_write'"
           size="small"
           type="primary"

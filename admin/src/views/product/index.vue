@@ -65,6 +65,9 @@ const showCreate = ref(false);
 const skuPanel = ref<InstanceType<typeof SkuPanel> | null>(null);
 const editingId = ref(0);
 const copying = ref(false);
+const copySourceId = ref(0);
+const copySKUs = computed(() => checkAuth("catalog:sku_read") && checkAuth("catalog:sku_write"));
+const copyControls = computed(() => checkAuth("catalog:control_read") && checkAuth("catalog:control_write"));
 const openingProduct = ref(false);
 const deliveryProduct = ref<any>(null);
 const showDeliverySources = ref(false);
@@ -1224,6 +1227,7 @@ async function handleBatchDelete() {
 
 function resetForm() {
   copying.value = false;
+  copySourceId.value = 0;
   editingProduct.value = null;
   independentlySaved.value = false;
   contentProtection.value = { cover: false, description: false };
@@ -1282,6 +1286,7 @@ async function openProduct(row: any, initialStep: number, copy: boolean) {
     }
     fillProductForm(data, copy);
     copying.value = copy;
+    copySourceId.value = copy && (copySKUs.value || copyControls.value) ? data.id : 0;
     step.value = initialStep;
     independentlySaved.value = false;
     initialProduct.value = JSON.stringify(buildPayload());
@@ -1340,6 +1345,7 @@ function buildPayload() {
   // 元 → 分（铁律 15：提交统一 *100，经 utils/money 防浮点）
   const physical = formData.product_property === "physical";
   return {
+    ...(copySourceId.value ? { copy_from_product_id: copySourceId.value } : {}),
     name: formData.name,
     category_id: formData.category_id || 0,
     description: formData.description,
@@ -1433,6 +1439,7 @@ async function saveAndContinue() {
       if (created.id) {
         editingId.value = created.id;
         copying.value = false;
+        copySourceId.value = 0;
         editingProduct.value = created;
         initialProduct.value = JSON.stringify(buildPayload());
         independentlySaved.value = true;
@@ -1848,7 +1855,11 @@ onMounted(() => {
       </NAlert>
       <div :inert="editorBusy || undefined">
         <NAlert v-if="copying" type="info" class="mb-12px">
-          核对资料后保存为新商品，默认下架。库存、规格、下单控件、货源和直发内容需单独配置。
+          核对资料后保存为新商品，默认下架。
+          <template v-if="copySKUs && copyControls">SKU 规格和下单控件会随商品保存。</template>
+          <template v-else-if="copySKUs">SKU 规格会随商品保存。</template>
+          <template v-else-if="copyControls">下单控件会随商品保存。</template>
+          库存、货源和直发内容需单独配置。
         </NAlert>
         <NAlert v-if="independentlySaved" type="info" class="mb-12px"
           >已有内容单独保存并生效；关闭只放弃尚未保存的输入。</NAlert
@@ -1904,7 +1915,7 @@ onMounted(() => {
             <NFormItem label="商品属性"
               ><NSelect
                 v-model:value="formData.product_property"
-                :disabled="!!editingId || formData.product_kind==='sms_channel'"
+                :disabled="!!editingId || !!copySourceId || formData.product_kind==='sms_channel'"
                 :options="[
                   { label: '虚拟商品', value: 'virtual' },
                   { label: '实体商品（快递配送）', value: 'physical' },
@@ -2175,6 +2186,7 @@ onMounted(() => {
                 :product-id="editingId"
                 :physical="formData.product_property === 'physical'"
                 :inventory-tracked="savedInventoryTracked"
+                :base-physical-stock="Number(editingProduct?.physical_stock || 0)"
                 :readonly="editorLocked"
                 @persisted="independentlySaved = true"
               />
@@ -2190,7 +2202,7 @@ onMounted(() => {
             </NCard>
           </template>
           <NCard v-else size="small" class="py-40px">
-            <NEmpty description="SKU 规格与下单控件挂在已保存的商品上">
+            <NEmpty :description="copySourceId ? '保存副本后可查看和修改复制的配置' : 'SKU 规格与下单控件挂在已保存的商品上'">
               <template #extra>
                 <NButton type="primary" :loading="saving" @click="saveAndContinue">
                   保存商品并配置
