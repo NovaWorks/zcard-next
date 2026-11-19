@@ -1718,3 +1718,5 @@ https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.117
 
 #ZCard #版本更新 #自动上下架 #独角数卡 #云帆主题
 ```
+
+发布准备状态（2026-11-19）：源码、公告及 v1.2.117 标签已推送，双架构发行包及 0.1.40 主题附件已上传为 GitHub 草稿；Docker 双架构镜像已在本地验证，等待 Docker Hub 登录后推送，再公开正式版。当前尚未发送频道公告、未部署客户站点。[验证与 CI 边界记录](releases/v1.2.117-verification.md)。
