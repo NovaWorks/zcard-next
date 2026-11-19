@@ -1716,4 +1716,4 @@ https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.117
 #ZCard #版本更新 #自动上下架 #独角数卡
 ```
 
-发布状态（2026-11-19）：按用户要求先发布 GitHub 正式版，Docker 双架构镜像待完成发布账户登录后推送；Latest 暂保留 v1.2.116。公开附件与公告已移除独立付费主题。当前尚未发送频道公告、未部署客户站点。[验证与 CI 边界记录](releases/v1.2.117-verification.md)。
+发布状态（2026-11-19）：GitHub v1.2.117 正式版已公开，8 个附件已匿名下载并通过字节比对、签名及 SHA256 验证。Docker 双架构镜像待完成发布账户登录后推送；Latest 暂保留 v1.2.116。公开附件与公告已移除独立付费主题。尚未发送频道公告、未部署客户站点。[验证与 CI 边界记录](releases/v1.2.117-verification.md)。
