@@ -233,9 +233,9 @@ func (s *SyncService) runSync(ctx context.Context, taskID uint64) error {
 // resolveLister 列表函数决策：
 // 驱动实现 IncrementalLister 且锚点有效 → 增量（含下架变更）；否则全量。
 func resolveLister(a adapter.Adapter, task *ent.SupplySyncTask, anchor time.Time, log *slog.Logger) (func(ctx context.Context, page, pageSize int) (*adapter.ProductList, error), bool) {
-	// Account discounts can change without a product updated_at change. Any scope
-	// that writes prices must inspect the full catalog, even when incremental was requested.
-	if task.Mode != "incremental" || anchor.IsZero() || task.Scope == ScopePrice || task.Scope == ScopeCollect || task.Scope == "" {
+	// Pricing needs current account discounts; automatic listing needs a complete
+	// catalog to detect missing products. Both require full reads.
+	if task.Mode != "incremental" || anchor.IsZero() || task.Scope == ScopePrice || task.Scope == ScopeCollect || task.Scope == ScopeListing || task.Scope == "" {
 		return func(ctx context.Context, page, pageSize int) (*adapter.ProductList, error) {
 			return a.ListProducts(ctx, page, pageSize, true)
 		}, false
@@ -268,7 +268,11 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 
 	// 对账状态：seenCodes（权威快照时收集）；reportedTotal 护栏基准
 	authoritative := !incremental
+	listingSnapshot := !incremental && (scope == ScopeListing || scope == ScopeStatus)
+	snapshotStarted := time.Now().UTC()
 	seen := map[string]bool{}
+	snapshotTotal := -1
+	snapshotConsistent := true
 	reportedTotal := 0
 	processed := 0
 	stockTotal, stockFailed := 0, 0
@@ -319,6 +323,21 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 		if list0.Total > reportedTotal {
 			reportedTotal = list0.Total
 		}
+		if listingSnapshot {
+			if snapshotTotal >= 0 && snapshotTotal != list0.Total {
+				snapshotConsistent = false
+			}
+			snapshotTotal = list0.Total
+			if list0.Total < 0 || list0.HasMore && len(list0.Items) == 0 {
+				snapshotConsistent = false
+			}
+			for _, p := range list0.Items {
+				if p.ID == "" || seen[p.ID] {
+					snapshotConsistent = false
+				}
+				seen[p.ID] = true
+			}
+		}
 		stats.Page = page
 
 		maintainable := make([]adapter.Product, 0, len(list0.Items))
@@ -331,7 +350,7 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 				stats.ManualSkipped++
 				stats.Processed++
 				processed++
-				if authoritative {
+				if authoritative && !listingSnapshot {
 					seen[p.ID] = true
 				}
 				continue
@@ -433,7 +452,7 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 				return nil
 			}
 			processed++
-			if authoritative {
+			if authoritative && !listingSnapshot {
 				seen[list0.Items[i].ID] = true
 			}
 		}
@@ -446,6 +465,30 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 			_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusFailed, "CTX_CANCELED", err.Error())
 			return nil
 		}
+	}
+
+	// A complete sellable catalog also confirms unavailability when the protocol
+	// omits inactive products. An incremental or incomplete catalog cannot do so.
+	if listingSnapshot {
+		canceled, err := s.repo.TouchTask(ctx, taskID, TaskProgress{Stage: "reconciling"})
+		if err != nil {
+			return err
+		}
+		if canceled {
+			_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusCanceled, "", "")
+			s.publishCompleted(ctx, conn.ID, taskID, "canceled")
+			return nil
+		}
+		if !snapshotConsistent || len(seen) != snapshotTotal {
+			_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusFailed, "RECONCILE_GUARD", "上游商品目录不完整或分页发生变化，已跳过未见商品的自动下架")
+			s.publishCompleted(ctx, conn.ID, taskID, "failed")
+			return nil
+		}
+		shelved, err := s.reconcileMissingListing(ctx, conn, seen, snapshotStarted)
+		if err != nil {
+			return err
+		}
+		stats.Deleted += int32(shelved)
 	}
 
 	// 删除对账（仅 collect + 权威快照）：
@@ -603,6 +646,7 @@ func (s *SyncService) syncOneLocked(ctx context.Context, taskID uint64, task *en
 
 	// upsert 本地商品（价格 -1 = 不更新）
 	write := catalogport.UpstreamProductInput{
+		FormFields:  p.FormFields,
 		ProductKind: p.ProductKind, DeliveryKind: p.DeliveryKind, SMSProduct: p.SMSProduct, SocialSchema: p.SocialSchema,
 		ConnectionID:        conn.ID,
 		UpstreamProductCode: p.ID,
@@ -1090,6 +1134,7 @@ func (s *SyncService) importOne(ctx context.Context, conn *ent.SupplyConnection,
 		return false, merr
 	}
 	write := catalogport.UpstreamProductInput{
+		FormFields:  p.FormFields,
 		ProductKind: p.ProductKind, DeliveryKind: p.DeliveryKind, SMSProduct: p.SMSProduct, SocialSchema: p.SocialSchema,
 		ConnectionID:        conn.ID,
 		UpstreamProductCode: p.ID,

@@ -159,7 +159,12 @@ func verifyDujiaoCallback(apiKey, secret string, auth *supplyport.UpstreamCallba
 	out := &supplyport.UpstreamCallbackResult{
 		DownstreamOrderNo: payload.DownstreamOrderNo, Status: payload.Status,
 	}
-	if payload.Fulfillment != nil && payload.Fulfillment.Status == "delivered" {
+	stopped := false
+	switch payload.Status {
+	case "refunded", "partially_refunded", "refunding", "canceled", "cancelled", "failed", "rejected", "expired":
+		stopped = true
+	}
+	if payload.Fulfillment != nil && payload.Fulfillment.Status == "delivered" && !stopped {
 		out.Status = "delivered"
 		out.Cards = splitCardLines(payload.Fulfillment.Payload)
 	}

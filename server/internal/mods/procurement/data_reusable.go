@@ -162,7 +162,7 @@ func (s *ProcureService) processReusable(ctx context.Context, id uint64) error {
 		switch res.Status {
 		case "delivered":
 			return s.confirmReusable(ctx, id, res.Cards, res.Amount, src.UpstreamOrderID)
-		case "failed", "rejected", "canceled", "refunded":
+		case "failed", "rejected", "canceled", "cancelled", "refunded", "partially_refunded", "refunding", "expired":
 			return s.markReusable(ctx, id, "failed", "上游采购未完成，相关订单待处理；不会自动退整单", "polling")
 		}
 		if src.SubmittedAt > 0 && time.Now().Unix()-src.SubmittedAt > 86400 {

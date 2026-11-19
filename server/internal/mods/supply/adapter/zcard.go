@@ -138,10 +138,10 @@ func (a *zCardAdapter) ListProducts(ctx context.Context, page, pageSize int, inc
 		return nil, err
 	}
 	var resp struct {
-		Items    []zCardProduct     `json:"items"`
-		Total    supplyport.Integer `json:"total"`
-		HasMore  *bool              `json:"has_more"`
-		PageSize int                `json:"page_size"`
+		Items    []zCardProduct      `json:"items"`
+		Total    *supplyport.Integer `json:"total"`
+		HasMore  *bool               `json:"has_more"`
+		PageSize int                 `json:"page_size"`
 	}
 	if err := decodeZCard(data, &resp); err != nil {
 		return nil, fmt.Errorf("adapter.zcard: 解析商品列表失败: %w", err)
@@ -151,10 +151,10 @@ func (a *zCardAdapter) ListProducts(ctx context.Context, page, pageSize int, inc
 		pageSize = 50
 	}
 	// 自家协议 include_inactive 恒生效（服务端 status=-1 全量；协议无回声字段）
-	if page < 1 || pageSize > 1000 || len(resp.Items) > pageSize || resp.Total < 0 {
+	if page < 1 || pageSize > 1000 || len(resp.Items) > pageSize || resp.Total == nil || *resp.Total < 0 || resp.Items == nil {
 		return nil, fmt.Errorf("adapter.zcard: invalid catalog page")
 	}
-	out := &ProductList{Total: int(resp.Total), PageSize: pageSize, HasMore: int64(page)*int64(pageSize) < int64(resp.Total), IncludesInactive: includeInactive}
+	out := &ProductList{Total: int(*resp.Total), PageSize: pageSize, HasMore: int64(page)*int64(pageSize) < int64(*resp.Total), IncludesInactive: includeInactive}
 	if resp.HasMore != nil {
 		out.HasMore = *resp.HasMore
 	}

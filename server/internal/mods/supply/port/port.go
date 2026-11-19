@@ -5,6 +5,7 @@ import "context"
 
 // PurchaseRequest 采购提交请求（ procurement 消费；DownstreamOrderNo 幂等键）。
 type PurchaseRequest struct {
+	ManualFormData    map[string]any // validated immutable order-item answers, keyed by supplier field key
 	ConnectionID      uint64
 	ProductCode       string // 上游商品标识（映射后的上游键）
 	UpstreamSKU       string // 规格 SKU 上游标识（本地 product_skus.upstream_sku_id：acg=规格选择编码、dujiao=sku_id；空=无规格）
@@ -31,11 +32,11 @@ type PurchaseOrderInfo struct {
 
 // UpstreamCallbackAuth 上游回调验签入参（HTTP 原语；port 零依赖故用 map 传头）。
 type UpstreamCallbackAuth struct {
-	Method    string
-	Path      string // 实际接收路径（zcard 验签用）
-	RawQuery  string
-	Headers   map[string]string
-	Body      []byte
+	Method   string
+	Path     string // 实际接收路径（zcard 验签用）
+	RawQuery string
+	Headers  map[string]string
+	Body     []byte
 }
 
 // UpstreamCallbackResult 回调载荷解析结果。
@@ -69,6 +70,7 @@ type UpstreamGateway interface {
 
 // 哨兵错误（适配器层归一化，procurement 状态机判据）。
 var (
+	ErrUpstreamFormInvalid = errorsNew("上游填写资料校验未通过，请人工核对商品规则及客户资料")
 	// ErrUpstreamDeleted 上游商品已删除（永久错误 → rejected）。
 	ErrUpstreamDeleted = errorsNew("supply: upstream product deleted")
 	// ErrUpstreamUnavailable 上游商品下架（永久错误 → rejected）。

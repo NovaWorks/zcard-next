@@ -50,8 +50,12 @@ func (s *SyncService) listingSKUStock(ctx context.Context, a adapter.Adapter, co
 	var total int32
 	unknown := false
 	unlimited := false
+	activeVariant := false
 	for _, sk := range skus {
 		r, ok := remote[sk.UpstreamSkuID]
+		if !ok && sk.UpstreamSkuID != "" && p.UpstreamExtra["sku_catalog_complete"] == true {
+			continue
+		}
 		if sk.UpstreamSkuID == "" || !ok {
 			unknown = true
 			continue
@@ -59,10 +63,18 @@ func (s *SyncService) listingSKUStock(ctx context.Context, a adapter.Adapter, co
 		if !r.IsActive {
 			continue
 		}
+		activeVariant = true
 		call, stop := context.WithTimeout(bounded, 8*time.Second)
 		started := time.Now().UTC()
 		n, e := a.GetStock(call, p.ID, sk.UpstreamSkuID)
 		stop()
+		if errors.Is(e, adapter.ErrProductDeleted) {
+			p.IsActive, p.Stock = false, 0
+			return nil
+		}
+		if errors.Is(e, adapter.ErrProductUnavailable) {
+			n, e = 0, nil
+		}
 		observed := n
 		if e != nil {
 			observed = -2
@@ -86,6 +98,9 @@ func (s *SyncService) listingSKUStock(ctx context.Context, a adapter.Adapter, co
 		} else {
 			total += n
 		}
+	}
+	if !activeVariant && !unknown {
+		p.IsActive = false
 	}
 	if unlimited {
 		p.Stock = -1
@@ -113,6 +128,51 @@ func (s *SyncService) observeListing(ctx context.Context, localID uint64, p *ada
 		return err
 	}
 	return data.ObserveListing(ctx, s.repo.data, local, p.Stock, p.IsActive, stockObservationTime(p))
+}
+
+func (s *SyncService) reconcileMissingListing(ctx context.Context, conn *ent.SupplyConnection, seen map[string]bool, checked time.Time) (int, error) {
+	c := s.repo.entClient(ctx)
+	rows, err := c.Product.Query().Where(
+		product.SubsiteID(0), product.UpstreamSourceID(conn.ID), product.StatusGT(0),
+		product.AutoListing(true), product.IsLocked(false), product.ProductKindNEQ("sms_channel"), product.GoodsTypeNEQ("physical"),
+		product.CreatedAtLTE(checked),
+	).All(ctx)
+	if err != nil {
+		return 0, err
+	}
+	changed := 0
+	for _, row := range rows {
+		if row.UpstreamProductCode == "" || seen[row.UpstreamProductCode] {
+			continue
+		}
+		err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
+			if err := s.checkPricingConnection(ctx, conn); err != nil {
+				return err
+			}
+			current, err := data.GuardProductWrite(ctx, s.repo.data, row.ID)
+			if err != nil {
+				return err
+			}
+			if !current.AutoListing || current.Status <= 0 || current.UpstreamSourceID != conn.ID || current.UpstreamProductCode != row.UpstreamProductCode {
+				return nil
+			}
+			if err := data.ObserveListing(ctx, s.repo.data, current, -2, false, checked); err != nil {
+				return err
+			}
+			fresh, err := s.repo.entClient(ctx).Product.Get(ctx, current.ID)
+			if err == nil && fresh.Status == 0 {
+				changed++
+			}
+			return err
+		})
+		if data.IsProductLocked(err) || ent.IsNotFound(err) {
+			continue
+		}
+		if err != nil {
+			return changed, err
+		}
+	}
+	return changed, nil
 }
 
 func listingSKUSignature(skus []*ent.ProductSku) string {

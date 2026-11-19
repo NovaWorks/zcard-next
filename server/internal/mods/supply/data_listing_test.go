@@ -3,21 +3,155 @@ package supply
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"testing"
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
 )
+
+func TestListingReconcilesMissingProductsAfterCompleteCatalog(t *testing.T) {
+	for _, scope := range []string{ScopeListing, ScopeStatus} {
+		for _, inactiveEcho := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s/echo=%t", scope, inactiveEcho), func(t *testing.T) {
+				s, r, _, _ := newTestSyncService(t)
+				ctx := context.Background()
+				conn := mustConn(t, r, nil, "missing")
+				task, err := r.CreateSyncTask(ctx, conn.ID, "full", scope, false)
+				if err != nil {
+					t.Fatal(err)
+				}
+				c := r.entClient(ctx)
+				create := func(code string) *ent.Product {
+					return c.Product.Create().SetName(code).SetSlug(code).SetPrice(100).
+						SetStatus(1).SetAutoListing(true).SetUpstreamSourceID(conn.ID).SetUpstreamProductCode(code).SaveX(ctx)
+				}
+				missing := create("missing")
+				present := create("present")
+				manual := create("manual")
+				c.Product.UpdateOneID(manual.ID).SetAutoListing(false).ExecX(ctx)
+				locked := create("locked")
+				c.Product.UpdateOneID(locked.ID).SetIsLocked(true).ExecX(ctx)
+				local := create("local")
+				c.Product.UpdateOneID(local.ID).SetFulfillmentMode("local").ExecX(ctx)
+				up := &fakeUpstream{products: []adapter.Product{{ID: "present", IsActive: true, Stock: 5}}, total: 1, echo: inactiveEcho}
+				if err := s.runLoop(ctx, task.ID, task, conn, up, loadScheduleSettings(conn), scope, false, listOf(up)); err != nil {
+					t.Fatal(err)
+				}
+				got := c.Product.GetX(ctx, missing.ID)
+				if got.Status != 0 || got.ListingReason != "upstream_unavailable" {
+					t.Fatalf("missing product was not taken off sale: %+v", got)
+				}
+				for _, row := range []*ent.Product{present, manual, locked, local} {
+					if c.Product.GetX(ctx, row.ID).Status != 1 {
+						t.Fatalf("unexpected status change for %s", row.Name)
+					}
+				}
+			})
+		}
+	}
+}
+
+func TestListingMissingCatalogGuards(t *testing.T) {
+	for _, test := range []struct {
+		name        string
+		pages       []*adapter.ProductList
+		incremental bool
+		fail        bool
+		shelved     bool
+		canceled    bool
+		edited      bool
+	}{
+		{name: "empty complete catalog", pages: []*adapter.ProductList{{Total: 0}}, shelved: true},
+		{name: "incomplete catalog", pages: []*adapter.ProductList{{Total: 2}}},
+		{name: "duplicate pages", pages: []*adapter.ProductList{
+			{Total: 2, HasMore: true, Items: []adapter.Product{{ID: "one", IsActive: true, Stock: 1}}},
+			{Total: 2, Items: []adapter.Product{{ID: "one", IsActive: true, Stock: 1}}},
+		}},
+		{name: "changed total", pages: []*adapter.ProductList{
+			{Total: 2, HasMore: true, Items: []adapter.Product{{ID: "one", IsActive: true, Stock: 1}}},
+			{Total: 3, Items: []adapter.Product{{ID: "two", IsActive: true, Stock: 1}, {ID: "three", IsActive: true, Stock: 1}}},
+		}},
+		{name: "incremental absence", pages: []*adapter.ProductList{{Total: 0}}, incremental: true},
+		{name: "query failed", fail: true},
+		{name: "canceled after listing", pages: []*adapter.ProductList{{Total: 0}}, canceled: true},
+		{name: "manual action after listing started", pages: []*adapter.ProductList{{Total: 0}}, edited: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			s, r, _, _ := newTestSyncService(t)
+			ctx := context.Background()
+			conn := mustConn(t, r, nil, "guards")
+			task, err := r.CreateSyncTask(ctx, conn.ID, "full", ScopeListing, false)
+			if err != nil {
+				t.Fatal(err)
+			}
+			p := r.entClient(ctx).Product.Create().SetName("missing").SetSlug("missing").SetPrice(100).
+				SetStatus(1).SetAutoListing(true).SetUpstreamSourceID(conn.ID).SetUpstreamProductCode("missing").SaveX(ctx)
+			list := func(_ context.Context, page, _ int) (*adapter.ProductList, error) {
+				if test.fail {
+					return nil, context.DeadlineExceeded
+				}
+				if test.canceled {
+					r.entClient(ctx).SupplySyncTask.UpdateOneID(task.ID).SetCancelRequestedAt(time.Now()).ExecX(ctx)
+				}
+				if test.edited {
+					r.entClient(ctx).Product.UpdateOneID(p.ID).SetListingChangedAt(time.Now().Add(time.Second).UnixMilli()).ExecX(ctx)
+				}
+				return test.pages[page-1], nil
+			}
+			if err := s.runLoop(ctx, task.ID, task, conn, &fakeUpstream{}, scheduleSettings{}, ScopeListing, test.incremental, list); err != nil {
+				t.Fatal(err)
+			}
+			if off := r.entClient(ctx).Product.GetX(ctx, p.ID).Status == 0; off != test.shelved {
+				t.Fatalf("off sale = %t, want %t", off, test.shelved)
+			}
+		})
+	}
+}
 
 type listingStockAdapter struct {
 	adapter.Adapter
 	values map[string]int32
 	fail   string
 	calls  int
+}
+
+func TestListingCompleteSKUCatalogDetectsRemovedLocalVariants(t *testing.T) {
+	s, r, _, _ := newTestSyncService(t)
+	ctx := context.Background()
+	conn := mustConn(t, r, nil, "removed-variant")
+	p := r.entClient(ctx).Product.Create().SetName("p").SetSlug("removed-variant").SetUpstreamSourceID(conn.ID).SetUpstreamProductCode("p").SaveX(ctx)
+	r.entClient(ctx).ProductSku.Create().SetProductID(p.ID).SetName("gone").SetUpstreamSkuID("gone").SetSpecValues(map[string]string{}).SaveX(ctx)
+	remote := &adapter.Product{ID: "p", IsActive: true, Stock: 9, UpstreamExtra: map[string]any{"sku_catalog_complete": true}, SKUs: []adapter.SKU{{Code: "other", IsActive: true, Stock: 9}}}
+	upstream := &listingStockAdapter{}
+	if err := s.listingSKUStock(ctx, upstream, conn.ID, remote); err != nil {
+		t.Fatal(err)
+	}
+	if remote.IsActive || remote.Stock != 0 || upstream.calls != 0 {
+		t.Fatalf("removed local variant remained sellable: %+v", remote)
+	}
+}
+
+type incrementalListingAdapter struct{ fakeUpstream }
+
+func (*incrementalListingAdapter) ListProductsAfter(context.Context, int, int, time.Time) (*adapter.ProductList, error) {
+	return nil, errors.New("listing scope must read the full catalog")
+}
+
+func TestListingAlwaysRequestsFullCatalog(t *testing.T) {
+	upstream := &incrementalListingAdapter{}
+	list, incremental := resolveLister(upstream, &ent.SupplySyncTask{Scope: ScopeListing, Mode: "incremental"}, time.Now(), slog.Default())
+	if incremental {
+		t.Fatal("incremental catalog cannot confirm missing products")
+	}
+	if _, err := list(context.Background(), 1, 50); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func (a *listingStockAdapter) GetStock(ctx context.Context, code, sku string) (int32, error) {

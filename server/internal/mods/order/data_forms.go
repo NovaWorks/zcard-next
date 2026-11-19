@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/purchaseform"
 	"math"
 	"math/big"
 	"net/url"
@@ -96,8 +98,15 @@ func (uc *OrderUsecase) prepareServices(ctx context.Context, in CreateOrderInput
 		if err != nil {
 			return nil, err
 		}
-		if (v.mode == "upstream" || v.mode == "reuse") && len(controls) > 0 {
+		if v.mode == "reuse" && len(controls) > 0 {
 			return nil, fmt.Errorf("order.FORM_INVALID: 上游暂不支持传递填写资料，请联系客服")
+		}
+		upstreamFields := map[string]purchaseform.Field{}
+		if v.mode == "upstream" && (len(controls) > 0 || p.ControlConfig[purchaseform.ConfigKey] != nil) {
+			upstreamFields, err = data.UpstreamPurchaseFields(ctx, c, p, controls)
+			if err != nil {
+				return nil, fmt.Errorf("order.FORM_INVALID: %w", err)
+			}
 		}
 		answers := it.ControlAnswers
 		if answers == nil {
@@ -113,7 +122,23 @@ func (uc *OrderUsecase) prepareServices(ctx context.Context, in CreateOrderInput
 				return nil, fmt.Errorf("order.FORM_INVALID: %s：%s", f.Name, err)
 			}
 			if val != "" {
-				v.answers = append(v.answers, map[string]string{"id": k, "name": f.Name, "value": val, "type": string(f.Type)})
+				answer := map[string]string{"id": k, "name": f.Name, "value": val, "type": string(f.Type)}
+				if field, ok := upstreamFields[k]; ok {
+					typed, err := field.Value(val)
+					if err != nil {
+						return nil, fmt.Errorf("order.FORM_INVALID: %s：%w", f.Name, err)
+					}
+					raw, err := json.Marshal(typed)
+					if err != nil {
+						return nil, err
+					}
+					answer["upstream_key"], answer["upstream_value"] = field.Key, string(raw)
+					answer["upstream_connection"], answer["upstream_product"] = strconv.FormatUint(p.UpstreamSourceID, 10), p.UpstreamProductCode
+				}
+				v.answers = append(v.answers, answer)
+			}
+			if field, ok := upstreamFields[k]; ok && val == "" && field.Required {
+				return nil, fmt.Errorf("order.FORM_INVALID: %s：请填写此项", f.Name)
 			}
 		}
 		if it.ControlAnswers != nil {

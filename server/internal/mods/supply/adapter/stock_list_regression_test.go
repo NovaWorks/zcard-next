@@ -25,3 +25,51 @@ func TestRecheckAcgMissingListStockIsUnknown(t *testing.T) {
 		t.Fatal("missing stock is incorrectly normalized to unlimited")
 	}
 }
+
+func TestCatalogDoesNotTreatMalformedSuccessAsEmpty(t *testing.T) {
+	for _, driver := range []string{"zcard", "dujiao_next", "acg_faka"} {
+		t.Run(driver, func(t *testing.T) {
+			body := `{"ok":true}`
+			if driver == "acg_faka" {
+				body = `{"code":200,"data":null}`
+			}
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = w.Write([]byte(body))
+			}))
+			defer srv.Close()
+			transport := newTransportWithClient(srv.URL, nil, nil, srv.Client())
+			var a Adapter
+			switch driver {
+			case "zcard":
+				a = &zCardAdapter{protocol: driver, t: transport}
+			case "dujiao_next":
+				a = &dujiaoAdapter{protocol: driver, t: transport}
+			case "acg_faka":
+				a = &acgFakaAdapter{protocol: driver, t: transport}
+			}
+			if _, err := a.ListProducts(context.Background(), 1, 50, true); err == nil {
+				t.Fatal("incomplete response was accepted as an empty catalog")
+			}
+			if driver != "acg_faka" {
+				body = `{"ok":true,"total":0}`
+				if _, err := a.ListProducts(context.Background(), 1, 50, true); err == nil {
+					t.Fatal("missing items accepted as empty catalog")
+				}
+			}
+			if driver == "dujiao_next" {
+				body = `{"ok":false,"total":0,"items":[]}`
+				if _, err := a.ListProducts(context.Background(), 1, 50, true); err == nil {
+					t.Fatal("failed response was accepted as an empty catalog")
+				}
+			}
+			body = `{"ok":true,"total":0,"items":[]}`
+			if driver == "acg_faka" {
+				body = `{"code":200,"data":[]}`
+			}
+			empty, err := a.ListProducts(context.Background(), 1, 50, true)
+			if err != nil || empty.Total != 0 || len(empty.Items) != 0 || empty.HasMore {
+				t.Fatalf("valid empty catalog rejected: %+v, %v", empty, err)
+			}
+		})
+	}
+}

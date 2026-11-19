@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/purchaseform"
 )
 
 // StockSnapshot carries display history separately from authoritative availability.
@@ -209,6 +210,7 @@ type ProductAdminRepo interface {
 // UpstreamProductInput 货源同步 upsert 输入（）。
 // Price=-1 表示「不更新价格」（价格保护：auto_sync_price=false 或运营已改价）。
 type UpstreamProductInput struct {
+	FormFields          []purchaseform.Field // nil preserves fields; an explicit empty slice clears supplier-managed fields
 	ProductKind         string
 	DeliveryKind        string
 	SMSProduct          map[string]string

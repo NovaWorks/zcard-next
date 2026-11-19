@@ -157,7 +157,12 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 	}
 
 	// 提交
+	form, err := data.UpstreamFormSubmission(it.FormAnswers, p.UpstreamSourceID, p.UpstreamProductCode)
+	if err != nil {
+		return s.repo.MarkManual(ctx, po.ID, err.Error())
+	}
 	res, err := s.gw.Submit(ctx, supplyport.PurchaseRequest{
+		ManualFormData:    form,
 		ConnectionID:      p.UpstreamSourceID,
 		ProductCode:       p.UpstreamProductCode,
 		UpstreamSKU:       upstreamSKU,
@@ -221,6 +226,9 @@ func (s *ProcureService) finalizeDelivered(ctx context.Context, poID, orderID, o
 
 // handleSubmitError 提交失败分流：永久错误 → rejected → 失败策略；其余 → 退避重试。
 func (s *ProcureService) handleSubmitError(ctx context.Context, poID uint64, err error) error {
+	if errors.Is(err, supplyport.ErrUpstreamFormInvalid) {
+		return s.repo.MarkManual(ctx, poID, "上游填写资料校验未通过，请核对上游商品规则和客户资料后人工处理")
+	}
 	// 防重键冲突（acg request_no 重复即报错）：上游可能已受理首请求（响应丢失
 	// 场景），重试永远撞墙、自动退款可能造成上游已成交却退客户款 → 立即转人工核对
 	if errors.Is(err, supplyport.ErrUpstreamDuplicate) {

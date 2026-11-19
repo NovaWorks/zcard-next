@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/NovaWorks/zcard-next/server/internal/platform/purchaseform"
 )
 
 // dujiaoAdapter dujiao_next 协议适配器。
@@ -147,27 +149,35 @@ func (a *dujiaoAdapter) listProducts(ctx context.Context, page, pageSize int, in
 	}
 	var resp struct {
 		OK               bool            `json:"ok"`
-		Total            int             `json:"total"`
+		Total            *int            `json:"total"`
 		Items            []dujiaoProduct `json:"items"`
 		IncludesInactive bool            `json:"includes_inactive"` // 回声字段：旧版不识别参数 → false
 	}
 	if err := json.Unmarshal(data, &resp); err != nil {
 		return nil, fmt.Errorf("adapter.dujiao: 解析商品列表失败: %w", err)
 	}
+	if !resp.OK || resp.Total == nil || *resp.Total < 0 || resp.Items == nil {
+		return nil, fmt.Errorf("adapter.dujiao: invalid catalog response")
+	}
 	out := &ProductList{
-		Total:            resp.Total,
-		HasMore:          page*pageSize < resp.Total,
+		Total:            *resp.Total,
+		HasMore:          page*pageSize < *resp.Total,
 		IncludesInactive: resp.IncludesInactive,
 	}
 	for _, p := range resp.Items {
-		out.Items = append(out.Items, p.toProduct())
+		item := p.toProduct()
+		item.FormFields, err = purchaseform.ParseSchema(p.ManualFormSchema)
+		if err != nil {
+			return nil, err
+		}
+		out.Items = append(out.Items, item)
 	}
 	return out, nil
 }
 
-func (a *dujiaoAdapter) GetStock(ctx context.Context, productCode, _ string) (int32, error) {
+func (a *dujiaoAdapter) GetStock(ctx context.Context, productCode, skuCode string) (int32, error) {
 	ctx = stockReadContext(ctx)
-	// dujiao 无独立库存端点：走商品详情（stockQuantity，-1=无限）
+	// Stock belongs to the requested SKU; the product itself has no stock field.
 	path := "/api/v1/upstream/products/" + url.PathEscape(productCode)
 	data, err := a.request(ctx, "GET", path, nil, nil)
 	if err != nil {
@@ -180,15 +190,19 @@ func (a *dujiaoAdapter) GetStock(ctx context.Context, productCode, _ string) (in
 		return 0, err
 	}
 	var resp struct {
-		OK      bool `json:"ok"`
-		Product struct {
-			StockQuantity int32 `json:"stock_quantity"`
-		} `json:"product"`
+		OK      bool           `json:"ok"`
+		Product *dujiaoProduct `json:"product"`
 	}
 	if err := json.Unmarshal(data, &resp); err != nil {
 		return 0, fmt.Errorf("adapter.dujiao: 解析商品详情失败: %w", err)
 	}
-	return resp.Product.StockQuantity, nil
+	if !resp.OK || resp.Product == nil || idString(resp.Product.ID) != productCode {
+		return -2, fmt.Errorf("adapter.dujiao: invalid product detail")
+	}
+	if !resp.Product.IsActive {
+		return 0, ErrProductUnavailable
+	}
+	return resp.Product.stock(skuCode)
 }
 
 func (a *dujiaoAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*CreateOrderResult, error) {
@@ -210,6 +224,9 @@ func (a *dujiaoAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*C
 		"trace_id":            req.TraceID,
 		"callback_url":        req.CallbackURL,
 	}
+	if len(req.ManualFormData) > 0 {
+		body["manual_form_data"] = req.ManualFormData
+	}
 	data, err := a.request(ctx, "POST", "/api/v1/upstream/orders", nil, body)
 	if err != nil {
 		// HTTP 状态层错误分类（dujiao-next 实测契约：402 insufficient_balance /
@@ -226,6 +243,8 @@ func (a *dujiaoAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*C
 			return nil, ErrProductUnavailable
 		case "product_deleted", "product_not_found":
 			return nil, ErrProductDeleted
+		case "bad_request":
+			return nil, ErrPurchaseFormInvalid
 		}
 		return nil, err
 	}
@@ -244,6 +263,8 @@ func (a *dujiaoAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*C
 	if !resp.OK {
 		// 余额不足/无映射等业务拒绝 → 归一化哨兵（T2 状态机判永久错误）
 		switch resp.ErrorCode {
+		case "bad_request":
+			return nil, ErrPurchaseFormInvalid
 		case "insufficient_balance", "balance_not_enough", "payment_failed":
 			return nil, ErrInsufficientBalance
 		case "insufficient_stock", "no_stock", "out_of_stock":
@@ -295,10 +316,12 @@ func (a *dujiaoAdapter) GetOrder(ctx context.Context, upstreamOrderID string) (*
 	status := resp.Status
 	var cards []string
 	if resp.Fulfillment != nil {
-		if resp.Fulfillment.Status == "delivered" {
+		if resp.Fulfillment.Status == "delivered" && !dujiaoOrderStopped(status) {
 			status = "delivered"
 		}
-		cards = splitCards(resp.Fulfillment.Payload)
+		if !dujiaoOrderStopped(status) {
+			cards = splitCards(resp.Fulfillment.Payload)
+		}
 	}
 	return &OrderDetail{
 		UpstreamOrderID: upstreamOrderID,
@@ -320,20 +343,22 @@ func (a *dujiaoAdapter) ListOrders(ctx context.Context, start, end time.Time) ([
 // dujiaoProduct 上游商品行（字段对齐 dujiao-next upstreamProduct：
 // title/description/content 为多语言 JSON 对象（jsonmap.JSON），非平文字符串）。
 type dujiaoProduct struct {
-	ID          any      `json:"id"`
-	Title       any      `json:"title"`       // 多语言对象；旧版兼容平文
-	Description any      `json:"description"` // 多语言对象（短描述）
-	Content     any      `json:"content"`     // 多语言对象（富文本详情，优先）
-	PriceAmount string   `json:"price_amount"`
-	CategoryID  any      `json:"category_id"`
-	Images      []string `json:"images"`
-	IsActive    bool     `json:"is_active"`
-	StockStatus string   `json:"stock_status"`
-	SKUs        []struct {
+	ManualFormSchema json.RawMessage `json:"manual_form_schema"`
+	ID               any             `json:"id"`
+	Title            any             `json:"title"`       // 多语言对象；旧版兼容平文
+	Description      any             `json:"description"` // 多语言对象（短描述）
+	Content          any             `json:"content"`     // 多语言对象（富文本详情，优先）
+	PriceAmount      string          `json:"price_amount"`
+	CategoryID       any             `json:"category_id"`
+	Images           []string        `json:"images"`
+	IsActive         bool            `json:"is_active"`
+	StockStatus      string          `json:"stock_status"`
+	StockQuantity    *int32          `json:"stock_quantity"` // older compatible servers only
+	SKUs             []struct {
 		ID            any               `json:"id"`
 		SKUCode       string            `json:"sku_code"`
 		PriceAmount   string            `json:"price_amount"`
-		StockQuantity int32             `json:"stock_quantity"`
+		StockQuantity *int32            `json:"stock_quantity"`
 		IsActive      bool              `json:"is_active"`
 		SpecValues    map[string]string `json:"spec_values"` // 规格（jsonmap.JSON）
 	} `json:"skus"`
@@ -351,11 +376,17 @@ func (p dujiaoProduct) toProduct() Product {
 		Description:    firstNonEmpty(LocalizedText(p.Content), LocalizedText(p.Description)),
 		DescriptionSet: p.Content != nil || p.Description != nil,
 		IsActive:       p.IsActive,
-		Stock:          -1,
+		Stock:          -2,
 		Cover:          firstNonEmpty(p.Images...),
 	}
 	// price_amount already includes the authenticated account price. Volume tiers are not single-unit quotes.
 	out.FactoryPrice = out.Price
+	if p.SKUs != nil {
+		out.UpstreamExtra = map[string]any{"sku_catalog_complete": true}
+	}
+	if stock, err := p.stock(""); err == nil {
+		out.Stock = stock
+	}
 
 	for _, s := range p.SKUs {
 		if !s.IsActive {
@@ -367,12 +398,12 @@ func (p dujiaoProduct) toProduct() Product {
 			Code:       skuID, // 下单反解键：dujiao sku_id（数字）→ product_skus.upstream_sku_id
 			Name:       firstNonEmpty(s.SKUCode, skuID),
 			Price:      parseYuanToCents(s.PriceAmount),
-			Stock:      s.StockQuantity,
+			Stock:      -2,
 			IsActive:   true,
 			SpecValues: s.SpecValues,
 		}
-		if out.Stock == -1 {
-			out.Stock = s.StockQuantity // 商品级库存 = 第一个启用 SKU 的库存
+		if s.StockQuantity != nil && *s.StockQuantity >= -1 {
+			sku.Stock = *s.StockQuantity
 		}
 		out.SKUs = append(out.SKUs, sku)
 	}

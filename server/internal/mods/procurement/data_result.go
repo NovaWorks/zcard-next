@@ -74,6 +74,8 @@ func (s *ProcureService) confirmResult(ctx context.Context, poID uint64, status 
 		return s.finalizeDelivered(ctx, po.ID, oi.OrderID, po.OrderItemID, oi.ProductID, oi.SubsiteID, cards, amount)
 	case "rejected", "failed":
 		return s.handleSubmitError(ctx, poID, errors.New("上游返回终态失败"))
+	case "refunded", "partially_refunded", "refunding", "canceled", "cancelled", "expired":
+		return s.repo.MarkManual(ctx, poID, "上游订单已退款、退款中或已取消，请核对上游金额后人工处理；不会使用旧交付记录发货")
 	default:
 		// pending：推进轮询档位
 		po, err := s.repo.Get(ctx, poID)

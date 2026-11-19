@@ -196,6 +196,9 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 	if err := json.Unmarshal(raw, &cats); err != nil {
 		return nil, fmt.Errorf("adapter.acgfaka: 解析商品列表失败: %w", err)
 	}
+	if cats == nil {
+		return nil, fmt.Errorf("adapter.acgfaka: missing catalog array")
+	}
 	// 站点级探测：items 只要有任一商品带 config，即说明该站 items 直出规格 INI
 	// （空 config = 真无规格，不兜底）；全部为空才视为皮肤站（如 tghao）缺省该字段，
 	// 逐品走 inventory 兜底——避免标准站为无规格品白白多打 N 次接口

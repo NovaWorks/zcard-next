@@ -15,11 +15,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/purchaseform"
 	"time"
 )
 
 // 哨兵错误：适配器层把上游协议差异归一化为统一语义（ 同步/ 库存判据）。
 var (
+	ErrPurchaseFormInvalid = errors.New("上游拒绝购买参数或填写资料，请核对后重试")
 	// ErrCredentialsInvalid identifies a local credential failure, before any
 	// upstream request, so catalog jobs can ask for reconfiguration accurately.
 	ErrCredentialsInvalid = errors.New("货源凭据无法读取，请编辑货源并重新填写完整的账号密钥")
@@ -78,6 +80,7 @@ type SKU struct {
 
 // Product 上游商品（统一输出分）。
 type Product struct {
+	FormFields     []purchaseform.Field
 	ProductKind    string
 	DeliveryKind   string
 	SMSProduct     map[string]string
@@ -107,14 +110,14 @@ type ProductList struct {
 	// Categories 非 nil 表示商品目录已携带分类，无须再次请求全量目录取分类名。
 	Categories []Category
 	// IncludesInactive 上游是否真的在本次响应里包含了下架商品（dujiao 回声字段）。
-	// 删除对账的权威性判据：仅当快照完整（全量 + 回声为 true）时，
-	// 「上游未见」才可推断为已删除（误判会把下架商品当删除下架掉——语义虽同向
-	// 但统计口径失真；旧版上游不识别 include_inactive 时必须禁用对账）。
+	// 采集删除对账要求全量且回声为 true；自动上下架则可根据完整的在售目录
+	// 将未见商品标记为上游不可售，不推断删除，也不删除本地商品。
 	IncludesInactive bool
 }
 
 // CreateOrderReq 采购提交请求（DownstreamOrderNo 即幂等键，随请求发送）。
 type CreateOrderReq struct {
+	ManualFormData    map[string]any
 	ProductCode       string // 上游商品标识（acg-faka: shared_code；dujiao: sku_id；zcard: product_id）
 	UpstreamSKU       string // 规格 SKU 标识（本地 product_skus.upstream_sku_id；acg=race|k=v 编码、dujiao=sku_id 覆盖 ProductCode；空=无规格）
 	Quantity          int
