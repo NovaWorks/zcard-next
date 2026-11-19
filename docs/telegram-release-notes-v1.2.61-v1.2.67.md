@@ -1685,7 +1685,7 @@ Docker 应用与更新器均提供 amd64 / arm64，版本标签、平台与发�
 📦 ZCard 众卡 v1.2.117 更新日志
 📅 发布日期：2026-11-19
 
-当前先发布 GitHub 正式版；Docker 镜像稍后发布，Latest 暂保留 v1.2.116。
+GitHub 与 Docker 正式版均已发布，支持 Linux amd64 / arm64。Docker 镜像及签名在线更新于 2026-11-20 补齐。
 
 🔄 自动上下架完善
 • 不再只判断库存：上游停售、删除，或在完整对接目录中已找不到的商品，会自动下架本地已开启自动管理的商品。
@@ -1706,9 +1706,10 @@ Docker 应用与更新器均提供 amd64 / arm64，版本标签、平台与发�
 本版也包含前两版已发布的商品复制、规格和下单控件复制、规格保存提示完善，以及实体发货运费到付。
 
 📌 升级提醒
-本版无新增数据库迁移。请先备份、保留原加密密钥，使用 Linux amd64 / arm64 完整发行包更新并重启。
+本版无新增数据库迁移。请先备份、保留原加密密钥，使用 Linux amd64 / arm64 完整发行包或 Docker 镜像更新并重启。
 已有需要填写资料的上游商品，请重新采集或导入以同步表单；与本地手工控件冲突会提示整理，不会直接覆盖。
-Docker 用户请等待镜像发布。版本发布不代表站点已经升级，真实支付及交付仍需在升级后验收。
+Docker 应用镜像：nealbaker/zcard-next:v1.2.117；配套更新器：nealbaker/zcard-updater:v1.2.117，latest 已同步更新。
+版本发布不代表站点已经升级，真实支付及交付仍需在升级后验收。
 
 🔗 版本详情与下载
 https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.117
@@ -1716,4 +1717,4 @@ https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.117
 #ZCard #版本更新 #自动上下架 #独角数卡
 ```
 
-发布状态（2026-11-19）：GitHub v1.2.117 正式版已公开，8 个附件已匿名下载并通过字节比对、签名及 SHA256 验证。Docker 双架构镜像待完成发布账户登录后推送；Latest 暂保留 v1.2.116。公开附件与公告已移除独立付费主题。尚未发送频道公告、未部署客户站点。[验证与 CI 边界记录](releases/v1.2.117-verification.md)。
+发布状态（2026-11-20）：GitHub 与 Docker v1.2.117 正式版均已发布，Latest 与 Docker latest 已同步。应用和更新器均支持 Linux amd64 / arm64，GitHub 签名清单包含固定远端 digest 的 Docker 发行描述符。公开附件与公告不包含独立付费主题。尚未发送频道公告、未部署客户站点。[验证与 CI 边界记录](releases/v1.2.117-verification.md)。
