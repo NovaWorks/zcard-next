@@ -16,7 +16,8 @@ const server=http.createServer((req,res)=>{let f=path.join(root,new URL(req.url,
    await route.fulfill({json:data}).catch(()=>{});
   });
   await page.goto(`http://127.0.0.1:${server.address().port}/admin/product`);
-  const remove=page.getByRole('button',{name:'删除',exact:true});await expect(remove).toBeEnabled();await remove.click();
+  await page.getByRole('button',{name:'更多操作：锁定商品',exact:true}).click();
+  const remove=page.getByRole('menuitem',{name:'删除',exact:true});await expect(remove).toBeEnabled();await remove.click();
   const modal=page.locator('.n-modal').filter({hasText:'删除商品'});await expect(modal.getByText('保留关联订单：')).toBeVisible();await expect(modal.getByText('2',{exact:true})).toBeVisible();
   await expect(modal.getByRole('button',{name:'删除商品及关联订单'})).toHaveCount(0);
   const confirm=modal.getByRole('button',{name:'确认删除（保留订单）',exact:true});await expect(confirm).toBeEnabled();await confirm.click();await expect(confirm).toBeEnabled();assert.equal(removed,false);await confirm.click();await expect(modal).toHaveCount(0);await expect(remove).toHaveCount(0);assert.equal(attempts,2);

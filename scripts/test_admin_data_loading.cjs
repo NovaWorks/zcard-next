@@ -50,7 +50,8 @@ const server=http.createServer((req,res)=>{
   await page.getByRole('menuitem',{name:'商品管理',exact:true}).click();
   await expect(page.locator('main')).toContainText('回归商品');
   assert.equal(requests.filter(u=>u.pathname.endsWith('/reviews')).length,0,'hidden drawer requested reviews');
-  await page.getByRole('button',{name:'评价',exact:true}).click();
+  await page.getByRole('button',{name:'更多操作：回归商品',exact:true}).click();
+  await page.getByRole('menuitem',{name:'评价',exact:true}).click();
   await expect.poll(()=>requests.filter(u=>u.pathname.endsWith('/reviews')).length).toBe(1);
   await page.keyboard.press('Escape');
   await page.getByRole('menuitem',{name:'卡密库存',exact:true}).click();

@@ -19,7 +19,7 @@ onMounted(async () => {
 import ListingManagement from "./components/listing-management.vue";
 import { ref, reactive, computed, onMounted, onBeforeUnmount, h, watch } from "vue";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
-import { NButton, NTag, NSpace, NPopconfirm, NInputNumber, NPopover } from "naive-ui";
+import { NButton, NTag, NSpace, NPopconfirm, NInputNumber, NPopover, NDropdown } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import {
   fetchProducts,
@@ -62,6 +62,11 @@ const router = useRouter();
 const loading = ref(false);
 const saving = ref(false);
 const showCreate = ref(false);
+const categoryCollapsed = ref(window.innerWidth < 1024);
+const advancedFilters = ref(false);
+const advancedFilterCount = computed(() => [
+  supplyFilter.value !== null, lockFilter.value !== null, autoListingFilter.value !== null, restockedOnly.value,
+].filter(Boolean).length);
 const skuPanel = ref<InstanceType<typeof SkuPanel> | null>(null);
 const editingId = ref(0);
 const copying = ref(false);
@@ -525,19 +530,16 @@ function priceCell(row: any) {
       h("span", { class: "w-30px shrink-0 text-12px text-gray-400" }, label),
       value,
     ]);
-  return h("div", { class: "flex flex-col gap-2px py-2px" }, [
+  return h("div", { class: "flex flex-col gap-2px" }, [
     line("售价", priceLine(row, "price")),
-    line("成本", priceLine(row, "cost")),
-    line(
-      "毛利",
-      markup === null
-        ? h("span", { class: "text-gray-300" }, "-")
-        : h(
+    line("成本", h("span", { class: "inline-flex items-center gap-6px" }, [
+      priceLine(row, "cost"),
+      markup === null ? null : h(
             NTag,
-            { size: "small", bordered: false, type: markup >= 0 ? "success" : "error" },
+            { size: "tiny", title: "毛利（成本基准）", bordered: false, type: markup >= 0 ? "success" : "error" },
             { default: () => `${markup >= 0 ? "+" : ""}${markup}%` },
           ),
-    ),
+    ])),
   ]);
 }
 
@@ -746,7 +748,7 @@ const columns: DataTableColumns<any> = [
     minWidth: 140,
     render: (row) =>
       h("div", { class: "flex flex-col gap-4px" }, [
-        h("span", null, row.name),
+        h("span", { class: "line-clamp-2 break-all", title: row.name }, row.name),
         row.is_locked
           ? h(
               NTag,
@@ -767,13 +769,14 @@ const columns: DataTableColumns<any> = [
     title: "分类",
     key: "category_id",
     width: 84,
+    ellipsis: { tooltip: true },
     render: (row) => categories.value.find((c: any) => c.id === row.category_id)?.name || "-",
   },
   {
-    // 价格块：售价/成本/加价三行合一（标签与数值紧邻，行内铅笔气泡改价）
+    // 售价、成本分两行；加价比例紧邻成本，保留行内改价入口。
     title: "价格",
     key: "pricing",
-    width: 168,
+    width: 188,
     render: (row) => priceCell(row),
   },
   {
@@ -972,74 +975,45 @@ const columns: DataTableColumns<any> = [
   {
     title: "操作",
     key: "actions",
-    width: 144,
+    width: 166,
     fixed: "right",
-    render: (row) =>
-      h(
-        NSpace,
-        { size: "small" },
-        {
-          default: () => [
-            checkAuth("inventory:import") && row.stock_type === "card" && row.product_kind !== "social_service" && (row.product_property || row.goods_type) !== "physical"
-              ? h(NButton, { size: "small", disabled: row.is_locked, onClick: () => router.push({ name: "inventory", query: { product_id: row.id, open_import: "1" } }) }, { default: () => "导入卡密" })
-              : null,
-            checkAuth("catalog:write")
-              ? h(
-                  NButton,
-                  { size: "small", onClick: () => handleEdit(row) },
-                  { default: () => (row.is_locked ? "查看" : "编辑") },
-                )
-              : null,
-            checkAuth("catalog:write") && canCopyProduct(row)
-              ? h(
-                  NButton,
-                  { size: "small", disabled: openingProduct.value, onClick: () => openProduct(row, 1, true) },
-                  { default: () => "复制" },
-                )
-              : null,
-            checkAuth("catalog:write") && row.upstream_source_id && row.product_kind !== "social_service"
-              ? h(
-                  NButton,
-                  { size: "small", onClick: () => openDeliverySources(row) },
-                  { default: () => "发货设置" },
-                )
-              : null,
-            checkAuth("catalog:lock")
-              ? h(
-                  NButton,
-                  {
-                    size: "small",
-                    loading: lockBusy.value === row.id,
-                    disabled: lockBusy.value !== null,
-                    onClick: () => changeLock(row),
-                  },
-                  { default: () => (row.is_locked ? "解锁" : "锁定") },
-                )
-              : null,
-            checkAuth("catalog:review_read")
-              ? h(
-                  NButton,
-                  { size: "small", quaternary: true, onClick: () => openReviews(row) },
-                  { default: () => "评价" },
-                )
-              : null,
-            checkAuth("catalog:delete")
-              ? h(
-                  NButton,
-                  {
-                    size: "small",
-                    type: "error",
-                    title: "删除商品，保留订单快照",
-                    onClick: () => {
-                      deleteTarget.value = row;
-                    },
-                  },
-                  { default: () => "删除" },
-                )
-              : null,
-          ],
-        },
-      ),
+    render: (row) => {
+      const actions: { key: string; label: string; disabled?: boolean; run: () => void }[] = [];
+      if (checkAuth("inventory:import") && row.stock_type === "card" && row.product_kind !== "social_service" && (row.product_property || row.goods_type) !== "physical") {
+        actions.push({ key: "import", label: "导入卡密", disabled: row.is_locked, run: () => { router.push({ name: "inventory", query: { product_id: row.id, open_import: "1" } }); } });
+      }
+      if (checkAuth("catalog:write") && row.upstream_source_id && row.product_kind !== "social_service") {
+        actions.push({ key: "delivery", label: "发货设置", run: () => openDeliverySources(row) });
+      }
+      if (checkAuth("catalog:lock")) {
+        actions.push({ key: "lock", label: row.is_locked ? "解锁" : "锁定", disabled: lockBusy.value !== null, run: () => { changeLock(row); } });
+      }
+      if (checkAuth("catalog:review_read")) {
+        actions.push({ key: "reviews", label: "评价", run: () => openReviews(row) });
+      }
+      if (checkAuth("catalog:delete")) {
+        actions.push({ key: "delete", label: "删除", run: () => { deleteTarget.value = row; } });
+      }
+      return h(NSpace, { size: 6, wrap: false }, {
+        default: () => [
+          checkAuth("catalog:write")
+            ? h(NButton, { size: "small", onClick: () => handleEdit(row) }, { default: () => row.is_locked ? "查看" : "编辑" })
+            : null,
+          checkAuth("catalog:write") && canCopyProduct(row)
+            ? h(NButton, { size: "small", disabled: openingProduct.value, onClick: () => openProduct(row, 1, true) }, { default: () => "复制" })
+            : null,
+          actions.length
+            ? h(NDropdown, {
+                trigger: "click",
+                options: actions,
+                menuProps: () => ({ role: "menu", "aria-label": `商品操作：${row.name}` }),
+                nodeProps: (option: { disabled?: boolean }) => ({ role: "menuitem", "aria-disabled": option.disabled ? "true" : "false" } as const),
+                onSelect: (key: string) => actions.find(action => action.key === key)?.run(),
+              }, { default: () => h(NButton, { size: "small", "aria-haspopup": "menu", "aria-label": `更多操作：${row.name}` }, { default: () => "更多" }) })
+            : null,
+        ],
+      });
+    },
   },
 ];
 
@@ -1081,6 +1055,7 @@ function onTreeSelect(keys: Array<string | number>) {
   selectedCatKeys.value = keys.length ? keys : [0];
   const k = keys[0];
   categoryFilter.value = typeof k === "number" && k > 0 ? k : null;
+  keyword.value = "";
   onSearch();
 }
 
@@ -1464,7 +1439,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="product-management min-h-500px flex flex-1 gap-16px overflow-hidden">
+  <div class="product-management flex flex-1 gap-12px">
     <ListingManagement
       v-model:show="showListing"
       :ids="listingIds"
@@ -1481,6 +1456,7 @@ onMounted(() => {
     />
     <!-- 左侧：分类树（大厂后台交互——左树筛选 + 右列表；悬停显示完整分类名） -->
     <NCard
+      v-show="!categoryCollapsed"
       title="商品分类"
       class="product-category-card shrink-0"
       :content-style="{
@@ -1528,7 +1504,12 @@ onMounted(() => {
         overflow: 'hidden',
       }"
     >
-      <div class="mb-16px flex shrink-0 flex-wrap items-center gap-12px">
+      <template #header-extra>
+        <NButton size="small" :aria-expanded="!categoryCollapsed" @click="categoryCollapsed = !categoryCollapsed">
+          {{ categoryCollapsed ? "展开分类" : "收起分类" }}
+        </NButton>
+      </template>
+      <div class="product-primary-tools mb-10px flex shrink-0 flex-wrap items-center gap-8px">
         <NButton
           v-auth="'catalog:write'"
           type="primary"
@@ -1539,14 +1520,25 @@ onMounted(() => {
         >
           新增商品
         </NButton>
-        <NButton v-auth="'catalog:category_write'" @click="showCategory = true"> 分类管理 </NButton>
         <NInput
           v-model:value="keyword"
           placeholder="搜索商品名"
           clearable
           style="width: 200px; max-width: 100%"
           @keyup.enter="onSearch"
+          @clear="onSearch"
         />
+        <NButton @click="onSearch">搜索</NButton>
+        <NButton :aria-expanded="advancedFilters" aria-controls="product-advanced-filters" @click="advancedFilters = !advancedFilters">
+          {{ advancedFilters ? "收起筛选" : "更多筛选" }}{{ advancedFilterCount ? `（${advancedFilterCount}）` : "" }}
+        </NButton>
+      </div>
+      <div v-if="categoryFilter" class="mb-8px flex flex-wrap items-center gap-8px shrink-0">
+        <span>{{ selectedCategoryName }} · 包含子分类</span>
+        <NButton v-auth="'catalog:category_read'" size="small" @click="showPlacements = true">置顶与推荐</NButton>
+      </div>
+      <div v-show="advancedFilters" id="product-advanced-filters" class="product-advanced-filters mb-8px shrink-0">
+        <div class="mb-8px flex flex-wrap items-center gap-8px">
         <NSelect
           v-model:value="supplyFilter"
           :options="supplyOptions"
@@ -1563,15 +1555,6 @@ onMounted(() => {
         >
           {{ supplyFilter === 0 ? "✓ 仅自营" : "仅自营" }}
         </NButton>
-        <NButton @click="onSearch">搜索</NButton>
-        <NButton
-          v-auth="'catalog:write'"
-          @click="loadCategories().then(() => (showClassifyProducts = true))"
-          >按关键词分类</NButton
-        >
-      </div>
-
-      <div class="mb-12px flex flex-wrap items-center gap-12px">
         <NSelect
           v-model:value="lockFilter"
           :options="[
@@ -1583,15 +1566,13 @@ onMounted(() => {
           style="width: 170px"
           @update:value="onSearch"
         />
-        <template v-if="categoryFilter"
-          ><span>{{ selectedCategoryName }} · 包含子分类</span
-          ><NButton v-auth="'catalog:category_read'" @click="showPlacements = true"
-            >置顶与推荐</NButton
-          ></template
+        <NButton
+          v-auth="'catalog:write'"
+          @click="loadCategories().then(() => (showClassifyProducts = true))"
+          >按关键词分类</NButton
         >
-        <span v-if="pageLockedCount" class="text-13px"
-          >本页 {{ pageLockedCount }} 件已锁定，编辑和同步会跳过，删除仍可选。</span
-        >
+        </div>
+        <p v-if="pageLockedCount" class="text-12px">本页 {{ pageLockedCount }} 件已锁定，编辑和同步会跳过。</p>
       </div>
       <NAlert
         v-if="batchReport"
@@ -1604,15 +1585,17 @@ onMounted(() => {
           <li v-for="failure in batchFailures" :key="failure">{{ failure }}</li>
         </ul></NAlert
       >
-      <div class="mb-8px flex flex-wrap items-center gap-8px shrink-0">
+      <div class="product-quick-filters shrink-0">
+      <div class="mb-8px flex flex-wrap items-center gap-8px">
         <span>上架状态</span
         ><FilterTabs v-model:value="statusFilter" :options="statusTabs" @change="onSearch" />
       </div>
-      <div class="mb-12px flex flex-wrap items-center gap-8px shrink-0">
+      <div class="mb-8px flex flex-wrap items-center gap-8px">
         <span>库存状态</span
         ><FilterTabs v-model:value="inventoryFilter" :options="inventoryTabs" @change="onSearch" />
       </div>
-      <div class="mb-12px flex flex-wrap items-center gap-8px shrink-0">
+      </div>
+      <div v-show="advancedFilters" class="product-advanced-filters mb-8px flex flex-wrap items-center gap-8px shrink-0">
         <NButton :type="restockedOnly ? 'primary' : 'default'" @click="showRestocked"
           >{{ restockedOnly ? "✓ " : "" }}补货待上架</NButton
         >
@@ -1663,7 +1646,7 @@ onMounted(() => {
 
       <!-- 批量操作条（勾选后出现） -->
       <div
-        v-if="checkedKeys.length || categoryFilter"
+        v-if="checkedKeys.length"
         class="mb-12px flex shrink-0 flex-wrap items-center gap-8px rounded-6px bg-primary-50 px-12px py-8px dark:bg-gray-800"
       >
         <span class="text-13px"
@@ -1734,6 +1717,7 @@ onMounted(() => {
       </div>
 
       <NDataTable
+        size="small"
         flex-height
         :scroll-x="1200"
         class="min-h-0 flex-1"
@@ -2247,8 +2231,11 @@ onMounted(() => {
 </template>
 
 <style>
+.product-management {
+  min-height: 0;
+}
 .product-category-card {
-  width: clamp(280px, 24vw, 360px);
+  width: clamp(210px, 18vw, 260px);
   min-height: 0;
   align-self: flex-start;
   /* 使用后台实际的顶栏、标签栏和页脚尺寸，避免小高度窗口中被页脚遮挡。 */
@@ -2258,6 +2245,24 @@ onMounted(() => {
   );
 }
 
+.product-quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 16px;
+}
+.product-list-card .n-data-table {
+  min-height: 260px;
+}
+.product-list-card > .n-card__content {
+  padding: 12px 16px;
+}
+.product-advanced-filters {
+  max-height: 150px;
+  overflow-y: auto;
+}
+.product-list-card {
+  min-height: 480px;
+}
 .product-category-scroll {
   flex: 1;
   min-height: 0;
@@ -2270,7 +2275,7 @@ onMounted(() => {
 @media (max-width: 767px) {
   .product-management {
     flex-direction: column;
-    overflow: auto;
+    overflow: visible;
   }
   .product-category-card {
     width: 100%;

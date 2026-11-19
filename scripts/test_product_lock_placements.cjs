@@ -2,7 +2,7 @@
 // ZCARD_TEST_BASE_URL, ZCARD_TEST_LOGIN_FILE, PLAYWRIGHT_MODULE (optional).
 const fs = require('node:fs');
 const assert = require('node:assert/strict');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const { chromium, expect } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const base = process.env.ZCARD_TEST_BASE_URL;
 if (!base || !['127.0.0.1', 'localhost', '[::1]'].includes(new URL(base).hostname)) throw Error('Isolated localhost server required');
 const output = process.env.ZCARD_TEST_OUTPUT || '/tmp/zcard-lock-placement-browser';
@@ -33,9 +33,10 @@ fs.mkdirSync(output, { recursive: true });
     await page.goto(base+'/admin/product');
     await page.getByText(parent.name,{exact:true}).first().click();
     const row = tableRow(locked.name);
-    await row.getByRole('button',{name:'锁定',exact:true}).click();
+    await row.getByRole('button',{name:'更多操作：锁定保留商品',exact:true}).click();
+    await page.getByRole('menuitem',{name:'锁定',exact:true}).click();
     await page.getByRole('button',{name:'锁定商品',exact:true}).click();
-    await row.getByRole('button',{name:'解锁',exact:true}).waitFor();
+    await expect(row).toContainText('已锁定');
     assert((await api(`/products/${locked.id}`)).is_locked);
     assert(await row.getByRole('checkbox').evaluate(el=>el.classList.contains('n-checkbox--disabled')),'locked row selectable');
     await page.locator('thead').getByRole('checkbox').check();

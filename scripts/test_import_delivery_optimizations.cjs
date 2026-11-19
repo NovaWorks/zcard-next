@@ -68,7 +68,8 @@ const server = http.createServer((req, res) => {
     await expect.poll(()=>writes.filter(r=>r.p.endsWith('/import')).length).toBe(1);
     const payload=writes.find(r=>r.p.endsWith('/import')).data;assert.deepEqual(payload.codes.sort(),['p1','p2','p3']);assert.equal(payload.selected_categories_only,true);assert.equal(Number(payload.category_rules[0].category_id),10);
     await page.goto(base+'/admin/product');
-    await page.getByRole('button',{name:'发货设置',exact:true}).first().click();
+    await page.getByRole('button',{name:'更多操作：小火箭共享账号',exact:true}).click();
+    await page.getByRole('menuitem',{name:'发货设置',exact:true}).click();
     const source=page.locator('.n-modal').filter({hasText:'商品发货设置'});await expect(source.getByText('共享规格',{exact:true})).toBeVisible();
     await source.locator('.n-form-item').filter({hasText:'发货来源'}).locator('.n-base-selection').click();await page.getByText('重复发货：复用同一份内容',{exact:true}).last().click();
     await source.locator('.n-form-item').filter({hasText:'内容来源'}).locator('.n-base-selection').click();await page.getByText('填写自己的账号 / 卡密',{exact:true}).last().click();
@@ -79,6 +80,7 @@ const server = http.createServer((req, res) => {
     await page.screenshot({path:`/tmp/zcard-delivery-settings-${width}.png`,fullPage:true});
     assert(await source.locator('.delivery-settings').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'delivery horizontal overflow');
     await source.getByRole('button',{name:'关闭',exact:true}).click();
+    await page.getByRole('button',{name:/更多筛选/}).click();
     await page.getByRole('button',{name:'按关键词分类',exact:true}).click();
     const classify=page.locator('.n-modal').filter({hasText:'按关键词自动分类'});
     await classify.getByPlaceholder('例如：小火箭，Shadowrocket，Apple ID').fill('小火箭');
