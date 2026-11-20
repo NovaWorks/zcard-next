@@ -1718,3 +1718,35 @@ https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.117
 ```
 
 发布状态（2026-11-20）：GitHub 与 Docker v1.2.117 正式版均已发布，Latest 与 Docker latest 已同步。应用和更新器均支持 Linux amd64 / arm64，GitHub 签名清单包含固定远端 digest 的 Docker 发行描述符。公开附件与公告不包含独立付费主题。尚未发送频道公告、未部署客户站点。[验证与 CI 边界记录](releases/v1.2.117-verification.md)。
+
+
+---
+
+## v1.2.118 · Telegram 下单与人工发货提醒
+
+频道文案由用户手动发送，尚未代发。
+
+```text
+📦 ZCard 众卡 v1.2.118 更新日志
+📅 发布日期：2026-11-20
+
+🔔 Telegram 订单提醒修复
+• 补齐“新订单”通知：创建订单后按开关提醒，并明确提示下单不代表付款成功。
+• 付款后的 TG 提醒优先入队，不再排在邮件或上游采购请求后面等待。
+• 人工发货商品确认付款后提示“待人工发货”，客服可及时处理，无需等补发卡密后才收到购买提醒。
+• 人工交付后单独发送“发货完成”，不再显示待处理提示；补发不会重新触发付款事件。
+• 发送扫描从 10 秒缩短到 1 秒，保留幂等、失败重试及限流保护；实际到达时间受网络和 Telegram 接口状态影响。
+• 报价、回滚和同一订单的重复提交不会产生多余的新订单通知，分站订单继续与主站接收位置隔离。
+
+📌 升级与设置
+本版无新增数据库迁移。备份数据、保留原加密密钥，更新程序或 Docker 镜像并重启。
+请在 Telegram 设置中启用订单通知并勾选“付款成功”；“新订单”“发货完成”可按需要分别勾选。拆分部署请确保 worker 正常运行。
+Docker：nealbaker/zcard-next:v1.2.118
+配套更新器：nealbaker/zcard-updater:v1.2.118
+均支持 Linux amd64 / arm64，latest 同步更新。
+
+🔗 版本详情与下载
+https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.118
+
+#ZCard #版本更新 #Telegram #人工发货
+```
