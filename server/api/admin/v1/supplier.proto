@@ -107,7 +107,7 @@ message SupplierAccountReply {
   string notify_url = 8;
   int64 reviewed_at = 9;
   int64 created_at = 10;
-  string protocol = 11; // zcard | dujiao_next | acg_faka（对外供货协议； B/C）
+  string protocol = 11; // zcard | dujiao_next | acg_faka | mcy_shop（对外供货协议； B/C）
   string display_name = 12; // connect/ping 回显店铺名
   uint64 owner_user_id = 13; // 前台申请归属用户（0=admin 手动建号）
   string apply_reason = 14; // 申请理由（前台申请时填）
@@ -120,7 +120,7 @@ message CreateSupplierAccountRequest {
   string api_key = 2 [(google.api.field_behavior) = REQUIRED];
   string api_secret = 3 [(google.api.field_behavior) = REQUIRED];
   string contact = 4;
-  string protocol = 5; // 空 = zcard；dujiao_next/acg_faka 为兼容账号
+  string protocol = 5; // 空 = zcard；dujiao_next/acg_faka/mcy_shop 为兼容账号
   string display_name = 6;
 }
 

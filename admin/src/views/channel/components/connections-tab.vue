@@ -40,6 +40,7 @@ const driverMeta: Record<string, { label: string; tag: "success" | "info" | "war
   zcard: { label: "ZCard", tag: "success" },
   dujiao_next: { label: "独角数卡", tag: "info" },
   acg_faka: { label: "异次元", tag: "warning" },
+  mcy_shop: { label: "萌次元", tag: "info" },
 };
 
 const canWrite = () => checkAuth("supply:write");
@@ -143,6 +144,7 @@ const credFields = computed(() => {
         { key: "api_secret", label: "Api Secret" },
       ];
     case "acg_faka":
+    case "mcy_shop":
       return [
         { key: "app_id", label: "商户ID（app_id）" },
         { key: "app_key", label: "对接密钥（app_key）" },
@@ -794,9 +796,13 @@ onMounted(load);
               { label: 'ZCard（自有协议）', value: 'zcard' },
               { label: '独角数卡 dujiao-next', value: 'dujiao_next' },
               { label: '异次元 acg-faka', value: 'acg_faka' },
+              { label: '萌次元 mcy-shop', value: 'mcy_shop' },
             ]"
           />
         </NFormItem>
+        <NAlert v-if="form.driver === 'mcy_shop'" type="info" :bordered="false" class="mb-12px">
+          上游需启用 OpenApi 插件，地址填写网站根地址。使用上游的对接 ID 和密钥；采购结果无法确认时转人工核对。
+        </NAlert>
         <NFormItem label="上游地址" required>
           <NInput v-model:value="form.base_url" placeholder="https://up.example.com" />
         </NFormItem>

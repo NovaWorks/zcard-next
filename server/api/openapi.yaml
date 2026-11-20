@@ -15982,7 +15982,7 @@ components:
             properties:
                 protocol:
                     type: string
-                    description: 下游面板协议：zcard | dujiao_next | acg_faka
+                    description: 下游面板协议：zcard | dujiao_next | acg_faka | mcy_shop
                 displayName:
                     type: string
                 contact:

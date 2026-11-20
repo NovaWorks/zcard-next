@@ -147,6 +147,7 @@ const (
 	ProtocolZcard      Protocol = "zcard"
 	ProtocolDujiaoNext Protocol = "dujiao_next"
 	ProtocolAcgFaka    Protocol = "acg_faka"
+	ProtocolMcyShop    Protocol = "mcy_shop"
 )
 
 func (pr Protocol) String() string {
@@ -156,7 +157,7 @@ func (pr Protocol) String() string {
 // ProtocolValidator is a validator for the "protocol" field enum values. It is called by the builders before save.
 func ProtocolValidator(pr Protocol) error {
 	switch pr {
-	case ProtocolZcard, ProtocolDujiaoNext, ProtocolAcgFaka:
+	case ProtocolZcard, ProtocolDujiaoNext, ProtocolAcgFaka, ProtocolMcyShop:
 		return nil
 	default:
 		return fmt.Errorf("supplieraccount: invalid enum value for protocol field: %q", pr)

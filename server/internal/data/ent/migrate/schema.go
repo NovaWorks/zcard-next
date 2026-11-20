@@ -2823,7 +2823,7 @@ var (
 		{Name: "balance_cache", Type: field.TypeInt64, Default: 0},
 		{Name: "notify_url", Type: field.TypeString, Nullable: true, Size: 500},
 		{Name: "reviewed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
-		{Name: "protocol", Type: field.TypeEnum, Enums: []string{"zcard", "dujiao_next", "acg_faka"}, Default: "zcard"},
+		{Name: "protocol", Type: field.TypeEnum, Enums: []string{"zcard", "dujiao_next", "acg_faka", "mcy_shop"}, Default: "zcard"},
 		{Name: "display_name", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "owner_user_id", Type: field.TypeUint64, Nullable: true, Default: 0},
 		{Name: "apply_reason", Type: field.TypeString, Nullable: true, Size: 500},

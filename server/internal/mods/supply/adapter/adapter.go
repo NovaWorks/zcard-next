@@ -1,7 +1,7 @@
 // Package adapter 货源协议适配器（）。
 //
-// 三协议：zcard（自家 Supply v2，4 头 HMAC）/ dujiao_next（3 头 HMAC）/
-// acg_faka（body 内 MD5 签名）。协议知识迁移自 1.x app/Supply/Drivers/CLAUDE.md
+// 协议：zcard（自家 Supply v2，4 头 HMAC）/ dujiao_next（3 头 HMAC）/
+// acg_faka（body 内 MD5 签名）/ mcy_shop（Api-Id/Api-Signature）。协议知识迁移自 1.x app/Supply/Drivers/CLAUDE.md
 // 与 dujiao-next internal/upstream（signer 签名串、IncludesInactive 回声字段）。
 //
 // 纪律：
@@ -36,6 +36,9 @@ var (
 	// ErrDuplicateSubmit 防重键冲突（acg-faka request_no 重复即报错——上游可能
 	// 已受理首请求，禁止重试/自动退款，必须人工核对）。
 	ErrDuplicateSubmit = errors.New("adapter: duplicate submit (request_no already exists)")
+	// ErrPurchaseUncertain means the purchase may have charged the account, but
+	// its receipt cannot be recovered safely. Never retry or auto-refund it.
+	ErrPurchaseUncertain = errors.New("adapter: upstream purchase outcome uncertain")
 	// ErrRateLimited 上游限流或疑似 WAF 拦截（429 / 200 但非 JSON）——
 	// 自适应节奏器的降速信号（ S2；AIMD 判据）。
 	ErrRateLimited = errors.New("adapter: upstream rate limited")
@@ -164,7 +167,7 @@ type ImportPreviewer interface {
 
 // Adapter 货源适配器接口（port 契约， / 消费方）。
 type Adapter interface {
-	// Protocol 返回协议名（zcard | dujiao_next | acg_faka）。
+	// Protocol 返回协议名（zcard | dujiao_next | acg_faka | mcy_shop）。
 	Protocol() string
 
 	// Ping 连通性探测。
@@ -204,6 +207,8 @@ func New(driver, baseURL string, creds Credentials, retryIntervals []int) (Adapt
 		return newDujiaoNext(baseURL, creds, retryIntervals)
 	case "acg_faka":
 		return newAcgFaka(baseURL, creds, retryIntervals)
+	case "mcy_shop":
+		return newMCY(baseURL, creds, retryIntervals)
 	default:
 		return nil, fmt.Errorf("adapter: 不支持的驱动 %q", driver)
 	}

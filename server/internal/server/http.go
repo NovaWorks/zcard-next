@@ -268,6 +268,7 @@ func NewHTTPServer(
 	// 即可对接本站）。原生 handler 挂载（外部协议契约不进我们的 proto/OpenAPI）；
 	// 不挂 JWT（架构测试规则 9）；须在 SPA 兜底前注册。
 	supplier.RegisterDujiaoCompat(srv, supplyAPISvc)
+	supplier.RegisterMCYCompat(srv, supplyAPISvc)
 	supplier.RegisterAcgFakaCompat(srv, supplyAPISvc)
 
 	// E：上游回调接收（采购三通道之回调；不挂 JWT，验签在 handler 内按驱动分支）

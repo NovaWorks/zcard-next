@@ -111,7 +111,7 @@ service AdminSupplyService {
 message SupplyConnection {
   uint64 id = 1;
   string name = 2;
-  string driver = 3; // zcard | dujiao_next | acg_faka
+  string driver = 3; // zcard | dujiao_next | acg_faka | mcy_shop
   string base_url = 4;
   bool credentials_set = 5; // 凭据已配置（密文不回显）
   string status = 6; // active | disabled

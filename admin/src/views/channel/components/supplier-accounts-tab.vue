@@ -51,6 +51,7 @@ const protocolMeta: Record<string, { label: string; tag: "success" | "info" | "w
   zcard: { label: "ZCard", tag: "success", hint: "对接另一套 ZCard：填本站地址 + api_key/api_secret（X-Supply-* 四头签名）" },
   dujiao_next: { label: "dujiao 兼容", tag: "info", hint: "对方 dujiao-next 后台「站点连接」填本站地址 + 下发的是 api_key/api_secret（Dujiao-Next-* 三头）" },
   acg_faka: { label: "acg 兼容", tag: "warning", hint: "对方 acg-faka 后台「共享店铺(异次元)」填本站地址 + 商户ID=api_key、密钥=api_secret" },
+  mcy_shop: { label: "萌次元兼容", tag: "info", hint: "对方萌次元安装「异次元V3」货源插件，网站地址填本站根地址；商户ID填 api_key、密钥填 api_secret。也支持 OpenApi 客户端。" },
 };
 
 const canWrite = () => checkAuth("supplier:write");
@@ -568,6 +569,7 @@ onMounted(load);
               { label: 'ZCard（自有协议）', value: 'zcard' },
               { label: 'dujiao-next 兼容（对方不改代码）', value: 'dujiao_next' },
               { label: 'acg-faka 兼容（对方不改代码）', value: 'acg_faka' },
+              { label: '萌次元 mcy-shop 兼容', value: 'mcy_shop' },
             ]"
           />
         </NFormItem>

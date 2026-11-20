@@ -57,6 +57,9 @@ func acgMux(svc *SupplyAPIService) *http.ServeMux {
 	mux.HandleFunc("/shared/commodity/valuation", h.wrap(h.valuation))
 	mux.HandleFunc("/shared/commodity/trade", h.wrap(h.trade))
 	mux.HandleFunc("/shared/commodity/query", h.wrap(h.query))
+	// Official MCYShopV3 plugins use these older ACG endpoint names.
+	mux.HandleFunc("/shared/commodity/inventory", h.wrap(h.inventory))
+	mux.HandleFunc("/shared/commodity/inventoryState", h.wrap(h.inventoryState))
 	return mux
 }
 
@@ -67,6 +70,7 @@ type acgCompat struct {
 // wrap body MD5 验签（app_id → 账户 → protocol 校验 → 解密 app_key 重算比对）。
 func (h *acgCompat) wrap(fn func(w http.ResponseWriter, r *http.Request, account *ent.SupplierAccount, form map[string]string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store, private")
 		if r.Method != http.MethodPost {
 			writeAcgErr(w, "仅支持 POST")
 			return
@@ -101,7 +105,7 @@ func (h *acgCompat) wrap(fn func(w http.ResponseWriter, r *http.Request, account
 			writeAcgErr(w, "请求 IP 不在白名单内")
 			return
 		}
-		if string(account.Protocol) != "acg_faka" {
+		if string(account.Protocol) != "acg_faka" && string(account.Protocol) != "mcy_shop" {
 			writeAcgErr(w, "商户ID不存在") // 非 acg 账号不暴露
 			return
 		}
@@ -116,6 +120,47 @@ func (h *acgCompat) wrap(fn func(w http.ResponseWriter, r *http.Request, account
 		}
 		fn(w, r, account, form)
 	}
+}
+
+func (h *acgCompat) inventory(w http.ResponseWriter, r *http.Request, account *ent.SupplierAccount, form map[string]string) {
+	p, ok := h.supplyProduct(r, account, form["sharedCode"])
+	if !ok || p.Status != 1 {
+		writeAcgErr(w, "商品不存在或已下架")
+		return
+	}
+	ctx := withAccount(r, account.ID)
+	stock, err := h.svc.inv.Stock(ctx, p.ID, 0)
+	if err != nil || stock < 0 {
+		writeAcgErr(w, "库存暂不可用")
+		return
+	}
+	pricing, err := h.svc.repo.LoadPricing(ctx, account.ID)
+	if err != nil {
+		writeAcgErr(w, "供货定价读取失败")
+		return
+	}
+	price := centsToYuanStr(pricing.Price(p.ID, 0, p.CategoryID, p.Price))
+	writeAcgOK(w, map[string]any{"count": stock, "price": price, "user_price": price,
+		"factory_price": price, "delivery_way": 0, "draft_status": 0, "config": ""})
+}
+
+func (h *acgCompat) inventoryState(w http.ResponseWriter, r *http.Request, account *ent.SupplierAccount, form map[string]string) {
+	p, ok := h.supplyProduct(r, account, form["shared_code"])
+	n, err := strconv.ParseInt(form["num"], 10, 32)
+	if !ok || p.Status != 1 || err != nil || n < 1 {
+		writeAcgErr(w, "商品或购买数量非法")
+		return
+	}
+	stock, err := h.svc.inv.Stock(withAccount(r, account.ID), p.ID, 0)
+	if err != nil || stock < 0 {
+		writeAcgErr(w, "库存暂不可用")
+		return
+	}
+	if stock < n {
+		writeAcgErr(w, "库存不足")
+		return
+	}
+	writeAcgOK(w, map[string]any{"state": true})
 }
 
 // ── 端点实现 ────────────────────────────────────────────────
@@ -136,10 +181,21 @@ func (h *acgCompat) items(w http.ResponseWriter, r *http.Request, account *ent.S
 		writeAcgErr(w, "分类读取失败")
 		return
 	}
-	prods, _, err := h.svc.reader.ListForSupply(ctx, catalogport.AdminFilter{Status: -1, Page: 1, PageSize: 1000})
-	if err != nil {
-		writeAcgErr(w, "商品读取失败")
-		return
+	prods := []catalogport.SupplierProduct{}
+	status := int8(-1)
+	if string(account.Protocol) == "mcy_shop" {
+		status = 1 // MCYShopV3 imports every item; it does not honor ACG's status field.
+	}
+	for page := int32(1); ; page++ {
+		items, total, err := h.svc.reader.ListForSupply(ctx, catalogport.AdminFilter{Status: status, Page: page, PageSize: 1000})
+		if err != nil {
+			writeAcgErr(w, "商品读取失败")
+			return
+		}
+		prods = append(prods, items...)
+		if len(items) == 0 || int64(page)*1000 >= total {
+			break
+		}
 	}
 	// 两级树：分类 → children 商品；未分类商品归入「默认分类」（id=0）
 	pricing, err := h.svc.repo.LoadPricing(ctx, account.ID)
@@ -307,6 +363,10 @@ func (h *acgCompat) supplyProduct(r *http.Request, account *ent.SupplierAccount,
 // contact_type=0（任意）避免对接站把 null 写进 NOT NULL 列而同步失败。
 func (h *acgCompat) acgProduct(ctx context.Context, account *ent.SupplierAccount, p catalogport.SupplierProduct, pricing *supplierPricing) map[string]any {
 	price := pricing.Price(p.ID, 0, p.CategoryID, p.Price)
+	factoryPrice := p.FactoryPrice
+	if string(account.Protocol) == "mcy_shop" {
+		factoryPrice = price // MCYShopV3 imports this as its purchase cost.
+	}
 	stock := -1
 	if st, err := h.svc.inv.Stock(ctx, p.ID, 0); err == nil {
 		stock = int(st)
@@ -316,7 +376,7 @@ func (h *acgCompat) acgProduct(ctx context.Context, account *ent.SupplierAccount
 		"name":               p.Name,
 		"price":              centsToYuanStr(price),
 		"user_price":         centsToYuanStr(price),
-		"factory_price":      centsToYuanStr(p.FactoryPrice),
+		"factory_price":      centsToYuanStr(factoryPrice),
 		"description":        p.Description,
 		"introduce":          p.Description,
 		"cover":              p.Cover,

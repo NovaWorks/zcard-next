@@ -231,14 +231,19 @@ func (s *ProcureService) handleSubmitError(ctx context.Context, poID uint64, err
 	}
 	// 防重键冲突（acg request_no 重复即报错）：上游可能已受理首请求（响应丢失
 	// 场景），重试永远撞墙、自动退款可能造成上游已成交却退客户款 → 立即转人工核对
-	if errors.Is(err, supplyport.ErrUpstreamDuplicate) {
+	if errors.Is(err, supplyport.ErrUpstreamDuplicate) || errors.Is(err, supplyport.ErrUpstreamUncertain) {
 		reason := "采购请求编号被上游判定重复，无法确认本单是否成交；请核实原上游订单后处理，系统不会重新采购"
+		strategy := "manual_duplicate_submit"
+		if errors.Is(err, supplyport.ErrUpstreamUncertain) {
+			reason = "上游采购结果无法确认，可能已扣款或发货；请核实原上游订单后处理，系统不会重新采购或自动退款"
+			strategy = "manual_uncertain_submit"
+		}
 		if merr := s.repo.MarkManual(ctx, poID, reason); merr != nil {
 			return merr
 		}
-		s.log.Warn("procurement.duplicate_submit_manual", "id", poID)
+		s.log.Warn("procurement.submit_requires_review", "id", poID, "strategy", strategy)
 		s.publish(ctx, events.ProcurementFailed, poID, map[string]any{
-			"procurement_id": poID, "reason": reason, "strategy": "manual_duplicate_submit",
+			"procurement_id": poID, "reason": reason, "strategy": strategy,
 		})
 		return nil
 	}

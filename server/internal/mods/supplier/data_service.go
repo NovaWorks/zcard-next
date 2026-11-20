@@ -42,8 +42,8 @@ func (s *AdminSupplierService) CreateAccount(ctx context.Context, req *adminv1.C
 	if protocol == "" {
 		protocol = "zcard"
 	}
-	if protocol != "zcard" && protocol != "dujiao_next" && protocol != "acg_faka" {
-		return nil, errors.New("supplier.INVALID_PROTOCOL: protocol 必须为 zcard|dujiao_next|acg_faka")
+	if protocol != "zcard" && protocol != "dujiao_next" && protocol != "acg_faka" && protocol != "mcy_shop" {
+		return nil, errors.New("supplier.INVALID_PROTOCOL: protocol 必须为 zcard|dujiao_next|acg_faka|mcy_shop")
 	}
 	acc, err := s.repo.CreateAccount(ctx, req.GetName(), req.GetApiKey(), req.GetApiSecret(), req.GetContact(), protocol, req.GetDisplayName())
 	if err != nil {

@@ -27,7 +27,7 @@ type SupplyConnection struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	Id                 uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name               string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Driver             string                 `protobuf:"bytes,3,opt,name=driver,proto3" json:"driver,omitempty"` // zcard | dujiao_next | acg_faka
+	Driver             string                 `protobuf:"bytes,3,opt,name=driver,proto3" json:"driver,omitempty"` // zcard | dujiao_next | acg_faka | mcy_shop
 	BaseUrl            string                 `protobuf:"bytes,4,opt,name=base_url,json=baseUrl,proto3" json:"base_url,omitempty"`
 	CredentialsSet     bool                   `protobuf:"varint,5,opt,name=credentials_set,json=credentialsSet,proto3" json:"credentials_set,omitempty"` // 凭据已配置（密文不回显）
 	Status             string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`                                        // active | disabled

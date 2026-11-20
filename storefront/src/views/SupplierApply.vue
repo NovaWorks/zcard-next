@@ -128,6 +128,7 @@
               <b style="color: #1f2329;">{{ $t('对接方式') }}</b><br />
               <template v-if="a.protocol === 'acg_faka'"> {{ $t('① 对方 acg-faka 后台 →「店铺共享 / 共享店铺」→ 新增店铺') }}<br /> {{ $t('② 类型选「异次元(原生)」，地址填本站地址（') }}<code>{{ origin }}</code>）<br /> {{ $t('③ 商户ID 填上面的 app_id，密钥填 app_key，保存前会自动连通测试') }} </template>
               <template v-else-if="a.protocol === 'dujiao_next'"> {{ $t('① 对方 dujiao-next 后台 →「站点连接」→ 新增连接') }}<br /> {{ $t('② 协议选 dujiao-next，地址填本站地址（') }}<code>{{ origin }}</code>/api/v1/upstream）<br /> {{ $t('③ API Key 填上面的 app_id，API Secret 填 app_key') }} </template>
+              <template v-else-if="a.protocol === 'mcy_shop'"> {{ $t('① 萌次元后台安装并启用「异次元V3」货源插件') }}<br /> {{ $t('② 新增货源配置，网站地址填本站根地址') }} <code>{{ origin }}</code><br /> {{ $t('③ 商户ID 填上面的 app_id，密钥填 app_key，然后拉取商品') }} </template>
               <template v-else> {{ $t('① 对方 ZCard 后台 →「货源渠道」→ 新增连接（协议选 zcard）') }}<br /> {{ $t('② 地址填本站地址（') }}<code>{{ origin }}</code>{{ $t('/api/supply），app_id 填上面的 api_key、密钥填 api_secret') }} </template>
             </div>
           </div>
@@ -241,6 +242,7 @@ const protocols = [
   { value: 'zcard', label: 'ZCard', get desc() { return $t("另一套 ZCard 系统对接（X-Supply 四头签名）"); } },
   { value: 'dujiao_next', label: 'dujiao-next', get desc() { return $t("对方 dujiao-next 站对接（Dujiao-Next 三头签名）"); } },
   { value: 'acg_faka', label: 'acg-faka', get desc() { return $t("对方 acg-faka 站对接（共享店铺原生协议）"); } },
+  { value: 'mcy_shop', label: 'mcy-shop', get desc() { return $t("萌次元站对接（异次元V3货源插件 / OpenApi）"); } },
 ];
 
 const accounts = ref<SupplierAccount[]>([]);
@@ -484,7 +486,7 @@ function pollBalance(id: number) {
 }
 
 function protocolLabel(p: string) {
-  return ({ zcard: 'ZCard', dujiao_next: 'dujiao-next', acg_faka: 'acg-faka' } as any)[p] || p;
+  return ({ zcard: 'ZCard', dujiao_next: 'dujiao-next', acg_faka: 'acg-faka', mcy_shop: 'mcy-shop' } as any)[p] || p;
 }
 function statusLabel(s: string) {
   return ({ get applying() { return $t("待审核"); }, get approved() { return $t("已通过"); }, get rejected() { return $t("已驳回"); }, get disabled() { return $t("已禁用"); } } as any)[s] || s;

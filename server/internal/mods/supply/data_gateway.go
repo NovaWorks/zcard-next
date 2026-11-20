@@ -129,7 +129,7 @@ func (g *Gateway) Submit(ctx context.Context, req supplyport.PurchaseRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	if len(req.ManualFormData) > 0 && conn.Driver != "dujiao_next" {
+	if len(req.ManualFormData) > 0 && conn.Driver != "dujiao_next" && conn.Driver != "mcy_shop" {
 		return nil, supplyport.ErrUpstreamFormInvalid
 	}
 	res, err := a.CreateOrder(ctx, adapter.CreateOrderReq{
@@ -156,6 +156,8 @@ func (g *Gateway) Submit(ctx context.Context, req supplyport.PurchaseRequest) (*
 			return nil, supplyport.ErrUpstreamNoStock
 		case errors.Is(err, adapter.ErrDuplicateSubmit):
 			return nil, supplyport.ErrUpstreamDuplicate
+		case errors.Is(err, adapter.ErrPurchaseUncertain):
+			return nil, supplyport.ErrUpstreamUncertain
 		}
 		return nil, err
 	}

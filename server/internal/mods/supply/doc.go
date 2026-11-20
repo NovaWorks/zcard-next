@@ -1,6 +1,6 @@
 // Package supply 上游货源模块（ 完整落地）：
 // - 协议适配器（adapter/）：zcard（自家 Supply v2，4 头 HMAC）/ dujiao_next（3 头）/
-// acg_faka（body MD5），golden vector 契约测试，出站 100% 经 platform/httpx（架构规则 5）
+// acg_faka（body MD5）/ mcy_shop（Api-Id/Api-Signature），出站经 platform/httpx（架构规则 5）
 // - 连接管理：CRUD + 凭据 AES-GCM 加密（AAD 绑定 driver+base_url）+ SSRF 校验
 // - 同步服务：拉分类/商品 → upsert 本地（catalog port）→ up_stock 缓存 → 定价重算
 // （汇率×加价×取整三模式；价格保护：auto_sync_price 关/固定覆盖价/运营改价不覆盖）

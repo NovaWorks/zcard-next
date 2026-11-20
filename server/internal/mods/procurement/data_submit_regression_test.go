@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"testing"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -15,6 +16,28 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment"
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
 )
+
+func TestUncertainPurchaseRequiresManualReview(t *testing.T) {
+	s, d, payload, iid := submitFixture(t)
+	g := &submitGateway{}
+	g.submit = func(context.Context, supplyport.PurchaseRequest) (*supplyport.PurchaseResult, error) {
+		return nil, supplyport.ErrUpstreamUncertain
+	}
+	s.gw = g
+	ctx := context.Background()
+	for i := 0; i < 2; i++ {
+		if err := s.processItem(ctx, payload, iid, 10, 0, 2); err != nil {
+			t.Fatal(err)
+		}
+	}
+	po, err := s.repo.GetByOrderItem(ctx, iid)
+	if err != nil || po.Status != "manual" || !strings.Contains(po.LastError, "结果无法确认") || g.submitCalls != 1 {
+		t.Fatalf("uncertain purchase was retried or misclassified: %+v %v calls=%d", po, err, g.submitCalls)
+	}
+	if d.Client.OrderDelivery.Query().CountX(ctx) != 0 || d.Client.RefundOrder.Query().CountX(ctx) != 0 {
+		t.Fatal("uncertain purchase was delivered or automatically refunded")
+	}
+}
 
 type submitProductReader struct{ catalogport.ProductReader }
 

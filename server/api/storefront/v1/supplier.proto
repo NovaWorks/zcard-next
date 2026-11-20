@@ -59,7 +59,7 @@ service StoreSupplierService {
 }
 
 message SubmitSupplierApplicationRequest {
-  // 下游面板协议：zcard | dujiao_next | acg_faka
+  // 下游面板协议：zcard | dujiao_next | acg_faka | mcy_shop
   string protocol = 1 [(google.api.field_behavior) = REQUIRED];
   string display_name = 2 [(google.api.field_behavior) = REQUIRED]; // 站点/店铺名（≤100）
   string contact = 3; // 联系方式（QQ/邮箱/手机）

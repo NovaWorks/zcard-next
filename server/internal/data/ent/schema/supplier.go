@@ -30,7 +30,7 @@ func (SupplierAccount) Fields() []ent.Field {
 		// P2-10 B/C：该账号对外说话用的协议（决定兼容层凭据形态与回调签名器）。
 		// dujiao_next：api_key=Api-Key、secret=签名密钥；acg_faka：api_key=数字
 		// app_id、secret=32 位 app_key（MD5 验签时解密参与）。
-		field.Enum("protocol").Values("zcard", "dujiao_next", "acg_faka").Default("zcard"),
+		field.Enum("protocol").Values("zcard", "dujiao_next", "acg_faka", "mcy_shop").Default("zcard"),
 		field.String("display_name").MaxLen(100).Optional().Comment("connect/ping 回显的店铺名（shopName/site_name）"),
 		// 前台对接申请（P3-xx）：owner=前台用户 id（admin 手动建号恒 0）；
 		// apply_reason 申请理由、review_note 审核意见（驳回时必填）。

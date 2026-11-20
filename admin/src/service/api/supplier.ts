@@ -12,7 +12,7 @@ export function createSupplierAccount(data: {
   api_key: string;
   api_secret: string;
   contact?: string;
-  protocol?: string; // zcard（默认）| dujiao_next | acg_faka（兼容账号）
+  protocol?: string; // zcard（默认）| dujiao_next | acg_faka | mcy_shop（兼容账号）
   display_name?: string;
 }) {
   return request({ url: "/api/v1/admin/supplier/accounts", method: "post", data });

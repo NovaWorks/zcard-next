@@ -25,7 +25,7 @@ const (
 
 type SubmitSupplierApplicationRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// 下游面板协议：zcard | dujiao_next | acg_faka
+	// 下游面板协议：zcard | dujiao_next | acg_faka | mcy_shop
 	Protocol      string `protobuf:"bytes,1,opt,name=protocol,proto3" json:"protocol,omitempty"`
 	DisplayName   string `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"` // 站点/店铺名（≤100）
 	Contact       string `protobuf:"bytes,3,opt,name=contact,proto3" json:"contact,omitempty"`                            // 联系方式（QQ/邮箱/手机）

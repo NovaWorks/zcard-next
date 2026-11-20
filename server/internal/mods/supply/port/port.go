@@ -80,6 +80,8 @@ var (
 	// ErrUpstreamDuplicate 防重键冲突（acg-faka request_no 重复即报错：上游可能
 	// 已受理首请求——禁止重试与自动退款，转人工核对）。
 	ErrUpstreamDuplicate = errorsNew("supply: upstream duplicate submit")
+	// ErrUpstreamUncertain 无法确认采购是否扣款/发货，禁止自动重试与退款。
+	ErrUpstreamUncertain = errorsNew("supply: upstream purchase outcome uncertain")
 	// ErrUpstreamNoStock 上游无库存（快速拒绝）。
 	ErrUpstreamNoStock = errorsNew("supply: upstream no stock")
 	// ErrRefundNotSupported 上游不支持退款。

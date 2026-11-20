@@ -59,8 +59,8 @@ func (s *StoreSupplierService) SubmitSupplierApplication(ctx context.Context, re
 		return nil, err
 	}
 	protocol := strings.TrimSpace(req.GetProtocol())
-	if protocol != "zcard" && protocol != "dujiao_next" && protocol != "acg_faka" {
-		return nil, errors.BadRequest("supplier.INVALID_PROTOCOL", "协议必须为 zcard|dujiao_next|acg_faka")
+	if protocol != "zcard" && protocol != "dujiao_next" && protocol != "acg_faka" && protocol != "mcy_shop" {
+		return nil, errors.BadRequest("supplier.INVALID_PROTOCOL", "协议必须为 zcard|dujiao_next|acg_faka|mcy_shop")
 	}
 	displayName := strings.TrimSpace(req.GetDisplayName())
 	if displayName == "" {
