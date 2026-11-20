@@ -502,6 +502,8 @@ func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.
 	}
 	// 佣金提现打通：打款 FIFO 消耗佣金（affiliate → wallet 注入，装配期一次）
 	walletRepo.SetCommissionConsumer(affiliateSvc.Repo())
+	// Persist merchant reminders before any supplier HTTP or SMTP work.
+	notifyDisp.RegisterTelegramOrders(dp)
 	// 事件订阅注册（）：order.paid → 采购（wire 破环点，见 bootstrap/queue.go 注释）
 	dp.Register(data.HandlerReg{
 		Consumer: "procurement.order_paid",
@@ -528,9 +530,6 @@ func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.
 			Type:     t,
 			Fn:       notifyDisp.HandleEvent,
 		})
-	}
-	for _, typ := range notify.TelegramEvents() {
-		dp.Register(data.HandlerReg{Consumer: "notify.telegram_orders", Type: typ, Fn: notifyDisp.EnqueueTelegram, Transactional: true})
 	}
 	var servers []transport.Server
 	// gRPC 可选（配置 addr 为空时不装配）

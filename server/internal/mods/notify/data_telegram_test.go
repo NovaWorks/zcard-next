@@ -144,6 +144,12 @@ func TestTelegramTenantIsolation(t *testing.T) {
 	if err := d.EnqueueTelegram(context.Background(), events.Envelope{SubsiteID: 42, Type: events.OrderPaid, Payload: []byte(`{}`)}); err != nil {
 		t.Fatal(err)
 	}
+	// Relay envelopes carry the tenant in their persisted payload.
+	for _, typ := range []string{events.OrderCreated, events.OrderPaid} {
+		if err := d.EnqueueTelegram(context.Background(), events.Envelope{Type: typ, Payload: []byte(`{"subsite_id":42,"order_id":1}`)}); err != nil {
+			t.Fatal(err)
+		}
+	}
 	if n, _ := r.data.Client.NotificationLog.Query().Count(context.Background()); n != 0 {
 		t.Fatal("tenant leaked")
 	}

@@ -112,7 +112,7 @@ func NewCron(catalogPreview *supply.AdminSupplyService, notifyDisp *notify.Dispa
 	})
 	// ：定时群发扫描（到期 pending → 入队）
 	c.AddEvery("notify.broadcast_scan", time.Minute, broadcastSvc.ScanDue)
-	c.AddEvery("notify.telegram_delivery", 10*time.Second, notifyDisp.ScanTelegram)
+	c.AddEvery("notify.telegram_delivery", time.Second, notifyDisp.ScanTelegram)
 	// ：工单 resolved 超 7 天自动关闭
 	c.AddEvery("ticket.autoclose", time.Hour, ticketAdmin.AutoCloseResolved)
 	// ：佣金到期确认（冻结期过 → wallet 入账；负债行重试抵扣）

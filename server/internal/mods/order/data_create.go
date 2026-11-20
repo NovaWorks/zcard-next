@@ -923,6 +923,19 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			result = &CreateOrderResult{TotalCents: totalCents, ShippingCents: shippingTotal, ShippingCollect: len(collectProducts) > 0, QuoteKey: quoteKey}
 			return errQuoteRollback
 		}
+		if uc.Outbox != nil {
+			payload, err := json.Marshal(map[string]any{
+				"order_no": o.OrderNo, "order_id": o.ID,
+				"subsite_id": o.SubsiteID, "user_id": o.UserID,
+				"total_cents": o.TotalAmount,
+			})
+			if err != nil {
+				return err
+			}
+			if err := uc.Outbox.Write(txCtx, "order", events.OrderCreated, o.OrderNo, DedupeKey(o.OrderNo, "created"), payload); err != nil {
+				return err
+			}
+		}
 		if hasPhysical && totalCents == 0 {
 			if err := uc.MarkPaid(txCtx, orderNo); err != nil {
 				return err

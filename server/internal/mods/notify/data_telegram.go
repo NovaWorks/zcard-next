@@ -31,6 +31,15 @@ var telegramOrderEvents = map[string]string{
 func TelegramEvents() []string {
 	return []string{events.OrderCreated, events.OrderPaid, events.OrderDelivered, events.OrderRefunded}
 }
+
+// Register before handlers that perform SMTP or supplier HTTP calls. Committing
+// the delivery jobs first lets the independent sender run while those calls wait.
+func (d *Dispatcher) RegisterTelegramOrders(dp *data.Dispatcher) {
+	for _, typ := range TelegramEvents() {
+		dp.Register(data.HandlerReg{Consumer: "notify.telegram_orders", Type: typ, Fn: d.EnqueueTelegram, Transactional: true})
+	}
+}
+
 func (d *Dispatcher) telegram() *TelegramChannel {
 	c, _ := d.channels["telegram"].(*TelegramChannel)
 	return c
@@ -134,11 +143,12 @@ func (d *Dispatcher) EnqueueTelegram(ctx context.Context, env events.Envelope) e
 		DeliveryKind string `json:"delivery_kind"`
 		OrderNo      string `json:"order_no"`
 		OrderID      uint64 `json:"order_id"`
+		SubsiteID    uint64 `json:"subsite_id"`
 	}
 	if err = json.Unmarshal(env.Payload, &payload); err != nil {
 		return err
 	}
-	if payload.DeliveryKind == "sms_activation" {
+	if payload.SubsiteID != 0 || payload.DeliveryKind == "sms_activation" {
 		return nil
 	}
 	q := client.Order.Query().Where(order.SubsiteID(0))
@@ -212,6 +222,18 @@ func (d *Dispatcher) EnqueueTelegram(ctx context.Context, env events.Envelope) e
 	}
 	subject := html.EscapeString(name + " · " + telegramOrderEvents[env.Type])
 	lines := []string{"订单号：" + html.EscapeString(o.OrderNo), fmt.Sprintf("%s：%s %d.%02d", amountLabel, html.EscapeString(o.BaseCurrency), amount/100, amount%100), "支付渠道：" + html.EscapeString(payChannel), "事件时间：" + at.Format(time.RFC3339)}
+	if env.Type == events.OrderCreated {
+		lines = append(lines, "下单提醒不代表付款成功，请确认付款后再发货。")
+	}
+	manualPending := false
+	for _, it := range items {
+		if it.FulfillmentType == orderitem.FulfillmentTypeManual && it.FulfillmentStatus != "delivered" && it.FulfillmentStatus != "refunded" && it.CanceledQuantity < it.Quantity {
+			manualPending = true
+		}
+	}
+	if env.Type == events.OrderPaid && manualPending && (o.Status == order.StatusPaid || o.Status == order.StatusFulfilling || o.Status == order.StatusPartiallyDelivered) {
+		lines = append(lines, "待人工发货：已确认付款，请及时在后台处理。")
+	}
 	for i, it := range items {
 		if i >= 10 {
 			lines = append(lines, "更多商品请查看订单详情")
@@ -226,9 +248,6 @@ func (d *Dispatcher) EnqueueTelegram(ctx context.Context, env events.Envelope) e
 		}
 		kind := string(it.FulfillmentType)
 		lines = append(lines, fmt.Sprintf("• %s × %d（%s）", html.EscapeString(label), it.Quantity, html.EscapeString(map[string]string{"auto": "自动发货", "manual": "人工服务", "upstream": "上游交付"}[kind])))
-		if kind == "manual" || kind == "manual_service" {
-			lines = append(lines, "人工服务：请在后台查看并处理")
-		}
 	}
 	if u, e := url.Parse(base); e == nil && (u.Scheme == "https" || u.Scheme == "http") && u.Host != "" && u.User == nil {
 		lines = append(lines, `<a href="`+html.EscapeString(strings.TrimRight(base, "/")+path+"/order?order_no="+url.QueryEscape(o.OrderNo))+`">查看后台订单（需要登录）</a>`)
