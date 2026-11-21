@@ -488,6 +488,7 @@ func runInstall(args []string) error {
 //	api = HTTP + gRPC + 后台relay（多实例 api，cron 不注册）
 //	worker = worker + 后台（消费与周期任务，多实例 asynq 竞争消费）
 func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.WorkerServer, bs *server.BackgroundServer, dp *data.Dispatcher, procureSvc *procurement.ProcureService, notifyDisp *notify.Dispatcher, affiliateSvc *affiliate.AffiliateService, resellerSettleSvc *reseller.SettleService, fulfillRepo *fulfillment.DeliveryRepoImpl, pointsSvc *memberlevel.PointsService, orderUC *order.OrderUsecase, payRepo *payment.PaymentRepoImpl, walletRepo *wallet.WalletRepoImpl, stockGate orderport.UpstreamStockGate, catalogSvc *catalog.StoreCatalogService, storeOrderSvc *order.StoreOrderService) *kratos.App {
+	catalogSvc.SetDiscountResolver(orderUC)
 	if reader, ok := orderUC.Flash.(couponport.FlashReader); ok {
 		catalogSvc.SetFlashReader(reader)
 	}

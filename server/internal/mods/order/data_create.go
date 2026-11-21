@@ -508,15 +508,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 					return fmt.Errorf("order.GROUP_LOOKUP_FAILED: %w", err)
 				}
 			}
-			itemMemberRate, groupRate := memberRate, group.Rate
-			if !group.StackMember && groupRate > 0 && groupRate < 10000 && memberRate > 0 && memberRate < 10000 {
-				// 禁止叠加时取较低应付比例；同价优先会员，不触发商品组用券限制。
-				if memberRate <= groupRate {
-					groupRate = 0
-				} else {
-					itemMemberRate = 0
-				}
-			}
+			itemMemberRate, groupRate := itemDiscountRates(memberRate, group)
 			if p.ProductKind == "sms_channel" {
 				itemMemberRate, groupRate = 0, 0
 			}

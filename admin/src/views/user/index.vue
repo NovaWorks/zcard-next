@@ -217,6 +217,7 @@ async function refreshBalance(userId: number) {
 }
 
 async function submitAdjust() {
+  if (adjustLoading.value || !adjustUser.value || !balance.value) return;
   if (adjustAmountYuan.value === null || adjustAmountYuan.value === 0) {
     window.$message?.warning("请填写调整金额（正=入账 负=扣减）");
     return;
@@ -229,11 +230,12 @@ async function submitAdjust() {
   try {
     const { error } = await adjustWalletBalance(adjustUser.value.id, {
       amount_cents: yuanToFen(adjustAmountYuan.value),
-      reason: adjustForm.reason,
+      reason: adjustForm.reason.trim(),
     });
     if (!error) {
+      showAdjust.value = false;
       window.$message?.success("余额已调整");
-      await refreshBalance(adjustUser.value.id);
+      await load();
     }
   } finally {
     adjustLoading.value = false;
@@ -506,7 +508,7 @@ onMounted(load);
     </NModal>
 
     <!-- 调整余额（超管：wallet:adjust） -->
-    <NModal v-model:show="showAdjust" preset="card" title="调整余额" style="width: 460px">
+    <NModal v-model:show="showAdjust" preset="card" title="调整余额" style="width: 460px" :closable="!adjustLoading" :mask-closable="!adjustLoading" :close-on-esc="!adjustLoading">
       <template v-if="adjustUser && balance">
         <div class="mb-16px rounded-6px bg-gray-50 p-12px text-13px dark:bg-gray-800">
           <div class="mb-4px">用户：<b>{{ adjustUser.username }}</b></div>
@@ -538,7 +540,7 @@ onMounted(load);
         </NForm>
       </template>
       <template #footer>
-        <NButton size="small" type="primary" :loading="adjustLoading" class="ml-auto" @click="submitAdjust">确认调整</NButton>
+        <NButton size="small" type="primary" :loading="adjustLoading" :disabled="!balance || adjustLoading" class="ml-auto" @click="submitAdjust">确认调整</NButton>
       </template>
     </NModal>
   </div>

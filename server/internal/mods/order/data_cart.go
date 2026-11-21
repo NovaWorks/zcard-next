@@ -20,6 +20,7 @@ import (
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	invport "github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
+	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -28,16 +29,17 @@ import (
 // StoreCartService 购物车服务。
 type StoreCartService struct {
 	storefrontv1.UnimplementedStoreCartServiceServer
-	settings settingsport.Provider
-	flash    couponport.FlashResolver
-	data     *data.Data
-	pricing  catalogport.PricingResolver
-	inv      invport.Inventory // 库存快照（Stock 单查；批量留优化）
+	settings  settingsport.Provider
+	flash     couponport.FlashResolver
+	data      *data.Data
+	pricing   catalogport.PricingResolver
+	inv       invport.Inventory // 库存快照（Stock 单查；批量留优化）
+	discounts orderport.DiscountResolver
 }
 
 // NewStoreCartService 构造（wire；Pricing/Inventory 复用 order 依赖注入链）。
-func NewStoreCartService(d *data.Data, pricing catalogport.PricingResolver, inv invport.Inventory, settings settingsport.Provider, flash couponport.FlashResolver) *StoreCartService {
-	return &StoreCartService{data: d, pricing: pricing, inv: inv, settings: settings, flash: flash}
+func NewStoreCartService(d *data.Data, pricing catalogport.PricingResolver, inv invport.Inventory, settings settingsport.Provider, flash couponport.FlashResolver, discounts orderport.DiscountResolver) *StoreCartService {
+	return &StoreCartService{data: d, pricing: pricing, inv: inv, settings: settings, flash: flash, discounts: discounts}
 }
 
 func mustUserClaims(ctx context.Context) (uint64, error) {
@@ -248,6 +250,12 @@ func (s *StoreCartService) toItemPB(ctx context.Context, row *ent.CartItem) (*st
 	if row.SkuID > 0 && s.pricing != nil {
 		if sp, err := s.pricing.ResolvePrice(ctx, row.ProductID, row.SkuID); err == nil {
 			price = sp
+		}
+	}
+	if s.discounts != nil {
+		price, err = s.discounts.DiscountedPrice(ctx, row.ProductID, price)
+		if err != nil {
+			return nil, err
 		}
 	}
 	item.PriceCents = int64(price)

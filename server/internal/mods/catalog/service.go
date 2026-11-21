@@ -14,6 +14,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
@@ -33,7 +34,8 @@ type StoreCatalogService struct {
 	// nil = 主站直营形态不解析分站价）。
 	pricer resellerport.Pricer
 	// sold 批量已售数量（列表/详情展示 + sales 排序；nil 容错降级 0）
-	sold orderport.SoldCounter
+	sold      orderport.SoldCounter
+	discounts orderport.DiscountResolver
 }
 
 // NewStoreCatalogService 构造。
@@ -126,11 +128,17 @@ func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv
 
 	for i := range items {
 		p := &items[i]
+		base := p.Price
+		price, err := s.discountedPrice(ctx, p, base)
+		if err != nil {
+			return nil, errors.InternalServer("catalog.PRICE_FAILED", "读取会员价格失败，请重试")
+		}
 		if tc.SubsiteID != tenancy.MainSubsiteID && s.pricer != nil {
-			if sp, err := s.pricer.ResolveUnitPrice(ctx, tc.SubsiteID, p.ID, 0, p.Price); err == nil {
-				p.Price = sp // 分站价（下限保护在 ResolveUnitPrice 内）
+			if sp, err := s.pricer.ResolveUnitPrice(ctx, tc.SubsiteID, p.ID, 0, base); err == nil && sp > base {
+				price += sp - base // 分站加价与结算一致，不参与会员折扣。
 			}
 		}
+		p.Price = price
 		item := toStorefrontProduct(p, stocks, solds[p.ID])
 		item.FlashSale = toFlashOffer(offers[couponport.FlashKey{ProductID: p.ID}])
 		snapshot, ok := snapshots[p.ID]
@@ -179,9 +187,13 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 	}
 	// ：分站单价（listing=checkout 同源；SKU 规则优先于商品规则由定价引擎裁定）
 	base := p.Price
+	p.Price, err = s.discountedPrice(ctx, p, base)
+	if err != nil {
+		return nil, errors.InternalServer("catalog.PRICE_FAILED", "读取会员价格失败，请重试")
+	}
 	if tc.SubsiteID != tenancy.MainSubsiteID && s.pricer != nil {
-		if sp, err := s.pricer.ResolveUnitPrice(ctx, tc.SubsiteID, p.ID, 0, base); err == nil {
-			p.Price = sp
+		if sp, err := s.pricer.ResolveUnitPrice(ctx, tc.SubsiteID, p.ID, 0, base); err == nil && sp > base {
+			p.Price += sp - base
 		}
 	}
 	snapshots, _ := s.uc.repo.StockSnapshotBatch(ctx, []uint64{p.ID})
@@ -249,10 +261,13 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 		if skuBase == 0 {
 			skuBase = base // 继承商品基础价
 		}
-		skuPrice := skuBase
+		skuPrice, err := s.discountedPrice(ctx, p, skuBase)
+		if err != nil {
+			return nil, errors.InternalServer("catalog.PRICE_FAILED", "读取会员价格失败，请重试")
+		}
 		if tc.SubsiteID != tenancy.MainSubsiteID && s.pricer != nil {
-			if sp, err := s.pricer.ResolveUnitPrice(ctx, tc.SubsiteID, p.ID, sku.ID, skuBase); err == nil {
-				skuPrice = sp
+			if sp, err := s.pricer.ResolveUnitPrice(ctx, tc.SubsiteID, p.ID, sku.ID, skuBase); err == nil && sp > skuBase {
+				skuPrice += sp - skuBase
 			}
 		}
 		offer := offers[couponport.FlashKey{ProductID: p.ID, SkuID: sku.ID}]
@@ -305,6 +320,17 @@ func (s *StoreCatalogService) SetStockLookup(lookup port.StockLookup) {
 }
 
 func (s *StoreCatalogService) SetFlashReader(reader couponport.FlashReader) { s.flash = reader }
+
+func (s *StoreCatalogService) SetDiscountResolver(resolver orderport.DiscountResolver) {
+	s.discounts = resolver
+}
+
+func (s *StoreCatalogService) discountedPrice(ctx context.Context, p *port.Product, base money.Cents) (money.Cents, error) {
+	if s.discounts == nil || p.ProductKind == "sms_channel" || p.DeliveryKind == "social_service" {
+		return base, nil
+	}
+	return s.discounts.DiscountedPrice(ctx, p.ID, base)
+}
 func (s *StoreCatalogService) flashOffers(ctx context.Context, ids []uint64) (map[couponport.FlashKey]*couponport.FlashInfo, error) {
 	if s.flash == nil {
 		return nil, nil

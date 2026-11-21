@@ -388,7 +388,13 @@ func contextWithTimeout(r *http.Request) (ctx context.Context, cancel context.Ca
 // Order data and bearer credentials must never be stored by shared caches.
 func privateOrderResponseFilter(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		catalog := r.URL.Path == "/api/v1/storefront/products" || strings.HasPrefix(r.URL.Path, "/api/v1/storefront/products/")
+		if catalog {
+			w.Header().Add("Vary", "Authorization")
+		}
 		if strings.HasPrefix(r.URL.Path, "/api/v1/storefront/orders") ||
+			(catalog && r.Header.Get("Authorization") != "") ||
+			strings.HasPrefix(r.URL.Path, "/api/v1/storefront/cart") ||
 			strings.HasPrefix(r.URL.Path, "/api/v1/storefront/payments") ||
 			r.URL.Path == "/api/v1/storefront/payment/quote" ||
 			(strings.HasPrefix(r.URL.Path, "/api/v1/admin/inventory/cards/") && strings.HasSuffix(r.URL.Path, "/content")) {

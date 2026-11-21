@@ -7,6 +7,12 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 )
 
+// DiscountResolver keeps catalog/cart prices on the checkout member/group rules.
+// The input is the undiscounted product/SKU price, before subsite markup.
+type DiscountResolver interface {
+	DiscountedPrice(context.Context, uint64, money.Cents) (money.Cents, error)
+}
+
 // UpstreamStockGate 上游代发商品实时库存闸门（ 落地；supply 网关实现，
 // newApp 破环点注入）。本地商品不走上游；对接商品缺货/查询失败/库存未知
 // 返回错误，仅上游明确不限(-1)可放行。nil 闸门 = 不启用预检。

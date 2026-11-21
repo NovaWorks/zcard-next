@@ -19,7 +19,8 @@ const server = http.createServer((req, res) => {
  try {
   for (const width of [1440, 390]) {
    const page = await browser.newPage({ viewport: { width, height: 1100 } }), errors = [];
-   let changed, configured, registration;
+   let changed, configured, registration, adjustCalls = 0, failAdjust = true, finishAdjust, finishRefresh;
+   let pauseRefresh = false;
    const levels = [
     { id: 1, name: '推荐会员', enabled: true, acquire_mode: 'manual', display_mode: 'public', discount: 9000 },
     { id: 2, name: '高级会员', enabled: true, acquire_mode: 'auto', display_mode: 'public', discount: 8500 }
@@ -31,7 +32,19 @@ const server = http.createServer((req, res) => {
     const req = route.request(), url = new URL(req.url()), p = url.pathname;
     let data = { items: [], entries: [], total: 0, categories: [], orders: [], users: [], products: [], roles: [], levels: [], pending: {} };
     if (p.endsWith('/auth/profile')) data = { admin: { id: 1, username: 'local-test' }, permissions: ['*'] };
-    if (p.endsWith('/admin/users')) data = { users: [customer], total: 1 };
+    if (p.endsWith('/admin/users')) {
+     if (pauseRefresh) await new Promise(resolve => { finishRefresh = resolve; });
+     data = { users: [customer], total: 1 };
+    }
+    if (p.endsWith('/admin/wallet/7')) data = { available_cents: customer.balance_cents || 1000, locked_cents: 0, total_cents: customer.balance_cents || 1000 };
+    if (p.endsWith('/admin/wallet/7/adjust')) {
+     adjustCalls++;
+     assert.deepEqual(req.postDataJSON(), { amount_cents: 1000, reason: '本地调账验证' });
+     if (failAdjust) { await route.fulfill({ status: 400, json: { code: 400, reason: 'wallet.ADJUST_FAILED', message: '本地模拟调账失败' } }); return; }
+     await new Promise(resolve => { finishAdjust = resolve; });
+     customer.balance_cents = 2000;
+     data = { available_cents: 2000, locked_cents: 0, total_cents: 2000 };
+    }
     if (p.endsWith('/admin/users/7')) data = { user: customer, inviter_username: 'local-agent', invitees_count: 0 };
     if (p.endsWith('/admin/member-levels')) data = { levels };
     if (p.endsWith('/users/7/member-level')) {
@@ -51,6 +64,31 @@ const server = http.createServer((req, res) => {
     await route.fulfill({ json: data });
    });
    await page.goto(base + '/admin/user');
+   await page.getByRole('button', { name: '余额', exact: true }).click();
+   const walletDialog = page.locator('.n-modal').filter({ hasText: '调整余额' });
+   await walletDialog.locator('.n-input-number input').fill('10');
+   await walletDialog.getByPlaceholder('必填；将写入审计日志').fill('本地调账验证');
+   await walletDialog.getByRole('button', { name: '确认调整', exact: true }).click();
+   await page.getByText('本地模拟调账失败', { exact: true }).waitFor();
+   assert(await walletDialog.isVisible(), 'failed adjustment must keep the dialog open');
+   assert.equal(await walletDialog.getByPlaceholder('必填；将写入审计日志').inputValue(), '本地调账验证');
+   failAdjust = false; pauseRefresh = true;
+   const adjustmentSent = page.waitForRequest(req => req.url().endsWith('/wallet/7/adjust'));
+   await walletDialog.getByRole('button', { name: '确认调整', exact: true }).click();
+   await adjustmentSent;
+   const pendingSubmit = walletDialog.locator('button').filter({ hasText: '确认调整' });
+   await pendingSubmit.evaluate(button => button.click());
+   assert.equal(adjustCalls, 2, 'pending adjustment must not submit twice');
+   assert(await pendingSubmit.isDisabled());
+   finishAdjust();
+   await walletDialog.waitFor({ state: 'hidden' });
+   // Closing must not depend on a slow follow-up balance/list read.
+   assert.equal(adjustCalls, 2);
+   for (let attempt = 0; !finishRefresh && attempt < 100; attempt++) await new Promise(resolve => setTimeout(resolve, 10));
+   assert(finishRefresh, 'list refresh was not requested');
+   pauseRefresh = false; finishRefresh();
+   await page.locator('.n-data-table tbody').getByText('20.00', { exact: true }).waitFor();
+   console.log(`PASS wallet failure retention, duplicate guard, immediate close and refreshed balance width=${width}`);
    await page.getByRole('button', { name: '详情', exact: true }).click();
    await page.getByRole('button', { name: '修改等级', exact: true }).click();
    let dialog = page.locator('.n-dialog');
@@ -73,7 +111,7 @@ const server = http.createServer((req, res) => {
    await page.waitForFunction(() => !document.querySelector('.n-dialog'));
    assert.equal(configured.level_id, 1); assert.equal(customer.manual_level_id, 2);
    await page.goto(base + '/register?ref=ABCDEFGH');
-   await page.getByText('注册成功即可获得推荐会员待遇，会员价享 9 折。', { exact: true }).waitFor();
+   await page.getByText(/注册成功即可获得\s*推荐会员\s*待遇，会员价享\s*9\s*折。/).waitFor();
    await page.getByPlaceholder('用户名', { exact: true }).fill('new-customer');
    await page.getByPlaceholder('至少 6 位').fill('test-only-password');
    await page.screenshot({ path: path.join(output, `register-${width}.png`), fullPage: true });
