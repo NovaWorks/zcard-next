@@ -320,10 +320,15 @@ func (a *mcyAdapter) GetStock(ctx context.Context, productCode, skuCode string) 
 		return -2, err
 	}
 	if skuCode == "" {
-		if len(p.SKUs) != 1 {
-			return -2, fmt.Errorf("%w: 请选择萌次元商品规格", ErrNotSupported)
+		var total int64
+		for _, sku := range p.SKUs {
+			n, err := a.skuStock(ctx, sku.ID)
+			if err != nil || n < 0 {
+				return -2, err
+			}
+			total += int64(n)
 		}
-		skuCode = p.SKUs[0].ID
+		return int32(min(total, math.MaxInt32)), nil
 	}
 	found := false
 	for _, sku := range p.SKUs {
@@ -332,6 +337,10 @@ func (a *mcyAdapter) GetStock(ctx context.Context, productCode, skuCode string) 
 	if !found {
 		return 0, ErrProductUnavailable
 	}
+	return a.skuStock(ctx, skuCode)
+}
+
+func (a *mcyAdapter) skuStock(ctx context.Context, skuCode string) (int32, error) {
 	raw, err := a.request(ctx, "sku/stock", map[string]string{"sku_id": skuCode})
 	if err != nil {
 		return -2, err

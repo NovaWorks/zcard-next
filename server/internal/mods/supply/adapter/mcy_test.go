@@ -169,3 +169,44 @@ func TestMCYRejectsAmbiguousSKUAndReservedForm(t *testing.T) {
 		t.Fatal("submitted rejected purchase")
 	}
 }
+
+func TestMCYProductStockAggregatesLiveSKUs(t *testing.T) {
+	for _, tt := range []struct {
+		name, first, second string
+		want                int32
+	}{
+		{"available", `3`, `"9"`, 12},
+		{"sold out", `0`, `"0"`, 0},
+		{"unknown", `3`, `"大量"`, -2},
+		{"missing", `3`, `null`, -2},
+		{"overflow", `2147483647`, `9`, 2147483647},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var queried []string
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = r.ParseForm()
+				w.Header().Set("Content-Type", "application/json")
+				switch r.URL.Path {
+				case "/plugin/open-api/item":
+					_, _ = w.Write([]byte(`{"code":200,"data":` + mcyFixtureItem + `}`))
+				case "/plugin/open-api/sku/stock":
+					id := r.PostForm.Get("sku_id")
+					queried = append(queried, id)
+					stock := tt.first
+					if id == "52" {
+						stock = tt.second
+					}
+					_, _ = w.Write([]byte(`{"code":200,"data":{"stock":` + stock + `}}`))
+				default:
+					t.Errorf("unexpected endpoint %s", r.URL.Path)
+				}
+			}))
+			defer srv.Close()
+			a := &mcyAdapter{t: newTransportWithClient(srv.URL, []int{0}, nil, srv.Client())}
+			n, err := a.GetStock(context.Background(), "12", "")
+			if err != nil || n != tt.want || strings.Join(queried, ",") != "51,52" {
+				t.Fatalf("aggregate = %d, %v; queried %v", n, err, queried)
+			}
+		})
+	}
+}

@@ -299,3 +299,8 @@ type SettingsReader interface {
 type StockLookup interface {
 	DisplayStock(ctx context.Context, connectionID uint64, productCode string) (int32, error)
 }
+
+// SKUStockLookup confirms one selectable SKU independently of the aggregate.
+type SKUStockLookup interface {
+	DisplaySKUStock(ctx context.Context, connectionID uint64, productCode, skuCode string) (int32, error)
+}

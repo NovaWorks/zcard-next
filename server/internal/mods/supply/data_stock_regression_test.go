@@ -78,3 +78,22 @@ func TestStockReferenceFailureAndOutOfOrderUpdates(t *testing.T) {
 		t.Fatal("metadata upsert restored stale stock", fresh.UpStock)
 	}
 }
+
+func TestDisplaySKUStockCacheIsSeparateFromProductAndOtherSKUs(t *testing.T) {
+	r, d := newTestRepo(t)
+	ctx := context.Background()
+	p := d.Client.Product.Create().SetName("sku cache").SetSlug("sku-cache").SetUpstreamSourceID(9).SetUpstreamProductCode("12").SaveX(ctx)
+	for sku, n := range map[string]int32{"": 99, "51": 9, "52": 0} {
+		d.Client.SupplyMapping.Create().SetConnectionID(9).SetLocalProductID(p.ID).SetUpstreamProduct("12").SetUpstreamSku(sku).SetUpStock(n).SetStockCheckedAt(time.Now()).SaveX(ctx)
+	}
+	g := NewGateway(r, nil, nil)
+	for sku, want := range map[string]int32{"51": 9, "52": 0} {
+		n, err := g.DisplaySKUStock(ctx, 9, "12", sku)
+		if err != nil || n != want {
+			t.Fatalf("SKU %s: %d %v", sku, n, err)
+		}
+	}
+	if _, err := g.DisplaySKUStock(ctx, 9, "12", ""); err == nil {
+		t.Fatal("missing SKU fell back to aggregate")
+	}
+}

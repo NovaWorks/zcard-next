@@ -299,7 +299,7 @@ const stockDisplay = computed(() => {
   return String(s);
 });
 // 自营/对接均使用各自库存；proto3 省略零值时仍按缺货处理。
-const effectiveStock = computed(()=>{if(manualDelivery.value)return p.value?.manual_stock ?? p.value?.stock ?? 0;const sku=p.value?.skus?.find(s=>Number(s.id)===Number(selectedSku.value));return sku && sku.stock !== -2 ? (sku.stock ?? 0) : (p.value?.stock ?? 0);});
+const effectiveStock = computed(()=>{if(manualDelivery.value)return p.value?.manual_stock ?? p.value?.stock ?? 0;const sku=p.value?.skus?.find(s=>Number(s.id)===Number(selectedSku.value));return sku ? (sku.stock ?? 0) : (p.value?.stock ?? 0);});
 const stockUnknown = computed(() => effectiveStock.value < -1);
 const stockRefreshing = ref(false);
 const stockRefreshMessage = ref('');

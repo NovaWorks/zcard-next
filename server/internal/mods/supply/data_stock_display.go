@@ -36,12 +36,26 @@ func (g *Gateway) cacheStockAt(ctx context.Context, connectionID uint64, code st
 }
 
 func (g *Gateway) DisplayStock(ctx context.Context, connectionID uint64, code string) (int32, error) {
+	return g.displayStock(ctx, connectionID, code, "")
+}
+
+func (g *Gateway) DisplaySKUStock(ctx context.Context, connectionID uint64, code, sku string) (int32, error) {
+	if sku == "" {
+		return -2, fmt.Errorf("supply: missing upstream SKU")
+	}
+	return g.displayStock(ctx, connectionID, code, sku)
+}
+
+func (g *Gateway) displayStock(ctx context.Context, connectionID uint64, code, sku string) (int32, error) {
+	if err := ctx.Err(); err != nil {
+		return -2, err
+	}
 	// Coalesce per repository/connection/product, with a bounded upstream request.
-	key := fmt.Sprintf("%p/%d/%s", g.repo, connectionID, code)
+	key := fmt.Sprintf("%p/%d/%q/%q", g.repo, connectionID, code, sku)
 	result := displayStockRequests.DoChan(key, func() (any, error) {
 		bounded, cancel := context.WithTimeout(context.WithoutCancel(ctx), 8*time.Second)
 		defer cancel()
-		m, err := data.Client(bounded, g.repo.data).SupplyMapping.Query().Where(supplymapping.ConnectionID(connectionID), supplymapping.UpstreamProduct(code), supplymapping.UpstreamSkuEQ("")).Only(bounded)
+		m, err := data.Client(bounded, g.repo.data).SupplyMapping.Query().Where(supplymapping.ConnectionID(connectionID), supplymapping.UpstreamProduct(code), supplymapping.UpstreamSkuEQ(sku)).Only(bounded)
 		if err == nil {
 			channel, e := data.Client(bounded, g.repo.data).Product.Query().Where(product.ID(m.LocalProductID), product.ProductKind("sms_channel")).Exist(bounded)
 			if e != nil {
@@ -60,7 +74,7 @@ func (g *Gateway) DisplayStock(ctx context.Context, connectionID uint64, code st
 		case <-bounded.Done():
 			return int32(-2), bounded.Err()
 		}
-		return g.CheckStock(bounded, connectionID, code, "")
+		return g.CheckStock(bounded, connectionID, code, sku)
 	})
 	select {
 	case <-ctx.Done():

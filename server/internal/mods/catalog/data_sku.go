@@ -6,6 +6,7 @@ package catalog
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -289,7 +290,7 @@ func (r *ProductRepoImpl) deleteSku(ctx context.Context, id uint64) error {
 
 // ── 前台/订单取价 ────────────────────────────────────────────
 
-// ListSkus 前台 SKU 列表（只下发 id/名称/价格）。
+// ListSkus 前台 SKU 列表，按实际交付来源读取规格库存。
 func (r *ProductRepoImpl) ListSkus(ctx context.Context, productID uint64) ([]port.Sku, error) {
 	rows, err := data.Client(ctx, r.data).ProductSku.Query().
 		Where(productsku.ProductID(productID)).
@@ -303,6 +304,18 @@ func (r *ProductRepoImpl) ListSkus(ctx context.Context, productID uint64) ([]por
 		return nil, err
 	}
 	out := make([]port.Sku, 0, len(rows))
+	stockCtx, cancelStock := context.WithTimeout(ctx, 8*time.Second)
+	defer cancelStock()
+	bySKU := map[uint64]data.StockSlot{}
+	if p.UpstreamSourceID != 0 {
+		slots, e := data.StockSlots(ctx, r.data, p)
+		if e != nil {
+			return nil, e
+		}
+		for _, slot := range slots {
+			bySKU[slot.SKUID] = slot
+		}
+	}
 	for _, s := range rows {
 		mode := data.FulfillmentMode(p, s)
 		stock := int64(-2)
@@ -323,6 +336,19 @@ func (r *ProductRepoImpl) ListSkus(ctx context.Context, productID uint64) ([]por
 				n, e := data.Client(ctx, r.data).Card.Query().Where(card.ProductID(p.ID), card.SkuID(s.ID), card.StatusEQ(card.StatusAvailable)).Count(ctx)
 				stock = int64(n)
 				err = e
+			}
+		case "upstream":
+			slot, found := bySKU[s.ID]
+			if !found {
+				break
+			}
+			stock = slot.Quantity
+			if lookup, ok := r.stockLookup.(port.SKUStockLookup); ok && slot.UpstreamSKU != "" {
+				n, e := lookup.DisplaySKUStock(stockCtx, p.UpstreamSourceID, p.UpstreamProductCode, slot.UpstreamSKU)
+				stock = -2
+				if e == nil && n >= -1 {
+					stock = int64(n)
+				}
 			}
 		}
 		if err != nil {
