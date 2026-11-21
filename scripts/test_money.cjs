@@ -85,6 +85,7 @@ async function main() {
   await admin.initCurrency(true);
   assert.equal(admin.formatMoney(200),'¥2.00');
   assert.equal(admin.centsToYuan(200),2);
+  assert.equal(admin.formatMoney(10084,'USD'),'100.84 USD');
   delete currencies[0].precision; // proto3 omission means explicit zero
   await admin.initCurrency(true);
   assert.equal(admin.formatMoney(200),'¥2');

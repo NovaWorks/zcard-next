@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
@@ -152,7 +153,11 @@ func (s *ProcureService) socialOperation(ctx context.Context, row *ent.SocialTas
 		if current.Status == "succeeded" || current.Status == "rejected" {
 			return nil
 		}
-		return c.SocialOperation.UpdateOneID(op.ID).SetUpstreamOperationID(result.OperationID).SetStatus(result.Status).SetErrorCode(result.ErrorCode).Exec(ctx)
+		upstreamID := result.OperationID
+		if result.ProviderOperationID != nil {
+			upstreamID = *result.ProviderOperationID
+		}
+		return c.SocialOperation.UpdateOneID(op.ID).SetUpstreamOperationID(upstreamID).SetStatus(result.Status).SetErrorCode(result.ErrorCode).Exec(ctx)
 	})
 }
 func (s *ProcureService) socialSnapshot(ctx context.Context, row *ent.SocialTask, snap *supplyport.SocialSnapshot) error {
@@ -318,6 +323,10 @@ func (s *ProcureService) socialReview(ctx context.Context, row *ent.SocialTask, 
 func (s *ProcureService) socialFailure(ctx context.Context, row *ent.SocialTask, cause error) {
 	finish, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
+	if errors.Is(cause, supplyport.ErrSocialSubmitUnknown) {
+		_ = data.Client(finish, s.repo.data).SocialTask.Update().Where(socialtask.ID(row.ID), socialtask.LeaseToken(row.LeaseToken)).SetPhase("review").SetState("submit_unknown").SetLastError("upstream_submit_unknown").SetCanCancel(false).SetCanRefill(false).SetLeaseUntil(0).Exec(finish)
+		return
+	}
 	// Transport failures remain recoverable: a prolonged outage must not strand
 	// a paid obligation merely because an arbitrary retry count was reached.
 	delay := time.Duration(5*(1<<min(row.Attempts, 7))) * time.Second

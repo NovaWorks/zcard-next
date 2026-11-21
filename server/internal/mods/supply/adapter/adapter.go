@@ -209,6 +209,8 @@ func New(driver, baseURL string, creds Credentials, retryIntervals []int) (Adapt
 		return newAcgFaka(baseURL, creds, retryIntervals)
 	case "mcy_shop":
 		return newMCY(baseURL, creds, retryIntervals)
+	case "csn19":
+		return newCSN19(baseURL, creds, retryIntervals)
 	default:
 		return nil, fmt.Errorf("adapter: 不支持的驱动 %q", driver)
 	}

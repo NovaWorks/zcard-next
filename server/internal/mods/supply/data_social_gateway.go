@@ -14,7 +14,7 @@ func (g *Gateway) PriceSocialRetail(ctx context.Context, connectionID, productID
 	if err != nil {
 		return 0, "", err
 	}
-	if conn.Driver != "zcard" || string(conn.Status) != "active" || conn.ExchangeRate != 1 || cost <= 0 {
+	if !supplyport.SupportsSocialRetail(conn.Driver, conn.ExchangeRate) || string(conn.Status) != "active" || cost <= 0 {
 		return 0, "", fmt.Errorf("社交服务货源或报价无效")
 	}
 	p, err := g.repo.entClient(ctx).Product.Get(ctx, productID)
@@ -35,26 +35,37 @@ func (g *Gateway) PriceSocialRetail(ctx context.Context, connectionID, productID
 	if _, fixed := m.PricingOverride["price"]; fixed {
 		return 0, "", fmt.Errorf("动态服务不能使用固定单件售价覆盖")
 	}
-	amount := rule.price(conn, cost)
+	pricing := *conn
+	if conn.Driver == "csn19" {
+		pricing.ExchangeRate = 1
+	}
+	amount := rule.price(&pricing, cost)
 	if amount <= 0 || amount < cost {
 		return 0, "", fmt.Errorf("社交服务总价无效或低于供货报价")
 	}
 	return amount, data.SocialRetailPricingRevision(conn, m), nil
 }
 
-// OpenSocial opens only the ZCard protocol. Provider credentials and raw order
-// identifiers remain on the wholesale server's separately configured connection.
+// OpenSocial keeps wholesale replay semantics separate from native provider
+// submissions, whose durable quote/submit ledger lives in nativeSocialClient.
 func (g *Gateway) OpenSocial(ctx context.Context, connectionID uint64) (supplyport.SocialClient, error) {
 	conn, err := g.gate(ctx, connectionID)
 	if err != nil {
 		return nil, err
 	}
-	if conn.Driver != "zcard" || conn.ExchangeRate != 1 {
-		return nil, fmt.Errorf("社交服务供货须使用启用的人民币 ZCard 连接")
+	if !supplyport.SupportsSocialRetail(conn.Driver, conn.ExchangeRate) {
+		return nil, fmt.Errorf("服务货源类型或汇率配置不支持")
 	}
 	a, err := g.adapterFor(ctx, connectionID)
 	if err != nil {
 		return nil, err
+	}
+	if conn.Driver == "csn19" {
+		provider, ok := a.(supplyport.SocialProvider)
+		if !ok {
+			return nil, fmt.Errorf("货源不支持服务采购")
+		}
+		return &nativeSocialClient{g: g, conn: conn, provider: provider}, nil
 	}
 	client, ok := a.(supplyport.SocialClient)
 	if !ok {

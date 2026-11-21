@@ -11,7 +11,7 @@ export function fetchSupplyConnections(params?: { page?: number; page_size?: num
 
 export function createSupplyConnection(data: {
   name: string;
-  driver: string; // zcard | dujiao_next | acg_faka | mcy_shop
+  driver: string; // zcard | dujiao_next | acg_faka | mcy_shop | csn19
   base_url: string;
   credentials: string; // 驱动结构 JSON 明文（仅此接口）
   callback_url?: string;

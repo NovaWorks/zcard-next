@@ -54,7 +54,7 @@ func (uc *OrderUsecase) socialQuote(ctx context.Context, p *ent.Product, in Crea
 	if e != nil {
 		return nil, e
 	}
-	if string(conn.Status) != "active" || conn.Driver != "zcard" || conn.ExchangeRate != 1 || data.SocialConnectionIdentity(conn) != q.ConnectionIdentity || data.SocialRetailPricingRevision(conn, m) != q.PricingRevision {
+	if string(conn.Status) != "active" || !supplyport.SupportsSocialRetail(conn.Driver, conn.ExchangeRate) || data.SocialConnectionIdentity(conn) != q.ConnectionIdentity || data.SocialRetailPricingRevision(conn, m) != q.PricingRevision {
 		return nil, fmt.Errorf("order.FORM_INVALID: 服务货源或定价已变化，请重新获取报价")
 	}
 	return q, nil

@@ -41,6 +41,7 @@ const driverMeta: Record<string, { label: string; tag: "success" | "info" | "war
   dujiao_next: { label: "独角数卡", tag: "info" },
   acg_faka: { label: "异次元", tag: "warning" },
   mcy_shop: { label: "萌次元", tag: "info" },
+  csn19: { label: "19csn", tag: "info" },
 };
 
 const canWrite = () => checkAuth("supply:write");
@@ -138,6 +139,8 @@ const form = reactive({
 
 const credFields = computed(() => {
   switch (form.driver) {
+    case "csn19":
+      return [{ key: "api_key", label: "API Key" }];
     case "dujiao_next":
       return [
         { key: "api_key", label: "Api Key" },
@@ -257,6 +260,7 @@ async function submitForm() {
 
 // ── 测试连接 ──
 const pinging = reactive<Record<number, boolean>>({});
+const connectionCurrencies = reactive<Record<number, string>>({});
 async function handlePing(row: any) {
   pinging[row.id] = true;
   try {
@@ -264,8 +268,9 @@ async function handlePing(row: any) {
     if (!error && data) {
       const d = data as any;
       if (d.ok === true) {
+        if (d.currency) connectionCurrencies[row.id] = d.currency;
         const balance = d.balance_cents ?? d.balance ?? (d.currency ? 0 : -1);
-        window.$message?.success(`连接成功：${d.site_name || "上游"}，余额 ${balance == null || balance < 0 ? "未知" : formatMoney(balance)}`);
+        window.$message?.success(`连接成功：${d.site_name || "上游"}，余额 ${balance == null || balance < 0 ? "未知" : formatMoney(balance, d.currency)}`);
       } else {
         window.$message?.error(`连接失败：${d.error || "上游未确认连接成功，请重试"}`);
       }
@@ -730,6 +735,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     cols.push({
       title: "余额", key: "balance_cache", width: 110,
       render: (row: any) => {
+        if (row.driver === "csn19" && !connectionCurrencies[row.id]) return "测试连接后查看";
         // JSON omits a known zero balance; an unknown balance is explicitly -1.
         const balance = row.balance_cache ?? (row.last_ping_ok ? 0 : -1);
         if (balance < 0) return "—（未取到）";
@@ -739,7 +745,7 @@ const columns = computed<DataTableColumns<any>>(() => {
             ? "上次成功获取的余额，当前未验证；最新余额以连接成功后的结果为准"
             : `最近测试：${fmtTime(row.last_ping_at)}`,
         }, [
-          h("div", formatMoney(balance)),
+          h("div", formatMoney(balance, connectionCurrencies[row.id])),
           historical ? h("small", { class: "text-amber-600" }, "历史余额") : null,
         ]);
       },
@@ -797,11 +803,15 @@ onMounted(load);
               { label: '独角数卡 dujiao-next', value: 'dujiao_next' },
               { label: '异次元 acg-faka', value: 'acg_faka' },
               { label: '萌次元 mcy-shop', value: 'mcy_shop' },
+              { label: '19csn（服务渠道）', value: 'csn19' },
             ]"
           />
         </NFormItem>
         <NAlert v-if="form.driver === 'mcy_shop'" type="info" :bordered="false" class="mb-12px">
           上游需启用 OpenApi 插件，地址填写网站根地址。使用上游的对接 ID 和密钥；采购结果无法确认时转人工核对。
+        </NAlert>
+        <NAlert v-if="form.driver === 'csn19'" type="info" :bordered="false" class="mb-12px">
+          地址可填写 https://19csn.com 或完整 /api/v2 地址，仅需 API Key。支持单次普通服务和自定义评论；套餐、订阅及循环投放需核实计费后再开放。汇率按测试连接返回的账号币种填写，人民币账号填 1。下单结果不明时转人工核对，取消不代表退款。
         </NAlert>
         <NFormItem label="上游地址" required>
           <NInput v-model:value="form.base_url" placeholder="https://up.example.com" />

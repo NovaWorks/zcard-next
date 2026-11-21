@@ -46,7 +46,8 @@ export function centsToYuan(cents: number): number {
 }
 
 // formatMoney 带符号格式化（显示唯一入口；符号位置感知）。
-export function formatMoney(cents: number): string {
+export function formatMoney(cents: number, currency?: string): string {
+  if (currency && currency !== current.code) return `${formatCents(cents, 2)} ${currency}`;
   const v = fenToYuan(cents);
   return current.position === "suffix" ? `${v}${current.symbol}` : `${current.symbol}${v}`;
 }

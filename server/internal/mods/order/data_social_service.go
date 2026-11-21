@@ -64,7 +64,7 @@ func (s *StoreSocialProductService) product(ctx context.Context, id uint64) (*en
 		return nil, nil, errors.NotFound("social.PRODUCT_UNAVAILABLE", "服务商品不可售")
 	}
 	conn, e := c.SupplyConnection.Get(ctx, p.UpstreamSourceID)
-	if e != nil || string(conn.Status) != "active" || conn.Driver != "zcard" || conn.ExchangeRate != 1 {
+	if e != nil || string(conn.Status) != "active" || !supplyport.SupportsSocialRetail(conn.Driver, conn.ExchangeRate) {
 		return nil, nil, errors.BadRequest("social.CONNECTION_UNAVAILABLE", "服务货源暂不可购")
 	}
 	gw, ok := s.uc.StockGate.(supplyport.SocialClientGateway)

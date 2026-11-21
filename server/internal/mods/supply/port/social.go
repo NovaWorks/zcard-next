@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -129,6 +130,12 @@ type SocialOperation struct {
 	OperationID string `json:"operation_id"`
 	Status      string `json:"status"` // pending | succeeded | rejected | unknown
 	ErrorCode   string `json:"error_code,omitempty"`
+	// Native providers may return a refill ID different from our operation ID.
+	ProviderOperationID *string `json:"provider_operation_id,omitempty"`
+}
+
+func SupportsSocialRetail(driver string, exchangeRate float64) bool {
+	return (driver == "zcard" && exchangeRate == 1) || (driver == "csn19" && exchangeRate > 0 && !math.IsNaN(exchangeRate) && !math.IsInf(exchangeRate, 0))
 }
 
 // SocialService is a provider catalog entry; its schema may contain private cost.
