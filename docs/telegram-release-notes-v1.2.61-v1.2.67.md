@@ -1861,4 +1861,4 @@ https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.121
 #ZCard #版本更新 #19csn #服务渠道
 ```
 
-发布状态（2026-11-21）：发行准备中，尚未发布 v1.2.121。
+发布状态（2026-11-22 更新）：GitHub 与 Docker v1.2.121 正式版及 latest 已发布；9 个公开附件、签名清单、双架构镜像和迁移指纹验收通过。频道公告由用户手动发送，尚未代发，未执行客户站点部署。[完整验证与 CI 边界](releases/v1.2.121-verification.md)。
