@@ -1823,4 +1823,4 @@ https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.120
 #ZCard #版本更新 #会员折扣 #余额 #规格库存
 ```
 
-发布状态（2026-11-21）：发行准备中，尚未发布 v1.2.120。
+发布状态（2026-11-21）：GitHub 与 Docker v1.2.120 正式版及 latest 已发布；9 个公开附件、签名清单、双架构镜像和迁移指纹验收通过。频道公告由用户手动发送，尚未代发，客户站点未部署。[完整验证与 CI 边界](releases/v1.2.120-verification.md)。
