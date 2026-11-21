@@ -227,6 +227,16 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 			out.StockReference = int64(n)
 		}
 	}
+
+	if out.Stock < -1 && p.UpstreamSourceID > 0 {
+		if check, ok := s.stockLookup.(interface {
+			DisplayAvailability(context.Context, uint64, string, string, int) (bool, error)
+		}); ok {
+			if available, e := check.DisplayAvailability(ctx, p.UpstreamSourceID, p.UpstreamProductCode, "", 1); e == nil && available {
+				out.StockStatus = "on_demand"
+			}
+		}
+	}
 	controls, err := s.uc.ListControls(ctx, req.GetId())
 	if err != nil {
 		return nil, errors.InternalServer("catalog.CONTROL_FAILED", "读取控件失败")

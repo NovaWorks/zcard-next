@@ -72,13 +72,19 @@ func TestCheckOrderItems(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			called := false
 			var gotCode string
-			stock := func(connectionID uint64, productCode, skuCode string) (int32, error) {
+			stock := func(connectionID uint64, productCode, skuCode string, quantity int) (bool, error) {
 				called = true
 				gotCode = skuCode
 				if connectionID != 9 || productCode != "UP-2" {
 					t.Fatalf("取数参数错误: conn=%d code=%s", connectionID, productCode)
 				}
-				return tc.stock, tc.stockErr
+				if tc.stockErr != nil {
+					return false, tc.stockErr
+				}
+				if tc.stock < -1 {
+					return false, errors.New("unknown stock")
+				}
+				return tc.stock == -1 || int64(tc.stock) >= int64(quantity), nil
 			}
 			err := checkOrderItems(ctx, reader, stock, 0, tc.items)
 			if called != tc.wantCall {
@@ -103,7 +109,7 @@ func TestCheckOrderItems(t *testing.T) {
 	}
 
 	// 商品不可读 → fail-open
-	if err := checkOrderItems(ctx, reader, func(uint64, string, string) (int32, error) { return 0, nil }, 0,
+	if err := checkOrderItems(ctx, reader, func(uint64, string, string, int) (bool, error) { return false, nil }, 0,
 		[]orderport.UpstreamStockItem{{ProductID: 404, Quantity: 1}}); err != nil {
 		t.Fatalf("不可读商品应放行: %v", err)
 	}

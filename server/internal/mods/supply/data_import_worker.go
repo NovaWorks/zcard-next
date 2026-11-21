@@ -401,9 +401,9 @@ func (s *SyncService) attemptImportItem(ctx context.Context, task *ent.SupplySyn
 func (s *SyncService) importStock(ctx context.Context, task *ent.SupplySyncTask, payload *importPayload, conn *ent.SupplyConnection, a adapter.Adapter, item *ent.SupplyImportItem) error {
 	started := time.Now().UTC()
 	stockCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 	local, e := s.repo.entClient(ctx).Product.Get(ctx, item.LocalProductID)
 	if e != nil {
-		cancel()
 		return e
 	}
 	var stock int32
@@ -413,12 +413,26 @@ func (s *SyncService) importStock(ctx context.Context, task *ent.SupplySyncTask,
 	} else {
 		stock, err = a.GetStock(stockCtx, item.Code, "")
 	}
-	cancel()
 	if err != nil {
 		return err
 	}
 	if stock < -1 && local.ProductKind != "sms_channel" && local.ProductKind != "social_service" {
-		return fmt.Errorf("货源库存无效")
+		check, ok := a.(interface {
+			CheckQuantity(context.Context, string, string, int) (bool, error)
+		})
+		if !ok {
+			return fmt.Errorf("货源库存无效")
+		}
+		available, e := check.CheckQuantity(stockCtx, item.Code, "", 1)
+		if e != nil {
+			return e
+		}
+		if !available {
+			return fmt.Errorf("当前购买数量不可用")
+		}
+		// Keep -2 in the inventory cache. Confirmed availability permits this
+		// import to activate; every order still checks its actual quantity.
+
 	}
 	return data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
 		if err := s.guardTaskLease(ctx); err != nil {

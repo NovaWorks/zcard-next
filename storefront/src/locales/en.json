@@ -1383,5 +1383,6 @@
   "① 萌次元后台安装并启用「异次元V3」货源插件": "1. Install and enable the ACG V3 supply plugin in MCY Shop.",
   "② 新增货源配置，网站地址填本站根地址": "2. Add a supply configuration and enter this store's root URL:",
   "③ 商户ID 填上面的 app_id，密钥填 app_key，然后拉取商品": "3. Enter the app_id and app_key shown above, then import products.",
-  "萌次元站对接（异次元V3货源插件 / OpenApi）": "Connect MCY Shop using the ACG V3 supply plugin or OpenApi."
+  "萌次元站对接（异次元V3货源插件 / OpenApi）": "Connect MCY Shop using the ACG V3 supply plugin or OpenApi.",
+  "下单时确认库存": "Stock checked when ordering"
 }

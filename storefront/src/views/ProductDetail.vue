@@ -269,7 +269,7 @@ watch([description, () => p.value?.description], () => {
 watch(() => route.params, () => { previewImages.value = []; });
 
 // 购物车（淘宝式切换）：当前商品 + 所选 SKU 在购物车 → 按钮变灰「移除购物车」
-const canCart = computed(() => !smsProduct.value && cartEnabled.value && !(p.value?.points_required && p.value.points_required > 0));
+const canCart = computed(() => !smsProduct.value && p.value?.stock_status !== "on_demand" && cartEnabled.value && !(p.value?.points_required && p.value.points_required > 0));
 const inCartNow = computed(() => {
   if (!p.value || !canCart.value) return false;
   return !!cartItemOf(p.value.id, selectedSku.value || 0);
@@ -294,13 +294,14 @@ const displayPrice = computed(() => flash.price(basePrice.value, selectedFlash.v
 const stockDisplay = computed(() => {
   if (!p.value) return '-';
   const s = effectiveStock.value;
+  if (p.value.stock_status === "on_demand") return $t("下单时确认库存");
   if (s < -1) return p.value.stock_status === 'stale' && (p.value.stock_reference ?? -2) >= -1 ? $t("上次：{0}（待确认）", [p.value.stock_reference === -1 ? $t('不限') : p.value.stock_reference]) : $t("待确认");
   if (s === -1) return $t("不限");
   return String(s);
 });
 // 自营/对接均使用各自库存；proto3 省略零值时仍按缺货处理。
 const effectiveStock = computed(()=>{if(manualDelivery.value)return p.value?.manual_stock ?? p.value?.stock ?? 0;const sku=p.value?.skus?.find(s=>Number(s.id)===Number(selectedSku.value));return sku ? (sku.stock ?? 0) : (p.value?.stock ?? 0);});
-const stockUnknown = computed(() => effectiveStock.value < -1);
+const stockUnknown = computed(() => effectiveStock.value < -1 && p.value?.stock_status !== "on_demand");
 const stockRefreshing = ref(false);
 const stockRefreshMessage = ref('');
 const stockRetrySeconds = ref(0);

@@ -176,6 +176,12 @@ type OrderRefunder interface {
 	RefundOrder(ctx context.Context, orderID uint64, amount money.Cents, reason string) error
 }
 
+// RejectedCardRefunder settles a specific, proven unaccepted card purchase.
+// Implementations independently validate the procurement and paid-wallet proof.
+type RejectedCardRefunder interface {
+	RefundRejectedCard(ctx context.Context, procurementID uint64) error
+}
+
 // SlowPaymentGracePeriod caps confirmation waiting after the original order deadline.
 const SlowPaymentGracePeriod = 15 * time.Minute
 

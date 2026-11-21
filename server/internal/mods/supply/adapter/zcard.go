@@ -195,6 +195,8 @@ func (a *zCardAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*Cr
 		return nil, err
 	}
 	var resp struct {
+		ErrorCode     string             `json:"error_code"`
+		Charged       bool               `json:"charged"`
 		SupplyOrderID any                `json:"supply_order_id"`
 		Amount        supplyport.Integer `json:"amount"`
 		Status        string             `json:"status"`
@@ -206,7 +208,28 @@ func (a *zCardAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*Cr
 	if err := decodeZCard(data, &resp); err != nil {
 		return nil, fmt.Errorf("adapter.zcard: 解析下单响应失败: %w", err)
 	}
+	if resp.Status == "rejected" {
+		if resp.Charged {
+			return nil, ErrPurchaseUncertain
+		}
+		switch resp.ErrorCode {
+		case "no_stock":
+			return nil, ErrNoStock
+		case "product_unavailable":
+			return nil, ErrProductUnavailable
+		case "insufficient_balance":
+			return nil, ErrInsufficientBalance
+		default:
+			return nil, ErrPurchaseUncertain
+		}
+	}
 	status := resp.Status
+	if status == "fulfilled" && resp.Fulfillment.Status == "delivered" {
+		status = "delivered"
+	}
+	if status == "fulfilling" {
+		status = "pending"
+	}
 	if status == "" {
 		status = resp.Fulfillment.Status
 	}
@@ -268,6 +291,12 @@ func (a *zCardAdapter) GetOrder(ctx context.Context, upstreamOrderID string) (*O
 		return nil, fmt.Errorf("adapter.zcard: 解析订单详情失败: %w", err)
 	}
 	status := resp.Status
+	if status == "fulfilled" && resp.Fulfillment.Status == "delivered" {
+		status = "delivered"
+	}
+	if status == "fulfilling" {
+		status = "pending"
+	}
 	if status == "" {
 		status = resp.Fulfillment.Status
 	}

@@ -248,14 +248,14 @@ func (g *Gateway) CheckItems(ctx context.Context, subsiteID uint64, items []orde
 		}
 		filtered = append(filtered, it)
 	}
-	return checkOrderItems(ctx, g.reader, func(connectionID uint64, productCode, skuCode string) (int32, error) {
-		return g.CheckStock(ctx, connectionID, productCode, skuCode)
+	return checkOrderItems(ctx, g.reader, func(connection uint64, code, sku string, quantity int) (bool, error) {
+		return g.CheckQuantity(ctx, connection, code, sku, quantity)
 	}, subsiteID, filtered)
 }
 
 // checkOrderItems 预检纯逻辑（reader/stock 可注入——单测覆盖决策矩阵）。
 func checkOrderItems(ctx context.Context, reader catalogport.ProductReader,
-	stock func(connectionID uint64, productCode, skuCode string) (int32, error),
+	stock func(connectionID uint64, productCode, skuCode string, quantity int) (bool, error),
 	subsiteID uint64, items []orderport.UpstreamStockItem) error {
 	if reader == nil {
 		return nil
@@ -278,16 +278,12 @@ func checkOrderItems(ctx context.Context, reader catalogport.ProductReader,
 				return fmt.Errorf("supply.STOCK_UNAVAILABLE: 商品「%s」缺少上游规格标识", p.Name)
 			}
 		}
-		n, err := stock(p.UpstreamSourceID, p.UpstreamProductCode, skuCode)
-		if err != nil || n < -1 {
+		available, err := stock(p.UpstreamSourceID, p.UpstreamProductCode, skuCode, int(it.Quantity))
+		if err != nil {
 			return fmt.Errorf("supply.STOCK_UNAVAILABLE: 商品「%s」暂时无法确认库存，请稍后重试", p.Name)
 		}
-		if n == -1 {
-			continue // 上游明确返回无限库存。
-		}
-
-		if n < int32(it.Quantity) {
-			return fmt.Errorf("supply: 商品「%s」上游库存不足（余 %d 需 %d）: %w", p.Name, n, it.Quantity, supplyport.ErrUpstreamNoStock)
+		if !available {
+			return fmt.Errorf("商品「%s」上游库存不足: %w", p.Name, supplyport.ErrUpstreamNoStock)
 		}
 	}
 	return nil

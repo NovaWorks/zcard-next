@@ -300,7 +300,7 @@ func (s *ProcureService) applyFailStrategy(ctx context.Context, poID uint64, rea
 		orderID, oerr := s.repo.OrderIDOf(ctx, poID)
 		if oerr != nil {
 			s.log.Error("procurement.order_resolve_failed", "po_id", poID, "err", oerr)
-		} else if err := s.refund.RefundOrder(ctx, orderID, 0, "上游采购失败自动退款: "+reason); err != nil {
+		} else if err := s.refundRejectedCard(ctx, poID, orderID, reason); err != nil {
 			s.log.Error("procurement.auto_refund_failed", "po_id", poID, "order_id", orderID, "err", err)
 			_ = s.repo.MarkManual(ctx, poID, "自动退款失败转人工: "+err.Error())
 			s.publish(ctx, events.ProcurementFailed, poID, map[string]any{
@@ -349,4 +349,11 @@ func (s *ProcureService) publish(ctx context.Context, typ string, poID uint64, p
 	}
 	agg := fmt.Sprintf("proc:%d", poID)
 	_ = s.outbox.Write(ctx, "procurement", typ, agg, agg, raw)
+}
+
+func (s *ProcureService) refundRejectedCard(ctx context.Context, poID, orderID uint64, reason string) error {
+	if refunder, ok := s.refund.(paymentport.RejectedCardRefunder); ok {
+		return refunder.RefundRejectedCard(ctx, poID)
+	}
+	return s.refund.RefundOrder(ctx, orderID, 0, "上游采购失败自动退款: "+reason)
 }
