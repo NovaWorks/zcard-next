@@ -152,6 +152,7 @@ func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv
 		}
 		reply.Items = append(reply.Items, item)
 	}
+	s.addSocialDisplayPrices(ctx, items, reply.Items)
 	return reply, nil
 }
 
@@ -203,6 +204,7 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 		solds, _ = s.sold.SoldBatch(ctx, []uint64{p.ID})
 	}
 	out := toStorefrontProduct(p, map[uint64]int64{p.ID: snapshot.Available}, solds[p.ID])
+	s.addSocialDisplayPrices(ctx, []port.Product{*p}, []*storefrontv1.Product{out})
 	out.StockStatus = snapshot.Status
 	out.StockReference = snapshot.Quantity
 	if !snapshot.CheckedAt.IsZero() {

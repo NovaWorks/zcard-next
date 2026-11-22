@@ -11,7 +11,7 @@ import (
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
 )
 
-const csnCatalogFixture = `[{"service":1,"name":"Followers","type":"Default","category":"First Category","rate":"0.015","min":"50","max":"10000","refill":true,"cancel":true},{"service":"2","name":"Comments","type":"Custom Comments","category":"Second Category","rate":"8","min":"2","max":"1500","refill":false,"cancel":true},{"service":3,"name":"Package","type":"Package","category":"First Category","rate":"5","min":"1","max":"1","refill":false,"cancel":false},{"service":4,"name":"Subscription","type":"Subscriptions","category":"First Category","rate":"1","min":"1","max":"1000"}]`
+const csnCatalogFixture = `[{"service":1,"name":"Followers","description":"<p>Provider service description</p>","type":"Default","category":"First Category","rate":"0.015","min":"50","max":"10000","refill":true,"cancel":true},{"service":"2","name":"Comments","type":"Custom Comments","category":"Second Category","rate":"8","min":"2","max":"1500","refill":false,"cancel":true},{"service":3,"name":"Package","type":"Package","category":"First Category","rate":"5","min":"1","max":"1","refill":false,"cancel":false},{"service":4,"name":"Subscription","type":"Subscriptions","category":"First Category","rate":"1","min":"1","max":"1000"}]`
 
 func csnFixture(t *testing.T, add func(http.ResponseWriter, *http.Request)) (*csn19Adapter, *int) {
 	t.Helper()
@@ -72,6 +72,9 @@ func TestCSN19DocumentedContract(t *testing.T) {
 	list, e := a.ListProducts(ctx, 1, 20, false)
 	if e != nil || len(list.Items) != 4 || len(list.Categories) != 2 || list.Items[0].ProductKind != "social_service" || list.Items[0].Price != 0 {
 		t.Fatal(list, e)
+	}
+	if list.Items[0].Description != "<p>Provider service description</p>" || !list.Items[0].DescriptionSet {
+		t.Fatal("provider description dropped", list.Items[0])
 	}
 	services, e := a.SocialServices(ctx)
 	if e != nil {

@@ -107,6 +107,7 @@ func (a *csn19Adapter) SocialServices(ctx context.Context) ([]supplyport.SocialS
 	var rows []struct {
 		ID                   json.Number `json:"service"`
 		Name, Type, Category string
+		Description          string      `json:"description"`
 		Rate                 json.Number `json:"rate"`
 		Min, Max             json.Number
 		Refill, Cancel       bool
@@ -161,7 +162,7 @@ func (a *csn19Adapter) SocialServices(ctx context.Context) ([]supplyport.SocialS
 			s.UnavailableReason = "当前服务暂不可购买，请联系商户"
 		}
 		s.Revision = supplyport.SocialSchemaRevision(s)
-		out = append(out, supplyport.SocialService{ID: row.ID.String(), Name: row.Name, Category: row.Category, IsActive: true, Schema: s})
+		out = append(out, supplyport.SocialService{ID: row.ID.String(), Name: row.Name, Category: row.Category, Description: row.Description, IsActive: true, Schema: s})
 	}
 	return out, nil
 }
@@ -181,7 +182,7 @@ func (a *csn19Adapter) ListProducts(ctx context.Context, page, _ int, _ bool) (*
 		var schema map[string]any
 		_ = json.Unmarshal(raw, &schema)
 		category := csnCategory(service.Category)
-		out.Items = append(out.Items, Product{ID: service.ID, Name: service.Name, CategoryID: category, IsActive: service.IsActive, ProductKind: supplyport.SocialProductKind, DeliveryKind: supplyport.SocialDelivery, SocialSchema: schema, Stock: -2})
+		out.Items = append(out.Items, Product{ID: service.ID, Name: service.Name, Description: service.Description, DescriptionSet: service.Description != "", CategoryID: category, IsActive: service.IsActive, ProductKind: supplyport.SocialProductKind, DeliveryKind: supplyport.SocialDelivery, SocialSchema: schema, Stock: -2})
 		if !seen[category] {
 			seen[category] = true
 			out.Categories = append(out.Categories, Category{ID: category, Name: service.Category})
