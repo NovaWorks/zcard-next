@@ -25,6 +25,7 @@ type serviceItem struct {
 	mode, name, skuName string
 	sourceID            uint64
 	answers             []map[string]string
+	sourceSnapshot      map[string]any
 }
 
 func itemKey(p, s uint64) [2]uint64 { return [2]uint64{p, s} }
@@ -68,6 +69,14 @@ func (uc *OrderUsecase) prepareServices(ctx context.Context, in CreateOrderInput
 			}
 		}
 		v := serviceItem{mode: data.FulfillmentMode(p, sku), name: p.Name}
+		upstreamSKU := ""
+		if sku != nil {
+			upstreamSKU = sku.UpstreamSkuID
+		}
+		v.sourceSnapshot, err = data.CaptureUpstreamSource(ctx, c, p.UpstreamSourceID, p.UpstreamProductCode, upstreamSKU, "order")
+		if err != nil {
+			return nil, err
+		}
 		if v.mode == "shipping" {
 			if p.UpstreamSourceID != 0 {
 				return nil, fmt.Errorf("实体商品不支持上游代发")

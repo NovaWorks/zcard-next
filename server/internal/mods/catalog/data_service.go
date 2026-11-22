@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/upstreamsource"
 	"strings"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -78,6 +79,7 @@ func (s *AdminCatalogService) fillStats(ctx context.Context, items []*adminv1.Ad
 	for _, p := range items {
 		ids = append(ids, p.Id)
 	}
+	sources, sourceErr := data.CurrentProductSources(ctx, data.Client(ctx, s.repo.data), ids)
 	messages := s.lowStockMessages(ctx, ids)
 	snapshots, err := s.repo.cachedStockSnapshotBatch(ctx, ids)
 	var solds map[uint64]int64
@@ -97,6 +99,9 @@ func (s *AdminCatalogService) fillStats(ctx context.Context, items []*adminv1.Ad
 		}
 		p.SoldCount = solds[p.Id]
 		p.LowStockMessage = messages[p.Id]
+		if sourceErr == nil {
+			p.UpstreamSource = upstreamsource.Proto(sources[p.Id])
+		}
 	}
 }
 

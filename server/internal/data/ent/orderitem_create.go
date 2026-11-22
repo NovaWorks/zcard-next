@@ -165,6 +165,12 @@ func (_c *OrderItemCreate) SetFormAnswers(v []map[string]string) *OrderItemCreat
 	return _c
 }
 
+// SetUpstreamSourceSnapshot sets the "upstream_source_snapshot" field.
+func (_c *OrderItemCreate) SetUpstreamSourceSnapshot(v map[string]interface{}) *OrderItemCreate {
+	_c.mutation.SetUpstreamSourceSnapshot(v)
+	return _c
+}
+
 // SetAssignedAdminID sets the "assigned_admin_id" field.
 func (_c *OrderItemCreate) SetAssignedAdminID(v uint64) *OrderItemCreate {
 	_c.mutation.SetAssignedAdminID(v)
@@ -711,6 +717,10 @@ func (_c *OrderItemCreate) createSpec() (*OrderItem, *sqlgraph.CreateSpec) {
 		_spec.SetField(orderitem.FieldFormAnswers, field.TypeJSON, value)
 		_node.FormAnswers = value
 	}
+	if value, ok := _c.mutation.UpstreamSourceSnapshot(); ok {
+		_spec.SetField(orderitem.FieldUpstreamSourceSnapshot, field.TypeJSON, value)
+		_node.UpstreamSourceSnapshot = value
+	}
 	if value, ok := _c.mutation.AssignedAdminID(); ok {
 		_spec.SetField(orderitem.FieldAssignedAdminID, field.TypeUint64, value)
 		_node.AssignedAdminID = value
@@ -1053,6 +1063,24 @@ func (u *OrderItemUpsert) UpdateFormAnswers() *OrderItemUpsert {
 // ClearFormAnswers clears the value of the "form_answers" field.
 func (u *OrderItemUpsert) ClearFormAnswers() *OrderItemUpsert {
 	u.SetNull(orderitem.FieldFormAnswers)
+	return u
+}
+
+// SetUpstreamSourceSnapshot sets the "upstream_source_snapshot" field.
+func (u *OrderItemUpsert) SetUpstreamSourceSnapshot(v map[string]interface{}) *OrderItemUpsert {
+	u.Set(orderitem.FieldUpstreamSourceSnapshot, v)
+	return u
+}
+
+// UpdateUpstreamSourceSnapshot sets the "upstream_source_snapshot" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateUpstreamSourceSnapshot() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldUpstreamSourceSnapshot)
+	return u
+}
+
+// ClearUpstreamSourceSnapshot clears the value of the "upstream_source_snapshot" field.
+func (u *OrderItemUpsert) ClearUpstreamSourceSnapshot() *OrderItemUpsert {
+	u.SetNull(orderitem.FieldUpstreamSourceSnapshot)
 	return u
 }
 
@@ -1688,6 +1716,27 @@ func (u *OrderItemUpsertOne) UpdateFormAnswers() *OrderItemUpsertOne {
 func (u *OrderItemUpsertOne) ClearFormAnswers() *OrderItemUpsertOne {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.ClearFormAnswers()
+	})
+}
+
+// SetUpstreamSourceSnapshot sets the "upstream_source_snapshot" field.
+func (u *OrderItemUpsertOne) SetUpstreamSourceSnapshot(v map[string]interface{}) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetUpstreamSourceSnapshot(v)
+	})
+}
+
+// UpdateUpstreamSourceSnapshot sets the "upstream_source_snapshot" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateUpstreamSourceSnapshot() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateUpstreamSourceSnapshot()
+	})
+}
+
+// ClearUpstreamSourceSnapshot clears the value of the "upstream_source_snapshot" field.
+func (u *OrderItemUpsertOne) ClearUpstreamSourceSnapshot() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.ClearUpstreamSourceSnapshot()
 	})
 }
 
@@ -2549,6 +2598,27 @@ func (u *OrderItemUpsertBulk) UpdateFormAnswers() *OrderItemUpsertBulk {
 func (u *OrderItemUpsertBulk) ClearFormAnswers() *OrderItemUpsertBulk {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.ClearFormAnswers()
+	})
+}
+
+// SetUpstreamSourceSnapshot sets the "upstream_source_snapshot" field.
+func (u *OrderItemUpsertBulk) SetUpstreamSourceSnapshot(v map[string]interface{}) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetUpstreamSourceSnapshot(v)
+	})
+}
+
+// UpdateUpstreamSourceSnapshot sets the "upstream_source_snapshot" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateUpstreamSourceSnapshot() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateUpstreamSourceSnapshot()
+	})
+}
+
+// ClearUpstreamSourceSnapshot clears the value of the "upstream_source_snapshot" field.
+func (u *OrderItemUpsertBulk) ClearUpstreamSourceSnapshot() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.ClearUpstreamSourceSnapshot()
 	})
 }
 

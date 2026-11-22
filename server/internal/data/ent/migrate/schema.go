@@ -1257,6 +1257,7 @@ var (
 		{Name: "sms_product", Type: field.TypeJSON, Nullable: true},
 		{Name: "sms_purchase_snapshot", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "form_answers", Type: field.TypeJSON, Nullable: true},
+		{Name: "upstream_source_snapshot", Type: field.TypeJSON, Nullable: true},
 		{Name: "assigned_admin_id", Type: field.TypeUint64, Default: 0},
 		{Name: "sku_name", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "unit_price", Type: field.TypeInt64},
@@ -1288,7 +1289,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "order_items_orders_items",
-				Columns:    []*schema.Column{OrderItemsColumns[34]},
+				Columns:    []*schema.Column{OrderItemsColumns[35]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1297,12 +1298,12 @@ var (
 			{
 				Name:    "orderitem_delivery_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrderItemsColumns[30]},
+				Columns: []*schema.Column{OrderItemsColumns[31]},
 			},
 			{
 				Name:    "orderitem_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrderItemsColumns[34]},
+				Columns: []*schema.Column{OrderItemsColumns[35]},
 			},
 			{
 				Name:    "orderitem_product_id",
@@ -1711,6 +1712,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "order_item_id", Type: field.TypeUint64},
+		{Name: "upstream_source_snapshot", Type: field.TypeJSON, Nullable: true},
 		{Name: "connection_id", Type: field.TypeUint64},
 		{Name: "upstream_order_id", Type: field.TypeString, Nullable: true, Size: 80},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "submitted", "polling", "fulfilled", "rejected", "refunding", "refunded", "manual", "failed"}, Default: "pending"},
@@ -1732,7 +1734,7 @@ var (
 			{
 				Name:    "procurementorder_connection_id_upstream_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{ProcurementOrdersColumns[4], ProcurementOrdersColumns[5]},
+				Columns: []*schema.Column{ProcurementOrdersColumns[5], ProcurementOrdersColumns[6]},
 			},
 			{
 				Name:    "procurementorder_order_item_id",
@@ -1742,7 +1744,7 @@ var (
 			{
 				Name:    "procurementorder_status_last_poll_at",
 				Unique:  false,
-				Columns: []*schema.Column{ProcurementOrdersColumns[6], ProcurementOrdersColumns[10]},
+				Columns: []*schema.Column{ProcurementOrdersColumns[7], ProcurementOrdersColumns[11]},
 			},
 		},
 	}

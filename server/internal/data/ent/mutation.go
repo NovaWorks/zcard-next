@@ -43818,6 +43818,7 @@ type OrderItemMutation struct {
 	sms_purchase_snapshot    *string
 	form_answers             *[]map[string]string
 	appendform_answers       []map[string]string
+	upstream_source_snapshot *map[string]interface{}
 	assigned_admin_id        *uint64
 	addassigned_admin_id     *int64
 	sku_name                 *string
@@ -44573,6 +44574,55 @@ func (m *OrderItemMutation) ResetFormAnswers() {
 	m.form_answers = nil
 	m.appendform_answers = nil
 	delete(m.clearedFields, orderitem.FieldFormAnswers)
+}
+
+// SetUpstreamSourceSnapshot sets the "upstream_source_snapshot" field.
+func (m *OrderItemMutation) SetUpstreamSourceSnapshot(value map[string]interface{}) {
+	m.upstream_source_snapshot = &value
+}
+
+// UpstreamSourceSnapshot returns the value of the "upstream_source_snapshot" field in the mutation.
+func (m *OrderItemMutation) UpstreamSourceSnapshot() (r map[string]interface{}, exists bool) {
+	v := m.upstream_source_snapshot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpstreamSourceSnapshot returns the old "upstream_source_snapshot" field's value of the OrderItem entity.
+// If the OrderItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderItemMutation) OldUpstreamSourceSnapshot(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpstreamSourceSnapshot is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpstreamSourceSnapshot requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpstreamSourceSnapshot: %w", err)
+	}
+	return oldValue.UpstreamSourceSnapshot, nil
+}
+
+// ClearUpstreamSourceSnapshot clears the value of the "upstream_source_snapshot" field.
+func (m *OrderItemMutation) ClearUpstreamSourceSnapshot() {
+	m.upstream_source_snapshot = nil
+	m.clearedFields[orderitem.FieldUpstreamSourceSnapshot] = struct{}{}
+}
+
+// UpstreamSourceSnapshotCleared returns if the "upstream_source_snapshot" field was cleared in this mutation.
+func (m *OrderItemMutation) UpstreamSourceSnapshotCleared() bool {
+	_, ok := m.clearedFields[orderitem.FieldUpstreamSourceSnapshot]
+	return ok
+}
+
+// ResetUpstreamSourceSnapshot resets all changes to the "upstream_source_snapshot" field.
+func (m *OrderItemMutation) ResetUpstreamSourceSnapshot() {
+	m.upstream_source_snapshot = nil
+	delete(m.clearedFields, orderitem.FieldUpstreamSourceSnapshot)
 }
 
 // SetAssignedAdminID sets the "assigned_admin_id" field.
@@ -45725,7 +45775,7 @@ func (m *OrderItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderItemMutation) Fields() []string {
-	fields := make([]string, 0, 34)
+	fields := make([]string, 0, 35)
 	if m.created_at != nil {
 		fields = append(fields, orderitem.FieldCreatedAt)
 	}
@@ -45764,6 +45814,9 @@ func (m *OrderItemMutation) Fields() []string {
 	}
 	if m.form_answers != nil {
 		fields = append(fields, orderitem.FieldFormAnswers)
+	}
+	if m.upstream_source_snapshot != nil {
+		fields = append(fields, orderitem.FieldUpstreamSourceSnapshot)
 	}
 	if m.assigned_admin_id != nil {
 		fields = append(fields, orderitem.FieldAssignedAdminID)
@@ -45862,6 +45915,8 @@ func (m *OrderItemMutation) Field(name string) (ent.Value, bool) {
 		return m.SmsPurchaseSnapshot()
 	case orderitem.FieldFormAnswers:
 		return m.FormAnswers()
+	case orderitem.FieldUpstreamSourceSnapshot:
+		return m.UpstreamSourceSnapshot()
 	case orderitem.FieldAssignedAdminID:
 		return m.AssignedAdminID()
 	case orderitem.FieldSkuName:
@@ -45939,6 +45994,8 @@ func (m *OrderItemMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldSmsPurchaseSnapshot(ctx)
 	case orderitem.FieldFormAnswers:
 		return m.OldFormAnswers(ctx)
+	case orderitem.FieldUpstreamSourceSnapshot:
+		return m.OldUpstreamSourceSnapshot(ctx)
 	case orderitem.FieldAssignedAdminID:
 		return m.OldAssignedAdminID(ctx)
 	case orderitem.FieldSkuName:
@@ -46080,6 +46137,13 @@ func (m *OrderItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFormAnswers(v)
+		return nil
+	case orderitem.FieldUpstreamSourceSnapshot:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpstreamSourceSnapshot(v)
 		return nil
 	case orderitem.FieldAssignedAdminID:
 		v, ok := value.(uint64)
@@ -46480,6 +46544,9 @@ func (m *OrderItemMutation) ClearedFields() []string {
 	if m.FieldCleared(orderitem.FieldFormAnswers) {
 		fields = append(fields, orderitem.FieldFormAnswers)
 	}
+	if m.FieldCleared(orderitem.FieldUpstreamSourceSnapshot) {
+		fields = append(fields, orderitem.FieldUpstreamSourceSnapshot)
+	}
 	if m.FieldCleared(orderitem.FieldSkuName) {
 		fields = append(fields, orderitem.FieldSkuName)
 	}
@@ -46520,6 +46587,9 @@ func (m *OrderItemMutation) ClearField(name string) error {
 		return nil
 	case orderitem.FieldFormAnswers:
 		m.ClearFormAnswers()
+		return nil
+	case orderitem.FieldUpstreamSourceSnapshot:
+		m.ClearUpstreamSourceSnapshot()
 		return nil
 	case orderitem.FieldSkuName:
 		m.ClearSkuName()
@@ -46579,6 +46649,9 @@ func (m *OrderItemMutation) ResetField(name string) error {
 		return nil
 	case orderitem.FieldFormAnswers:
 		m.ResetFormAnswers()
+		return nil
+	case orderitem.FieldUpstreamSourceSnapshot:
+		m.ResetUpstreamSourceSnapshot()
 		return nil
 	case orderitem.FieldAssignedAdminID:
 		m.ResetAssignedAdminID()
@@ -47870,8 +47943,8 @@ func (m *OutboxEventMutation) ResetAggregateID() {
 }
 
 // SetPayload sets the "payload" field.
-func (m *OutboxEventMutation) SetPayload(jm json.RawMessage) {
-	m.payload = &jm
+func (m *OutboxEventMutation) SetPayload(j json.RawMessage) {
+	m.payload = &j
 	m.appendpayload = nil
 }
 
@@ -47901,9 +47974,9 @@ func (m *OutboxEventMutation) OldPayload(ctx context.Context) (v json.RawMessage
 	return oldValue.Payload, nil
 }
 
-// AppendPayload adds jm to the "payload" field.
-func (m *OutboxEventMutation) AppendPayload(jm json.RawMessage) {
-	m.appendpayload = append(m.appendpayload, jm...)
+// AppendPayload adds j to the "payload" field.
+func (m *OutboxEventMutation) AppendPayload(j json.RawMessage) {
+	m.appendpayload = append(m.appendpayload, j...)
 }
 
 // AppendedPayload returns the list of values that were appended to the "payload" field in this mutation.
@@ -49816,8 +49889,8 @@ func (m *PaymentMutation) ResetGatewayOrderRef() {
 }
 
 // SetGatewayContext sets the "gateway_context" field.
-func (m *PaymentMutation) SetGatewayContext(jm json.RawMessage) {
-	m.gateway_context = &jm
+func (m *PaymentMutation) SetGatewayContext(j json.RawMessage) {
+	m.gateway_context = &j
 	m.appendgateway_context = nil
 }
 
@@ -49847,9 +49920,9 @@ func (m *PaymentMutation) OldGatewayContext(ctx context.Context) (v json.RawMess
 	return oldValue.GatewayContext, nil
 }
 
-// AppendGatewayContext adds jm to the "gateway_context" field.
-func (m *PaymentMutation) AppendGatewayContext(jm json.RawMessage) {
-	m.appendgateway_context = append(m.appendgateway_context, jm...)
+// AppendGatewayContext adds j to the "gateway_context" field.
+func (m *PaymentMutation) AppendGatewayContext(j json.RawMessage) {
+	m.appendgateway_context = append(m.appendgateway_context, j...)
 }
 
 // AppendedGatewayContext returns the list of values that were appended to the "gateway_context" field in this mutation.
@@ -50315,8 +50388,8 @@ func (m *PaymentMutation) ResetFee() {
 }
 
 // SetPricingSnapshot sets the "pricing_snapshot" field.
-func (m *PaymentMutation) SetPricingSnapshot(jm json.RawMessage) {
-	m.pricing_snapshot = &jm
+func (m *PaymentMutation) SetPricingSnapshot(j json.RawMessage) {
+	m.pricing_snapshot = &j
 	m.appendpricing_snapshot = nil
 }
 
@@ -50346,9 +50419,9 @@ func (m *PaymentMutation) OldPricingSnapshot(ctx context.Context) (v json.RawMes
 	return oldValue.PricingSnapshot, nil
 }
 
-// AppendPricingSnapshot adds jm to the "pricing_snapshot" field.
-func (m *PaymentMutation) AppendPricingSnapshot(jm json.RawMessage) {
-	m.appendpricing_snapshot = append(m.appendpricing_snapshot, jm...)
+// AppendPricingSnapshot adds j to the "pricing_snapshot" field.
+func (m *PaymentMutation) AppendPricingSnapshot(j json.RawMessage) {
+	m.appendpricing_snapshot = append(m.appendpricing_snapshot, j...)
 }
 
 // AppendedPricingSnapshot returns the list of values that were appended to the "pricing_snapshot" field in this mutation.
@@ -50465,8 +50538,8 @@ func (m *PaymentMutation) ResetPaidAt() {
 }
 
 // SetRaw sets the "raw" field.
-func (m *PaymentMutation) SetRaw(jm json.RawMessage) {
-	m.raw = &jm
+func (m *PaymentMutation) SetRaw(j json.RawMessage) {
+	m.raw = &j
 	m.appendraw = nil
 }
 
@@ -50496,9 +50569,9 @@ func (m *PaymentMutation) OldRaw(ctx context.Context) (v json.RawMessage, err er
 	return oldValue.Raw, nil
 }
 
-// AppendRaw adds jm to the "raw" field.
-func (m *PaymentMutation) AppendRaw(jm json.RawMessage) {
-	m.appendraw = append(m.appendraw, jm...)
+// AppendRaw adds j to the "raw" field.
+func (m *PaymentMutation) AppendRaw(j json.RawMessage) {
+	m.appendraw = append(m.appendraw, j...)
 }
 
 // AppendedRaw returns the list of values that were appended to the "raw" field in this mutation.
@@ -59501,30 +59574,31 @@ func (m *ProcurementItemMutation) ResetEdge(name string) error {
 // ProcurementOrderMutation represents an operation that mutates the ProcurementOrder nodes in the graph.
 type ProcurementOrderMutation struct {
 	config
-	op                 Op
-	typ                string
-	id                 *uint64
-	created_at         *time.Time
-	updated_at         *time.Time
-	order_item_id      *uint64
-	addorder_item_id   *int64
-	connection_id      *uint64
-	addconnection_id   *int64
-	upstream_order_id  *string
-	status             *procurementorder.Status
-	fail_strategy      *procurementorder.FailStrategy
-	retry_count        *int32
-	addretry_count     *int32
-	next_retry_at      *time.Time
-	last_poll_at       *time.Time
-	dedupe_key         *string
-	trace_id           *string
-	last_error         *string
-	upstream_refund_id *string
-	clearedFields      map[string]struct{}
-	done               bool
-	oldValue           func(context.Context) (*ProcurementOrder, error)
-	predicates         []predicate.ProcurementOrder
+	op                       Op
+	typ                      string
+	id                       *uint64
+	created_at               *time.Time
+	updated_at               *time.Time
+	order_item_id            *uint64
+	addorder_item_id         *int64
+	upstream_source_snapshot *map[string]interface{}
+	connection_id            *uint64
+	addconnection_id         *int64
+	upstream_order_id        *string
+	status                   *procurementorder.Status
+	fail_strategy            *procurementorder.FailStrategy
+	retry_count              *int32
+	addretry_count           *int32
+	next_retry_at            *time.Time
+	last_poll_at             *time.Time
+	dedupe_key               *string
+	trace_id                 *string
+	last_error               *string
+	upstream_refund_id       *string
+	clearedFields            map[string]struct{}
+	done                     bool
+	oldValue                 func(context.Context) (*ProcurementOrder, error)
+	predicates               []predicate.ProcurementOrder
 }
 
 var _ ent.Mutation = (*ProcurementOrderMutation)(nil)
@@ -59757,6 +59831,55 @@ func (m *ProcurementOrderMutation) AddedOrderItemID() (r int64, exists bool) {
 func (m *ProcurementOrderMutation) ResetOrderItemID() {
 	m.order_item_id = nil
 	m.addorder_item_id = nil
+}
+
+// SetUpstreamSourceSnapshot sets the "upstream_source_snapshot" field.
+func (m *ProcurementOrderMutation) SetUpstreamSourceSnapshot(value map[string]interface{}) {
+	m.upstream_source_snapshot = &value
+}
+
+// UpstreamSourceSnapshot returns the value of the "upstream_source_snapshot" field in the mutation.
+func (m *ProcurementOrderMutation) UpstreamSourceSnapshot() (r map[string]interface{}, exists bool) {
+	v := m.upstream_source_snapshot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpstreamSourceSnapshot returns the old "upstream_source_snapshot" field's value of the ProcurementOrder entity.
+// If the ProcurementOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProcurementOrderMutation) OldUpstreamSourceSnapshot(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpstreamSourceSnapshot is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpstreamSourceSnapshot requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpstreamSourceSnapshot: %w", err)
+	}
+	return oldValue.UpstreamSourceSnapshot, nil
+}
+
+// ClearUpstreamSourceSnapshot clears the value of the "upstream_source_snapshot" field.
+func (m *ProcurementOrderMutation) ClearUpstreamSourceSnapshot() {
+	m.upstream_source_snapshot = nil
+	m.clearedFields[procurementorder.FieldUpstreamSourceSnapshot] = struct{}{}
+}
+
+// UpstreamSourceSnapshotCleared returns if the "upstream_source_snapshot" field was cleared in this mutation.
+func (m *ProcurementOrderMutation) UpstreamSourceSnapshotCleared() bool {
+	_, ok := m.clearedFields[procurementorder.FieldUpstreamSourceSnapshot]
+	return ok
+}
+
+// ResetUpstreamSourceSnapshot resets all changes to the "upstream_source_snapshot" field.
+func (m *ProcurementOrderMutation) ResetUpstreamSourceSnapshot() {
+	m.upstream_source_snapshot = nil
+	delete(m.clearedFields, procurementorder.FieldUpstreamSourceSnapshot)
 }
 
 // SetConnectionID sets the "connection_id" field.
@@ -60307,7 +60430,7 @@ func (m *ProcurementOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProcurementOrderMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, procurementorder.FieldCreatedAt)
 	}
@@ -60316,6 +60439,9 @@ func (m *ProcurementOrderMutation) Fields() []string {
 	}
 	if m.order_item_id != nil {
 		fields = append(fields, procurementorder.FieldOrderItemID)
+	}
+	if m.upstream_source_snapshot != nil {
+		fields = append(fields, procurementorder.FieldUpstreamSourceSnapshot)
 	}
 	if m.connection_id != nil {
 		fields = append(fields, procurementorder.FieldConnectionID)
@@ -60364,6 +60490,8 @@ func (m *ProcurementOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case procurementorder.FieldOrderItemID:
 		return m.OrderItemID()
+	case procurementorder.FieldUpstreamSourceSnapshot:
+		return m.UpstreamSourceSnapshot()
 	case procurementorder.FieldConnectionID:
 		return m.ConnectionID()
 	case procurementorder.FieldUpstreamOrderID:
@@ -60401,6 +60529,8 @@ func (m *ProcurementOrderMutation) OldField(ctx context.Context, name string) (e
 		return m.OldUpdatedAt(ctx)
 	case procurementorder.FieldOrderItemID:
 		return m.OldOrderItemID(ctx)
+	case procurementorder.FieldUpstreamSourceSnapshot:
+		return m.OldUpstreamSourceSnapshot(ctx)
 	case procurementorder.FieldConnectionID:
 		return m.OldConnectionID(ctx)
 	case procurementorder.FieldUpstreamOrderID:
@@ -60452,6 +60582,13 @@ func (m *ProcurementOrderMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetOrderItemID(v)
+		return nil
+	case procurementorder.FieldUpstreamSourceSnapshot:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpstreamSourceSnapshot(v)
 		return nil
 	case procurementorder.FieldConnectionID:
 		v, ok := value.(uint64)
@@ -60599,6 +60736,9 @@ func (m *ProcurementOrderMutation) AddField(name string, value ent.Value) error 
 // mutation.
 func (m *ProcurementOrderMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(procurementorder.FieldUpstreamSourceSnapshot) {
+		fields = append(fields, procurementorder.FieldUpstreamSourceSnapshot)
+	}
 	if m.FieldCleared(procurementorder.FieldUpstreamOrderID) {
 		fields = append(fields, procurementorder.FieldUpstreamOrderID)
 	}
@@ -60631,6 +60771,9 @@ func (m *ProcurementOrderMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *ProcurementOrderMutation) ClearField(name string) error {
 	switch name {
+	case procurementorder.FieldUpstreamSourceSnapshot:
+		m.ClearUpstreamSourceSnapshot()
+		return nil
 	case procurementorder.FieldUpstreamOrderID:
 		m.ClearUpstreamOrderID()
 		return nil
@@ -60665,6 +60808,9 @@ func (m *ProcurementOrderMutation) ResetField(name string) error {
 		return nil
 	case procurementorder.FieldOrderItemID:
 		m.ResetOrderItemID()
+		return nil
+	case procurementorder.FieldUpstreamSourceSnapshot:
+		m.ResetUpstreamSourceSnapshot()
 		return nil
 	case procurementorder.FieldConnectionID:
 		m.ResetConnectionID()
@@ -65518,8 +65664,8 @@ func (m *ProductContentBatchMutation) ResetActorID() {
 }
 
 // SetPayload sets the "payload" field.
-func (m *ProductContentBatchMutation) SetPayload(jm json.RawMessage) {
-	m.payload = &jm
+func (m *ProductContentBatchMutation) SetPayload(j json.RawMessage) {
+	m.payload = &j
 	m.appendpayload = nil
 }
 
@@ -65549,9 +65695,9 @@ func (m *ProductContentBatchMutation) OldPayload(ctx context.Context) (v json.Ra
 	return oldValue.Payload, nil
 }
 
-// AppendPayload adds jm to the "payload" field.
-func (m *ProductContentBatchMutation) AppendPayload(jm json.RawMessage) {
-	m.appendpayload = append(m.appendpayload, jm...)
+// AppendPayload adds j to the "payload" field.
+func (m *ProductContentBatchMutation) AppendPayload(j json.RawMessage) {
+	m.appendpayload = append(m.appendpayload, j...)
 }
 
 // AppendedPayload returns the list of values that were appended to the "payload" field in this mutation.
@@ -90550,8 +90696,8 @@ func (m *SettingMutation) ResetKey() {
 }
 
 // SetValue sets the "value" field.
-func (m *SettingMutation) SetValue(jm json.RawMessage) {
-	m.value = &jm
+func (m *SettingMutation) SetValue(j json.RawMessage) {
+	m.value = &j
 	m.appendvalue = nil
 }
 
@@ -90581,9 +90727,9 @@ func (m *SettingMutation) OldValue(ctx context.Context) (v json.RawMessage, err 
 	return oldValue.Value, nil
 }
 
-// AppendValue adds jm to the "value" field.
-func (m *SettingMutation) AppendValue(jm json.RawMessage) {
-	m.appendvalue = append(m.appendvalue, jm...)
+// AppendValue adds j to the "value" field.
+func (m *SettingMutation) AppendValue(j json.RawMessage) {
+	m.appendvalue = append(m.appendvalue, j...)
 }
 
 // AppendedValue returns the list of values that were appended to the "value" field in this mutation.
@@ -103333,8 +103479,8 @@ func (m *SupplyCatalogSnapshotMutation) ResetMessage() {
 }
 
 // SetPayload sets the "payload" field.
-func (m *SupplyCatalogSnapshotMutation) SetPayload(jm json.RawMessage) {
-	m.payload = &jm
+func (m *SupplyCatalogSnapshotMutation) SetPayload(j json.RawMessage) {
+	m.payload = &j
 	m.appendpayload = nil
 }
 
@@ -103364,9 +103510,9 @@ func (m *SupplyCatalogSnapshotMutation) OldPayload(ctx context.Context) (v json.
 	return oldValue.Payload, nil
 }
 
-// AppendPayload adds jm to the "payload" field.
-func (m *SupplyCatalogSnapshotMutation) AppendPayload(jm json.RawMessage) {
-	m.appendpayload = append(m.appendpayload, jm...)
+// AppendPayload adds j to the "payload" field.
+func (m *SupplyCatalogSnapshotMutation) AppendPayload(j json.RawMessage) {
+	m.appendpayload = append(m.appendpayload, j...)
 }
 
 // AppendedPayload returns the list of values that were appended to the "payload" field in this mutation.
@@ -106827,8 +106973,8 @@ func (m *SupplyImportItemMutation) ResetName() {
 }
 
 // SetSnapshot sets the "snapshot" field.
-func (m *SupplyImportItemMutation) SetSnapshot(jm json.RawMessage) {
-	m.snapshot = &jm
+func (m *SupplyImportItemMutation) SetSnapshot(j json.RawMessage) {
+	m.snapshot = &j
 	m.appendsnapshot = nil
 }
 
@@ -106858,9 +107004,9 @@ func (m *SupplyImportItemMutation) OldSnapshot(ctx context.Context) (v json.RawM
 	return oldValue.Snapshot, nil
 }
 
-// AppendSnapshot adds jm to the "snapshot" field.
-func (m *SupplyImportItemMutation) AppendSnapshot(jm json.RawMessage) {
-	m.appendsnapshot = append(m.appendsnapshot, jm...)
+// AppendSnapshot adds j to the "snapshot" field.
+func (m *SupplyImportItemMutation) AppendSnapshot(j json.RawMessage) {
+	m.appendsnapshot = append(m.appendsnapshot, j...)
 }
 
 // AppendedSnapshot returns the list of values that were appended to the "snapshot" field in this mutation.
@@ -111463,8 +111609,8 @@ func (m *SupplySyncTaskMutation) ResetRequestHash() {
 }
 
 // SetImportPayload sets the "import_payload" field.
-func (m *SupplySyncTaskMutation) SetImportPayload(jm json.RawMessage) {
-	m.import_payload = &jm
+func (m *SupplySyncTaskMutation) SetImportPayload(j json.RawMessage) {
+	m.import_payload = &j
 	m.appendimport_payload = nil
 }
 
@@ -111494,9 +111640,9 @@ func (m *SupplySyncTaskMutation) OldImportPayload(ctx context.Context) (v json.R
 	return oldValue.ImportPayload, nil
 }
 
-// AppendImportPayload adds jm to the "import_payload" field.
-func (m *SupplySyncTaskMutation) AppendImportPayload(jm json.RawMessage) {
-	m.appendimport_payload = append(m.appendimport_payload, jm...)
+// AppendImportPayload adds j to the "import_payload" field.
+func (m *SupplySyncTaskMutation) AppendImportPayload(j json.RawMessage) {
+	m.appendimport_payload = append(m.appendimport_payload, j...)
 }
 
 // AppendedImportPayload returns the list of values that were appended to the "import_payload" field in this mutation.

@@ -45,6 +45,8 @@ type OrderItem struct {
 	SmsPurchaseSnapshot string `json:"sms_purchase_snapshot,omitempty"`
 	// FormAnswers holds the value of the "form_answers" field.
 	FormAnswers []map[string]string `json:"form_answers,omitempty"`
+	// 仅后台：当时的直接上游定位，不含凭据
+	UpstreamSourceSnapshot map[string]interface{} `json:"upstream_source_snapshot,omitempty"`
 	// AssignedAdminID holds the value of the "assigned_admin_id" field.
 	AssignedAdminID uint64 `json:"assigned_admin_id,omitempty"`
 	// SKU 名称快照
@@ -118,7 +120,7 @@ func (*OrderItem) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case orderitem.FieldSocialSchema, orderitem.FieldSmsProduct, orderitem.FieldFormAnswers, orderitem.FieldCommissionSnapshot, orderitem.FieldProfitSnapshot:
+		case orderitem.FieldSocialSchema, orderitem.FieldSmsProduct, orderitem.FieldFormAnswers, orderitem.FieldUpstreamSourceSnapshot, orderitem.FieldCommissionSnapshot, orderitem.FieldProfitSnapshot:
 			values[i] = new([]byte)
 		case orderitem.FieldInventoryTracked:
 			values[i] = new(sql.NullBool)
@@ -231,6 +233,14 @@ func (_m *OrderItem) assignValues(columns []string, values []any) error {
 			} else if value != nil && len(*value) > 0 {
 				if err := json.Unmarshal(*value, &_m.FormAnswers); err != nil {
 					return fmt.Errorf("unmarshal field form_answers: %w", err)
+				}
+			}
+		case orderitem.FieldUpstreamSourceSnapshot:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field upstream_source_snapshot", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.UpstreamSourceSnapshot); err != nil {
+					return fmt.Errorf("unmarshal field upstream_source_snapshot: %w", err)
 				}
 			}
 		case orderitem.FieldAssignedAdminID:
@@ -442,6 +452,9 @@ func (_m *OrderItem) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("form_answers=")
 	builder.WriteString(fmt.Sprintf("%v", _m.FormAnswers))
+	builder.WriteString(", ")
+	builder.WriteString("upstream_source_snapshot=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UpstreamSourceSnapshot))
 	builder.WriteString(", ")
 	builder.WriteString("assigned_admin_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.AssignedAdminID))

@@ -61,12 +61,13 @@ func TestProcurementRequestKeyUpgrade(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			d.Client.ProcurementOrder.UpdateOneID(old.ID).SetStatus(procurementorder.StatusManual).SetUpstreamOrderID("UP-OLD").ExecX(ctx)
+			d.Client.ProcurementOrder.Update().Where(procurementorder.ID(old.ID)).SetStatus(procurementorder.StatusManual).SetUpstreamOrderID("UP-OLD").ExecX(ctx)
 			receipt := d.Client.ProcurementItem.Create().SetProcurementID(old.ID).SetUpstreamSku("P1").SetQuantity(1).SetReceivedContent([]string{"sealed-receipt"}).SaveX(ctx)
 			if _, err := d.DB.Exec(string(upgrade)); err != nil {
 				t.Fatal(err)
 			}
-			got := d.Client.ProcurementOrder.GetX(ctx, old.ID)
+			// Select only fields in this historical schema; later additive migrations are intentionally absent.
+			got := d.Client.ProcurementOrder.Query().Where(procurementorder.ID(old.ID)).Select(procurementorder.FieldDedupeKey, procurementorder.FieldStatus, procurementorder.FieldUpstreamOrderID).OnlyX(ctx)
 			if got.DedupeKey != "order_item:40" || got.Status != procurementorder.StatusManual || got.UpstreamOrderID != "UP-OLD" {
 				t.Fatal("migration altered historic purchase identity or state")
 			}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import UpstreamSource from "@/components/common/upstream-source.vue";
 import { orderStatusText } from "@/utils/order-status";
 // 采购单管理（procurement:read / procurement:write）：上游拿货单（客户购买 →
 // 上游采购 → 卡密回填链路的运行轨迹）。状态筛选 + 手动重试 / 转人工。
@@ -137,6 +138,7 @@ const actionsCol = () => ({
   width: 172,
   render: (row: any) =>
     h("div", { class: "flex flex-wrap items-center gap-4px" }, [
+      h(UpstreamSource, { source: row.upstream_source, compact: true }),
       h(NButton, { size: "tiny", type: "primary", quaternary: true, onClick: () => openDetail(row.id) }, { default: () => "查看" }),
       ["manual", "rejected", "refunding"].includes(row.status) && canDeliver()
         ? h(NButton, { size: "tiny", type: "primary", onClick: () => openDetail(row.id) }, { default: () => "处理" }) : null,
@@ -230,6 +232,8 @@ onMounted(load);
         <NSpin :show="detailLoading">
           <NAlert v-if="detailError" type="error">{{ detailError }}</NAlert>
           <template v-if="detail">
+            <div class="mb-16px"><UpstreamSource :source="detail.upstream_source" /></div>
+            <NAlert v-if="['pending','submitted','polling','manual'].includes(detail.status)" type="info" class="mb-12px">打开链接仅用于核对。请先按下方上游单号、请求号查询是否已扣款或出货，再决定人工拿货，避免重复购买。</NAlert>
             <NAlert v-if="needsRecovery(detail)" type="warning" class="mb-12px">采购已返回结果，但此商品尚未完成交付。优先重试已有卡密的交付；需要换卡补发时，请先核实上游结果并转人工。</NAlert>
             <div class="flex flex-wrap gap-8px mb-12px" v-if="canRetry()">
               <NButton v-if="retryable(detail)" @click="handleRetry(detail)">{{ Number(detail.received_cards) > 0 ? "重试交付" : "查询上游" }}</NButton>
@@ -252,7 +256,10 @@ onMounted(load);
               <NDescriptionsItem label="数量">{{ detail.item_quantity }}</NDescriptionsItem>
               <NDescriptionsItem label="采购来源">{{ detail.connection_name || `渠道 #${detail.connection_id}（已不可用）` }} · {{ detail.connection_driver }}</NDescriptionsItem>
               <NDescriptionsItem label="上游地址" :span="2">{{ detail.connection_url || '—' }}</NDescriptionsItem>
-              <NDescriptionsItem label="上游订单">{{ detail.upstream_order_id || '尚未生成' }}</NDescriptionsItem>
+              <NDescriptionsItem label="上游订单">{{ detail.upstream_order_id || '尚未确认，请按原请求号查询' }}</NDescriptionsItem>
+              <NDescriptionsItem label="原请求号">{{ detail.dedupe_key || '未记录' }}</NDescriptionsItem>
+              <NDescriptionsItem label="追踪号">{{ detail.trace_id || '未记录' }}</NDescriptionsItem>
+              <NDescriptionsItem label="处理说明">{{ detail.last_error || '—' }}</NDescriptionsItem>
               <NDescriptionsItem label="上游商品编号">{{ detail.upstream_product_code || '—' }}</NDescriptionsItem>
               <NDescriptionsItem label="下单时间">{{ fmtTime(detail.created_at) }}</NDescriptionsItem>
               <NDescriptionsItem label="销售单价">{{ money(detail.sale_unit_cents) }}</NDescriptionsItem>

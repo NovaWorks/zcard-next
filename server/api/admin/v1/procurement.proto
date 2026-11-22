@@ -7,6 +7,7 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
 
 // AdminProcurementService 采购管理：采购单列表/详情/手动重试/手动标记完成。
 service AdminProcurementService {
@@ -38,6 +39,7 @@ service AdminProcurementService {
 }
 
 message ProcurementOrder {
+  google.protobuf.Struct upstream_source = 37; // 仅后台：直接上游及来源快照
   uint64 id = 1;
   uint64 order_item_id = 2;
   uint64 connection_id = 3;

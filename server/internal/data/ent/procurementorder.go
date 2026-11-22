@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -23,6 +24,8 @@ type ProcurementOrder struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// 触发采购的订单子项
 	OrderItemID uint64 `json:"order_item_id,omitempty"`
+	// 仅后台：实际采购时的直接上游，不含凭据
+	UpstreamSourceSnapshot map[string]interface{} `json:"upstream_source_snapshot,omitempty"`
 	// ConnectionID holds the value of the "connection_id" field.
 	ConnectionID uint64 `json:"connection_id,omitempty"`
 	// UpstreamOrderID holds the value of the "upstream_order_id" field.
@@ -53,6 +56,8 @@ func (*ProcurementOrder) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case procurementorder.FieldUpstreamSourceSnapshot:
+			values[i] = new([]byte)
 		case procurementorder.FieldID, procurementorder.FieldOrderItemID, procurementorder.FieldConnectionID, procurementorder.FieldRetryCount:
 			values[i] = new(sql.NullInt64)
 		case procurementorder.FieldUpstreamOrderID, procurementorder.FieldStatus, procurementorder.FieldFailStrategy, procurementorder.FieldDedupeKey, procurementorder.FieldTraceID, procurementorder.FieldLastError, procurementorder.FieldUpstreamRefundID:
@@ -97,6 +102,14 @@ func (_m *ProcurementOrder) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field order_item_id", values[i])
 			} else if value.Valid {
 				_m.OrderItemID = uint64(value.Int64)
+			}
+		case procurementorder.FieldUpstreamSourceSnapshot:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field upstream_source_snapshot", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.UpstreamSourceSnapshot); err != nil {
+					return fmt.Errorf("unmarshal field upstream_source_snapshot: %w", err)
+				}
 			}
 		case procurementorder.FieldConnectionID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -208,6 +221,9 @@ func (_m *ProcurementOrder) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("order_item_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.OrderItemID))
+	builder.WriteString(", ")
+	builder.WriteString("upstream_source_snapshot=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UpstreamSourceSnapshot))
 	builder.WriteString(", ")
 	builder.WriteString("connection_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ConnectionID))

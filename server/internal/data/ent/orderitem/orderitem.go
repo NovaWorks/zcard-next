@@ -41,6 +41,8 @@ const (
 	FieldSmsPurchaseSnapshot = "sms_purchase_snapshot"
 	// FieldFormAnswers holds the string denoting the form_answers field in the database.
 	FieldFormAnswers = "form_answers"
+	// FieldUpstreamSourceSnapshot holds the string denoting the upstream_source_snapshot field in the database.
+	FieldUpstreamSourceSnapshot = "upstream_source_snapshot"
 	// FieldAssignedAdminID holds the string denoting the assigned_admin_id field in the database.
 	FieldAssignedAdminID = "assigned_admin_id"
 	// FieldSkuName holds the string denoting the sku_name field in the database.
@@ -112,6 +114,7 @@ var Columns = []string{
 	FieldSmsProduct,
 	FieldSmsPurchaseSnapshot,
 	FieldFormAnswers,
+	FieldUpstreamSourceSnapshot,
 	FieldAssignedAdminID,
 	FieldSkuName,
 	FieldUnitPrice,

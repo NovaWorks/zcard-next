@@ -83,16 +83,24 @@ func (r *ProcureRepo) transition(ctx context.Context, id uint64, from, to string
 }
 
 // CreatePending 创建采购单（幂等：order_item_id 唯一 → 重复返回 ErrDuplicatePurchase）。
-func (r *ProcureRepo) CreatePending(ctx context.Context, orderItemID, connectionID uint64, productCode string, quantity int32, failStrategy string, traceID string) (*ent.ProcurementOrder, error) {
+func (r *ProcureRepo) CreatePending(ctx context.Context, orderItemID, connectionID uint64, productCode string, quantity int32, failStrategy string, traceID string, sku ...string) (*ent.ProcurementOrder, error) {
 	var p *ent.ProcurementOrder
 	err := data.Tx(ctx, r.data, func(ctx context.Context) error {
 		// ACG checks request_no across ALL downstream accounts and stores CHAR(19).
 		// Persist 95 random bits once; local order_item_id uniqueness independently
 		// prevents concurrent payment events from creating another purchase.
 		dedupe := rand.Text()[:19]
-		var err error
+		upstreamSKU := ""
+		if len(sku) > 0 {
+			upstreamSKU = sku[0]
+		}
+		source, err := data.CaptureUpstreamSource(ctx, data.Client(ctx, r.data), connectionID, productCode, upstreamSKU, "purchase")
+		if err != nil {
+			return err
+		}
 		p, err = data.Client(ctx, r.data).ProcurementOrder.Create().
 			SetOrderItemID(orderItemID).
+			SetUpstreamSourceSnapshot(source).
 			SetConnectionID(connectionID).
 			SetStatus(procurementorder.StatusPending).
 			SetFailStrategy(procurementorder.FailStrategy(failStrategy)).
@@ -384,10 +392,11 @@ func (r *ProcureRepo) ItemByProcurement(ctx context.Context, procurementID uint6
 
 // OrderItemInfo 订单项上下文（order_id / product_id / subsite_id——交付出口与加密 AAD 需要）。
 type OrderItemInfo struct {
-	OrderID   uint64
-	ProductID uint64
-	SubsiteID uint64
-	Quantity  int32
+	ProductName, SkuName string
+	OrderID              uint64
+	ProductID            uint64
+	SubsiteID            uint64
+	Quantity             int32
 }
 
 // OrderItemInfo 按 order_item_id 查订单项上下文。
@@ -396,7 +405,7 @@ func (r *ProcureRepo) OrderItemInfo(ctx context.Context, orderItemID uint64) (*O
 	if err != nil {
 		return nil, err
 	}
-	return &OrderItemInfo{OrderID: it.OrderID, ProductID: it.ProductID, SubsiteID: it.SubsiteID, Quantity: it.Quantity}, nil
+	return &OrderItemInfo{ProductName: it.ProductName, SkuName: it.SkuName, OrderID: it.OrderID, ProductID: it.ProductID, SubsiteID: it.SubsiteID, Quantity: it.Quantity}, nil
 }
 
 // OrderIDOf 采购单 → 订单 ID（失败策略退款需要；经 order_item 反查）。

@@ -3,6 +3,7 @@ package procurement
 import (
 	"context"
 	"fmt"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/upstreamsource"
 	"math/big"
 	"net/url"
 
@@ -28,6 +29,11 @@ func (s *AdminProcurementService) detail(ctx context.Context, po *ent.Procuremen
 		return nil, err
 	}
 	out := s.toProto(ctx, po)
+	sources, err := data.ProcurementSources(ctx, c, []*ent.ProcurementOrder{po})
+	if err != nil {
+		return nil, err
+	}
+	out.UpstreamSource = upstreamsource.Proto(sources[po.ID])
 	out.OrderNo = o.OrderNo
 	out.OrderStatus = string(o.Status)
 	out.ProductId = item.ProductID
@@ -71,6 +77,16 @@ func (s *AdminProcurementService) detail(ctx context.Context, po *ent.Procuremen
 		out.UpstreamProductCode = pi.UpstreamSku
 	} else if !ent.IsNotFound(e) {
 		return nil, e
+	}
+	if out.UpstreamSource != nil {
+		f := out.UpstreamSource.GetFields()
+		out.ConnectionName = f["connection_name"].GetStringValue()
+		out.ConnectionDriver = f["driver"].GetStringValue()
+		out.ConnectionUrl = f["website_url"].GetStringValue()
+		out.UpstreamProductCode = f["product_code"].GetStringValue()
+	}
+	if item.ProductName != "" {
+		out.ProductName = item.ProductName
 	}
 	return out, nil
 }

@@ -11,6 +11,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -25,6 +26,7 @@ const (
 
 type ProcurementOrder struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
+	UpstreamSource      *structpb.Struct       `protobuf:"bytes,37,opt,name=upstream_source,json=upstreamSource,proto3" json:"upstream_source,omitempty"` // 仅后台：直接上游及来源快照
 	Id                  uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	OrderItemId         uint64                 `protobuf:"varint,2,opt,name=order_item_id,json=orderItemId,proto3" json:"order_item_id,omitempty"`
 	ConnectionId        uint64                 `protobuf:"varint,3,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
@@ -93,6 +95,13 @@ func (x *ProcurementOrder) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ProcurementOrder.ProtoReflect.Descriptor instead.
 func (*ProcurementOrder) Descriptor() ([]byte, []int) {
 	return file_admin_v1_procurement_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ProcurementOrder) GetUpstreamSource() *structpb.Struct {
+	if x != nil {
+		return x.UpstreamSource
+	}
+	return nil
 }
 
 func (x *ProcurementOrder) GetId() uint64 {
@@ -847,9 +856,10 @@ var File_admin_v1_procurement_proto protoreflect.FileDescriptor
 
 const file_admin_v1_procurement_proto_rawDesc = "" +
 	"\n" +
-	"\x1aadmin/v1/procurement.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xb8\n" +
+	"\x1aadmin/v1/procurement.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xfa\n" +
 	"\n" +
-	"\x10ProcurementOrder\x12\x0e\n" +
+	"\x10ProcurementOrder\x12@\n" +
+	"\x0fupstream_source\x18% \x01(\v2\x17.google.protobuf.StructR\x0eupstreamSource\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\"\n" +
 	"\rorder_item_id\x18\x02 \x01(\x04R\vorderItemId\x12#\n" +
 	"\rconnection_id\x18\x03 \x01(\x04R\fconnectionId\x12*\n" +
@@ -962,28 +972,30 @@ var file_admin_v1_procurement_proto_goTypes = []any{
 	(*SMSDiagnostic)(nil),                // 6: zcard.api.admin.v1.SMSDiagnostic
 	(*SMSDiagnostics)(nil),               // 7: zcard.api.admin.v1.SMSDiagnostics
 	(*RetrySMSRequest)(nil),              // 8: zcard.api.admin.v1.RetrySMSRequest
-	(*emptypb.Empty)(nil),                // 9: google.protobuf.Empty
+	(*structpb.Struct)(nil),              // 9: google.protobuf.Struct
+	(*emptypb.Empty)(nil),                // 10: google.protobuf.Empty
 }
 var file_admin_v1_procurement_proto_depIdxs = []int32{
-	0, // 0: zcard.api.admin.v1.ListProcurementsReply.procurements:type_name -> zcard.api.admin.v1.ProcurementOrder
-	6, // 1: zcard.api.admin.v1.SMSDiagnostics.items:type_name -> zcard.api.admin.v1.SMSDiagnostic
-	1, // 2: zcard.api.admin.v1.AdminProcurementService.ListSMS:input_type -> zcard.api.admin.v1.ListProcurementsRequest
-	8, // 3: zcard.api.admin.v1.AdminProcurementService.RetrySMS:input_type -> zcard.api.admin.v1.RetrySMSRequest
-	1, // 4: zcard.api.admin.v1.AdminProcurementService.ListProcurements:input_type -> zcard.api.admin.v1.ListProcurementsRequest
-	3, // 5: zcard.api.admin.v1.AdminProcurementService.GetProcurement:input_type -> zcard.api.admin.v1.GetProcurementRequest
-	4, // 6: zcard.api.admin.v1.AdminProcurementService.RetryProcurement:input_type -> zcard.api.admin.v1.RetryProcurementRequest
-	5, // 7: zcard.api.admin.v1.AdminProcurementService.MarkProcurementManual:input_type -> zcard.api.admin.v1.MarkProcurementManualRequest
-	7, // 8: zcard.api.admin.v1.AdminProcurementService.ListSMS:output_type -> zcard.api.admin.v1.SMSDiagnostics
-	9, // 9: zcard.api.admin.v1.AdminProcurementService.RetrySMS:output_type -> google.protobuf.Empty
-	2, // 10: zcard.api.admin.v1.AdminProcurementService.ListProcurements:output_type -> zcard.api.admin.v1.ListProcurementsReply
-	0, // 11: zcard.api.admin.v1.AdminProcurementService.GetProcurement:output_type -> zcard.api.admin.v1.ProcurementOrder
-	0, // 12: zcard.api.admin.v1.AdminProcurementService.RetryProcurement:output_type -> zcard.api.admin.v1.ProcurementOrder
-	0, // 13: zcard.api.admin.v1.AdminProcurementService.MarkProcurementManual:output_type -> zcard.api.admin.v1.ProcurementOrder
-	8, // [8:14] is the sub-list for method output_type
-	2, // [2:8] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	9,  // 0: zcard.api.admin.v1.ProcurementOrder.upstream_source:type_name -> google.protobuf.Struct
+	0,  // 1: zcard.api.admin.v1.ListProcurementsReply.procurements:type_name -> zcard.api.admin.v1.ProcurementOrder
+	6,  // 2: zcard.api.admin.v1.SMSDiagnostics.items:type_name -> zcard.api.admin.v1.SMSDiagnostic
+	1,  // 3: zcard.api.admin.v1.AdminProcurementService.ListSMS:input_type -> zcard.api.admin.v1.ListProcurementsRequest
+	8,  // 4: zcard.api.admin.v1.AdminProcurementService.RetrySMS:input_type -> zcard.api.admin.v1.RetrySMSRequest
+	1,  // 5: zcard.api.admin.v1.AdminProcurementService.ListProcurements:input_type -> zcard.api.admin.v1.ListProcurementsRequest
+	3,  // 6: zcard.api.admin.v1.AdminProcurementService.GetProcurement:input_type -> zcard.api.admin.v1.GetProcurementRequest
+	4,  // 7: zcard.api.admin.v1.AdminProcurementService.RetryProcurement:input_type -> zcard.api.admin.v1.RetryProcurementRequest
+	5,  // 8: zcard.api.admin.v1.AdminProcurementService.MarkProcurementManual:input_type -> zcard.api.admin.v1.MarkProcurementManualRequest
+	7,  // 9: zcard.api.admin.v1.AdminProcurementService.ListSMS:output_type -> zcard.api.admin.v1.SMSDiagnostics
+	10, // 10: zcard.api.admin.v1.AdminProcurementService.RetrySMS:output_type -> google.protobuf.Empty
+	2,  // 11: zcard.api.admin.v1.AdminProcurementService.ListProcurements:output_type -> zcard.api.admin.v1.ListProcurementsReply
+	0,  // 12: zcard.api.admin.v1.AdminProcurementService.GetProcurement:output_type -> zcard.api.admin.v1.ProcurementOrder
+	0,  // 13: zcard.api.admin.v1.AdminProcurementService.RetryProcurement:output_type -> zcard.api.admin.v1.ProcurementOrder
+	0,  // 14: zcard.api.admin.v1.AdminProcurementService.MarkProcurementManual:output_type -> zcard.api.admin.v1.ProcurementOrder
+	9,  // [9:15] is the sub-list for method output_type
+	3,  // [3:9] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_procurement_proto_init() }

@@ -725,6 +725,16 @@ func FormAnswersNotNil() predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldNotNull(FieldFormAnswers))
 }
 
+// UpstreamSourceSnapshotIsNil applies the IsNil predicate on the "upstream_source_snapshot" field.
+func UpstreamSourceSnapshotIsNil() predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIsNull(FieldUpstreamSourceSnapshot))
+}
+
+// UpstreamSourceSnapshotNotNil applies the NotNil predicate on the "upstream_source_snapshot" field.
+func UpstreamSourceSnapshotNotNil() predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotNull(FieldUpstreamSourceSnapshot))
+}
+
 // AssignedAdminIDEQ applies the EQ predicate on the "assigned_admin_id" field.
 func AssignedAdminIDEQ(v uint64) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldAssignedAdminID, v))

@@ -7,6 +7,7 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
 
 // AdminCatalogService 商品目录管理：商品/分类/标签/控件/商品组/评价。
 service AdminCatalogService {
@@ -194,6 +195,7 @@ message GetProductRequest {
 
 // AdminProduct 管理面商品（含成本价等敏感字段）。
 message AdminProduct {
+  google.protobuf.Struct upstream_source = 74; // 仅后台：直接上游及来源快照
   string product_property = 71;
   optional bool track_inventory = 72;
   optional bool sales_visible = 73;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import UpstreamSource from "@/components/common/upstream-source.vue";
 import { request as shippingRequest } from "@/service/request";
 import { countryOptions, type RegionData } from "../../../../packages/shipping";
 const shippingRegions = ref<RegionData>({});
@@ -789,48 +790,8 @@ const columns: DataTableColumns<any> = [
   {
     title: "货源",
     key: "upstream_source_id",
-    width: 150,
-    render: (row) => {
-      if (!row.upstream_source_id) {
-        return h(NTag, { size: "small", bordered: false }, { default: () => "自营" });
-      }
-      const conn = supplyConnections.value.find((c: any) => c.id === row.upstream_source_id);
-      const name = conn?.name || `#${row.upstream_source_id}`;
-      // 上游商品链接（渠道配置 product_url_template：{base}/{code} 占位）
-      let link = "";
-      if (conn) {
-        try {
-          const tpl = JSON.parse(conn.settings || "{}").product_url_template;
-          if (tpl && row.upstream_product_code) {
-            link = tpl
-              .replaceAll("{base}", conn.base_url)
-              .replaceAll("{code}", row.upstream_product_code);
-          }
-        } catch {
-          /* 无模板 */
-        }
-      }
-      return h("div", { class: "flex items-center gap-4px" }, [
-        h(
-          NTag,
-          { size: "small", bordered: false, type: "info" },
-          { default: () => `代发 · ${name}` },
-        ),
-        link
-          ? h(
-              "a",
-              {
-                href: link,
-                target: "_blank",
-                rel: "noopener noreferrer",
-                title: link,
-                class: "text-12px text-blue-500 hover:underline",
-              },
-              "↗",
-            )
-          : null,
-      ]);
-    },
+    width: 220,
+    render: (row) => row.upstream_source_id ? h(UpstreamSource, { source: row.upstream_source, compact: true }) : "自营",
   },
   {
     title: "类型",

@@ -132,6 +132,7 @@ const form = reactive({
   markupAmountYuan: 0,
   failAction: "auto_refund",
   productUrlTemplate: "",
+  websiteUrl: "",
   price_rounding_mode: "none",
   auto_sync_price: true,
   stock_mode: "real",
@@ -173,6 +174,7 @@ function openCreate() {
   form.markupAmountYuan = 0;
   form.failAction = "auto_refund";
   form.productUrlTemplate = "";
+  form.websiteUrl = "";
   form.price_rounding_mode = "none";
   form.auto_sync_price = true;
   form.stock_mode = "real";
@@ -186,6 +188,8 @@ function openEdit(row: any) {
   form.driver = row.driver;
   form.base_url = row.base_url;
   form.credentials = "";
+  form.websiteUrl = "";
+  form.productUrlTemplate = "";
   form.exchange_rate = row.exchange_rate || 1;
   form.price_markup_percent = row.price_markup_percent || 0;
   form.markupAmountYuan = (row.price_markup_amount || 0) / 100;
@@ -193,6 +197,7 @@ function openEdit(row: any) {
     const st = JSON.parse(row.settings || "{}");
     form.failAction = st.failure_action || "auto_refund";
     form.productUrlTemplate = st.product_url_template || "";
+    form.websiteUrl = st.website_url || "";
   } catch {
     form.failAction = "auto_refund";
   }
@@ -241,6 +246,8 @@ async function submitForm() {
     else delete baseSettings.failure_action;
     if (form.productUrlTemplate.trim()) baseSettings.product_url_template = form.productUrlTemplate.trim();
     else delete baseSettings.product_url_template;
+    if (form.websiteUrl.trim()) baseSettings.website_url = form.websiteUrl.trim();
+    else delete baseSettings.website_url;
     payload.settings = JSON.stringify(baseSettings);
     if (editingId.value) {
       const { error } = await updateSupplyConnection(editingId.value, payload);
@@ -840,8 +847,14 @@ onMounted(load);
             </div>
           </div>
         </NFormItem>
+        <NFormItem label="上游网站地址">
+          <NInput v-model:value="form.websiteUrl" placeholder="可选，如 https://shop.example.com；网站与 API 地址不同时填写" />
+        </NFormItem>
         <NFormItem label="商品链接模板">
-          <NInput v-model:value="form.productUrlTemplate" placeholder="如 {base}/product/{code}（商品列表跳上游）" />
+          <div class="w-full">
+            <NInput v-model:value="form.productUrlTemplate" placeholder="可选，如 {base}/product/{product_id}" />
+            <p class="text-12px text-gray-500">支持 {base} 网站地址、{code} 原始编码、{product_id} 商品编号、{sku_id} 规格编号。ZCard、萌次元留空时使用已知商品路由；其他渠道显示网站与编号。只影响之后的来源记录，历史快照保留原链接。</p>
+          </div>
         </NFormItem>
         <NFormItem label="采购失败策略">
           <NSelect

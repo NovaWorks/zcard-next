@@ -7,6 +7,7 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
 
 // AdminOrderService 订单管理。
 service AdminOrderService {
@@ -90,6 +91,7 @@ message AdminOrder {
 }
 
 message AdminOrderItem {
+  google.protobuf.Struct upstream_source = 41; // 仅后台：直接上游及来源快照
   bool shipping_collect = 40;
   string goods_type = 30;
   int64 paid_cents = 31;

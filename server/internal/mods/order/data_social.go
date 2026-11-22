@@ -150,7 +150,11 @@ func (uc *OrderUsecase) createSocialOrder(ctx context.Context, in CreateOrderInp
 		if e != nil {
 			return e
 		}
-		it, e := c.OrderItem.Create().SetOrderID(o.ID).SetSubsiteID(0).SetProductID(p.ID).SetProductName(p.Name).SetDeliveryKind(supplyport.SocialDelivery).SetSocialSchema(schemaObject(schema)).SetQuantity(1).SetUnitPrice(q.AmountCents).SetAmount(q.AmountCents).SetCost(q.CostCents).SetPaidAmount(q.AmountCents).SetGoodsType("virtual").SetInventoryTracked(false).SetFulfillmentType("upstream").SetFulfillmentStatus("pending").Save(ctx)
+		source, e := data.CaptureUpstreamSource(ctx, c, q.ConnectionID, q.UpstreamProductID, "", "order")
+		if e != nil {
+			return e
+		}
+		it, e := c.OrderItem.Create().SetUpstreamSourceSnapshot(source).SetOrderID(o.ID).SetSubsiteID(0).SetProductID(p.ID).SetProductName(p.Name).SetDeliveryKind(supplyport.SocialDelivery).SetSocialSchema(schemaObject(schema)).SetQuantity(1).SetUnitPrice(q.AmountCents).SetAmount(q.AmountCents).SetCost(q.CostCents).SetPaidAmount(q.AmountCents).SetGoodsType("virtual").SetInventoryTracked(false).SetFulfillmentType("upstream").SetFulfillmentStatus("pending").Save(ctx)
 		if e != nil {
 			return e
 		}

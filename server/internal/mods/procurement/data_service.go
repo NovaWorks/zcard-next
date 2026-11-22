@@ -5,6 +5,7 @@ package procurement
 import (
 	"context"
 	"errors"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/upstreamsource"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -33,9 +34,15 @@ func (s *AdminProcurementService) ListProcurements(ctx context.Context, req *adm
 	if err != nil {
 		return nil, err
 	}
+	sources, err := data.ProcurementSources(ctx, data.Client(ctx, s.repo.data), rows)
+	if err != nil {
+		return nil, err
+	}
 	reply := &adminv1.ListProcurementsReply{Total: int64(total), Page: int32(page), PageSize: int32(pageSize)}
 	for _, po := range rows {
-		reply.Procurements = append(reply.Procurements, s.toProto(ctx, po))
+		item := s.toProto(ctx, po)
+		item.UpstreamSource = upstreamsource.Proto(sources[po.ID])
+		reply.Procurements = append(reply.Procurements, item)
 	}
 	return reply, nil
 }
@@ -111,6 +118,9 @@ func (s *AdminProcurementService) toProto(ctx context.Context, po *ent.Procureme
 	}
 	if oi, err := s.repo.OrderItemInfo(ctx, po.OrderItemID); err == nil {
 		if o, e := data.Client(ctx, s.repo.data).Order.Get(ctx, oi.OrderID); e == nil {
+			out.ProductId = oi.ProductID
+			out.ProductName = oi.ProductName
+			out.SkuName = oi.SkuName
 			out.OrderNo = o.OrderNo
 			out.OrderStatus = string(o.Status)
 			if count, e := s.repo.deliveredCount(ctx, po.OrderItemID, oi.Quantity); e == nil {

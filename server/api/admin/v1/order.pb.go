@@ -11,6 +11,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -506,6 +507,7 @@ func (x *AdminOrder) GetExpiryReason() string {
 
 type AdminOrderItem struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
+	UpstreamSource        *structpb.Struct       `protobuf:"bytes,41,opt,name=upstream_source,json=upstreamSource,proto3" json:"upstream_source,omitempty"` // 仅后台：直接上游及来源快照
 	ShippingCollect       bool                   `protobuf:"varint,40,opt,name=shipping_collect,json=shippingCollect,proto3" json:"shipping_collect,omitempty"`
 	GoodsType             string                 `protobuf:"bytes,30,opt,name=goods_type,json=goodsType,proto3" json:"goods_type,omitempty"`
 	PaidCents             int64                  `protobuf:"varint,31,opt,name=paid_cents,json=paidCents,proto3" json:"paid_cents,omitempty"`
@@ -568,6 +570,13 @@ func (x *AdminOrderItem) ProtoReflect() protoreflect.Message {
 // Deprecated: Use AdminOrderItem.ProtoReflect.Descriptor instead.
 func (*AdminOrderItem) Descriptor() ([]byte, []int) {
 	return file_admin_v1_order_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *AdminOrderItem) GetUpstreamSource() *structpb.Struct {
+	if x != nil {
+		return x.UpstreamSource
+	}
+	return nil
 }
 
 func (x *AdminOrderItem) GetShippingCollect() bool {
@@ -1040,7 +1049,7 @@ var File_admin_v1_order_proto protoreflect.FileDescriptor
 
 const file_admin_v1_order_proto_rawDesc = "" +
 	"\n" +
-	"\x14admin/v1/order.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xd6\x02\n" +
+	"\x14admin/v1/order.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xd6\x02\n" +
 	"\x11ListOrdersRequest\x12'\n" +
 	"\x0fshipping_status\x18\x14 \x01(\tR\x0eshippingStatus\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x16\n" +
@@ -1101,8 +1110,9 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"\rexpiry_reason\x18\x13 \x01(\tR\fexpiryReason\x1aB\n" +
 	"\x14ShippingAddressEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa1\t\n" +
-	"\x0eAdminOrderItem\x12)\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xe3\t\n" +
+	"\x0eAdminOrderItem\x12@\n" +
+	"\x0fupstream_source\x18) \x01(\v2\x17.google.protobuf.StructR\x0eupstreamSource\x12)\n" +
 	"\x10shipping_collect\x18( \x01(\bR\x0fshippingCollect\x12\x1d\n" +
 	"\n" +
 	"goods_type\x18\x1e \x01(\tR\tgoodsType\x12\x1d\n" +
@@ -1192,7 +1202,8 @@ var file_admin_v1_order_proto_goTypes = []any{
 	(*CancelOrderRequest)(nil),   // 7: zcard.api.admin.v1.CancelOrderRequest
 	(*DeleteOrdersRequest)(nil),  // 8: zcard.api.admin.v1.DeleteOrdersRequest
 	nil,                          // 9: zcard.api.admin.v1.AdminOrder.ShippingAddressEntry
-	(*emptypb.Empty)(nil),        // 10: google.protobuf.Empty
+	(*structpb.Struct)(nil),      // 10: google.protobuf.Struct
+	(*emptypb.Empty)(nil),        // 11: google.protobuf.Empty
 }
 var file_admin_v1_order_proto_depIdxs = []int32{
 	3,  // 0: zcard.api.admin.v1.ListOrdersReply.orders:type_name -> zcard.api.admin.v1.AdminOrder
@@ -1200,19 +1211,20 @@ var file_admin_v1_order_proto_depIdxs = []int32{
 	4,  // 2: zcard.api.admin.v1.AdminOrder.items:type_name -> zcard.api.admin.v1.AdminOrderItem
 	5,  // 3: zcard.api.admin.v1.AdminOrder.amount_lines:type_name -> zcard.api.admin.v1.AmountLine
 	6,  // 4: zcard.api.admin.v1.AdminOrder.status_events:type_name -> zcard.api.admin.v1.StatusEvent
-	0,  // 5: zcard.api.admin.v1.AdminOrderService.ListOrders:input_type -> zcard.api.admin.v1.ListOrdersRequest
-	2,  // 6: zcard.api.admin.v1.AdminOrderService.GetOrder:input_type -> zcard.api.admin.v1.GetAdminOrderRequest
-	7,  // 7: zcard.api.admin.v1.AdminOrderService.CancelOrder:input_type -> zcard.api.admin.v1.CancelOrderRequest
-	8,  // 8: zcard.api.admin.v1.AdminOrderService.DeleteOrders:input_type -> zcard.api.admin.v1.DeleteOrdersRequest
-	1,  // 9: zcard.api.admin.v1.AdminOrderService.ListOrders:output_type -> zcard.api.admin.v1.ListOrdersReply
-	3,  // 10: zcard.api.admin.v1.AdminOrderService.GetOrder:output_type -> zcard.api.admin.v1.AdminOrder
-	10, // 11: zcard.api.admin.v1.AdminOrderService.CancelOrder:output_type -> google.protobuf.Empty
-	10, // 12: zcard.api.admin.v1.AdminOrderService.DeleteOrders:output_type -> google.protobuf.Empty
-	9,  // [9:13] is the sub-list for method output_type
-	5,  // [5:9] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	10, // 5: zcard.api.admin.v1.AdminOrderItem.upstream_source:type_name -> google.protobuf.Struct
+	0,  // 6: zcard.api.admin.v1.AdminOrderService.ListOrders:input_type -> zcard.api.admin.v1.ListOrdersRequest
+	2,  // 7: zcard.api.admin.v1.AdminOrderService.GetOrder:input_type -> zcard.api.admin.v1.GetAdminOrderRequest
+	7,  // 8: zcard.api.admin.v1.AdminOrderService.CancelOrder:input_type -> zcard.api.admin.v1.CancelOrderRequest
+	8,  // 9: zcard.api.admin.v1.AdminOrderService.DeleteOrders:input_type -> zcard.api.admin.v1.DeleteOrdersRequest
+	1,  // 10: zcard.api.admin.v1.AdminOrderService.ListOrders:output_type -> zcard.api.admin.v1.ListOrdersReply
+	3,  // 11: zcard.api.admin.v1.AdminOrderService.GetOrder:output_type -> zcard.api.admin.v1.AdminOrder
+	11, // 12: zcard.api.admin.v1.AdminOrderService.CancelOrder:output_type -> google.protobuf.Empty
+	11, // 13: zcard.api.admin.v1.AdminOrderService.DeleteOrders:output_type -> google.protobuf.Empty
+	10, // [10:14] is the sub-list for method output_type
+	6,  // [6:10] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_order_proto_init() }

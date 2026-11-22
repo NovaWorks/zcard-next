@@ -186,6 +186,7 @@ func (ProcurementOrder) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("id"),
 		field.Uint64("order_item_id").Comment("触发采购的订单子项"),
+		field.JSON("upstream_source_snapshot", map[string]any{}).Optional().Comment("仅后台：实际采购时的直接上游，不含凭据"),
 		field.Uint64("connection_id"),
 		field.String("upstream_order_id").MaxLen(80).Optional(),
 		field.Enum("status").

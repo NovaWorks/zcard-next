@@ -9,6 +9,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/upstreamsource"
 	"strconv"
 	"strings"
 	"time"
@@ -424,6 +425,28 @@ func (s *AdminOrderService) GetOrder(ctx context.Context, req *adminv1.GetAdminO
 	// 商品/上游联查（ 修复：订单详情展示自营/上游渠道/链接/成本——老项目同款信息区）
 	products, connections := s.loadItemUpstream(ctx, items)
 	out := toAdminOrderPB(o, items, lines, events, products, connections)
+	sources, err := data.OrderItemSources(ctx, client, items)
+	if err != nil {
+		return nil, err
+	}
+	for _, it := range out.Items {
+		source := sources[it.Id]
+		it.UpstreamSource = upstreamsource.Proto(source)
+		it.IsSelf = source["kind"] == "self"
+		it.UpstreamSourceId = 0
+		it.UpstreamSourceName = ""
+		it.UpstreamDriver = ""
+		it.UpstreamProductCode = ""
+		it.UpstreamUrl = ""
+		if it.UpstreamSource != nil {
+			f := it.UpstreamSource.GetFields()
+			it.UpstreamSourceId, _ = strconv.ParseUint(f["connection_id"].GetStringValue(), 10, 64)
+			it.UpstreamSourceName = f["connection_name"].GetStringValue()
+			it.UpstreamDriver = f["driver"].GetStringValue()
+			it.UpstreamProductCode = f["product_code"].GetStringValue()
+			it.UpstreamUrl = f["website_url"].GetStringValue()
+		}
+	}
 	out.ShipmentsJson, err = data.ShipmentsJSON(ctx, s.data, o.ID)
 	if err != nil {
 		return nil, err

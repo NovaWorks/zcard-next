@@ -841,6 +841,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				SetProductName(services[itemKey(r.input.ProductID, r.input.SkuID)].name).
 				SetSkuName(services[itemKey(r.input.ProductID, r.input.SkuID)].skuName).
 				SetFormAnswers(services[itemKey(r.input.ProductID, r.input.SkuID)].answers).
+				SetUpstreamSourceSnapshot(services[itemKey(r.input.ProductID, r.input.SkuID)].sourceSnapshot).
 				SetFulfillmentStatus("pending").
 				Save(txCtx)
 			if err != nil {

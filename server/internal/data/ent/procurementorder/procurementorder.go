@@ -20,6 +20,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldOrderItemID holds the string denoting the order_item_id field in the database.
 	FieldOrderItemID = "order_item_id"
+	// FieldUpstreamSourceSnapshot holds the string denoting the upstream_source_snapshot field in the database.
+	FieldUpstreamSourceSnapshot = "upstream_source_snapshot"
 	// FieldConnectionID holds the string denoting the connection_id field in the database.
 	FieldConnectionID = "connection_id"
 	// FieldUpstreamOrderID holds the string denoting the upstream_order_id field in the database.
@@ -52,6 +54,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldOrderItemID,
+	FieldUpstreamSourceSnapshot,
 	FieldConnectionID,
 	FieldUpstreamOrderID,
 	FieldStatus,

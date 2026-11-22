@@ -3,7 +3,7 @@
 
 openapi: 3.0.3
 info:
-    title: "ZCard API"
+    title: ""
     version: 0.0.1
 paths:
     /api/supply/categories:
@@ -8025,6 +8025,8 @@ components:
         zcard.api.admin.v1.AdminOrderItem:
             type: object
             properties:
+                upstreamSource:
+                    type: object
                 shippingCollect:
                     type: boolean
                 goodsType:
@@ -8093,6 +8095,8 @@ components:
         zcard.api.admin.v1.AdminProduct:
             type: object
             properties:
+                upstreamSource:
+                    type: object
                 productProperty:
                     type: string
                 trackInventory:
@@ -11871,6 +11875,8 @@ components:
         zcard.api.admin.v1.ProcurementOrder:
             type: object
             properties:
+                upstreamSource:
+                    type: object
                 id:
                     type: string
                 orderItemId:

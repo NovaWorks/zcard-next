@@ -14,7 +14,7 @@ var ErrOrderNotPurchasable = errors.New("订单已关闭或商品已取消，不
 
 // Persist the in-flight claim under the same order lock used by refunds. The
 // remote call happens after commit; an ambiguous claim must be reconciled first.
-func (r *ProcureRepo) claimPurchase(ctx context.Context, itemID, connectionID uint64, code string, qty int32, strategy, trace string) (out *ent.ProcurementOrder, err error) {
+func (r *ProcureRepo) claimPurchase(ctx context.Context, itemID, connectionID uint64, code string, qty int32, strategy, trace string, sku ...string) (out *ent.ProcurementOrder, err error) {
 	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
 		c := data.Client(ctx, r.data)
 		it, e := c.OrderItem.Get(ctx, itemID)
@@ -52,7 +52,7 @@ func (r *ProcureRepo) claimPurchase(ctx context.Context, itemID, connectionID ui
 		if busy {
 			return fmt.Errorf("退款待核对，不能采购")
 		}
-		out, e = r.CreatePending(ctx, itemID, connectionID, code, qty, strategy, trace)
+		out, e = r.CreatePending(ctx, itemID, connectionID, code, qty, strategy, trace, sku...)
 		return e
 	})
 	return

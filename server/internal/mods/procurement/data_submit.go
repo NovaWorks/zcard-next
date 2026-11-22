@@ -132,6 +132,12 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 		return fmt.Errorf("procurement: 上游商品映射缺失，需要人工核实")
 	}
 
+	// 规格选择：客户所选本地 SKU 的上游标识（acg=race|k=v 编码 / dujiao=sku_id）
+	upstreamSKU := ""
+	if skuID > 0 {
+		upstreamSKU = s.reader.SkuUpstreamCode(ctx, payload.SubsiteID, skuID)
+	}
+
 	// 建单并持久化随机请求号；失败策略取渠道级配置，默认自动退款。
 	failStrategy := "auto_refund"
 	if s.gw != nil {
@@ -139,7 +145,7 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 			failStrategy = fs
 		}
 	}
-	po, err := s.repo.claimPurchase(ctx, orderItemID, p.UpstreamSourceID, p.UpstreamProductCode, quantity, failStrategy, payload.OrderNo)
+	po, err := s.repo.claimPurchase(ctx, orderItemID, p.UpstreamSourceID, p.UpstreamProductCode, quantity, failStrategy, payload.OrderNo, upstreamSKU)
 	if err != nil {
 		if errors.Is(err, ErrDuplicatePurchase) {
 			return nil // 并发已建
@@ -149,12 +155,6 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 
 	traceID := fmt.Sprintf("po-%d-%s", po.ID, payload.OrderNo)
 	_ = s.repo.EnsureTraceID(ctx, po.ID, traceID)
-
-	// 规格选择：客户所选本地 SKU 的上游标识（acg=race|k=v 编码 / dujiao=sku_id）
-	upstreamSKU := ""
-	if skuID > 0 {
-		upstreamSKU = s.reader.SkuUpstreamCode(ctx, payload.SubsiteID, skuID)
-	}
 
 	// 提交
 	form, err := data.UpstreamFormSubmission(it.FormAnswers, p.UpstreamSourceID, p.UpstreamProductCode)

@@ -129,6 +129,7 @@ func (OrderItem) Fields() []ent.Field {
 		field.JSON("sms_product", map[string]string{}).Optional(),
 		field.Text("sms_purchase_snapshot").Optional(),
 		field.JSON("form_answers", []map[string]string{}).Optional(),
+		field.JSON("upstream_source_snapshot", map[string]any{}).Optional().Comment("仅后台：当时的直接上游定位，不含凭据"),
 		field.Uint64("assigned_admin_id").Default(0),
 		field.String("sku_name").MaxLen(100).Optional().Comment("SKU 名称快照"),
 		field.Int64("unit_price").Comment("单价快照（分）"),

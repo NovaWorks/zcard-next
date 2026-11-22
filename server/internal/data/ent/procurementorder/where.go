@@ -234,6 +234,16 @@ func OrderItemIDLTE(v uint64) predicate.ProcurementOrder {
 	return predicate.ProcurementOrder(sql.FieldLTE(FieldOrderItemID, v))
 }
 
+// UpstreamSourceSnapshotIsNil applies the IsNil predicate on the "upstream_source_snapshot" field.
+func UpstreamSourceSnapshotIsNil() predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldIsNull(FieldUpstreamSourceSnapshot))
+}
+
+// UpstreamSourceSnapshotNotNil applies the NotNil predicate on the "upstream_source_snapshot" field.
+func UpstreamSourceSnapshotNotNil() predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldNotNull(FieldUpstreamSourceSnapshot))
+}
+
 // ConnectionIDEQ applies the EQ predicate on the "connection_id" field.
 func ConnectionIDEQ(v uint64) predicate.ProcurementOrder {
 	return predicate.ProcurementOrder(sql.FieldEQ(FieldConnectionID, v))

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import UpstreamSource from "@/components/common/upstream-source.vue";
 import PhysicalOrderPanel from "./components/physical-order-panel.vue";
 import { shippingStatus } from "../../../../packages/shipping";
 import OrderAnswers from "@/components/common/order-answers.vue";
@@ -95,7 +96,9 @@ const detail = ref<{
     upstream_source_name?: string;
     upstream_driver?: string;
     upstream_product_code?: string;
+    product_id?: number;
     upstream_url?: string;
+    upstream_source?: import("@/components/common/upstream-source.vue").UpstreamSource;
   }[];
   amount_lines?: any[];
   status_events?: any[];
@@ -834,36 +837,12 @@ onMounted(async () => {
           </NDescriptionsItem>
         </NDescriptions>
 
-        <!-- 上游货源信息（老项目同款信息区） -->
-        <template v-if="(detail.items || []).some((it) => it.upstream_source_name)">
-          <NDivider>上游货源</NDivider>
-          <NDescriptions :column="2" bordered size="small">
-            <NDescriptionsItem label="上游渠道">{{
-              (detail.items || []).find((it) => it.upstream_source_name)?.upstream_source_name ||
-              "-"
-            }}</NDescriptionsItem>
-            <NDescriptionsItem label="上游驱动">{{
-              (detail.items || []).find((it) => it.upstream_driver)?.upstream_driver || "-"
-            }}</NDescriptionsItem>
-            <NDescriptionsItem label="上游商品编码" :span="2">
-              {{
-                (detail.items || []).find((it) => it.upstream_product_code)
-                  ?.upstream_product_code || "-"
-              }}
-            </NDescriptionsItem>
-            <NDescriptionsItem label="上游地址" :span="2">
-              <a
-                v-if="(detail.items || []).find((it) => it.upstream_url)"
-                :href="(detail.items || []).find((it) => it.upstream_url)?.upstream_url"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="text-blue-500 hover:underline break-all"
-              >
-                {{ (detail.items || []).find((it) => it.upstream_url)?.upstream_url }} ↗
-              </a>
-              <span v-else>-</span>
-            </NDescriptionsItem>
-          </NDescriptions>
+        <template v-if="detail.items?.length">
+          <NDivider>各商品拿货来源</NDivider>
+          <div v-for="item in detail.items" :key="item.id" class="mb-16px p-12px border border-solid border-gray-200 rounded-8px">
+            <div class="mb-8px font-semibold">{{ item.name || `商品 #${item.product_id}` }}<template v-if="item.sku_name"> / {{ item.sku_name }}</template></div>
+            <UpstreamSource :source="item.upstream_source" />
+          </div>
         </template>
         <PhysicalOrderPanel
           v-if="Number(detail.commerce_version) === 1"

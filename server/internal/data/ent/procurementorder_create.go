@@ -56,6 +56,12 @@ func (_c *ProcurementOrderCreate) SetOrderItemID(v uint64) *ProcurementOrderCrea
 	return _c
 }
 
+// SetUpstreamSourceSnapshot sets the "upstream_source_snapshot" field.
+func (_c *ProcurementOrderCreate) SetUpstreamSourceSnapshot(v map[string]interface{}) *ProcurementOrderCreate {
+	_c.mutation.SetUpstreamSourceSnapshot(v)
+	return _c
+}
+
 // SetConnectionID sets the "connection_id" field.
 func (_c *ProcurementOrderCreate) SetConnectionID(v uint64) *ProcurementOrderCreate {
 	_c.mutation.SetConnectionID(v)
@@ -358,6 +364,10 @@ func (_c *ProcurementOrderCreate) createSpec() (*ProcurementOrder, *sqlgraph.Cre
 		_spec.SetField(procurementorder.FieldOrderItemID, field.TypeUint64, value)
 		_node.OrderItemID = value
 	}
+	if value, ok := _c.mutation.UpstreamSourceSnapshot(); ok {
+		_spec.SetField(procurementorder.FieldUpstreamSourceSnapshot, field.TypeJSON, value)
+		_node.UpstreamSourceSnapshot = value
+	}
 	if value, ok := _c.mutation.ConnectionID(); ok {
 		_spec.SetField(procurementorder.FieldConnectionID, field.TypeUint64, value)
 		_node.ConnectionID = value
@@ -481,6 +491,24 @@ func (u *ProcurementOrderUpsert) UpdateOrderItemID() *ProcurementOrderUpsert {
 // AddOrderItemID adds v to the "order_item_id" field.
 func (u *ProcurementOrderUpsert) AddOrderItemID(v uint64) *ProcurementOrderUpsert {
 	u.Add(procurementorder.FieldOrderItemID, v)
+	return u
+}
+
+// SetUpstreamSourceSnapshot sets the "upstream_source_snapshot" field.
+func (u *ProcurementOrderUpsert) SetUpstreamSourceSnapshot(v map[string]interface{}) *ProcurementOrderUpsert {
+	u.Set(procurementorder.FieldUpstreamSourceSnapshot, v)
+	return u
+}
+
+// UpdateUpstreamSourceSnapshot sets the "upstream_source_snapshot" field to the value that was provided on create.
+func (u *ProcurementOrderUpsert) UpdateUpstreamSourceSnapshot() *ProcurementOrderUpsert {
+	u.SetExcluded(procurementorder.FieldUpstreamSourceSnapshot)
+	return u
+}
+
+// ClearUpstreamSourceSnapshot clears the value of the "upstream_source_snapshot" field.
+func (u *ProcurementOrderUpsert) ClearUpstreamSourceSnapshot() *ProcurementOrderUpsert {
+	u.SetNull(procurementorder.FieldUpstreamSourceSnapshot)
 	return u
 }
 
@@ -747,6 +775,27 @@ func (u *ProcurementOrderUpsertOne) AddOrderItemID(v uint64) *ProcurementOrderUp
 func (u *ProcurementOrderUpsertOne) UpdateOrderItemID() *ProcurementOrderUpsertOne {
 	return u.Update(func(s *ProcurementOrderUpsert) {
 		s.UpdateOrderItemID()
+	})
+}
+
+// SetUpstreamSourceSnapshot sets the "upstream_source_snapshot" field.
+func (u *ProcurementOrderUpsertOne) SetUpstreamSourceSnapshot(v map[string]interface{}) *ProcurementOrderUpsertOne {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.SetUpstreamSourceSnapshot(v)
+	})
+}
+
+// UpdateUpstreamSourceSnapshot sets the "upstream_source_snapshot" field to the value that was provided on create.
+func (u *ProcurementOrderUpsertOne) UpdateUpstreamSourceSnapshot() *ProcurementOrderUpsertOne {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.UpdateUpstreamSourceSnapshot()
+	})
+}
+
+// ClearUpstreamSourceSnapshot clears the value of the "upstream_source_snapshot" field.
+func (u *ProcurementOrderUpsertOne) ClearUpstreamSourceSnapshot() *ProcurementOrderUpsertOne {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.ClearUpstreamSourceSnapshot()
 	})
 }
 
@@ -1209,6 +1258,27 @@ func (u *ProcurementOrderUpsertBulk) AddOrderItemID(v uint64) *ProcurementOrderU
 func (u *ProcurementOrderUpsertBulk) UpdateOrderItemID() *ProcurementOrderUpsertBulk {
 	return u.Update(func(s *ProcurementOrderUpsert) {
 		s.UpdateOrderItemID()
+	})
+}
+
+// SetUpstreamSourceSnapshot sets the "upstream_source_snapshot" field.
+func (u *ProcurementOrderUpsertBulk) SetUpstreamSourceSnapshot(v map[string]interface{}) *ProcurementOrderUpsertBulk {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.SetUpstreamSourceSnapshot(v)
+	})
+}
+
+// UpdateUpstreamSourceSnapshot sets the "upstream_source_snapshot" field to the value that was provided on create.
+func (u *ProcurementOrderUpsertBulk) UpdateUpstreamSourceSnapshot() *ProcurementOrderUpsertBulk {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.UpdateUpstreamSourceSnapshot()
+	})
+}
+
+// ClearUpstreamSourceSnapshot clears the value of the "upstream_source_snapshot" field.
+func (u *ProcurementOrderUpsertBulk) ClearUpstreamSourceSnapshot() *ProcurementOrderUpsertBulk {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.ClearUpstreamSourceSnapshot()
 	})
 }
 

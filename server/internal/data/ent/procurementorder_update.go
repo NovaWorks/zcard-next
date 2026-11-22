@@ -55,6 +55,18 @@ func (_u *ProcurementOrderUpdate) AddOrderItemID(v int64) *ProcurementOrderUpdat
 	return _u
 }
 
+// SetUpstreamSourceSnapshot sets the "upstream_source_snapshot" field.
+func (_u *ProcurementOrderUpdate) SetUpstreamSourceSnapshot(v map[string]interface{}) *ProcurementOrderUpdate {
+	_u.mutation.SetUpstreamSourceSnapshot(v)
+	return _u
+}
+
+// ClearUpstreamSourceSnapshot clears the value of the "upstream_source_snapshot" field.
+func (_u *ProcurementOrderUpdate) ClearUpstreamSourceSnapshot() *ProcurementOrderUpdate {
+	_u.mutation.ClearUpstreamSourceSnapshot()
+	return _u
+}
+
 // SetConnectionID sets the "connection_id" field.
 func (_u *ProcurementOrderUpdate) SetConnectionID(v uint64) *ProcurementOrderUpdate {
 	_u.mutation.ResetConnectionID()
@@ -356,6 +368,12 @@ func (_u *ProcurementOrderUpdate) sqlSave(ctx context.Context) (_node int, err e
 	if value, ok := _u.mutation.AddedOrderItemID(); ok {
 		_spec.AddField(procurementorder.FieldOrderItemID, field.TypeUint64, value)
 	}
+	if value, ok := _u.mutation.UpstreamSourceSnapshot(); ok {
+		_spec.SetField(procurementorder.FieldUpstreamSourceSnapshot, field.TypeJSON, value)
+	}
+	if _u.mutation.UpstreamSourceSnapshotCleared() {
+		_spec.ClearField(procurementorder.FieldUpstreamSourceSnapshot, field.TypeJSON)
+	}
 	if value, ok := _u.mutation.ConnectionID(); ok {
 		_spec.SetField(procurementorder.FieldConnectionID, field.TypeUint64, value)
 	}
@@ -457,6 +475,18 @@ func (_u *ProcurementOrderUpdateOne) SetNillableOrderItemID(v *uint64) *Procurem
 // AddOrderItemID adds value to the "order_item_id" field.
 func (_u *ProcurementOrderUpdateOne) AddOrderItemID(v int64) *ProcurementOrderUpdateOne {
 	_u.mutation.AddOrderItemID(v)
+	return _u
+}
+
+// SetUpstreamSourceSnapshot sets the "upstream_source_snapshot" field.
+func (_u *ProcurementOrderUpdateOne) SetUpstreamSourceSnapshot(v map[string]interface{}) *ProcurementOrderUpdateOne {
+	_u.mutation.SetUpstreamSourceSnapshot(v)
+	return _u
+}
+
+// ClearUpstreamSourceSnapshot clears the value of the "upstream_source_snapshot" field.
+func (_u *ProcurementOrderUpdateOne) ClearUpstreamSourceSnapshot() *ProcurementOrderUpdateOne {
+	_u.mutation.ClearUpstreamSourceSnapshot()
 	return _u
 }
 
@@ -790,6 +820,12 @@ func (_u *ProcurementOrderUpdateOne) sqlSave(ctx context.Context) (_node *Procur
 	}
 	if value, ok := _u.mutation.AddedOrderItemID(); ok {
 		_spec.AddField(procurementorder.FieldOrderItemID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.UpstreamSourceSnapshot(); ok {
+		_spec.SetField(procurementorder.FieldUpstreamSourceSnapshot, field.TypeJSON, value)
+	}
+	if _u.mutation.UpstreamSourceSnapshotCleared() {
+		_spec.ClearField(procurementorder.FieldUpstreamSourceSnapshot, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.ConnectionID(); ok {
 		_spec.SetField(procurementorder.FieldConnectionID, field.TypeUint64, value)

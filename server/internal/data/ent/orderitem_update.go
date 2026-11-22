@@ -223,6 +223,18 @@ func (_u *OrderItemUpdate) ClearFormAnswers() *OrderItemUpdate {
 	return _u
 }
 
+// SetUpstreamSourceSnapshot sets the "upstream_source_snapshot" field.
+func (_u *OrderItemUpdate) SetUpstreamSourceSnapshot(v map[string]interface{}) *OrderItemUpdate {
+	_u.mutation.SetUpstreamSourceSnapshot(v)
+	return _u
+}
+
+// ClearUpstreamSourceSnapshot clears the value of the "upstream_source_snapshot" field.
+func (_u *OrderItemUpdate) ClearUpstreamSourceSnapshot() *OrderItemUpdate {
+	_u.mutation.ClearUpstreamSourceSnapshot()
+	return _u
+}
+
 // SetAssignedAdminID sets the "assigned_admin_id" field.
 func (_u *OrderItemUpdate) SetAssignedAdminID(v uint64) *OrderItemUpdate {
 	_u.mutation.ResetAssignedAdminID()
@@ -772,6 +784,12 @@ func (_u *OrderItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.FormAnswersCleared() {
 		_spec.ClearField(orderitem.FieldFormAnswers, field.TypeJSON)
 	}
+	if value, ok := _u.mutation.UpstreamSourceSnapshot(); ok {
+		_spec.SetField(orderitem.FieldUpstreamSourceSnapshot, field.TypeJSON, value)
+	}
+	if _u.mutation.UpstreamSourceSnapshotCleared() {
+		_spec.ClearField(orderitem.FieldUpstreamSourceSnapshot, field.TypeJSON)
+	}
 	if value, ok := _u.mutation.AssignedAdminID(); ok {
 		_spec.SetField(orderitem.FieldAssignedAdminID, field.TypeUint64, value)
 	}
@@ -1128,6 +1146,18 @@ func (_u *OrderItemUpdateOne) AppendFormAnswers(v []map[string]string) *OrderIte
 // ClearFormAnswers clears the value of the "form_answers" field.
 func (_u *OrderItemUpdateOne) ClearFormAnswers() *OrderItemUpdateOne {
 	_u.mutation.ClearFormAnswers()
+	return _u
+}
+
+// SetUpstreamSourceSnapshot sets the "upstream_source_snapshot" field.
+func (_u *OrderItemUpdateOne) SetUpstreamSourceSnapshot(v map[string]interface{}) *OrderItemUpdateOne {
+	_u.mutation.SetUpstreamSourceSnapshot(v)
+	return _u
+}
+
+// ClearUpstreamSourceSnapshot clears the value of the "upstream_source_snapshot" field.
+func (_u *OrderItemUpdateOne) ClearUpstreamSourceSnapshot() *OrderItemUpdateOne {
+	_u.mutation.ClearUpstreamSourceSnapshot()
 	return _u
 }
 
@@ -1709,6 +1739,12 @@ func (_u *OrderItemUpdateOne) sqlSave(ctx context.Context) (_node *OrderItem, er
 	}
 	if _u.mutation.FormAnswersCleared() {
 		_spec.ClearField(orderitem.FieldFormAnswers, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.UpstreamSourceSnapshot(); ok {
+		_spec.SetField(orderitem.FieldUpstreamSourceSnapshot, field.TypeJSON, value)
+	}
+	if _u.mutation.UpstreamSourceSnapshotCleared() {
+		_spec.ClearField(orderitem.FieldUpstreamSourceSnapshot, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.AssignedAdminID(); ok {
 		_spec.SetField(orderitem.FieldAssignedAdminID, field.TypeUint64, value)

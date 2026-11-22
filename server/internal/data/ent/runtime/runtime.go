@@ -1580,59 +1580,59 @@ func init() {
 	// orderitem.DefaultSocialPurchaseSnapshot holds the default value on creation for the social_purchase_snapshot field.
 	orderitem.DefaultSocialPurchaseSnapshot = orderitemDescSocialPurchaseSnapshot.Default.(string)
 	// orderitemDescAssignedAdminID is the schema descriptor for assigned_admin_id field.
-	orderitemDescAssignedAdminID := orderitemFields[11].Descriptor()
+	orderitemDescAssignedAdminID := orderitemFields[12].Descriptor()
 	// orderitem.DefaultAssignedAdminID holds the default value on creation for the assigned_admin_id field.
 	orderitem.DefaultAssignedAdminID = orderitemDescAssignedAdminID.Default.(uint64)
 	// orderitemDescSkuName is the schema descriptor for sku_name field.
-	orderitemDescSkuName := orderitemFields[12].Descriptor()
+	orderitemDescSkuName := orderitemFields[13].Descriptor()
 	// orderitem.SkuNameValidator is a validator for the "sku_name" field. It is called by the builders before save.
 	orderitem.SkuNameValidator = orderitemDescSkuName.Validators[0].(func(string) error)
 	// orderitemDescCost is the schema descriptor for cost field.
-	orderitemDescCost := orderitemFields[16].Descriptor()
+	orderitemDescCost := orderitemFields[17].Descriptor()
 	// orderitem.DefaultCost holds the default value on creation for the cost field.
 	orderitem.DefaultCost = orderitemDescCost.Default.(int64)
 	// orderitemDescGoodsType is the schema descriptor for goods_type field.
-	orderitemDescGoodsType := orderitemFields[17].Descriptor()
+	orderitemDescGoodsType := orderitemFields[18].Descriptor()
 	// orderitem.DefaultGoodsType holds the default value on creation for the goods_type field.
 	orderitem.DefaultGoodsType = orderitemDescGoodsType.Default.(string)
 	// orderitemDescInventoryTracked is the schema descriptor for inventory_tracked field.
-	orderitemDescInventoryTracked := orderitemFields[18].Descriptor()
+	orderitemDescInventoryTracked := orderitemFields[19].Descriptor()
 	// orderitem.DefaultInventoryTracked holds the default value on creation for the inventory_tracked field.
 	orderitem.DefaultInventoryTracked = orderitemDescInventoryTracked.Default.(bool)
 	// orderitemDescPaidAmount is the schema descriptor for paid_amount field.
-	orderitemDescPaidAmount := orderitemFields[19].Descriptor()
+	orderitemDescPaidAmount := orderitemFields[20].Descriptor()
 	// orderitem.DefaultPaidAmount holds the default value on creation for the paid_amount field.
 	orderitem.DefaultPaidAmount = orderitemDescPaidAmount.Default.(int64)
 	// orderitemDescShippingAmount is the schema descriptor for shipping_amount field.
-	orderitemDescShippingAmount := orderitemFields[20].Descriptor()
+	orderitemDescShippingAmount := orderitemFields[21].Descriptor()
 	// orderitem.DefaultShippingAmount holds the default value on creation for the shipping_amount field.
 	orderitem.DefaultShippingAmount = orderitemDescShippingAmount.Default.(int64)
 	// orderitemDescRefundedAmount is the schema descriptor for refunded_amount field.
-	orderitemDescRefundedAmount := orderitemFields[21].Descriptor()
+	orderitemDescRefundedAmount := orderitemFields[22].Descriptor()
 	// orderitem.DefaultRefundedAmount holds the default value on creation for the refunded_amount field.
 	orderitem.DefaultRefundedAmount = orderitemDescRefundedAmount.Default.(int64)
 	// orderitemDescRefundedShipping is the schema descriptor for refunded_shipping field.
-	orderitemDescRefundedShipping := orderitemFields[22].Descriptor()
+	orderitemDescRefundedShipping := orderitemFields[23].Descriptor()
 	// orderitem.DefaultRefundedShipping holds the default value on creation for the refunded_shipping field.
 	orderitem.DefaultRefundedShipping = orderitemDescRefundedShipping.Default.(int64)
 	// orderitemDescCanceledQuantity is the schema descriptor for canceled_quantity field.
-	orderitemDescCanceledQuantity := orderitemFields[23].Descriptor()
+	orderitemDescCanceledQuantity := orderitemFields[24].Descriptor()
 	// orderitem.DefaultCanceledQuantity holds the default value on creation for the canceled_quantity field.
 	orderitem.DefaultCanceledQuantity = orderitemDescCanceledQuantity.Default.(int32)
 	// orderitemDescShippedQuantity is the schema descriptor for shipped_quantity field.
-	orderitemDescShippedQuantity := orderitemFields[24].Descriptor()
+	orderitemDescShippedQuantity := orderitemFields[25].Descriptor()
 	// orderitem.DefaultShippedQuantity holds the default value on creation for the shipped_quantity field.
 	orderitem.DefaultShippedQuantity = orderitemDescShippedQuantity.Default.(int32)
 	// orderitemDescReceivedQuantity is the schema descriptor for received_quantity field.
-	orderitemDescReceivedQuantity := orderitemFields[25].Descriptor()
+	orderitemDescReceivedQuantity := orderitemFields[26].Descriptor()
 	// orderitem.DefaultReceivedQuantity holds the default value on creation for the received_quantity field.
 	orderitem.DefaultReceivedQuantity = orderitemDescReceivedQuantity.Default.(int32)
 	// orderitemDescReturnedQuantity is the schema descriptor for returned_quantity field.
-	orderitemDescReturnedQuantity := orderitemFields[26].Descriptor()
+	orderitemDescReturnedQuantity := orderitemFields[27].Descriptor()
 	// orderitem.DefaultReturnedQuantity holds the default value on creation for the returned_quantity field.
 	orderitem.DefaultReturnedQuantity = orderitemDescReturnedQuantity.Default.(int32)
 	// orderitemDescFulfillmentStatus is the schema descriptor for fulfillment_status field.
-	orderitemDescFulfillmentStatus := orderitemFields[29].Descriptor()
+	orderitemDescFulfillmentStatus := orderitemFields[30].Descriptor()
 	// orderitem.DefaultFulfillmentStatus holds the default value on creation for the fulfillment_status field.
 	orderitem.DefaultFulfillmentStatus = orderitemDescFulfillmentStatus.Default.(string)
 	// orderitem.FulfillmentStatusValidator is a validator for the "fulfillment_status" field. It is called by the builders before save.
@@ -2099,23 +2099,23 @@ func init() {
 	// procurementorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	procurementorder.UpdateDefaultUpdatedAt = procurementorderDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// procurementorderDescUpstreamOrderID is the schema descriptor for upstream_order_id field.
-	procurementorderDescUpstreamOrderID := procurementorderFields[3].Descriptor()
+	procurementorderDescUpstreamOrderID := procurementorderFields[4].Descriptor()
 	// procurementorder.UpstreamOrderIDValidator is a validator for the "upstream_order_id" field. It is called by the builders before save.
 	procurementorder.UpstreamOrderIDValidator = procurementorderDescUpstreamOrderID.Validators[0].(func(string) error)
 	// procurementorderDescRetryCount is the schema descriptor for retry_count field.
-	procurementorderDescRetryCount := procurementorderFields[6].Descriptor()
+	procurementorderDescRetryCount := procurementorderFields[7].Descriptor()
 	// procurementorder.DefaultRetryCount holds the default value on creation for the retry_count field.
 	procurementorder.DefaultRetryCount = procurementorderDescRetryCount.Default.(int32)
 	// procurementorderDescDedupeKey is the schema descriptor for dedupe_key field.
-	procurementorderDescDedupeKey := procurementorderFields[9].Descriptor()
+	procurementorderDescDedupeKey := procurementorderFields[10].Descriptor()
 	// procurementorder.DedupeKeyValidator is a validator for the "dedupe_key" field. It is called by the builders before save.
 	procurementorder.DedupeKeyValidator = procurementorderDescDedupeKey.Validators[0].(func(string) error)
 	// procurementorderDescTraceID is the schema descriptor for trace_id field.
-	procurementorderDescTraceID := procurementorderFields[10].Descriptor()
+	procurementorderDescTraceID := procurementorderFields[11].Descriptor()
 	// procurementorder.TraceIDValidator is a validator for the "trace_id" field. It is called by the builders before save.
 	procurementorder.TraceIDValidator = procurementorderDescTraceID.Validators[0].(func(string) error)
 	// procurementorderDescUpstreamRefundID is the schema descriptor for upstream_refund_id field.
-	procurementorderDescUpstreamRefundID := procurementorderFields[12].Descriptor()
+	procurementorderDescUpstreamRefundID := procurementorderFields[13].Descriptor()
 	// procurementorder.UpstreamRefundIDValidator is a validator for the "upstream_refund_id" field. It is called by the builders before save.
 	procurementorder.UpstreamRefundIDValidator = procurementorderDescUpstreamRefundID.Validators[0].(func(string) error)
 	productMixin := schema.Product{}.Mixin()
