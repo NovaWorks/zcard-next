@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -218,19 +219,20 @@ func (r *ProcureRepo) recordMissing(ctx context.Context, itemID uint64) error {
 		if count >= int(it.Quantity) {
 			return nil
 		}
-		var connection uint64
-		var code string
-		if p, e := c.Product.Get(ctx, it.ProductID); e == nil {
-			connection = p.UpstreamSourceID
-			code = p.UpstreamProductCode
-		} else if !ent.IsNotFound(e) {
-			return e
-		}
-		po, err := r.CreatePending(ctx, it.ID, connection, code, it.Quantity, "manual", o.OrderNo)
+		// No upstream request was created. Retain the order-time source rather
+		// than treating today's binding as evidence of an actual purchase.
+		source := data.MissingProcurementSource(it)
+		connection, _ := strconv.ParseUint(stringSource(source, "connection_id"), 10, 64)
+		code, sku := stringSource(source, "product_code"), stringSource(source, "sku_id")
+
+		po, err := r.CreatePending(ctx, it.ID, connection, code, it.Quantity, "manual", o.OrderNo, sku)
 		if err != nil {
 			return err
 		}
-		return r.MarkManual(ctx, po.ID, "未能生成有效采购任务，请核实上游扣款和出货结果后人工补发；系统不会重复采购")
+		if err := c.ProcurementOrder.UpdateOneID(po.ID).SetUpstreamSourceSnapshot(source).Exec(ctx); err != nil {
+			return err
+		}
+		return r.MarkManual(ctx, po.ID, data.MissingProcurementReason)
 	})
 }
 
@@ -257,3 +259,5 @@ func (r *ProcureRepo) reconcileMissing(ctx context.Context) error {
 func (r *ProcureRepo) recordDeliveryFailure(ctx context.Context, id uint64) error {
 	return data.Client(ctx, r.data).ProcurementOrder.Update().Where(procurementorder.ID(id), procurementorder.StatusEQ(procurementorder.StatusPolling)).AddRetryCount(1).SetNextRetryAt(time.Now().UTC().Add(time.Minute)).SetLastError("上游已返回结果，本地交付失败，请重试交付或核实后转人工").Exec(ctx)
 }
+
+func stringSource(source map[string]any, key string) string { v, _ := source[key].(string); return v }

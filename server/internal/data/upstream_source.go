@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementitem"
@@ -10,6 +11,25 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/upstreamsource"
 )
+
+// MissingProcurementReason identifies historical placeholder records, which
+// never represented an actual upstream purchase.
+const MissingProcurementReason = "未能生成有效采购任务，请核实上游扣款和出货结果后人工补发；系统不会重复采购"
+
+func MissingProcurementSource(it *ent.OrderItem) map[string]any {
+	out := map[string]any{"version": "1", "kind": "unknown", "stage": "unavailable", "link_status": "unavailable", "record_kind": "missing_purchase"}
+	if it != nil && it.UpstreamSourceSnapshot["kind"] == "upstream" {
+		for k, v := range it.UpstreamSourceSnapshot {
+			out[k] = v
+		}
+		out["stage"] = "order"
+	}
+	return out
+}
+
+func missingProcurementSource(po *ent.ProcurementOrder) bool {
+	return po.ConnectionID == 0 || po.LastError == MissingProcurementReason || po.UpstreamSourceSnapshot["record_kind"] == "missing_purchase" || po.UpstreamSourceSnapshot["kind"] == "self"
+}
 
 func CaptureUpstreamSource(ctx context.Context, c *ent.Client, id uint64, code, sku, stage string) (map[string]any, error) {
 	in := upstreamsource.Input{ConnectionID: id, Code: code, SKU: sku, Stage: stage}
@@ -67,7 +87,7 @@ func ProcurementSources(ctx context.Context, c *ent.Client, rows []*ent.Procurem
 	out := map[uint64]map[string]any{}
 	ids, connIDs := []uint64{}, []uint64{}
 	for _, po := range rows {
-		if len(po.UpstreamSourceSnapshot) > 0 {
+		if po.UpstreamSourceSnapshot["record_kind"] == "missing_purchase" || len(po.UpstreamSourceSnapshot) > 0 && !missingProcurementSource(po) {
 			out[po.ID] = po.UpstreamSourceSnapshot
 		} else {
 			ids = append(ids, po.ID)
@@ -85,6 +105,22 @@ func ProcurementSources(ctx context.Context, c *ent.Client, rows []*ent.Procurem
 	for _, it := range items {
 		codes[it.ProcurementID] = it.UpstreamSku
 	}
+	fallbackIDs := []uint64{}
+	for _, po := range rows {
+		if out[po.ID] == nil && (missingProcurementSource(po) || codes[po.ID] == "") {
+			fallbackIDs = append(fallbackIDs, po.OrderItemID)
+		}
+	}
+	orderItems := map[uint64]*ent.OrderItem{}
+	if len(fallbackIDs) > 0 {
+		records, e := c.OrderItem.Query().Where(orderitem.IDIn(fallbackIDs...)).All(ctx)
+		if e != nil {
+			return nil, e
+		}
+		for _, it := range records {
+			orderItems[it.ID] = it
+		}
+	}
 	conns, err := c.SupplyConnection.Query().Where(supplyconnection.IDIn(connIDs...)).All(ctx)
 	if err != nil {
 		return nil, err
@@ -95,6 +131,10 @@ func ProcurementSources(ctx context.Context, c *ent.Client, rows []*ent.Procurem
 	}
 	for _, po := range rows {
 		if out[po.ID] != nil {
+			continue
+		}
+		if missingProcurementSource(po) || codes[po.ID] == "" {
+			out[po.ID] = MissingProcurementSource(orderItems[po.OrderItemID])
 			continue
 		}
 		in := upstreamsource.Input{ConnectionID: po.ConnectionID, Code: codes[po.ID], Stage: "legacy"}
