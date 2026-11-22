@@ -47943,8 +47943,8 @@ func (m *OutboxEventMutation) ResetAggregateID() {
 }
 
 // SetPayload sets the "payload" field.
-func (m *OutboxEventMutation) SetPayload(j json.RawMessage) {
-	m.payload = &j
+func (m *OutboxEventMutation) SetPayload(jm json.RawMessage) {
+	m.payload = &jm
 	m.appendpayload = nil
 }
 
@@ -47974,9 +47974,9 @@ func (m *OutboxEventMutation) OldPayload(ctx context.Context) (v json.RawMessage
 	return oldValue.Payload, nil
 }
 
-// AppendPayload adds j to the "payload" field.
-func (m *OutboxEventMutation) AppendPayload(j json.RawMessage) {
-	m.appendpayload = append(m.appendpayload, j...)
+// AppendPayload adds jm to the "payload" field.
+func (m *OutboxEventMutation) AppendPayload(jm json.RawMessage) {
+	m.appendpayload = append(m.appendpayload, jm...)
 }
 
 // AppendedPayload returns the list of values that were appended to the "payload" field in this mutation.
@@ -49889,8 +49889,8 @@ func (m *PaymentMutation) ResetGatewayOrderRef() {
 }
 
 // SetGatewayContext sets the "gateway_context" field.
-func (m *PaymentMutation) SetGatewayContext(j json.RawMessage) {
-	m.gateway_context = &j
+func (m *PaymentMutation) SetGatewayContext(jm json.RawMessage) {
+	m.gateway_context = &jm
 	m.appendgateway_context = nil
 }
 
@@ -49920,9 +49920,9 @@ func (m *PaymentMutation) OldGatewayContext(ctx context.Context) (v json.RawMess
 	return oldValue.GatewayContext, nil
 }
 
-// AppendGatewayContext adds j to the "gateway_context" field.
-func (m *PaymentMutation) AppendGatewayContext(j json.RawMessage) {
-	m.appendgateway_context = append(m.appendgateway_context, j...)
+// AppendGatewayContext adds jm to the "gateway_context" field.
+func (m *PaymentMutation) AppendGatewayContext(jm json.RawMessage) {
+	m.appendgateway_context = append(m.appendgateway_context, jm...)
 }
 
 // AppendedGatewayContext returns the list of values that were appended to the "gateway_context" field in this mutation.
@@ -50388,8 +50388,8 @@ func (m *PaymentMutation) ResetFee() {
 }
 
 // SetPricingSnapshot sets the "pricing_snapshot" field.
-func (m *PaymentMutation) SetPricingSnapshot(j json.RawMessage) {
-	m.pricing_snapshot = &j
+func (m *PaymentMutation) SetPricingSnapshot(jm json.RawMessage) {
+	m.pricing_snapshot = &jm
 	m.appendpricing_snapshot = nil
 }
 
@@ -50419,9 +50419,9 @@ func (m *PaymentMutation) OldPricingSnapshot(ctx context.Context) (v json.RawMes
 	return oldValue.PricingSnapshot, nil
 }
 
-// AppendPricingSnapshot adds j to the "pricing_snapshot" field.
-func (m *PaymentMutation) AppendPricingSnapshot(j json.RawMessage) {
-	m.appendpricing_snapshot = append(m.appendpricing_snapshot, j...)
+// AppendPricingSnapshot adds jm to the "pricing_snapshot" field.
+func (m *PaymentMutation) AppendPricingSnapshot(jm json.RawMessage) {
+	m.appendpricing_snapshot = append(m.appendpricing_snapshot, jm...)
 }
 
 // AppendedPricingSnapshot returns the list of values that were appended to the "pricing_snapshot" field in this mutation.
@@ -50538,8 +50538,8 @@ func (m *PaymentMutation) ResetPaidAt() {
 }
 
 // SetRaw sets the "raw" field.
-func (m *PaymentMutation) SetRaw(j json.RawMessage) {
-	m.raw = &j
+func (m *PaymentMutation) SetRaw(jm json.RawMessage) {
+	m.raw = &jm
 	m.appendraw = nil
 }
 
@@ -50569,9 +50569,9 @@ func (m *PaymentMutation) OldRaw(ctx context.Context) (v json.RawMessage, err er
 	return oldValue.Raw, nil
 }
 
-// AppendRaw adds j to the "raw" field.
-func (m *PaymentMutation) AppendRaw(j json.RawMessage) {
-	m.appendraw = append(m.appendraw, j...)
+// AppendRaw adds jm to the "raw" field.
+func (m *PaymentMutation) AppendRaw(jm json.RawMessage) {
+	m.appendraw = append(m.appendraw, jm...)
 }
 
 // AppendedRaw returns the list of values that were appended to the "raw" field in this mutation.
@@ -65664,8 +65664,8 @@ func (m *ProductContentBatchMutation) ResetActorID() {
 }
 
 // SetPayload sets the "payload" field.
-func (m *ProductContentBatchMutation) SetPayload(j json.RawMessage) {
-	m.payload = &j
+func (m *ProductContentBatchMutation) SetPayload(jm json.RawMessage) {
+	m.payload = &jm
 	m.appendpayload = nil
 }
 
@@ -65695,9 +65695,9 @@ func (m *ProductContentBatchMutation) OldPayload(ctx context.Context) (v json.Ra
 	return oldValue.Payload, nil
 }
 
-// AppendPayload adds j to the "payload" field.
-func (m *ProductContentBatchMutation) AppendPayload(j json.RawMessage) {
-	m.appendpayload = append(m.appendpayload, j...)
+// AppendPayload adds jm to the "payload" field.
+func (m *ProductContentBatchMutation) AppendPayload(jm json.RawMessage) {
+	m.appendpayload = append(m.appendpayload, jm...)
 }
 
 // AppendedPayload returns the list of values that were appended to the "payload" field in this mutation.
@@ -90696,8 +90696,8 @@ func (m *SettingMutation) ResetKey() {
 }
 
 // SetValue sets the "value" field.
-func (m *SettingMutation) SetValue(j json.RawMessage) {
-	m.value = &j
+func (m *SettingMutation) SetValue(jm json.RawMessage) {
+	m.value = &jm
 	m.appendvalue = nil
 }
 
@@ -90727,9 +90727,9 @@ func (m *SettingMutation) OldValue(ctx context.Context) (v json.RawMessage, err 
 	return oldValue.Value, nil
 }
 
-// AppendValue adds j to the "value" field.
-func (m *SettingMutation) AppendValue(j json.RawMessage) {
-	m.appendvalue = append(m.appendvalue, j...)
+// AppendValue adds jm to the "value" field.
+func (m *SettingMutation) AppendValue(jm json.RawMessage) {
+	m.appendvalue = append(m.appendvalue, jm...)
 }
 
 // AppendedValue returns the list of values that were appended to the "value" field in this mutation.
@@ -103479,8 +103479,8 @@ func (m *SupplyCatalogSnapshotMutation) ResetMessage() {
 }
 
 // SetPayload sets the "payload" field.
-func (m *SupplyCatalogSnapshotMutation) SetPayload(j json.RawMessage) {
-	m.payload = &j
+func (m *SupplyCatalogSnapshotMutation) SetPayload(jm json.RawMessage) {
+	m.payload = &jm
 	m.appendpayload = nil
 }
 
@@ -103510,9 +103510,9 @@ func (m *SupplyCatalogSnapshotMutation) OldPayload(ctx context.Context) (v json.
 	return oldValue.Payload, nil
 }
 
-// AppendPayload adds j to the "payload" field.
-func (m *SupplyCatalogSnapshotMutation) AppendPayload(j json.RawMessage) {
-	m.appendpayload = append(m.appendpayload, j...)
+// AppendPayload adds jm to the "payload" field.
+func (m *SupplyCatalogSnapshotMutation) AppendPayload(jm json.RawMessage) {
+	m.appendpayload = append(m.appendpayload, jm...)
 }
 
 // AppendedPayload returns the list of values that were appended to the "payload" field in this mutation.
@@ -106973,8 +106973,8 @@ func (m *SupplyImportItemMutation) ResetName() {
 }
 
 // SetSnapshot sets the "snapshot" field.
-func (m *SupplyImportItemMutation) SetSnapshot(j json.RawMessage) {
-	m.snapshot = &j
+func (m *SupplyImportItemMutation) SetSnapshot(jm json.RawMessage) {
+	m.snapshot = &jm
 	m.appendsnapshot = nil
 }
 
@@ -107004,9 +107004,9 @@ func (m *SupplyImportItemMutation) OldSnapshot(ctx context.Context) (v json.RawM
 	return oldValue.Snapshot, nil
 }
 
-// AppendSnapshot adds j to the "snapshot" field.
-func (m *SupplyImportItemMutation) AppendSnapshot(j json.RawMessage) {
-	m.appendsnapshot = append(m.appendsnapshot, j...)
+// AppendSnapshot adds jm to the "snapshot" field.
+func (m *SupplyImportItemMutation) AppendSnapshot(jm json.RawMessage) {
+	m.appendsnapshot = append(m.appendsnapshot, jm...)
 }
 
 // AppendedSnapshot returns the list of values that were appended to the "snapshot" field in this mutation.
@@ -111609,8 +111609,8 @@ func (m *SupplySyncTaskMutation) ResetRequestHash() {
 }
 
 // SetImportPayload sets the "import_payload" field.
-func (m *SupplySyncTaskMutation) SetImportPayload(j json.RawMessage) {
-	m.import_payload = &j
+func (m *SupplySyncTaskMutation) SetImportPayload(jm json.RawMessage) {
+	m.import_payload = &jm
 	m.appendimport_payload = nil
 }
 
@@ -111640,9 +111640,9 @@ func (m *SupplySyncTaskMutation) OldImportPayload(ctx context.Context) (v json.R
 	return oldValue.ImportPayload, nil
 }
 
-// AppendImportPayload adds j to the "import_payload" field.
-func (m *SupplySyncTaskMutation) AppendImportPayload(j json.RawMessage) {
-	m.appendimport_payload = append(m.appendimport_payload, j...)
+// AppendImportPayload adds jm to the "import_payload" field.
+func (m *SupplySyncTaskMutation) AppendImportPayload(jm json.RawMessage) {
+	m.appendimport_payload = append(m.appendimport_payload, jm...)
 }
 
 // AppendedImportPayload returns the list of values that were appended to the "import_payload" field in this mutation.
