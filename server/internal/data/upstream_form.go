@@ -16,7 +16,7 @@ func UpstreamPurchaseFields(ctx context.Context, c *ent.Client, p *ent.Product, 
 		return nil, fmt.Errorf("上游填写规则与商品控件不一致，请重新同步商品")
 	}
 	connection, err := c.SupplyConnection.Get(ctx, p.UpstreamSourceID)
-	if err != nil || connection.Driver != "dujiao_next" {
+	if err != nil || (connection.Driver != "dujiao_next" && connection.Driver != "mcy_shop") {
 		return nil, fmt.Errorf("该货源不支持传递填写资料")
 	}
 	fields := map[string]purchaseform.Field{}
