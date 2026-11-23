@@ -10,7 +10,7 @@ import (
 )
 
 func TestUpstreamFormOrderSnapshotsSupplierKeys(t *testing.T) {
-	for _, driver := range []string{"dujiao_next", "mcy_shop", "zcard"} {
+	for _, driver := range []string{"dujiao_next", "mcy_shop", "zcard", "acg_faka"} {
 		t.Run(driver, func(t *testing.T) { testUpstreamFormOrderSnapshotsSupplierKeys(t, driver) })
 	}
 }
@@ -63,7 +63,7 @@ func TestMCYEmptyFormAllowsQuoteWithoutCreatingOrder(t *testing.T) {
 		t.Fatal("quote persisted an order")
 	}
 	// Unrecognized drivers and changed supplier bindings must still be rejected.
-	d.Client.SupplyConnection.UpdateOneID(connection.ID).SetDriver("acg_faka").ExecX(ctx)
+	d.Client.SupplyConnection.UpdateOneID(connection.ID).SetDriver("19csn").ExecX(ctx)
 	if _, err := uc.CreateOrder(ctx, input); err == nil {
 		t.Fatal("unsupported driver accepted form contract")
 	}

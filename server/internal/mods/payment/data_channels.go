@@ -38,9 +38,10 @@ import (
 
 // PaymentRepoImpl 支付仓储。
 type PaymentRepoImpl struct {
-	data   *data.Data
-	Cipher *crypto.Box // ZCARD_DATA_KEY
-	reg    *Registry   // 渠道 adapter 注册表
+	data               *data.Data
+	Cipher             *crypto.Box // ZCARD_DATA_KEY
+	cardPurchaseCipher cardPurchaseCipher
+	reg                *Registry // 渠道 adapter 注册表
 	// 回调管线依赖（wire 注入， 破环点）：
 	lifecycle orderport.OrderLifecycle    // 订单型回调 → 状态机推进 + order.paid 事件（同事务）
 	wallet    walletport.Wallet           // 余额支付扣款 / 充值到账入账（通道 B 同事务）

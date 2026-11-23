@@ -118,6 +118,7 @@ func (OrderItem) Mixin() []ent.Mixin { return []ent.Mixin{TimeMixin{}, TenantMix
 
 func (OrderItem) Fields() []ent.Field {
 	return []ent.Field{
+ field.Bytes("upstream_card_cipher").Optional(),
 		field.Uint64("id"),
 		field.Uint64("order_id").Comment("父订单（硬外键 → orders）"),
 		field.Uint64("product_id"),

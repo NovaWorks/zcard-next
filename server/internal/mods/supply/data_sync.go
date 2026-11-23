@@ -647,6 +647,7 @@ func (s *SyncService) syncOneLocked(ctx context.Context, taskID uint64, task *en
 	// upsert 本地商品（价格 -1 = 不更新）
 	write := catalogport.UpstreamProductInput{
 		FormFields:  p.FormFields,
+		CardRules:   p.CardRules,
 		ProductKind: p.ProductKind, DeliveryKind: p.DeliveryKind, SMSProduct: p.SMSProduct, SocialSchema: p.SocialSchema,
 		ConnectionID:        conn.ID,
 		UpstreamProductCode: p.ID,
@@ -1135,6 +1136,7 @@ func (s *SyncService) importOne(ctx context.Context, conn *ent.SupplyConnection,
 	}
 	write := catalogport.UpstreamProductInput{
 		FormFields:  p.FormFields,
+		CardRules:   p.CardRules,
 		ProductKind: p.ProductKind, DeliveryKind: p.DeliveryKind, SMSProduct: p.SMSProduct, SocialSchema: p.SocialSchema,
 		ConnectionID:        conn.ID,
 		UpstreamProductCode: p.ID,

@@ -71,6 +71,7 @@ message CreateOrderRequest {
 }
 
 message OrderItemInput {
+ string card_selection = 5;
   map<string, string> control_answers = 4;
   uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
   uint64 sku_id = 2;
@@ -78,6 +79,7 @@ message OrderItemInput {
 }
 
 message CreateOrderReply {
+ int64 points_total = 8;
   // At least one item has shipping payable to the carrier on delivery.
   bool shipping_collect = 7;
   string order_access_token = 6;

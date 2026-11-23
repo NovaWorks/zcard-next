@@ -8,9 +8,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
 	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/settings/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/cardpurchase"
 	kerrors "github.com/go-kratos/kratos/v3/errors"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"entgo.io/ent/dialect/sql"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
@@ -59,7 +62,7 @@ func (s *StoreCartService) AddCartItem(ctx context.Context, req *storefrontv1.Ad
 	if err != nil {
 		return nil, err
 	}
-	if req.GetQuantity() <= 0 || req.GetQuantity() > 99 {
+	if req.GetQuantity() <= 0 {
 		return nil, errors.New("cart.QUANTITY_INVALID: 1-99")
 	}
 	client := data.Client(ctx, s.data)
@@ -86,21 +89,52 @@ func (s *StoreCartService) AddCartItem(ctx context.Context, req *storefrontv1.Ad
 	if reuse && req.GetQuantity() != 1 {
 		return nil, errors.New("该规格每次只需购买一份")
 	}
-	// 合并：唯一索引 (user_id, product_id, sku_id) 冲突时数量累加（AddQuantity）
-	if err := client.CartItem.Create().
-		SetUserID(userID).
-		SetProductID(req.GetProductId()).
-		SetSkuID(req.GetSkuId()).
-		SetQuantity(req.GetQuantity()).
-		OnConflict(
-			sql.ConflictColumns(cartitem.FieldUserID, cartitem.FieldProductID, cartitem.FieldSkuID),
-		).Update(func(u *ent.CartItemUpsert) {
-		if reuse {
-			u.SetQuantity(1)
-		} else {
-			u.AddQuantity(req.GetQuantity())
+	err = data.PurchaseRetry(ctx, s.data, func(txCtx context.Context) error {
+		if e := data.LockPurchaseProducts(txCtx, s.data, p.SubsiteID, []uint64{p.ID}); e != nil {
+			return e
 		}
-	}).Exec(ctx); err != nil {
+		current, e := data.Client(txCtx, s.data).Product.Get(txCtx, p.ID)
+		if e != nil {
+			return e
+		}
+		quantity := int64(req.GetQuantity())
+		old, e := s.myItem(txCtx, userID, p.ID, req.GetSkuId())
+		if e != nil && !ent.IsNotFound(e) {
+			return e
+		}
+		if old != nil && !reuse {
+			quantity += int64(old.Quantity)
+		}
+		if reuse {
+			quantity = 1
+		}
+		if quantity > 2147483647 {
+			return fmt.Errorf("cart.QUANTITY_INVALID")
+		}
+		if e := cartCardQuantity(current, int(quantity)); e != nil {
+			return e
+		}
+		// 合并：唯一索引 (user_id, product_id, sku_id) 冲突时数量累加（AddQuantity）
+		if err := data.Client(txCtx, s.data).CartItem.Create().
+			SetUserID(userID).
+			SetProductID(req.GetProductId()).
+			SetSkuID(req.GetSkuId()).
+			SetQuantity(req.GetQuantity()).
+			OnConflict(
+				sql.ConflictColumns(cartitem.FieldUserID, cartitem.FieldProductID, cartitem.FieldSkuID),
+			).Update(func(u *ent.CartItemUpsert) {
+			if reuse {
+				u.SetQuantity(1)
+			} else {
+				u.AddQuantity(req.GetQuantity())
+			}
+		}).Exec(txCtx); err != nil {
+			return err
+		}
+		return nil
+
+	})
+	if err != nil {
 		return nil, err
 	}
 	// 回读合并后的行（upsert 无 returning）
@@ -154,29 +188,52 @@ func (s *StoreCartService) UpdateCartItem(ctx context.Context, req *storefrontv1
 	if err != nil {
 		return nil, errors.New("cart.ITEM_NOT_FOUND")
 	}
-	if req.GetQuantity() < 0 || req.GetQuantity() > 99 {
+	if req.GetQuantity() < 0 {
 		return nil, errors.New("cart.QUANTITY_INVALID: 0-99")
 	}
-	client := data.Client(ctx, s.data)
 	if req.GetQuantity() == 0 {
-		if err := client.CartItem.DeleteOneID(row.ID).Exec(ctx); err != nil {
-			return nil, err
+		if _, e := s.RemoveCartItem(ctx, &storefrontv1.RemoveCartItemRequest{Id: row.ID}); e != nil {
+			return nil, e
 		}
 		return &storefrontv1.CartItem{Id: row.ID}, nil
 	}
-	p, err := client.Product.Get(ctx, row.ProductID)
+	anchor, err := data.Client(ctx, s.data).Product.Get(ctx, row.ProductID)
 	if err != nil {
 		return nil, err
 	}
-	sku, err := data.DeliverySKU(ctx, client, p, row.SkuID)
+	err = data.PurchaseRetry(ctx, s.data, func(tx context.Context) error {
+		c := data.Client(tx, s.data)
+		if e := data.LockPurchaseProducts(tx, s.data, anchor.SubsiteID, []uint64{anchor.ID}); e != nil {
+			return e
+		}
+		current, e := s.myItemByID(tx, userID, req.GetId())
+		if e != nil {
+			return e
+		}
+		if req.GetQuantity() == 0 {
+			return c.CartItem.DeleteOneID(current.ID).Exec(tx)
+		}
+		p, e := c.Product.Get(tx, anchor.ID)
+		if e != nil {
+			return e
+		}
+		if e = cartCardQuantity(p, int(req.GetQuantity())); e != nil {
+			return e
+		}
+		sku, e := data.DeliverySKU(tx, c, p, current.SkuID)
+		if e != nil {
+			return e
+		}
+		if data.StockSource(p, sku) == "reuse" && req.GetQuantity() != 1 {
+			return fmt.Errorf("该规格每次只需购买一份")
+		}
+		return c.CartItem.UpdateOneID(current.ID).SetQuantity(req.GetQuantity()).Exec(tx)
+	})
 	if err != nil {
 		return nil, err
 	}
-	if data.StockSource(p, sku) == "reuse" && req.GetQuantity() != 1 {
-		return nil, errors.New("该规格每次只需购买一份")
-	}
-	if err := client.CartItem.UpdateOne(row).SetQuantity(req.GetQuantity()).Exec(ctx); err != nil {
-		return nil, err
+	if req.GetQuantity() == 0 {
+		return &storefrontv1.CartItem{Id: row.ID}, nil
 	}
 	row.Quantity = req.GetQuantity()
 	return s.toItemPB(ctx, row)
@@ -195,8 +252,27 @@ func (s *StoreCartService) RemoveCartItem(ctx context.Context, req *storefrontv1
 	if err != nil {
 		return nil, errors.New("cart.ITEM_NOT_FOUND")
 	}
-	if err := data.Client(ctx, s.data).CartItem.DeleteOne(row).Exec(ctx); err != nil {
-		return nil, err
+	anchor, e := data.Client(ctx, s.data).Product.Get(ctx, row.ProductID)
+	if ent.IsNotFound(e) {
+		if e = data.Client(ctx, s.data).CartItem.DeleteOneID(row.ID).Exec(ctx); e != nil {
+			return nil, e
+		}
+		return &emptypb.Empty{}, nil
+	}
+	if e != nil {
+		return nil, e
+	}
+	if e = data.PurchaseRetry(ctx, s.data, func(tx context.Context) error {
+		if e := data.LockPurchaseProducts(tx, s.data, anchor.SubsiteID, []uint64{anchor.ID}); e != nil {
+			return e
+		}
+		current, e := s.myItemByID(tx, userID, row.ID)
+		if e != nil {
+			return e
+		}
+		return data.Client(tx, s.data).CartItem.DeleteOneID(current.ID).Exec(tx)
+	}); e != nil {
+		return nil, e
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -232,6 +308,17 @@ func (s *StoreCartService) toItemPB(ctx context.Context, row *ent.CartItem) (*st
 	}
 	if err != nil {
 		return nil, err
+	}
+	rules, ruleErr := cardpurchase.Decode(p.ControlConfig[cardpurchase.ConfigKey])
+	if ruleErr != nil {
+		return nil, ruleErr
+	}
+	if rules != nil {
+		raw, _ := json.Marshal(rules)
+		var v map[string]any
+		_ = json.Unmarshal(raw, &v)
+		item.CardPurchase, _ = structpb.NewStruct(v)
+		item.MaxQuantity = rules.Maximum
 	}
 	item.ProductName = p.Name
 	item.ProductCover = p.Cover
@@ -316,4 +403,15 @@ func (s *StoreCartService) requireEnabled(ctx context.Context) error {
 		return kerrors.Forbidden("cart.DISABLED", "购物车已关闭，请在商品详情页直接购买")
 	}
 	return nil
+}
+
+func cartCardQuantity(p *ent.Product, quantity int) error {
+	rules, e := cardpurchase.Decode(p.ControlConfig[cardpurchase.ConfigKey])
+	if e != nil {
+		return e
+	}
+	if rules == nil && quantity > 99 {
+		return fmt.Errorf("cart.QUANTITY_INVALID: 1-99")
+	}
+	return rules.Validate(quantity)
 }

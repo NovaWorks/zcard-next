@@ -5,6 +5,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/migrations"
 	"io/fs"
@@ -67,7 +68,7 @@ func TestProductLockUpgradePreservesProductsAndChildren(t *testing.T) {
 			if p.IsLocked || p.LockVersion != 0 || p.LockedAt != nil || p.Price != 999 || p.CategoryID != 40 {
 				t.Fatalf("old product changed: %+v", p)
 			}
-			if d.Client.ProductSku.Query().Where(productsku.ID(43)).Select(productsku.FieldID, productsku.FieldProductID).OnlyX(ctx).ProductID != 42 || d.Client.ProductControl.GetX(ctx, 44).ProductID != 42 {
+			if d.Client.ProductSku.Query().Where(productsku.ID(43)).Select(productsku.FieldID, productsku.FieldProductID).OnlyX(ctx).ProductID != 42 || d.Client.ProductControl.Query().Where(productcontrol.ID(44)).Select(productcontrol.FieldID, productcontrol.FieldProductID).OnlyX(ctx).ProductID != 42 {
 				t.Fatal("child lost")
 			}
 			if d.Client.Category.GetX(ctx, 40).PlacementVersion != 0 {

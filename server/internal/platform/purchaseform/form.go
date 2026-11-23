@@ -15,16 +15,17 @@ import (
 const ConfigKey = "upstream_purchase_form"
 
 type Field struct {
-	Key         string   `json:"key"`
-	Type        string   `json:"type"`
-	Label       string   `json:"label"`
-	Placeholder string   `json:"placeholder"`
-	Required    bool     `json:"required"`
-	Options     []string `json:"options,omitempty"`
-	Regex       string   `json:"regex,omitempty"`
-	Min         *float64 `json:"min,omitempty"`
-	Max         *float64 `json:"max,omitempty"`
-	MaxLength   int      `json:"max_length"`
+	Key          string            `json:"key"`
+	Type         string            `json:"type"`
+	Label        string            `json:"label"`
+	Placeholder  string            `json:"placeholder"`
+	Required     bool              `json:"required"`
+	Options      []string          `json:"options,omitempty"`
+	OptionLabels map[string]string `json:"option_labels,omitempty"`
+	Regex        string            `json:"regex,omitempty"`
+	Min          *float64          `json:"min,omitempty"`
+	Max          *float64          `json:"max,omitempty"`
+	MaxLength    int               `json:"max_length"`
 }
 
 type Binding struct {
@@ -63,6 +64,7 @@ func ParseSchema(raw json.RawMessage) ([]Field, error) {
 			Label, Placeholder any
 			Required           bool
 			Options            []string
+			OptionLabels       map[string]string `json:"option_labels"`
 			Min, Max           *float64
 			MaxLen             *int `json:"max_len"`
 			MaxLength          *int `json:"max_length"`
@@ -77,13 +79,13 @@ func ParseSchema(raw json.RawMessage) ([]Field, error) {
 	fields := make([]Field, 0, len(schema.Fields))
 	seen := map[string]bool{}
 	for _, v := range schema.Fields {
-		f := Field{Key: v.Key, Type: v.Type, Label: localized(v.Label), Placeholder: localized(v.Placeholder), Required: v.Required, Options: v.Options, Regex: v.Regex, Min: v.Min, Max: v.Max, MaxLength: 4000}
+		f := Field{Key: v.Key, Type: v.Type, Label: localized(v.Label), Placeholder: localized(v.Placeholder), Required: v.Required, Options: v.Options, OptionLabels: v.OptionLabels, Regex: v.Regex, Min: v.Min, Max: v.Max, MaxLength: 4000}
 		if !regexp.MustCompile(`^[a-z0-9_]{1,64}$`).MatchString(f.Key) || seen[f.Key] {
 			return nil, fmt.Errorf("上游填写字段标识无效或重复")
 		}
 		seen[f.Key] = true
 		switch f.Type {
-		case "text", "textarea", "phone", "email", "number", "select", "radio", "checkbox":
+		case "text", "password", "textarea", "phone", "email", "number", "select", "radio", "checkbox":
 		default:
 			return nil, fmt.Errorf("上游填写字段类型暂不支持")
 		}
@@ -120,7 +122,7 @@ func ParseSchema(raw json.RawMessage) ([]Field, error) {
 
 func (f Field) ControlType() string {
 	switch f.Type {
-	case "number", "select", "radio", "checkbox":
+	case "textarea", "password", "number", "select", "radio", "checkbox":
 		return f.Type
 	default:
 		return "text"
@@ -135,7 +137,8 @@ func (f Field) Value(value string) (any, error) {
 		}
 		return nil, nil
 	}
-	if utf8.RuneCountInString(v) > f.MaxLength {
+	if f.Type=="password" || f.Type=="textarea" {v=value}
+ if utf8.RuneCountInString(v) > f.MaxLength {
 		return nil, fmt.Errorf("填写内容超过长度限制")
 	}
 	if f.Regex != "" {

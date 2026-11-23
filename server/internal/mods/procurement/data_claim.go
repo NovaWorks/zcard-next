@@ -15,11 +15,23 @@ var ErrOrderNotPurchasable = errors.New("订单已关闭或商品已取消，不
 // Persist the in-flight claim under the same order lock used by refunds. The
 // remote call happens after commit; an ambiguous claim must be reconciled first.
 func (r *ProcureRepo) claimPurchase(ctx context.Context, itemID, connectionID uint64, code string, qty int32, strategy, trace string, sku ...string) (out *ent.ProcurementOrder, err error) {
-	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+	anchor, e := data.Client(ctx, r.data).OrderItem.Get(ctx, itemID)
+	if e != nil {
+		return nil, e
+	}
+	err = data.PurchaseRetry(ctx, r.data, func(ctx context.Context) error {
 		c := data.Client(ctx, r.data)
+		// Acquire a write lock before the first transaction snapshot (SQLite WAL
+		// cannot upgrade a stale read snapshot). The provider is called after commit.
+		if e := c.Order.UpdateOneID(anchor.OrderID).AddVersion(0).Exec(ctx); e != nil {
+			return e
+		}
 		it, e := c.OrderItem.Get(ctx, itemID)
 		if e != nil {
 			return e
+		}
+		if it.OrderID != anchor.OrderID {
+			return ErrOrderNotPurchasable
 		}
 		o, e := c.Order.Get(ctx, it.OrderID)
 		if e != nil {

@@ -1970,3 +1970,17 @@ ZCard v1.2.126 已发布
 
 详情及下载：https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.126
 ```
+
+---
+
+## v1.2.127 · 购买规则、实际报价与选卡
+
+```text
+ZCard v1.2.127 已发布
+
+tghao 数量限制、实际数量整单报价、自定义购买资料和预选卡已贯通 Market 与开源版 ZCard。购买前确认总价，购物车支持上游明确开放的数量范围；报价失效重新核算，采购结果不明确时核对原订单，避免重复拿货。
+
+本版有数据库迁移。先备份并保留原密钥，先升级 Market v1.2.108 并同步，再升级开源版 v1.2.127 并同步。此前已下架的商品需核对后手动上架。
+
+详情及下载：https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.127
+```

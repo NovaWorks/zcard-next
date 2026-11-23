@@ -27,8 +27,8 @@
         </div>
 
         <!-- 商品列表 -->
-        <div v-for="it in items" :key="it.id" class="cart-item" :class="{ invalid: !it.valid || (it.stock ?? 0) === 0 || it.stock < -1 }">
-          <input type="checkbox" :disabled="!it.valid || (it.stock ?? 0) === 0 || it.stock < -1" v-model="selected" :value="it.id" class="cart-item-check" />
+        <div v-for="it in items" :key="it.id" class="cart-item" :class="{ invalid: !it.valid || (it.stock ?? 0) === 0 || (it.stock < -1 && !it.card_purchase?.dynamic_quote) }">
+          <input type="checkbox" :disabled="!it.valid || (it.stock ?? 0) === 0 || (it.stock < -1 && !it.card_purchase?.dynamic_quote)" v-model="selected" :value="it.id" class="cart-item-check" />
           <router-link v-if="it.valid" :to="`/product/${it.product_id}`" class="cart-item-cover">
             <img v-if="it.product_cover" :src="it.product_cover" :alt="it.product_name" @error="onImgError" />
             <img v-else :src="NO_IMAGE" :alt="it.product_name" style="object-fit: contain;" />
@@ -41,23 +41,23 @@
             <span v-else class="cart-item-name">{{ it.product_name }}</span>
             <div class="cart-item-badges">
               <span v-if="!it.valid" class="badge red">{{ $t('已失效') }}</span>
-              <span v-else-if="(it.stock ?? 0) === 0 || it.stock < -1" class="badge orange">{{ it.stock < -1 ? $t('库存待确认') : $t('缺货') }}</span>
+              <span v-else-if="(it.stock ?? 0) === 0 || (it.stock < -1 && !it.card_purchase?.dynamic_quote)" class="badge orange">{{ it.stock < -1 ? $t('库存待确认') : $t('缺货') }}</span>
               <span v-if="it.points_only" class="tag">{{ $t('积分商品') }}</span>
             </div>
             <div class="cart-item-sku muted" v-if="it.sku_id">{{ skuNames[it.id] || $t('规格 #{0}', [it.sku_id]) }}</div>
           </div>
           <div class="cart-item-price">
             <div class="cart-price">{{ formatMoney(itemPrice(it)) }}</div>
-            <div class="muted">{{ $t('单价') }}</div>
+            <div class="muted">{{ it.card_purchase?.dynamic_quote ? $t('参考单价') : $t('单价') }}</div>
           </div>
           <div class="cart-item-qty">
-            <button class="cart-qty-btn" :disabled="(it.stock ?? 0) === 0 || it.stock < -1" @click="changeQty(it, it.quantity - 1)">−</button>
-            <input class="cart-qty-input" type="number" min="1" :max="it.max_quantity||99" v-model.number="it.quantity"
-                   :disabled="(it.stock ?? 0) === 0 || it.stock < -1" @change="changeQty(it, it.quantity)" />
-            <button class="cart-qty-btn" :disabled="(it.stock ?? 0) === 0 || it.stock < -1 || it.quantity >= (it.max_quantity||99)" @click="changeQty(it, it.quantity + 1)">＋</button>
+            <button class="cart-qty-btn" :disabled="(it.stock ?? 0) === 0 || (it.stock < -1 && !it.card_purchase?.dynamic_quote)" @click="changeQty(it, it.quantity - 1)">−</button>
+            <input class="cart-qty-input" type="number" :min="minimumQuantity(it)" :max="maximumQuantity(it)" step="1" v-model.number="it.quantity"
+                   :disabled="(it.stock ?? 0) === 0 || (it.stock < -1 && !it.card_purchase?.dynamic_quote)" @change="changeQty(it, it.quantity)" />
+            <button class="cart-qty-btn" :disabled="(it.stock ?? 0) === 0 || (it.stock < -1 && !it.card_purchase?.dynamic_quote) || (maximumQuantity(it) !== undefined && it.quantity >= maximumQuantity(it)!)" @click="changeQty(it, it.quantity + 1)">＋</button>
           </div>
           <div class="cart-item-subtotal">
-            <div class="cart-subtotal">{{ formatMoney(itemPrice(it) * it.quantity) }}</div>
+            <div class="cart-subtotal">{{ it.card_purchase?.dynamic_quote ? $t('结算时确认总价') : formatMoney(itemPrice(it) * it.quantity) }}</div>
             <div class="muted">{{ $t('小计') }}</div>
           </div>
           <button class="cart-item-del" @click="remove(it.id)" :title="$t('删除')">✕</button>
@@ -69,7 +69,7 @@
             <div class="muted">{{ $t('已选') }} <b>{{ selectedItems.length }}</b> {{ $t('项') }}</div>
             <div class="cart-total-row">
               <span class="muted">{{ $t('合计：') }}</span>
-              <span class="cart-total-price">{{ formatMoney(rawTotal) }}</span>
+              <span class="cart-total-price">{{ hasDynamicCard ? $t('结算时确认总价') : formatMoney(rawTotal) }}</span>
             </div>
             <div class="muted">{{ $t('优惠与实体运费将在结算时核算') }}</div>
           </div>
@@ -123,6 +123,7 @@ import { getRefCode } from '@/ref';
 import { fetchCaptchaConfig, type CaptchaConfig } from '@/api';
 import CaptchaInput from '@/components/CaptchaInput.vue';
 import { cartPriceCents } from '@/utils/commerce';
+import { minimumQuantity, maximumQuantity, validQuantity } from '@/utils/card-purchase';
 
 const router = useRouter();
 const items = ref<CartItem[]>([]);
@@ -149,12 +150,14 @@ const controlAnswers = ref<Record<string, Record<string,string>>>({});
 const controlsNeeded = ref<{ productId: number; key: string; name: string; controls: ProductControl[] }[]>([]);
 
 // 自营/对接都按服务端各自库存判断；游客快照仍由后端下单复核。
-const validItems = computed(() => items.value.filter((i) => i.valid && !(flash.active(i.flash_sale) && (i.flash_sale?.remaining || 0) <= 0) && (i.stock ?? 0) !== 0 && i.stock >= -1));
+const validItems = computed(() => items.value.filter((i) => i.valid && !(flash.active(i.flash_sale) && (i.flash_sale?.remaining || 0) <= 0) && (i.stock ?? 0) !== 0 && (i.stock >= -1 || i.card_purchase?.dynamic_quote)));
 const allSelected = computed(() => validItems.value.length > 0 && selected.value.length === validItems.value.length);
 const selectedItems = computed(() => validItems.value.filter((i) => selected.value.includes(i.id)));
 const productProperties = ref<Record<number,string>>({});
 const physicalOnly = computed(() => selectedItems.value.length > 0 && selectedItems.value.every(i => productProperties.value[i.product_id] === 'physical'));
 function itemPrice(item: CartItem) { return flash.price(cartPriceCents(item.price_cents), item.flash_sale); }
+const hasDynamicCard = computed(() => selectedItems.value.some(i => i.card_purchase?.dynamic_quote));
+const checkoutNeedsQuote = ref(false);
 const rawTotal = computed(() => selectedItems.value.reduce((s, i) => s + itemPrice(i) * i.quantity, 0));
 const controlsComplete = computed(() =>
   controlsNeeded.value.every((g) => g.controls.every((c) => !c.required || (controlAnswers.value[g.key]?.[String(c.id)] || '').trim() !== ''))
@@ -174,6 +177,13 @@ async function load() {
   selected.value = validItems.value.map((i) => i.id);
   const productIds = [...new Set(items.value.map(i => i.product_id))];
   const details = new Map(await Promise.all(productIds.map(async id => [id, (await getProduct(id)).data] as const)));
+  for (const item of items.value) {
+    const product = details.get(item.product_id);
+    if (!product) { item.valid = false; continue; }
+    item.card_purchase = product.card_purchase;
+    if (product.card_purchase) { item.min_quantity = minimumQuantity(product); item.max_quantity = product.card_purchase.maximum; }
+  }
+  selected.value = validItems.value.map(i => i.id);
   productProperties.value=Object.fromEntries([...details].map(([id,p])=>[id,p?.product_property || p?.goods_type || 'virtual']));
   skuNames.value = Object.fromEntries(items.value.filter(i => i.sku_id).map(i => [
     i.id, details.get(i.product_id)?.skus?.find(s => Number(s.id) === Number(i.sku_id))?.name || '',
@@ -187,10 +197,11 @@ function toggleAll() {
 
 async function changeQty(it: CartItem, qty: number) {
   if (!(await refreshCartSetting(true))) return;
-  const q = Math.max(1, Math.min(it.max_quantity||99, qty || 1));
+  if (!validQuantity(it, qty)) { alert($t('购买数量不符合商品规则，请调整后重试')); return; }
+  const q = qty;
   if (isGuestCart.value) {
     // 游客本地购物车
-    updateGuestQty(it.id, q);
+    updateGuestQty(it.id, q, { card_purchase:it.card_purchase, min_quantity:it.min_quantity, max_quantity:it.max_quantity });
     it.quantity = q;
     return;
   }
@@ -230,9 +241,12 @@ async function checkout() {
   controlAnswers.value = {};
   const needed: typeof controlsNeeded.value = [];
   checkoutCountries.value=null;
+  checkoutNeedsQuote.value=false;
   for (const it of selectedItems.value) {
     const { data: p } = await getProduct(it.product_id);
     if (!p) { alert($t("读取商品填写信息失败，请重试")); return; }
+    if (!validQuantity(p, it.quantity)) { alert($t('购买数量不符合商品规则，请调整后重试')); return; }
+    checkoutNeedsQuote.value ||= !!p.card_purchase?.dynamic_quote;
  if((p.product_property || p.goods_type)==='physical'){const current:string[]|null=checkoutCountries.value;checkoutCountries.value=current===null?[...(p.shipping_countries || [])]:(current as string[]).filter((c:string)=>(p.shipping_countries || []).includes(c))}
  const req = p.controls || [];
  const key = `${it.product_id}:${it.sku_id || 0}`; controlAnswers.value[key] = {};
@@ -266,8 +280,8 @@ async function doCheckout() {
       captcha_code: (isGuestCart.value && captchaCfg.value.order) ? captchaCode.value : undefined,
       contact: contact.value.trim() || undefined,
     };
-    const { data, error } = checkoutCountries.value !== null
-      ? { data: await shippingCheckout.value!.open(input, checkoutCountries.value), error: null }
+    const { data, error } = checkoutCountries.value !== null || checkoutNeedsQuote.value
+      ? { data: await shippingCheckout.value!.open(input, checkoutCountries.value === null ? undefined : checkoutCountries.value), error: null }
       : await createOrder(input);
     if (!data && !error) return;
     if (error || !data) {

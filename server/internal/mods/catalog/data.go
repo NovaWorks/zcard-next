@@ -18,6 +18,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/cardpurchase"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
@@ -174,8 +175,10 @@ func (r *ProductRepoImpl) Get(ctx context.Context, subsiteID, id uint64) (*port.
 }
 
 func toPortProduct(row *ent.Product) port.Product {
+	rules, _ := cardpurchase.Decode(row.ControlConfig[cardpurchase.ConfigKey])
 	name, description := sanitize.SMSPublicContent(row.ProductKind, row.Name, row.Description)
 	return port.Product{
+		CardRules:   rules,
 		ProductKind: row.ProductKind, DeliveryKind: row.DeliveryKind, SMSProduct: row.SmsProduct, SocialSchema: row.SocialSchema,
 		GoodsType: row.GoodsType, ProductProperty: row.ProductProperty, SalesVisible: row.SalesVisible, TrackInventory: row.TrackInventory, ShippingMode: row.ShippingMode, ShippingFee: row.ShippingFee, ShippingCountries: row.ShippingCountries, PhysicalStock: row.PhysicalStock,
 		ID:              row.ID,
@@ -252,7 +255,7 @@ func (r *ProductRepoImpl) ListControls(ctx context.Context, productID uint64) ([
 	for _, c := range rows {
 		out = append(out, port.Control{
 			ID: c.ID, Name: c.Name, Type: string(c.Type),
-			Required: c.Required, Options: c.Options, Sort: c.Sort,
+			Required: c.Required, Options: c.Options, OptionLabels: c.OptionLabels, Sort: c.Sort,
 			Placeholder: c.Placeholder, Validation: c.Validation, MaxLength: c.MaxLength,
 		})
 	}

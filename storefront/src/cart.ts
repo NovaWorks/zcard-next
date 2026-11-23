@@ -4,7 +4,8 @@ import { t as $t } from '@/i18n';
 // 登录后自动把本地购物车合并到后端并清空本地。
 
 import { ref } from 'vue';
-import type { FlashOffer } from './api';
+import type { FlashOffer, CardPurchaseRules } from './api';
+import { minimumQuantity, clampQuantity, validQuantity } from './utils/card-purchase';
 import { listCart, addCart, updateCart, removeCart } from './api';
 import { api, getToken } from './api/client';
 import { cartPriceCents } from './utils/commerce';
@@ -86,7 +87,7 @@ export function inCart(productId: number, skuId = 0) {
 }
 
 interface GuestCartItem {
-  max_quantity?: number;
+  max_quantity?: number; min_quantity?: number; card_purchase?: CardPurchaseRules;
   flash_sale?: FlashOffer;
   id: number;
   product_id: number;
@@ -139,10 +140,11 @@ export async function loadCart() {
 }
 
 /** 加购（登录 → 后端；游客/令牌失效 → 本地，同商品同 SKU 合并数量）；成功后同步角标 */
-export async function addToCart(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number; max_quantity?:number; flash_sale?: FlashOffer }, quantity: number, skuId = 0) {
+export async function addToCart(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number; max_quantity?:number; min_quantity?:number; card_purchase?:CardPurchaseRules; flash_sale?: FlashOffer }, quantity: number, skuId = 0) {
   if (!(await refreshCartSetting(true))) return { data: null, error: unavailableMessage() };
+  if (!validQuantity(product, quantity)) return { data: null, error: $t('购买数量不符合商品规则，请调整后重试') };
   if ((product.stock ?? 0) === 0) return { data: null, get error() { return $t("暂时缺货"); } };
-  if ((product.stock ?? 0) < -1) return { data: null, get error() { return $t("库存待确认，请稍后重试"); } };
+  if ((product.stock ?? 0) < -1 && !product.card_purchase?.dynamic_quote) return { data: null, get error() { return $t("库存待确认，请稍后重试"); } };
   let result;
   if (getToken()) {
     const { data, error, status } = await addCart(product.id, quantity, skuId);
@@ -160,11 +162,14 @@ export async function addToCart(product: { id: number; name: string; price_cents
 }
 
 /** 游客本地加购（同商品同 SKU 合并数量） */
-function addGuestLocal(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number; max_quantity?:number; flash_sale?: FlashOffer }, quantity: number, skuId: number) {
+function addGuestLocal(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number; max_quantity?:number; min_quantity?:number; card_purchase?:CardPurchaseRules; flash_sale?: FlashOffer }, quantity: number, skuId: number) {
   const items = guestItems();
   const existing = items.find((i) => i.product_id === product.id && (i.sku_id || 0) === skuId);
   if (existing) {
-    existing.quantity = Math.min(product.max_quantity||99, existing.quantity + quantity);
+    if (product.card_purchase && !validQuantity(product, existing.quantity + quantity)) return { data: null, error: $t('购买数量不符合商品规则，请调整后重试') };
+    existing.quantity = clampQuantity(product, existing.quantity + quantity);
+    existing.card_purchase = product.card_purchase;
+    existing.min_quantity = minimumQuantity(product);
     existing.max_quantity=product.max_quantity;
     existing.price_cents=cartPriceCents(product.price_cents);
     existing.flash_sale=product.flash_sale;
@@ -173,7 +178,9 @@ function addGuestLocal(product: { id: number; name: string; price_cents: number;
       id: Date.now(),
       product_id: product.id,
       sku_id: skuId,
-      quantity:Math.min(quantity,product.max_quantity||99),
+      quantity:clampQuantity(product,quantity),
+      min_quantity:minimumQuantity(product),
+      card_purchase:product.card_purchase,
       max_quantity:product.max_quantity,
       product_name: product.name,
       price_cents: cartPriceCents(product.price_cents),
@@ -190,11 +197,15 @@ function addGuestLocal(product: { id: number; name: string; price_cents: number;
 }
 
 /** 改数量（游客本地；同步角标计数） */
-export function updateGuestQty(id: number, quantity: number) {
+export function updateGuestQty(id: number, quantity: number, current?: { card_purchase?: CardPurchaseRules; min_quantity?: number; max_quantity?: number }) {
   if (!cartEnabled.value) return;
   const items = guestItems();
   const it = items.find((i) => i.id === id);
-  if (it) it.quantity = Math.max(1, Math.min(it.max_quantity||99, quantity || 1));
+  if (it) {
+    if (current) Object.assign(it, current);
+    if (!validQuantity(it, quantity)) return;
+    it.quantity = quantity;
+  }
   saveGuest(items);
   syncCartState(items);
 }

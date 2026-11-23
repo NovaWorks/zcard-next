@@ -1248,6 +1248,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "upstream_card_cipher", Type: field.TypeBytes, Nullable: true},
 		{Name: "product_id", Type: field.TypeUint64},
 		{Name: "sku_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "product_name", Type: field.TypeString, Default: ""},
@@ -1289,7 +1290,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "order_items_orders_items",
-				Columns:    []*schema.Column{OrderItemsColumns[35]},
+				Columns:    []*schema.Column{OrderItemsColumns[36]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1298,17 +1299,17 @@ var (
 			{
 				Name:    "orderitem_delivery_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrderItemsColumns[31]},
+				Columns: []*schema.Column{OrderItemsColumns[32]},
 			},
 			{
 				Name:    "orderitem_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrderItemsColumns[35]},
+				Columns: []*schema.Column{OrderItemsColumns[36]},
 			},
 			{
 				Name:    "orderitem_product_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrderItemsColumns[4]},
+				Columns: []*schema.Column{OrderItemsColumns[5]},
 			},
 		},
 	}
@@ -1870,12 +1871,13 @@ var (
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
 		{Name: "product_id", Type: field.TypeUint64},
 		{Name: "name", Type: field.TypeString, Size: 60},
-		{Name: "type", Type: field.TypeEnum, Enums: []string{"text", "password", "select", "number", "checkbox", "radio"}},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"text", "password", "select", "number", "checkbox", "radio", "textarea"}},
 		{Name: "placeholder", Type: field.TypeString, Default: ""},
 		{Name: "validation", Type: field.TypeString, Default: "text"},
 		{Name: "max_length", Type: field.TypeInt32, Default: 500},
 		{Name: "required", Type: field.TypeBool, Default: false},
 		{Name: "options", Type: field.TypeJSON, Nullable: true},
+		{Name: "option_labels", Type: field.TypeJSON, Nullable: true},
 		{Name: "sort", Type: field.TypeInt32, Default: 0},
 	}
 	// ProductControlsTable holds the schema information for the "product_controls" table.

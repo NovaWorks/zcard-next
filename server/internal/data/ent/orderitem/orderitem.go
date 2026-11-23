@@ -21,6 +21,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldSubsiteID holds the string denoting the subsite_id field in the database.
 	FieldSubsiteID = "subsite_id"
+	// FieldUpstreamCardCipher holds the string denoting the upstream_card_cipher field in the database.
+	FieldUpstreamCardCipher = "upstream_card_cipher"
 	// FieldOrderID holds the string denoting the order_id field in the database.
 	FieldOrderID = "order_id"
 	// FieldProductID holds the string denoting the product_id field in the database.
@@ -104,6 +106,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldSubsiteID,
+	FieldUpstreamCardCipher,
 	FieldOrderID,
 	FieldProductID,
 	FieldSkuID,

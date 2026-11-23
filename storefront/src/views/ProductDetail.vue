@@ -79,11 +79,15 @@
         <div class="pd-field">
           <label class="pd-label">{{ $t('购买数量') }}</label>
           <div class="pd-qty">
-            <button class="pd-qty-btn" @click="quantity = Math.max(1, quantity - 1)">−</button>
-            <input v-model.number="quantity" type="number" min="1" :max="reusableDelivery||smsProduct?1:99" :disabled="reusableDelivery||smsProduct" class="pd-qty-input" />
-            <button class="pd-qty-btn" :disabled="reusableDelivery||smsProduct" @click="quantity = Math.min(99, quantity + 1)">＋</button>
+            <button class="pd-qty-btn" @click="quantity = Math.max(minimumQty, quantity - 1)">−</button>
+            <input v-model.number="quantity" type="number" :min="minimumQty" :max="maximumQty" step="1" :disabled="reusableDelivery||smsProduct||!!cardSelection" class="pd-qty-input" />
+            <button class="pd-qty-btn" :disabled="reusableDelivery||smsProduct||!!cardSelection||(maximumQty !== undefined && quantity >= maximumQty)" @click="quantity = Math.min(maximumQty ?? Number.MAX_SAFE_INTEGER, quantity + 1)">＋</button>
           </div>
         </div>
+
+        <p v-if="p.card_purchase" class="muted">{{ $t('起购 {0}，每单上限 {1}', [minimumQty, maximumQty === undefined ? $t('不限') : maximumQty]) }}</p>
+        <CardSelection v-if="p.card_purchase?.preselection" :product-id="p.id" :sku-id="selectedSku" :minimum="minimumQty" v-model="cardSelection" />
+        <p v-if="dynamicCard" class="muted">{{ $t('商品单价仅供参考，按本次数量和填写资料确认实际总价。') }}</p>
 
         <!-- 库存进度条 -->
         <div v-if="stockShown && p.stock_type === 'card' && p.stock >= 0" class="pd-stock-bar">
@@ -153,10 +157,11 @@
             <template v-else-if="inCartNow"><ThemeIcon name="trash" />{{ $t('移除购物车') }}</template>
             <template v-else><ThemeIcon name="cart" />{{ $t('加入购物车') }}</template>
           </button>
-          <button v-if="!physicalProduct && !smsProduct && p.points_required && p.points_required > 0" class="pd-btn-points" :disabled="submitting || soldOut || stockUnknown || flashSoldOut" @click="exchangePoints">
+          <button v-if="!physicalProduct && !smsProduct && p.points_required && p.points_required > 0" class="pd-btn-points" :disabled="submitting || soldOut || stockUnknown || flashSoldOut || minimumQty > 1" @click="exchangePoints">
             {{ stockUnknown ? $t('库存待确认') : soldOut ? $t('已兑完') : $t('积分兑换（{0} 分）', [p.points_required]) }}
           </button>
         </div>
+        <p v-if="p.points_required && minimumQty > 1" class="muted">{{ $t('此商品起购数量大于一，不能单份积分兑换') }}</p>
       </div>
     </div>
 
@@ -197,6 +202,8 @@
 import { uiText, t as $t, localeTag, locale } from '@/i18n';
 
 import ShippingCheckout from "@/components/ShippingCheckout.vue";
+import CardSelection from "@/components/CardSelection.vue";
+import { minimumQuantity, maximumQuantity, validQuantity } from "@/utils/card-purchase";
 const shippingCheckout=ref<InstanceType<typeof ShippingCheckout>>();
 import { loadPublicConfig } from '@/config';
 import OrderFields from '@/components/OrderFields.vue';
@@ -226,6 +233,12 @@ const quantity = ref(1);
 const smsProduct=computed(()=>p.value?.delivery_kind==='sms_activation');
 watch(smsProduct,v=>{if(v){quantity.value=1;couponCode.value='';selectedSku.value=0;}});
 const selectedSku = ref(0);
+const cardSelection = ref('');
+const dynamicCard = computed(() => !!p.value?.card_purchase?.dynamic_quote);
+const minimumQty = computed(() => reusableDelivery.value || smsProduct.value ? 1 : minimumQuantity(p.value || {}));
+const maximumQty = computed(() => reusableDelivery.value || smsProduct.value || cardSelection.value ? 1 : maximumQuantity(p.value || {}));
+watch(cardSelection, value => { if (value) quantity.value = 1; });
+watch(selectedSku, () => { cardSelection.value = ''; });
 const queryPassword = ref('');
 const contact = ref('');
 const couponCode = ref('');
@@ -269,7 +282,7 @@ watch([description, () => p.value?.description], () => {
 watch(() => route.params, () => { previewImages.value = []; });
 
 // 购物车（淘宝式切换）：当前商品 + 所选 SKU 在购物车 → 按钮变灰「移除购物车」
-const canCart = computed(() => !smsProduct.value && p.value?.stock_status !== "on_demand" && cartEnabled.value && !(p.value?.points_required && p.value.points_required > 0));
+const canCart = computed(() => !smsProduct.value && !cardSelection.value && (p.value?.stock_status !== "on_demand" || dynamicCard.value) && cartEnabled.value && !(p.value?.points_required && p.value.points_required > 0));
 const inCartNow = computed(() => {
   if (!p.value || !canCart.value) return false;
   return !!cartItemOf(p.value.id, selectedSku.value || 0);
@@ -301,7 +314,7 @@ const stockDisplay = computed(() => {
 });
 // 自营/对接均使用各自库存；proto3 省略零值时仍按缺货处理。
 const effectiveStock = computed(()=>{if(manualDelivery.value)return p.value?.manual_stock ?? p.value?.stock ?? 0;const sku=p.value?.skus?.find(s=>Number(s.id)===Number(selectedSku.value));return sku ? (sku.stock ?? 0) : (p.value?.stock ?? 0);});
-const stockUnknown = computed(() => effectiveStock.value < -1 && p.value?.stock_status !== "on_demand");
+const stockUnknown = computed(() => effectiveStock.value < -1 && p.value?.stock_status !== "on_demand" && !dynamicCard.value);
 const stockRefreshing = ref(false);
 const stockRefreshMessage = ref('');
 const stockRetrySeconds = ref(0);
@@ -376,7 +389,7 @@ async function addToCart() {
   if (!p.value || soldOut.value || stockUnknown.value) return;
   addingCart.value = true;
   error.value = '';
-  const { error: err } = await addToCartStore({ ...p.value, max_quantity:reusableDelivery.value?1:99, stock:effectiveStock.value, price_cents: basePrice.value, flash_sale: selectedFlash.value }, quantity.value, selectedSku.value || 0);
+  const { error: err } = await addToCartStore({ ...p.value, min_quantity:minimumQty.value, max_quantity:maximumQty.value ?? 0, stock:effectiveStock.value, price_cents: basePrice.value, flash_sale: selectedFlash.value }, quantity.value, selectedSku.value || 0);
   addingCart.value = false;
   if (err) {
     error.value = err;
@@ -433,6 +446,7 @@ if (productResp.error) {
 } else {
   p.value = productResp.data;
   selectedSku.value = Number(productResp.data?.skus?.[0]?.id || 0);
+  quantity.value = minimumQuantity(productResp.data || {});
   if (productResp.data) applyProductSeo(productResp.data);
 }
 
@@ -529,6 +543,10 @@ function validateTradeFields(requireContact = true): boolean {
 
 async function buy() {
   if (!p.value || soldOut.value || stockUnknown.value) return;
+  if (!validQuantity(p.value, quantity.value) || (cardSelection.value && quantity.value !== 1)) {
+    error.value = $t('购买数量不符合商品规则，请调整后重试');
+    return;
+  }
   // 交易设置校验（查询密码 / 游客联系方式）
   if (!validateTradeFields()) { scrollToFormError(); return; }
   // 必填控件校验（proto3 空数组省略 → undefined 兜底空数组）
@@ -542,7 +560,7 @@ async function buy() {
   submitting.value = true;
   error.value = '';
   const input = {
-    items: [{ product_id: p.value.id, sku_id: selectedSku.value || undefined, quantity: quantity.value, control_answers:controlAnswers.value }],
+    items: [{ product_id: p.value.id, sku_id: selectedSku.value || undefined, quantity: quantity.value, control_answers:controlAnswers.value, card_selection:cardSelection.value || undefined }],
     query_password: physicalProduct.value ? undefined : queryPassword.value || undefined,
     contact: contact.value || undefined,
     coupon_code: couponCode.value || undefined,
@@ -550,8 +568,8 @@ async function buy() {
     captcha_id: (isGuest.value && captchaCfg.value.order) ? captchaId.value : undefined,
     captcha_code: (isGuest.value && captchaCfg.value.order) ? captchaCode.value : undefined,
   };
-  const {data,error:err}=physicalProduct.value
-   ? {data:await shippingCheckout.value!.open(input,p.value.shipping_countries || []),error:null}
+  const {data,error:err}=physicalProduct.value || dynamicCard.value
+   ? {data:await shippingCheckout.value!.open(input,physicalProduct.value ? p.value.shipping_countries || [] : undefined),error:null}
    : await createOrder(input);
   submitting.value = false;
   if (err) { error.value = err; return; }
@@ -563,6 +581,7 @@ async function buy() {
 // 积分兑换（：use_points → 服务端同事务扣积分 → 订单直落 paid → 取货页交付）
 async function exchangePoints() {
   if (!p.value || soldOut.value || stockUnknown.value) return;
+  if (minimumQty.value > 1) { error.value = $t('此商品起购数量大于一，不能单份积分兑换'); return; }
   if (!getToken()) {
     router.push({ path: '/login', query: { redirect: route.fullPath } });
     return;
@@ -575,13 +594,18 @@ async function exchangePoints() {
   if (!confirm($t("确认用 {0} 积分兑换本商品？", [p.value.points_required]))) return;
   submitting.value = true;
   error.value = '';
-  const { data, error: err } = await createOrder({
-    items: [{ product_id: p.value.id, sku_id:selectedSku.value || undefined, quantity: 1, control_answers:controlAnswers.value }],
+  const input = {
+    items: [{ product_id: p.value.id, sku_id:selectedSku.value || undefined, quantity: 1, control_answers:controlAnswers.value, card_selection:cardSelection.value || undefined }],
     query_password: queryPassword.value,
     use_points: true
-  });
+  };
+  const { data, error: err } = dynamicCard.value
+    ? {data:await shippingCheckout.value!.open(input),error:null}
+    : await createOrder(input);
   submitting.value = false;
   if (err) { error.value = err; return; }
+  if (!data) return;
+  rememberOrderPassword(data.order_no, queryPassword.value);
   alert($t("兑换成功，订单已支付，请前往取货页领取"));
   router.push('/fetch');
 }

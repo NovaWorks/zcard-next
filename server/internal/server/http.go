@@ -227,6 +227,7 @@ func NewHTTPServer(
 	adminv1.RegisterAdminOrderServiceHTTPServer(srv, orderAdminSvc)
 	adminv1.RegisterAdminPaymentServiceHTTPServer(srv, payAdminSvc)
 	storefrontv1.RegisterStoreOrderServiceHTTPServer(srv, orderStoreSvc)
+ order.RegisterCardHTTPServer(srv,orderStoreSvc)
 	storefrontv1.RegisterStoreCartServiceHTTPServer(srv, cartSvc)
 	storefrontv1.RegisterStorePaymentServiceHTTPServer(srv, payStoreSvc)
 	storefrontv1.RegisterStoreWalletServiceHTTPServer(srv, walletStoreSvc)

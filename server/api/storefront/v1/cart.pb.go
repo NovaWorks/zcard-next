@@ -11,6 +11,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -180,11 +181,12 @@ func (x *RemoveCartItemRequest) GetId() uint64 {
 }
 
 type CartItem struct {
-	state     protoimpl.MessageState `protogen:"open.v1"`
-	Id        uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	ProductId uint64                 `protobuf:"varint,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	SkuId     uint64                 `protobuf:"varint,3,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
-	Quantity  int32                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	CardPurchase *structpb.Struct       `protobuf:"bytes,15,opt,name=card_purchase,json=cardPurchase,proto3" json:"card_purchase,omitempty"`
+	Id           uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProductId    uint64                 `protobuf:"varint,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	SkuId        uint64                 `protobuf:"varint,3,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	Quantity     int32                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
 	// 商品快照（联查现值——结算前端展示用）
 	ProductName    string      `protobuf:"bytes,5,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
 	PriceCents     int64       `protobuf:"varint,6,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`     // 现价（SKU 解析后）
@@ -228,6 +230,13 @@ func (x *CartItem) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CartItem.ProtoReflect.Descriptor instead.
 func (*CartItem) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_cart_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *CartItem) GetCardPurchase() *structpb.Struct {
+	if x != nil {
+		return x.CardPurchase
+	}
+	return nil
 }
 
 func (x *CartItem) GetId() uint64 {
@@ -384,7 +393,7 @@ var File_storefront_v1_cart_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_cart_proto_rawDesc = "" +
 	"\n" +
-	"\x18storefront/v1/cart.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bstorefront/v1/catalog.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"p\n" +
+	"\x18storefront/v1/cart.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bstorefront/v1/catalog.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"p\n" +
 	"\x12AddCartItemRequest\x12\"\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x15\n" +
@@ -394,8 +403,9 @@ const file_storefront_v1_cart_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x1f\n" +
 	"\bquantity\x18\x02 \x01(\x05B\x03\xe0A\x02R\bquantity\",\n" +
 	"\x15RemoveCartItemRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xcd\x03\n" +
-	"\bCartItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\x8b\x04\n" +
+	"\bCartItem\x12<\n" +
+	"\rcard_purchase\x18\x0f \x01(\v2\x17.google.protobuf.StructR\fcardPurchase\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x02 \x01(\x04R\tproductId\x12\x15\n" +
@@ -443,25 +453,27 @@ var file_storefront_v1_cart_proto_goTypes = []any{
 	(*RemoveCartItemRequest)(nil), // 2: zcard.api.storefront.v1.RemoveCartItemRequest
 	(*CartItem)(nil),              // 3: zcard.api.storefront.v1.CartItem
 	(*ListCartReply)(nil),         // 4: zcard.api.storefront.v1.ListCartReply
-	(*FlashOffer)(nil),            // 5: zcard.api.storefront.v1.FlashOffer
-	(*emptypb.Empty)(nil),         // 6: google.protobuf.Empty
+	(*structpb.Struct)(nil),       // 5: google.protobuf.Struct
+	(*FlashOffer)(nil),            // 6: zcard.api.storefront.v1.FlashOffer
+	(*emptypb.Empty)(nil),         // 7: google.protobuf.Empty
 }
 var file_storefront_v1_cart_proto_depIdxs = []int32{
-	5, // 0: zcard.api.storefront.v1.CartItem.flash_sale:type_name -> zcard.api.storefront.v1.FlashOffer
-	3, // 1: zcard.api.storefront.v1.ListCartReply.items:type_name -> zcard.api.storefront.v1.CartItem
-	0, // 2: zcard.api.storefront.v1.StoreCartService.AddCartItem:input_type -> zcard.api.storefront.v1.AddCartItemRequest
-	6, // 3: zcard.api.storefront.v1.StoreCartService.ListCart:input_type -> google.protobuf.Empty
-	1, // 4: zcard.api.storefront.v1.StoreCartService.UpdateCartItem:input_type -> zcard.api.storefront.v1.UpdateCartItemRequest
-	2, // 5: zcard.api.storefront.v1.StoreCartService.RemoveCartItem:input_type -> zcard.api.storefront.v1.RemoveCartItemRequest
-	3, // 6: zcard.api.storefront.v1.StoreCartService.AddCartItem:output_type -> zcard.api.storefront.v1.CartItem
-	4, // 7: zcard.api.storefront.v1.StoreCartService.ListCart:output_type -> zcard.api.storefront.v1.ListCartReply
-	3, // 8: zcard.api.storefront.v1.StoreCartService.UpdateCartItem:output_type -> zcard.api.storefront.v1.CartItem
-	6, // 9: zcard.api.storefront.v1.StoreCartService.RemoveCartItem:output_type -> google.protobuf.Empty
-	6, // [6:10] is the sub-list for method output_type
-	2, // [2:6] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	5, // 0: zcard.api.storefront.v1.CartItem.card_purchase:type_name -> google.protobuf.Struct
+	6, // 1: zcard.api.storefront.v1.CartItem.flash_sale:type_name -> zcard.api.storefront.v1.FlashOffer
+	3, // 2: zcard.api.storefront.v1.ListCartReply.items:type_name -> zcard.api.storefront.v1.CartItem
+	0, // 3: zcard.api.storefront.v1.StoreCartService.AddCartItem:input_type -> zcard.api.storefront.v1.AddCartItemRequest
+	7, // 4: zcard.api.storefront.v1.StoreCartService.ListCart:input_type -> google.protobuf.Empty
+	1, // 5: zcard.api.storefront.v1.StoreCartService.UpdateCartItem:input_type -> zcard.api.storefront.v1.UpdateCartItemRequest
+	2, // 6: zcard.api.storefront.v1.StoreCartService.RemoveCartItem:input_type -> zcard.api.storefront.v1.RemoveCartItemRequest
+	3, // 7: zcard.api.storefront.v1.StoreCartService.AddCartItem:output_type -> zcard.api.storefront.v1.CartItem
+	4, // 8: zcard.api.storefront.v1.StoreCartService.ListCart:output_type -> zcard.api.storefront.v1.ListCartReply
+	3, // 9: zcard.api.storefront.v1.StoreCartService.UpdateCartItem:output_type -> zcard.api.storefront.v1.CartItem
+	7, // 10: zcard.api.storefront.v1.StoreCartService.RemoveCartItem:output_type -> google.protobuf.Empty
+	7, // [7:11] is the sub-list for method output_type
+	3, // [3:7] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_cart_proto_init() }

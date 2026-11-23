@@ -65,6 +65,12 @@ func (_c *OrderItemCreate) SetNillableSubsiteID(v *uint64) *OrderItemCreate {
 	return _c
 }
 
+// SetUpstreamCardCipher sets the "upstream_card_cipher" field.
+func (_c *OrderItemCreate) SetUpstreamCardCipher(v []byte) *OrderItemCreate {
+	_c.mutation.SetUpstreamCardCipher(v)
+	return _c
+}
+
 // SetOrderID sets the "order_id" field.
 func (_c *OrderItemCreate) SetOrderID(v uint64) *OrderItemCreate {
 	_c.mutation.SetOrderID(v)
@@ -681,6 +687,10 @@ func (_c *OrderItemCreate) createSpec() (*OrderItem, *sqlgraph.CreateSpec) {
 		_spec.SetField(orderitem.FieldSubsiteID, field.TypeUint64, value)
 		_node.SubsiteID = value
 	}
+	if value, ok := _c.mutation.UpstreamCardCipher(); ok {
+		_spec.SetField(orderitem.FieldUpstreamCardCipher, field.TypeBytes, value)
+		_node.UpstreamCardCipher = value
+	}
 	if value, ok := _c.mutation.ProductID(); ok {
 		_spec.SetField(orderitem.FieldProductID, field.TypeUint64, value)
 		_node.ProductID = value
@@ -901,6 +911,24 @@ func (u *OrderItemUpsert) UpdateSubsiteID() *OrderItemUpsert {
 // AddSubsiteID adds v to the "subsite_id" field.
 func (u *OrderItemUpsert) AddSubsiteID(v uint64) *OrderItemUpsert {
 	u.Add(orderitem.FieldSubsiteID, v)
+	return u
+}
+
+// SetUpstreamCardCipher sets the "upstream_card_cipher" field.
+func (u *OrderItemUpsert) SetUpstreamCardCipher(v []byte) *OrderItemUpsert {
+	u.Set(orderitem.FieldUpstreamCardCipher, v)
+	return u
+}
+
+// UpdateUpstreamCardCipher sets the "upstream_card_cipher" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateUpstreamCardCipher() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldUpstreamCardCipher)
+	return u
+}
+
+// ClearUpstreamCardCipher clears the value of the "upstream_card_cipher" field.
+func (u *OrderItemUpsert) ClearUpstreamCardCipher() *OrderItemUpsert {
+	u.SetNull(orderitem.FieldUpstreamCardCipher)
 	return u
 }
 
@@ -1527,6 +1555,27 @@ func (u *OrderItemUpsertOne) AddSubsiteID(v uint64) *OrderItemUpsertOne {
 func (u *OrderItemUpsertOne) UpdateSubsiteID() *OrderItemUpsertOne {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.UpdateSubsiteID()
+	})
+}
+
+// SetUpstreamCardCipher sets the "upstream_card_cipher" field.
+func (u *OrderItemUpsertOne) SetUpstreamCardCipher(v []byte) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetUpstreamCardCipher(v)
+	})
+}
+
+// UpdateUpstreamCardCipher sets the "upstream_card_cipher" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateUpstreamCardCipher() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateUpstreamCardCipher()
+	})
+}
+
+// ClearUpstreamCardCipher clears the value of the "upstream_card_cipher" field.
+func (u *OrderItemUpsertOne) ClearUpstreamCardCipher() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.ClearUpstreamCardCipher()
 	})
 }
 
@@ -2409,6 +2458,27 @@ func (u *OrderItemUpsertBulk) AddSubsiteID(v uint64) *OrderItemUpsertBulk {
 func (u *OrderItemUpsertBulk) UpdateSubsiteID() *OrderItemUpsertBulk {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.UpdateSubsiteID()
+	})
+}
+
+// SetUpstreamCardCipher sets the "upstream_card_cipher" field.
+func (u *OrderItemUpsertBulk) SetUpstreamCardCipher(v []byte) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetUpstreamCardCipher(v)
+	})
+}
+
+// UpdateUpstreamCardCipher sets the "upstream_card_cipher" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateUpstreamCardCipher() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateUpstreamCardCipher()
+	})
+}
+
+// ClearUpstreamCardCipher clears the value of the "upstream_card_cipher" field.
+func (u *OrderItemUpsertBulk) ClearUpstreamCardCipher() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.ClearUpstreamCardCipher()
 	})
 }
 

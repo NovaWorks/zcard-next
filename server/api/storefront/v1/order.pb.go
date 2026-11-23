@@ -169,6 +169,7 @@ func (x *CreateOrderRequest) GetCaptchaCode() string {
 
 type OrderItemInput struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
+	CardSelection  string                 `protobuf:"bytes,5,opt,name=card_selection,json=cardSelection,proto3" json:"card_selection,omitempty"`
 	ControlAnswers map[string]string      `protobuf:"bytes,4,rep,name=control_answers,json=controlAnswers,proto3" json:"control_answers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	ProductId      uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	SkuId          uint64                 `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
@@ -207,6 +208,13 @@ func (*OrderItemInput) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_order_proto_rawDescGZIP(), []int{1}
 }
 
+func (x *OrderItemInput) GetCardSelection() string {
+	if x != nil {
+		return x.CardSelection
+	}
+	return ""
+}
+
 func (x *OrderItemInput) GetControlAnswers() map[string]string {
 	if x != nil {
 		return x.ControlAnswers
@@ -236,7 +244,8 @@ func (x *OrderItemInput) GetQuantity() int32 {
 }
 
 type CreateOrderReply struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	PointsTotal int64                  `protobuf:"varint,8,opt,name=points_total,json=pointsTotal,proto3" json:"points_total,omitempty"`
 	// At least one item has shipping payable to the carrier on delivery.
 	ShippingCollect  bool   `protobuf:"varint,7,opt,name=shipping_collect,json=shippingCollect,proto3" json:"shipping_collect,omitempty"`
 	OrderAccessToken string `protobuf:"bytes,6,opt,name=order_access_token,json=orderAccessToken,proto3" json:"order_access_token,omitempty"`
@@ -277,6 +286,13 @@ func (x *CreateOrderReply) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateOrderReply.ProtoReflect.Descriptor instead.
 func (*CreateOrderReply) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_order_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CreateOrderReply) GetPointsTotal() int64 {
+	if x != nil {
+		return x.PointsTotal
+	}
+	return 0
 }
 
 func (x *CreateOrderReply) GetShippingCollect() bool {
@@ -1935,8 +1951,9 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aA\n" +
 	"\x13ControlAnswersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x95\x02\n" +
-	"\x0eOrderItemInput\x12d\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xbc\x02\n" +
+	"\x0eOrderItemInput\x12%\n" +
+	"\x0ecard_selection\x18\x05 \x01(\tR\rcardSelection\x12d\n" +
 	"\x0fcontrol_answers\x18\x04 \x03(\v2;.zcard.api.storefront.v1.OrderItemInput.ControlAnswersEntryR\x0econtrolAnswers\x12\"\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x15\n" +
@@ -1944,8 +1961,9 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\bquantity\x18\x03 \x01(\x05B\x03\xe0A\x02R\bquantity\x1aA\n" +
 	"\x13ControlAnswersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x8a\x02\n" +
-	"\x10CreateOrderReply\x12)\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xad\x02\n" +
+	"\x10CreateOrderReply\x12!\n" +
+	"\fpoints_total\x18\b \x01(\x03R\vpointsTotal\x12)\n" +
 	"\x10shipping_collect\x18\a \x01(\bR\x0fshippingCollect\x12,\n" +
 	"\x12order_access_token\x18\x06 \x01(\tR\x10orderAccessToken\x12%\n" +
 	"\x0eshipping_cents\x18\x04 \x01(\x03R\rshippingCents\x12\x1b\n" +

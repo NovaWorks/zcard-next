@@ -161,7 +161,7 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 	if err != nil {
 		return s.repo.MarkManual(ctx, po.ID, err.Error())
 	}
-	res, err := s.gw.Submit(ctx, supplyport.PurchaseRequest{
+	request := supplyport.PurchaseRequest{
 		ManualFormData:    form,
 		ConnectionID:      p.UpstreamSourceID,
 		ProductCode:       p.UpstreamProductCode,
@@ -169,7 +169,12 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 		Quantity:          int(quantity),
 		DownstreamOrderNo: po.DedupeKey,
 		TraceID:           traceID,
-	})
+	}
+	request, err = s.frozenCardRequest(it, request)
+	if err != nil {
+		return s.repo.MarkManual(ctx, po.ID, err.Error())
+	}
+	res, err := s.gw.Submit(ctx, request)
 	// Once sent, preserve the outcome even if the caller timed out. This context
 	// only covers bounded local persistence/delivery, never another purchase.
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
@@ -177,12 +182,18 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 	if err != nil {
 		return s.handleSubmitError(ctx, po.ID, err)
 	}
+	if res == nil {
+		return s.repo.MarkManual(ctx, po.ID, "采购回执缺失，请核对原采购结果")
+	}
 	// Save the supplier order separately, BEFORE sealing/storing the receipt.
 	// If local receipt persistence fails, recovery can query the original order.
 	if err := s.repo.recordUpstreamOrder(ctx, po.ID, res.UpstreamOrderID); err != nil {
 		return err
 	}
 
+	if err := s.recordCardReceiptCost(ctx, it, res.Amount); err != nil {
+		return s.repo.MarkManual(ctx, po.ID, err.Error())
+	}
 	switch res.Status {
 	case "delivered":
 		return s.finalizeDelivered(ctx, po.ID, payload.OrderID, orderItemID, productID, payload.SubsiteID, res.Cards, res.Amount)
@@ -226,6 +237,13 @@ func (s *ProcureService) finalizeDelivered(ctx context.Context, poID, orderID, o
 
 // handleSubmitError 提交失败分流：永久错误 → rejected → 失败策略；其余 → 退避重试。
 func (s *ProcureService) handleSubmitError(ctx context.Context, poID uint64, err error) error {
+	var cardRejection *supplyport.CardPurchaseRejection
+	if errors.As(err, &cardRejection) || errors.Is(err, supplyport.ErrCardQuoteChanged) {
+		if proofErr := s.recordCardRejection(ctx, poID, err); proofErr != nil {
+			return s.repo.MarkManual(ctx, poID, "卡密拒绝凭证无法核对，请核实原采购结果后处理")
+		}
+		err = supplyport.ErrCardPurchaseRejected
+	}
 	if errors.Is(err, supplyport.ErrUpstreamFormInvalid) {
 		return s.repo.MarkManual(ctx, poID, "上游填写资料校验未通过，请核对上游商品规则和客户资料后人工处理")
 	}
@@ -254,7 +272,7 @@ func (s *ProcureService) handleSubmitError(ctx context.Context, poID uint64, err
 		s.publish(ctx, events.ProcurementFailed, poID, map[string]any{"procurement_id": poID, "reason": "上游账户余额不足", "strategy": "manual_balance"})
 		return nil
 	}
-	permanent := errors.Is(err, supplyport.ErrUpstreamDeleted) ||
+	permanent := errors.Is(err, supplyport.ErrCardPurchaseRejected) || errors.Is(err, supplyport.ErrUpstreamDeleted) ||
 		errors.Is(err, supplyport.ErrUpstreamUnavailable) ||
 		errors.Is(err, supplyport.ErrUpstreamBalance) ||
 		// 上游明确无库存：永久拒绝（否则空 upstream_order_id 进轮询死循环到 24h

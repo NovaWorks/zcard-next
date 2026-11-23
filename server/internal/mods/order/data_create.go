@@ -135,6 +135,7 @@ type CreateOrderInput struct {
 
 // OrderItemInput 商品行。
 type OrderItemInput struct {
+	CardSelection  string `json:",omitempty"`
 	ControlAnswers map[string]string
 	ProductID      uint64
 	SkuID          uint64
@@ -143,6 +144,7 @@ type OrderItemInput struct {
 
 // CreateOrderResult 下单结果。
 type CreateOrderResult struct {
+	PointsTotal      int64
 	OrderAccessToken string
 	ShippingCents    int64
 	ShippingCollect  bool
@@ -318,6 +320,11 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 	}
 
+	cardQuotes, err := uc.prepareCardQuotes(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	hasDynamicCard := len(cardQuotes) > 0
 	if !hasPhysical {
 		in.ShippingAddress = nil
 	}
@@ -326,7 +333,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 	}
 	requestHash := orderRequestHash(in)
 	var result *CreateOrderResult
-	err := data.Tx(ctx, uc.Data, func(txCtx context.Context) error {
+	err = data.Tx(ctx, uc.Data, func(txCtx context.Context) error {
 		client := data.Client(txCtx, uc.Data)
 		baseCurrency, err := data.BaseCurrency(txCtx, uc.Data)
 		if err != nil {
@@ -500,6 +507,9 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				}
 				basePrice = money.Cents(q.AmountCents)
 			}
+			if cq, ok := cardQuotes[itemKey(item.ProductID, item.SkuID)]; ok {
+				basePrice = money.Cents(cq.Quote.AmountCents / int64(item.Quantity))
+			}
 			// 商品组必须携带叠加策略；解析失败不能绕过禁止叠加的设置。
 			var group catalogport.GroupDiscount
 			if uc.Catalog != nil {
@@ -570,7 +580,16 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			priceInput.PromoName = promoName
 			priceInput.SubsiteMarkup = subsiteMarkup
 			pr := PriceCalculator(priceInput)
+			if cq, ok := cardQuotes[itemKey(item.ProductID, item.SkuID)]; ok {
+				if e := uc.verifyCardQuote(txCtx, cq); e != nil {
+					return e
+				}
+				pr = cardPriceCalculator(priceInput, money.Cents(cq.Quote.AmountCents))
+			}
 			cost := p.FactoryPrice
+			if cq, ok := cardQuotes[itemKey(item.ProductID, item.SkuID)]; ok {
+				cost = cq.Quote.CostCents / int64(item.Quantity)
+			}
 			if p.GoodsType == "physical" && item.SkuID != 0 {
 				sk, e := data.DeliverySKU(txCtx, client, p, item.SkuID)
 				if e != nil {
@@ -588,9 +607,10 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			totalCents += int64(pr.Total)
 			if groupRate == 0 || group.StackCoupon {
 				// 券在会员/商品组/促销之后计算，不能抵扣分站加价或禁止用券的商品。
+				couponBase := pr.Total - subsiteMarkup*money.Cents(item.Quantity)
 				cartItems = append(cartItems, couponport.CartItem{
 					ProductID: item.ProductID, SkuID: item.SkuID, CategoryID: p.CategoryID,
-					Quantity: item.Quantity, UnitPrice: pr.Total/money.Cents(item.Quantity) - subsiteMarkup,
+					Quantity: item.Quantity, UnitPrice: pr.Total/money.Cents(item.Quantity) - subsiteMarkup, TotalAmount: &couponBase,
 				})
 			}
 		}
@@ -622,13 +642,23 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		for _, r := range results {
 			quotePrices = append(quotePrices, int64(r.res.Total))
 		}
-		quoteParts := []any{requestHash, totalCents, shippingTotal, couponValue, quotePrices, shippingByProduct, revisions}
+		quoteParts := []any{requestHash, totalCents, shippingTotal, couponValue, quotePrices, shippingByProduct, revisions, pointsTotal}
+		if hasDynamicCard {
+			bindings := map[string]any{}
+			for k, q := range cardQuotes {
+				bindings[fmt.Sprintf("%d:%d", k[0], k[1])] = []any{q.Quote.ConfigurationHash, q.Quote.AmountCents, q.Quote.CostCents}
+			}
+			quoteParts = append(quoteParts, bindings)
+		}
 		if len(collectProducts) > 0 {
 			quoteParts = append(quoteParts, collectProducts)
 		}
 		quoteBytes, _ := json.Marshal(quoteParts)
 		quoteKey := fmt.Sprintf("%x", sha256.Sum256(quoteBytes))
-		if hasPhysical && !in.QuoteOnly && in.QuoteKey != quoteKey {
+		if (hasPhysical || hasDynamicCard) && !in.QuoteOnly && in.QuoteKey != quoteKey {
+			if hasDynamicCard {
+				return fmt.Errorf("order.QUOTE_CHANGED: 请重新确认商品金额")
+			}
 			return fmt.Errorf("order.FORM_INVALID: 请重新确认订单金额和运费")
 		}
 		var allocationBefore, allocationBase int64
@@ -645,7 +675,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				return e
 			}
 			for _, it := range eligible {
-				weight := int64(it.UnitPrice) * int64(it.Quantity)
+				weight := int64(it.Amount())
 				couponWeights[itemKey(it.ProductID, it.SkuID)] = weight
 				allocationBase += weight
 			}
@@ -666,6 +696,14 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		// 5) 写 orders（父单）
 		ttl := time.Duration(uc.ttlMinutes(txCtx)) * time.Minute
 		exp := time.Now().Add(ttl).UTC()
+		for _, q := range cardQuotes {
+			if q.Quote.ExpiresAt <= time.Now().Unix() {
+				return fmt.Errorf("order.QUOTE_EXPIRED")
+			}
+			if t := time.Unix(q.Quote.ExpiresAt, 0).UTC(); t.Before(exp) {
+				exp = t
+			}
+		}
 		if in.SMSQuoteID != "" {
 			q, e := client.SMSRetailQuote.Get(txCtx, in.SMSQuoteID)
 			if e != nil {
@@ -817,7 +855,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				SetSubsiteID(in.SubsiteID).
 				SetProductID(r.input.ProductID).
 				SetSkuID(r.input.SkuID).
-				SetUnitPrice(int64(r.res.Lines[0].Amount)).
+				SetUnitPrice(itemUnitPrice(r.res, r.input.Quantity)).
 				SetQuantity(r.input.Quantity).
 				SetAmount(int64(r.res.Total)).
 				SetGoodsType(kind).SetInventoryTracked(r.inventoryTracked).SetPaidAmount(paid).SetShippingAmount(fee).
@@ -825,10 +863,14 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 					var markup int64
 					for _, line := range r.res.Lines {
 						if line.Type == "subsite_markup" {
-							markup += line.Amount * int64(r.input.Quantity)
+							markup += lineAmount(line, r.input.Quantity)
 						}
 					}
-					return map[string]any{"markup": markup}
+					snapshot := map[string]any{"markup": markup}
+					if cq, ok := cardQuotes[itemKey(r.input.ProductID, r.input.SkuID)]; ok {
+						snapshot["card_cost_total_cents"] = cq.Quote.CostCents
+					}
+					return snapshot
 				}()).
 				SetCost(func() int64 {
 					if services[itemKey(r.input.ProductID, r.input.SkuID)].mode == "reuse" {
@@ -848,6 +890,11 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				return fmt.Errorf("order.ITEM_CREATE_FAILED: %w", err)
 			}
 
+			if cq, ok := cardQuotes[itemKey(r.input.ProductID, r.input.SkuID)]; ok {
+				if err := uc.freezeCardPurchase(txCtx, orderItem, cq); err != nil {
+					return err
+				}
+			}
 			if hasSMS {
 				if err := uc.freezeSMSSelection(txCtx, orderItem, smsQuotes[r.input.ProductID], in, orderNo); err != nil {
 					return err
@@ -869,7 +916,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 					SetOrderID(o.ID).
 					SetItemID(orderItem.ID).
 					SetType(orderamountline.Type(line.Type)).
-					SetAmount(line.Amount * int64(r.input.Quantity)).
+					SetAmount(lineAmount(line, r.input.Quantity)).
 					SetSourceType(line.SourceType).
 					SetSourceID(line.SourceID).
 					SetSeq(amountSeq).
@@ -913,7 +960,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			Save(txCtx)
 
 		if in.QuoteOnly {
-			result = &CreateOrderResult{TotalCents: totalCents, ShippingCents: shippingTotal, ShippingCollect: len(collectProducts) > 0, QuoteKey: quoteKey}
+			result = &CreateOrderResult{TotalCents: totalCents, ShippingCents: shippingTotal, ShippingCollect: len(collectProducts) > 0, QuoteKey: quoteKey, ExpiresAt: exp, PointsTotal: pointsTotal}
 			return errQuoteRollback
 		}
 		if uc.Outbox != nil {
@@ -957,7 +1004,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			OrderAccessToken: accessToken,
 			OrderNo:          orderNo,
 			ShippingCollect:  len(collectProducts) > 0,
-			ShippingCents:    shippingTotal, QuoteKey: quoteKey,
+			ShippingCents:    shippingTotal, QuoteKey: quoteKey, PointsTotal: pointsTotal,
 			TotalCents: totalCents,
 			ExpiresAt:  exp,
 		}

@@ -40,6 +40,8 @@ type ProductControl struct {
 	Required bool `json:"required,omitempty"`
 	// 选项（select/checkbox/radio）
 	Options []string `json:"options,omitempty"`
+	// OptionLabels holds the value of the "option_labels" field.
+	OptionLabels map[string]string `json:"option_labels,omitempty"`
 	// Sort holds the value of the "sort" field.
 	Sort         int32 `json:"sort,omitempty"`
 	selectValues sql.SelectValues
@@ -50,7 +52,7 @@ func (*ProductControl) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case productcontrol.FieldOptions:
+		case productcontrol.FieldOptions, productcontrol.FieldOptionLabels:
 			values[i] = new([]byte)
 		case productcontrol.FieldRequired:
 			values[i] = new(sql.NullBool)
@@ -149,6 +151,14 @@ func (_m *ProductControl) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field options: %w", err)
 				}
 			}
+		case productcontrol.FieldOptionLabels:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field option_labels", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.OptionLabels); err != nil {
+					return fmt.Errorf("unmarshal field option_labels: %w", err)
+				}
+			}
 		case productcontrol.FieldSort:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field sort", values[i])
@@ -223,6 +233,9 @@ func (_m *ProductControl) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("options=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Options))
+	builder.WriteString(", ")
+	builder.WriteString("option_labels=")
+	builder.WriteString(fmt.Sprintf("%v", _m.OptionLabels))
 	builder.WriteString(", ")
 	builder.WriteString("sort=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Sort))

@@ -189,19 +189,29 @@ func (r *ProcureRepo) lockManualRecovery(ctx context.Context, po *ent.Procuremen
 
 // Record missing tasks for investigation, never blindly resubmit upstream purchases.
 func (r *ProcureRepo) recordMissing(ctx context.Context, itemID uint64) error {
-	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+	anchor, e := data.Client(ctx, r.data).OrderItem.Get(ctx, itemID)
+	if e != nil {
+		return e
+	}
+	return data.PurchaseRetry(ctx, r.data, func(ctx context.Context) error {
+		c := data.Client(ctx, r.data)
+		if e := c.Order.UpdateOneID(anchor.OrderID).AddVersion(0).Exec(ctx); e != nil {
+			return e
+		}
 		if _, err := r.GetByOrderItem(ctx, itemID); err == nil {
 			return nil
 		} else if !errors.Is(err, ErrNotFound) {
 			return err
 		}
-		c := data.Client(ctx, r.data)
 		it, err := c.OrderItem.Get(ctx, itemID)
 		if err != nil {
 			return err
 		}
 		if it.FulfillmentType != orderitem.FulfillmentTypeUpstream || it.DeliveryKind != "card" {
 			return nil
+		}
+		if it.OrderID != anchor.OrderID {
+			return ErrOrderNotPurchasable
 		}
 		o, err := c.Order.Get(ctx, it.OrderID)
 		if err != nil {

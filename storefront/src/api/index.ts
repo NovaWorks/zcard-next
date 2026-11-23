@@ -6,7 +6,14 @@ import { api } from './client';
 
 // ── 类型（字段名 snake_case，与 proto 一致）──
 
+export interface CardPurchaseRules { minimum: number; maximum: number; dynamic_quote: boolean; preselection: boolean; }
+export interface CardDraft { selection: string; preview: string; premium_cents: number; }
+export function listCardDrafts(productId: number, skuId: number, page = 1, limit = 20) {
+  return api.post<{ items: CardDraft[]; total: number }>(`/products/${productId}/card/drafts`, { sku_id: skuId, page, limit });
+}
+
 export interface ProductControl {
+ option_labels?: Record<string,string>;
  placeholder?: string; validation?: string; max_length?: number;
   id: number;
   name: string;
@@ -37,6 +44,7 @@ export interface Sku {
 }
 
 export interface Product {
+ card_purchase?: CardPurchaseRules;
  social_schema?:SocialSchema;
  product_property?: 'virtual' | 'physical'; track_inventory?:boolean; sales_visible?:boolean;
  product_kind?: string;
@@ -81,6 +89,7 @@ export interface ListProductsReply {
 }
 
 export interface CreateOrderReply {
+ points_total?:number;
  order_access_token?:string;
  shipping_cents?:number;shipping_collect?:boolean;quote_key?:string;
   order_no: string;
@@ -155,7 +164,7 @@ export function getProduct(id: number) {
 
 export interface CreateOrderInput {
  shipping_address?:Record<string,string>;quote_key?:string;
-  items: { product_id: number; sku_id?: number; quantity: number; control_answers?: Record<string,string> }[];
+  items: { product_id: number; sku_id?: number; quantity: number; control_answers?: Record<string,string>; card_selection?: string }[];
   guest_contact?: string;
   query_password?: string;
   contact?: string;
@@ -336,6 +345,7 @@ export function updateProfile(body: { email: string }) {
 // ── 购物车（：CRUD；结算复用 createOrder 多商品一单）──
 
 export interface CartItem {
+ card_purchase?: CardPurchaseRules; min_quantity?: number;
   max_quantity?: number;
   flash_sale?: FlashOffer;
   id: number;

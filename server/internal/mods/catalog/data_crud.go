@@ -936,6 +936,9 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 		if err := r.syncUpstreamControls(ctx, created, in.FormFields); err != nil {
 			return 0, false, err
 		}
+		if err := r.syncCardRules(ctx, created.ID, in.CardRules); err != nil {
+			return 0, false, err
+		}
 		if err := data.SyncProductMediaRefs(ctx, r.data, nil, created); err != nil {
 			return 0, false, err
 		}
@@ -1023,6 +1026,9 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 		return 0, false, err
 	}
 	if err := r.syncUpstreamControls(ctx, updated, in.FormFields); err != nil {
+		return 0, false, err
+	}
+	if err := r.syncCardRules(ctx, updated.ID, in.CardRules); err != nil {
 		return 0, false, err
 	}
 	if err := data.SyncProductMediaRefs(ctx, r.data, existing, updated); err != nil {

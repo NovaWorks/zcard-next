@@ -65,7 +65,7 @@ func (r *DashboardRepoImpl) loadLedger(ctx context.Context, subsite uint64, star
 	}
 	// Bound IN lists for SQLite and avoid loading items for unpaid/canceled orders.
 	for i := 0; i < len(ids); i += 500 {
-		rows, err := c.OrderItem.Query().Where(orderitem.OrderIDIn(ids[i:min(i+500, len(ids))]...)).Select(orderitem.FieldID, orderitem.FieldOrderID, orderitem.FieldProductID, orderitem.FieldQuantity, orderitem.FieldAmount, orderitem.FieldCost, orderitem.FieldFulfillmentType, orderitem.FieldDeliverySourceID).Order(ent.Asc(orderitem.FieldID)).All(ctx)
+		rows, err := c.OrderItem.Query().Where(orderitem.OrderIDIn(ids[i:min(i+500, len(ids))]...)).Select(orderitem.FieldID, orderitem.FieldOrderID, orderitem.FieldProductID, orderitem.FieldQuantity, orderitem.FieldAmount, orderitem.FieldCost, orderitem.FieldProfitSnapshot, orderitem.FieldFulfillmentType, orderitem.FieldDeliverySourceID).Order(ent.Asc(orderitem.FieldID)).All(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -129,10 +129,10 @@ func (l *metricLedger) between(start, end time.Time) Metric {
 					}
 					continue
 				}
-				if it.Cost <= 0 || it.Quantity <= 0 {
+				if data.OrderItemCostTotal(it) <= 0 || it.Quantity <= 0 {
 					unknown = true
 				} else {
-					m.Cost += it.Cost * int64(it.Quantity)
+					m.Cost += data.OrderItemCostTotal(it)
 				}
 			}
 		}

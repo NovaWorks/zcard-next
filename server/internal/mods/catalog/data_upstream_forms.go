@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"slices"
 	"strconv"
 
@@ -53,15 +54,15 @@ func (r *ProductRepoImpl) syncUpstreamControls(ctx context.Context, p *ent.Produ
 	for i, f := range fields {
 		var row *ent.ProductControl
 		if existing := byID[managed[f.Key]]; existing != nil {
-			if existing.Name == f.Label && string(existing.Type) == f.ControlType() && existing.Required == f.Required && slices.Equal(existing.Options, f.Options) && existing.Sort == int32(i) && existing.Placeholder == f.Placeholder && existing.Validation == "text" && existing.MaxLength == int32(f.MaxLength) {
+			if existing.Name == f.Label && string(existing.Type) == f.ControlType() && existing.Required == f.Required && slices.Equal(existing.Options, f.Options) && maps.Equal(existing.OptionLabels, f.OptionLabels) && existing.Sort == int32(i) && existing.Placeholder == f.Placeholder && existing.Validation == "text" && existing.MaxLength == int32(f.MaxLength) {
 				row = existing
 			} else {
 				changed = true
-				row, err = c.ProductControl.UpdateOneID(existing.ID).SetName(f.Label).SetType(productcontrol.Type(f.ControlType())).SetRequired(f.Required).SetOptions(f.Options).SetSort(int32(i)).SetPlaceholder(f.Placeholder).SetValidation("text").SetMaxLength(int32(f.MaxLength)).Save(ctx)
+				row, err = c.ProductControl.UpdateOneID(existing.ID).SetName(f.Label).SetType(productcontrol.Type(f.ControlType())).SetRequired(f.Required).SetOptions(f.Options).SetOptionLabels(f.OptionLabels).SetSort(int32(i)).SetPlaceholder(f.Placeholder).SetValidation("text").SetMaxLength(int32(f.MaxLength)).Save(ctx)
 			}
 		} else {
 			changed = true
-			row, err = c.ProductControl.Create().SetSubsiteID(p.SubsiteID).SetProductID(p.ID).SetName(f.Label).SetType(productcontrol.Type(f.ControlType())).SetRequired(f.Required).SetOptions(f.Options).SetSort(int32(i)).SetPlaceholder(f.Placeholder).SetValidation("text").SetMaxLength(int32(f.MaxLength)).Save(ctx)
+			row, err = c.ProductControl.Create().SetSubsiteID(p.SubsiteID).SetProductID(p.ID).SetName(f.Label).SetType(productcontrol.Type(f.ControlType())).SetRequired(f.Required).SetOptions(f.Options).SetOptionLabels(f.OptionLabels).SetSort(int32(i)).SetPlaceholder(f.Placeholder).SetValidation("text").SetMaxLength(int32(f.MaxLength)).Save(ctx)
 		}
 		if err != nil {
 			return err

@@ -112,7 +112,7 @@ func idList(v any) map[uint64]bool {
 func orderAmountOf(items []port.CartItem) money.Cents {
 	var total int64
 	for _, it := range items {
-		total += int64(it.UnitPrice) * int64(it.Quantity)
+		total += int64(it.Amount())
 	}
 	return money.Cents(total)
 }

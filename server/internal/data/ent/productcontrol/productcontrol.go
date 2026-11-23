@@ -36,6 +36,8 @@ const (
 	FieldRequired = "required"
 	// FieldOptions holds the string denoting the options field in the database.
 	FieldOptions = "options"
+	// FieldOptionLabels holds the string denoting the option_labels field in the database.
+	FieldOptionLabels = "option_labels"
 	// FieldSort holds the string denoting the sort field in the database.
 	FieldSort = "sort"
 	// Table holds the table name of the productcontrol in the database.
@@ -56,6 +58,7 @@ var Columns = []string{
 	FieldMaxLength,
 	FieldRequired,
 	FieldOptions,
+	FieldOptionLabels,
 	FieldSort,
 }
 
@@ -103,6 +106,7 @@ const (
 	TypeNumber   Type = "number"
 	TypeCheckbox Type = "checkbox"
 	TypeRadio    Type = "radio"
+	TypeTextarea Type = "textarea"
 )
 
 func (_type Type) String() string {
@@ -112,7 +116,7 @@ func (_type Type) String() string {
 // TypeValidator is a validator for the "type" field enum values. It is called by the builders before save.
 func TypeValidator(_type Type) error {
 	switch _type {
-	case TypeText, TypePassword, TypeSelect, TypeNumber, TypeCheckbox, TypeRadio:
+	case TypeText, TypePassword, TypeSelect, TypeNumber, TypeCheckbox, TypeRadio, TypeTextarea:
 		return nil
 	default:
 		return fmt.Errorf("productcontrol: invalid enum value for type field: %q", _type)

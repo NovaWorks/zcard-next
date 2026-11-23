@@ -11,6 +11,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -525,6 +526,7 @@ func (x *GetStockReply) GetStock() int32 {
 
 type SupplyProduct struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	CardPurchase  *structpb.Struct       `protobuf:"bytes,80,opt,name=card_purchase,json=cardPurchase,proto3" json:"card_purchase,omitempty"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Price         int64                  `protobuf:"varint,3,opt,name=price,proto3" json:"price,omitempty"`                                   // 分（供货价口径：定价覆盖 > 基础价）
@@ -567,6 +569,13 @@ func (x *SupplyProduct) ProtoReflect() protoreflect.Message {
 // Deprecated: Use SupplyProduct.ProtoReflect.Descriptor instead.
 func (*SupplyProduct) Descriptor() ([]byte, []int) {
 	return file_supply_v1_supply_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *SupplyProduct) GetCardPurchase() *structpb.Struct {
+	if x != nil {
+		return x.CardPurchase
+	}
+	return nil
 }
 
 func (x *SupplyProduct) GetId() string {
@@ -717,6 +726,7 @@ func (x *SupplySku) GetIsActive() bool {
 
 type CreateSupplyOrderRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
+	CardQuoteId       string                 `protobuf:"bytes,20,opt,name=card_quote_id,json=cardQuoteId,proto3" json:"card_quote_id,omitempty"`
 	ProductId         string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"` // 商品标识（本地商品 id）
 	SkuId             string                 `protobuf:"bytes,2,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`             // 可选
 	Quantity          int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
@@ -755,6 +765,13 @@ func (x *CreateSupplyOrderRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateSupplyOrderRequest.ProtoReflect.Descriptor instead.
 func (*CreateSupplyOrderRequest) Descriptor() ([]byte, []int) {
 	return file_supply_v1_supply_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *CreateSupplyOrderRequest) GetCardQuoteId() string {
+	if x != nil {
+		return x.CardQuoteId
+	}
+	return ""
 }
 
 func (x *CreateSupplyOrderRequest) GetProductId() string {
@@ -1432,7 +1449,7 @@ var File_supply_v1_supply_proto protoreflect.FileDescriptor
 
 const file_supply_v1_supply_proto_rawDesc = "" +
 	"\n" +
-	"\x16supply/v1/supply.proto\x12\x13zcard.api.supply.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xbc\x01\n" +
+	"\x16supply/v1/supply.proto\x12\x13zcard.api.supply.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xbc\x01\n" +
 	"\tPingReply\x12\x1a\n" +
 	"\bprotocol\x18\x01 \x01(\tR\bprotocol\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1f\n" +
@@ -1466,8 +1483,9 @@ const file_supply_v1_supply_proto_rawDesc = "" +
 	"\x0fGetStockRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"%\n" +
 	"\rGetStockReply\x12\x14\n" +
-	"\x05stock\x18\x01 \x01(\x05R\x05stock\"\xae\x02\n" +
-	"\rSupplyProduct\x12\x0e\n" +
+	"\x05stock\x18\x01 \x01(\x05R\x05stock\"\xec\x02\n" +
+	"\rSupplyProduct\x12<\n" +
+	"\rcard_purchase\x18P \x01(\v2\x17.google.protobuf.StructR\fcardPurchase\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
 	"\x05price\x18\x03 \x01(\x03R\x05price\x12#\n" +
@@ -1485,8 +1503,9 @@ const file_supply_v1_supply_proto_rawDesc = "" +
 	"\x04code\x18\x02 \x01(\tR\x04code\x12\x14\n" +
 	"\x05price\x18\x03 \x01(\x03R\x05price\x12\x14\n" +
 	"\x05stock\x18\x04 \x01(\x05R\x05stock\x12\x1b\n" +
-	"\tis_active\x18\x05 \x01(\bR\bisActive\"\xda\x01\n" +
-	"\x18CreateSupplyOrderRequest\x12\x1d\n" +
+	"\tis_active\x18\x05 \x01(\bR\bisActive\"\xfe\x01\n" +
+	"\x18CreateSupplyOrderRequest\x12\"\n" +
+	"\rcard_quote_id\x18\x14 \x01(\tR\vcardQuoteId\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\tR\tproductId\x12\x15\n" +
 	"\x06sku_id\x18\x02 \x01(\tR\x05skuId\x12\x1a\n" +
@@ -1589,41 +1608,43 @@ var file_supply_v1_supply_proto_goTypes = []any{
 	(*RefundSupplyOrderRequest)(nil), // 20: zcard.api.supply.v1.RefundSupplyOrderRequest
 	(*RefundSupplyOrderReply)(nil),   // 21: zcard.api.supply.v1.RefundSupplyOrderReply
 	(*SupplyFulfillment)(nil),        // 22: zcard.api.supply.v1.SupplyFulfillment
-	(*emptypb.Empty)(nil),            // 23: google.protobuf.Empty
+	(*structpb.Struct)(nil),          // 23: google.protobuf.Struct
+	(*emptypb.Empty)(nil),            // 24: google.protobuf.Empty
 }
 var file_supply_v1_supply_proto_depIdxs = []int32{
 	2,  // 0: zcard.api.supply.v1.ListCategoriesReply.categories:type_name -> zcard.api.supply.v1.SupplyCategory
 	9,  // 1: zcard.api.supply.v1.ListProductsReply.items:type_name -> zcard.api.supply.v1.SupplyProduct
 	9,  // 2: zcard.api.supply.v1.GetProductReply.product:type_name -> zcard.api.supply.v1.SupplyProduct
-	10, // 3: zcard.api.supply.v1.SupplyProduct.skus:type_name -> zcard.api.supply.v1.SupplySku
-	22, // 4: zcard.api.supply.v1.CreateSupplyOrderReply.fulfillment:type_name -> zcard.api.supply.v1.SupplyFulfillment
-	14, // 5: zcard.api.supply.v1.ListSupplyOrdersReply.orders:type_name -> zcard.api.supply.v1.SupplyOrderItem
-	22, // 6: zcard.api.supply.v1.GetSupplyOrderReply.fulfillment:type_name -> zcard.api.supply.v1.SupplyFulfillment
-	23, // 7: zcard.api.supply.v1.SupplyService.Ping:input_type -> google.protobuf.Empty
-	23, // 8: zcard.api.supply.v1.SupplyService.ListCategories:input_type -> google.protobuf.Empty
-	3,  // 9: zcard.api.supply.v1.SupplyService.ListProducts:input_type -> zcard.api.supply.v1.ListProductsRequest
-	5,  // 10: zcard.api.supply.v1.SupplyService.GetProduct:input_type -> zcard.api.supply.v1.GetProductRequest
-	7,  // 11: zcard.api.supply.v1.SupplyService.GetStock:input_type -> zcard.api.supply.v1.GetStockRequest
-	11, // 12: zcard.api.supply.v1.SupplyService.CreateOrder:input_type -> zcard.api.supply.v1.CreateSupplyOrderRequest
-	13, // 13: zcard.api.supply.v1.SupplyService.ListOrders:input_type -> zcard.api.supply.v1.ListSupplyOrdersRequest
-	16, // 14: zcard.api.supply.v1.SupplyService.GetOrder:input_type -> zcard.api.supply.v1.GetSupplyOrderRequest
-	18, // 15: zcard.api.supply.v1.SupplyService.CancelOrder:input_type -> zcard.api.supply.v1.CancelSupplyOrderRequest
-	20, // 16: zcard.api.supply.v1.SupplyService.RefundOrder:input_type -> zcard.api.supply.v1.RefundSupplyOrderRequest
-	0,  // 17: zcard.api.supply.v1.SupplyService.Ping:output_type -> zcard.api.supply.v1.PingReply
-	1,  // 18: zcard.api.supply.v1.SupplyService.ListCategories:output_type -> zcard.api.supply.v1.ListCategoriesReply
-	4,  // 19: zcard.api.supply.v1.SupplyService.ListProducts:output_type -> zcard.api.supply.v1.ListProductsReply
-	6,  // 20: zcard.api.supply.v1.SupplyService.GetProduct:output_type -> zcard.api.supply.v1.GetProductReply
-	8,  // 21: zcard.api.supply.v1.SupplyService.GetStock:output_type -> zcard.api.supply.v1.GetStockReply
-	12, // 22: zcard.api.supply.v1.SupplyService.CreateOrder:output_type -> zcard.api.supply.v1.CreateSupplyOrderReply
-	15, // 23: zcard.api.supply.v1.SupplyService.ListOrders:output_type -> zcard.api.supply.v1.ListSupplyOrdersReply
-	17, // 24: zcard.api.supply.v1.SupplyService.GetOrder:output_type -> zcard.api.supply.v1.GetSupplyOrderReply
-	19, // 25: zcard.api.supply.v1.SupplyService.CancelOrder:output_type -> zcard.api.supply.v1.CancelSupplyOrderReply
-	21, // 26: zcard.api.supply.v1.SupplyService.RefundOrder:output_type -> zcard.api.supply.v1.RefundSupplyOrderReply
-	17, // [17:27] is the sub-list for method output_type
-	7,  // [7:17] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	23, // 3: zcard.api.supply.v1.SupplyProduct.card_purchase:type_name -> google.protobuf.Struct
+	10, // 4: zcard.api.supply.v1.SupplyProduct.skus:type_name -> zcard.api.supply.v1.SupplySku
+	22, // 5: zcard.api.supply.v1.CreateSupplyOrderReply.fulfillment:type_name -> zcard.api.supply.v1.SupplyFulfillment
+	14, // 6: zcard.api.supply.v1.ListSupplyOrdersReply.orders:type_name -> zcard.api.supply.v1.SupplyOrderItem
+	22, // 7: zcard.api.supply.v1.GetSupplyOrderReply.fulfillment:type_name -> zcard.api.supply.v1.SupplyFulfillment
+	24, // 8: zcard.api.supply.v1.SupplyService.Ping:input_type -> google.protobuf.Empty
+	24, // 9: zcard.api.supply.v1.SupplyService.ListCategories:input_type -> google.protobuf.Empty
+	3,  // 10: zcard.api.supply.v1.SupplyService.ListProducts:input_type -> zcard.api.supply.v1.ListProductsRequest
+	5,  // 11: zcard.api.supply.v1.SupplyService.GetProduct:input_type -> zcard.api.supply.v1.GetProductRequest
+	7,  // 12: zcard.api.supply.v1.SupplyService.GetStock:input_type -> zcard.api.supply.v1.GetStockRequest
+	11, // 13: zcard.api.supply.v1.SupplyService.CreateOrder:input_type -> zcard.api.supply.v1.CreateSupplyOrderRequest
+	13, // 14: zcard.api.supply.v1.SupplyService.ListOrders:input_type -> zcard.api.supply.v1.ListSupplyOrdersRequest
+	16, // 15: zcard.api.supply.v1.SupplyService.GetOrder:input_type -> zcard.api.supply.v1.GetSupplyOrderRequest
+	18, // 16: zcard.api.supply.v1.SupplyService.CancelOrder:input_type -> zcard.api.supply.v1.CancelSupplyOrderRequest
+	20, // 17: zcard.api.supply.v1.SupplyService.RefundOrder:input_type -> zcard.api.supply.v1.RefundSupplyOrderRequest
+	0,  // 18: zcard.api.supply.v1.SupplyService.Ping:output_type -> zcard.api.supply.v1.PingReply
+	1,  // 19: zcard.api.supply.v1.SupplyService.ListCategories:output_type -> zcard.api.supply.v1.ListCategoriesReply
+	4,  // 20: zcard.api.supply.v1.SupplyService.ListProducts:output_type -> zcard.api.supply.v1.ListProductsReply
+	6,  // 21: zcard.api.supply.v1.SupplyService.GetProduct:output_type -> zcard.api.supply.v1.GetProductReply
+	8,  // 22: zcard.api.supply.v1.SupplyService.GetStock:output_type -> zcard.api.supply.v1.GetStockReply
+	12, // 23: zcard.api.supply.v1.SupplyService.CreateOrder:output_type -> zcard.api.supply.v1.CreateSupplyOrderReply
+	15, // 24: zcard.api.supply.v1.SupplyService.ListOrders:output_type -> zcard.api.supply.v1.ListSupplyOrdersReply
+	17, // 25: zcard.api.supply.v1.SupplyService.GetOrder:output_type -> zcard.api.supply.v1.GetSupplyOrderReply
+	19, // 26: zcard.api.supply.v1.SupplyService.CancelOrder:output_type -> zcard.api.supply.v1.CancelSupplyOrderReply
+	21, // 27: zcard.api.supply.v1.SupplyService.RefundOrder:output_type -> zcard.api.supply.v1.RefundSupplyOrderReply
+	18, // [18:28] is the sub-list for method output_type
+	8,  // [8:18] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_supply_v1_supply_proto_init() }

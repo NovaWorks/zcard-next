@@ -11,6 +11,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/cardpurchase"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/purchaseform"
 	"math"
 	"math/big"
@@ -36,7 +37,7 @@ func (uc *OrderUsecase) prepareServices(ctx context.Context, in CreateOrderInput
 	demand := map[uint64]int64{}
 	allowed := map[string]bool{}
 	for _, it := range in.Items {
-		if it.Quantity <= 0 || it.Quantity > 100000 {
+		if it.Quantity <= 0 {
 			return nil, fmt.Errorf("order.FORM_INVALID: 购买数量无效")
 		}
 		key := itemKey(it.ProductID, it.SkuID)
@@ -57,6 +58,16 @@ func (uc *OrderUsecase) prepareServices(ctx context.Context, in CreateOrderInput
 		p, err = pq.Only(ctx)
 		if err != nil {
 			return nil, err
+		}
+		rules, e := cardpurchase.Decode(p.ControlConfig[cardpurchase.ConfigKey])
+		if e != nil {
+			return nil, e
+		}
+		if rules == nil && it.Quantity > 100000 {
+			return nil, fmt.Errorf("order.FORM_INVALID: 购买数量无效")
+		}
+		if e = rules.Validate(int(it.Quantity)); e != nil {
+			return nil, fmt.Errorf("order.FORM_INVALID: %w", e)
 		}
 		if p.LockVersion != revisions[p.ID] {
 			return nil, fmt.Errorf("商品发货设置已变化，请刷新后重新下单")
@@ -127,6 +138,9 @@ func (uc *OrderUsecase) prepareServices(ctx context.Context, in CreateOrderInput
 			allowed[k] = true
 			own[k] = true
 			val := strings.TrimSpace(answers[k])
+			if f.Type == "password" || f.Type == "textarea" {
+				val = answers[k]
+			}
 			if err := validateAnswer(f, val); err != nil {
 				return nil, fmt.Errorf("order.FORM_INVALID: %s：%s", f.Name, err)
 			}

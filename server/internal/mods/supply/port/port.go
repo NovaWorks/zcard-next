@@ -5,14 +5,21 @@ import "context"
 
 // PurchaseRequest 采购提交请求（ procurement 消费；DownstreamOrderNo 幂等键）。
 type PurchaseRequest struct {
-	ManualFormData    map[string]any // validated immutable order-item answers, keyed by supplier field key
-	ConnectionID      uint64
-	ProductCode       string // 上游商品标识（映射后的上游键）
-	UpstreamSKU       string // 规格 SKU 上游标识（本地 product_skus.upstream_sku_id：acg=规格选择编码、dujiao=sku_id；空=无规格）
-	Quantity          int
-	DownstreamOrderNo string // 幂等键（防重复下单）
-	TraceID           string
-	CallbackURL       string // 空 = 轮询/巡检兜底
+	CardProductID, CardSKUID uint64
+	CardID                   string
+	CardQuoteID              string
+	CardMaxAmountCents       int64
+	CardCurrency             string
+	CardConfigurationHash    string
+	MaxCostCents             int64
+	ManualFormData           map[string]any // validated immutable order-item answers, keyed by supplier field key
+	ConnectionID             uint64
+	ProductCode              string // 上游商品标识（映射后的上游键）
+	UpstreamSKU              string // 规格 SKU 上游标识（本地 product_skus.upstream_sku_id：acg=规格选择编码、dujiao=sku_id；空=无规格）
+	Quantity                 int
+	DownstreamOrderNo        string // 幂等键（防重复下单）
+	TraceID                  string
+	CallbackURL              string // 空 = 轮询/巡检兜底
 }
 
 // PurchaseResult 采购提交结果。

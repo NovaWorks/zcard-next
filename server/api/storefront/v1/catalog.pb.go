@@ -418,6 +418,7 @@ func (x *FlashOffer) GetPerUserLimit() int32 {
 
 type Product struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
+	CardPurchase      *structpb.Struct       `protobuf:"bytes,85,opt,name=card_purchase,json=cardPurchase,proto3" json:"card_purchase,omitempty"`
 	ProductProperty   string                 `protobuf:"bytes,71,opt,name=product_property,json=productProperty,proto3" json:"product_property,omitempty"`
 	TrackInventory    *bool                  `protobuf:"varint,72,opt,name=track_inventory,json=trackInventory,proto3,oneof" json:"track_inventory,omitempty"`
 	SalesVisible      *bool                  `protobuf:"varint,73,opt,name=sales_visible,json=salesVisible,proto3,oneof" json:"sales_visible,omitempty"`
@@ -497,6 +498,13 @@ func (x *Product) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Product.ProtoReflect.Descriptor instead.
 func (*Product) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Product) GetCardPurchase() *structpb.Struct {
+	if x != nil {
+		return x.CardPurchase
+	}
+	return nil
 }
 
 func (x *Product) GetProductProperty() string {
@@ -761,6 +769,7 @@ func (x *Product) GetSocialSchema() *structpb.Struct {
 // ProductControl 自定义控件定义（下单表单渲染）。
 type ProductControl struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	OptionLabels  map[string]string      `protobuf:"bytes,10,rep,name=option_labels,json=optionLabels,proto3" json:"option_labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Placeholder   string                 `protobuf:"bytes,7,opt,name=placeholder,proto3" json:"placeholder,omitempty"`
 	Validation    string                 `protobuf:"bytes,8,opt,name=validation,proto3" json:"validation,omitempty"`
 	MaxLength     int32                  `protobuf:"varint,9,opt,name=max_length,json=maxLength,proto3" json:"max_length,omitempty"`
@@ -802,6 +811,13 @@ func (x *ProductControl) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ProductControl.ProtoReflect.Descriptor instead.
 func (*ProductControl) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ProductControl) GetOptionLabels() map[string]string {
+	if x != nil {
+		return x.OptionLabels
+	}
+	return nil
 }
 
 func (x *ProductControl) GetPlaceholder() string {
@@ -1074,8 +1090,9 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"priceCents\x12\x15\n" +
 	"\x06end_at\x18\x02 \x01(\x03R\x05endAt\x12\x1c\n" +
 	"\tremaining\x18\x03 \x01(\x05R\tremaining\x12$\n" +
-	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\xe4\f\n" +
-	"\aProduct\x12)\n" +
+	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\xa2\r\n" +
+	"\aProduct\x12<\n" +
+	"\rcard_purchase\x18U \x01(\v2\x17.google.protobuf.StructR\fcardPurchase\x12)\n" +
 	"\x10product_property\x18G \x01(\tR\x0fproductProperty\x12,\n" +
 	"\x0ftrack_inventory\x18H \x01(\bH\x00R\x0etrackInventory\x88\x01\x01\x12(\n" +
 	"\rsales_visible\x18I \x01(\bH\x01R\fsalesVisible\x88\x01\x01\x12!\n" +
@@ -1126,8 +1143,10 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x12\n" +
 	"\x10_track_inventoryB\x10\n" +
 	"\x0e_sales_visibleB\x10\n" +
-	"\x0e_stock_visible\"\xf3\x01\n" +
-	"\x0eProductControl\x12 \n" +
+	"\x0e_stock_visible\"\x94\x03\n" +
+	"\x0eProductControl\x12^\n" +
+	"\roption_labels\x18\n" +
+	" \x03(\v29.zcard.api.storefront.v1.ProductControl.OptionLabelsEntryR\foptionLabels\x12 \n" +
 	"\vplaceholder\x18\a \x01(\tR\vplaceholder\x12\x1e\n" +
 	"\n" +
 	"validation\x18\b \x01(\tR\n" +
@@ -1139,7 +1158,10 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x12\x1a\n" +
 	"\brequired\x18\x04 \x01(\bR\brequired\x12\x18\n" +
 	"\aoptions\x18\x05 \x03(\tR\aoptions\x12\x12\n" +
-	"\x04sort\x18\x06 \x01(\x05R\x04sort\"\xa8\x01\n" +
+	"\x04sort\x18\x06 \x01(\x05R\x04sort\x1a?\n" +
+	"\x11OptionLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa8\x01\n" +
 	"\n" +
 	"ReviewItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1a\n" +
@@ -1177,7 +1199,7 @@ func file_storefront_v1_catalog_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_catalog_proto_rawDescData
 }
 
-var file_storefront_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_storefront_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_storefront_v1_catalog_proto_goTypes = []any{
 	(*ListCategoriesReply)(nil), // 0: zcard.api.storefront.v1.ListCategoriesReply
 	(*CategoryItem)(nil),        // 1: zcard.api.storefront.v1.CategoryItem
@@ -1190,30 +1212,33 @@ var file_storefront_v1_catalog_proto_goTypes = []any{
 	(*ReviewItem)(nil),          // 8: zcard.api.storefront.v1.ReviewItem
 	(*Sku)(nil),                 // 9: zcard.api.storefront.v1.Sku
 	nil,                         // 10: zcard.api.storefront.v1.Product.SmsProductEntry
-	(*structpb.Struct)(nil),     // 11: google.protobuf.Struct
-	(*emptypb.Empty)(nil),       // 12: google.protobuf.Empty
+	nil,                         // 11: zcard.api.storefront.v1.ProductControl.OptionLabelsEntry
+	(*structpb.Struct)(nil),     // 12: google.protobuf.Struct
+	(*emptypb.Empty)(nil),       // 13: google.protobuf.Empty
 }
 var file_storefront_v1_catalog_proto_depIdxs = []int32{
 	1,  // 0: zcard.api.storefront.v1.ListCategoriesReply.categories:type_name -> zcard.api.storefront.v1.CategoryItem
 	6,  // 1: zcard.api.storefront.v1.ListProductsReply.items:type_name -> zcard.api.storefront.v1.Product
-	10, // 2: zcard.api.storefront.v1.Product.sms_product:type_name -> zcard.api.storefront.v1.Product.SmsProductEntry
-	7,  // 3: zcard.api.storefront.v1.Product.controls:type_name -> zcard.api.storefront.v1.ProductControl
-	8,  // 4: zcard.api.storefront.v1.Product.reviews:type_name -> zcard.api.storefront.v1.ReviewItem
-	9,  // 5: zcard.api.storefront.v1.Product.skus:type_name -> zcard.api.storefront.v1.Sku
-	5,  // 6: zcard.api.storefront.v1.Product.flash_sale:type_name -> zcard.api.storefront.v1.FlashOffer
-	11, // 7: zcard.api.storefront.v1.Product.social_schema:type_name -> google.protobuf.Struct
-	5,  // 8: zcard.api.storefront.v1.Sku.flash_sale:type_name -> zcard.api.storefront.v1.FlashOffer
-	2,  // 9: zcard.api.storefront.v1.StoreCatalogService.ListProducts:input_type -> zcard.api.storefront.v1.ListProductsRequest
-	4,  // 10: zcard.api.storefront.v1.StoreCatalogService.GetProduct:input_type -> zcard.api.storefront.v1.GetProductRequest
-	12, // 11: zcard.api.storefront.v1.StoreCatalogService.ListCategories:input_type -> google.protobuf.Empty
-	3,  // 12: zcard.api.storefront.v1.StoreCatalogService.ListProducts:output_type -> zcard.api.storefront.v1.ListProductsReply
-	6,  // 13: zcard.api.storefront.v1.StoreCatalogService.GetProduct:output_type -> zcard.api.storefront.v1.Product
-	0,  // 14: zcard.api.storefront.v1.StoreCatalogService.ListCategories:output_type -> zcard.api.storefront.v1.ListCategoriesReply
-	12, // [12:15] is the sub-list for method output_type
-	9,  // [9:12] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	12, // 2: zcard.api.storefront.v1.Product.card_purchase:type_name -> google.protobuf.Struct
+	10, // 3: zcard.api.storefront.v1.Product.sms_product:type_name -> zcard.api.storefront.v1.Product.SmsProductEntry
+	7,  // 4: zcard.api.storefront.v1.Product.controls:type_name -> zcard.api.storefront.v1.ProductControl
+	8,  // 5: zcard.api.storefront.v1.Product.reviews:type_name -> zcard.api.storefront.v1.ReviewItem
+	9,  // 6: zcard.api.storefront.v1.Product.skus:type_name -> zcard.api.storefront.v1.Sku
+	5,  // 7: zcard.api.storefront.v1.Product.flash_sale:type_name -> zcard.api.storefront.v1.FlashOffer
+	12, // 8: zcard.api.storefront.v1.Product.social_schema:type_name -> google.protobuf.Struct
+	11, // 9: zcard.api.storefront.v1.ProductControl.option_labels:type_name -> zcard.api.storefront.v1.ProductControl.OptionLabelsEntry
+	5,  // 10: zcard.api.storefront.v1.Sku.flash_sale:type_name -> zcard.api.storefront.v1.FlashOffer
+	2,  // 11: zcard.api.storefront.v1.StoreCatalogService.ListProducts:input_type -> zcard.api.storefront.v1.ListProductsRequest
+	4,  // 12: zcard.api.storefront.v1.StoreCatalogService.GetProduct:input_type -> zcard.api.storefront.v1.GetProductRequest
+	13, // 13: zcard.api.storefront.v1.StoreCatalogService.ListCategories:input_type -> google.protobuf.Empty
+	3,  // 14: zcard.api.storefront.v1.StoreCatalogService.ListProducts:output_type -> zcard.api.storefront.v1.ListProductsReply
+	6,  // 15: zcard.api.storefront.v1.StoreCatalogService.GetProduct:output_type -> zcard.api.storefront.v1.Product
+	0,  // 16: zcard.api.storefront.v1.StoreCatalogService.ListCategories:output_type -> zcard.api.storefront.v1.ListCategoriesReply
+	14, // [14:17] is the sub-list for method output_type
+	11, // [11:14] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_catalog_proto_init() }
@@ -1228,7 +1253,7 @@ func file_storefront_v1_catalog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_catalog_proto_rawDesc), len(file_storefront_v1_catalog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -129,11 +129,16 @@ func (g *Gateway) Submit(ctx context.Context, req supplyport.PurchaseRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	if len(req.ManualFormData) > 0 && conn.Driver != "dujiao_next" && conn.Driver != "mcy_shop" && conn.Driver != "zcard" {
+	if len(req.ManualFormData) > 0 && conn.Driver != "dujiao_next" && conn.Driver != "mcy_shop" && conn.Driver != "zcard" && conn.Driver != "acg_faka" {
 		return nil, supplyport.ErrUpstreamFormInvalid
 	}
+	if err := g.verifyFrozenCardPurchase(ctx, req, a, conn); err != nil {
+		return nil, err
+	}
 	res, err := a.CreateOrder(ctx, adapter.CreateOrderReq{
-		ManualFormData:    req.ManualFormData,
+		ManualFormData: req.ManualFormData,
+		CardID:         req.CardID, CardQuoteID: req.CardQuoteID,
+		CardMaxAmountCents: req.CardMaxAmountCents, CardCurrency: req.CardCurrency,
 		ProductCode:       req.ProductCode,
 		UpstreamSKU:       req.UpstreamSKU,
 		Quantity:          req.Quantity,
@@ -143,6 +148,11 @@ func (g *Gateway) Submit(ctx context.Context, req supplyport.PurchaseRequest) (*
 	})
 	g.feedback(ctx, conn, err)
 	if err != nil {
+		var rejection *supplyport.CardPurchaseRejection
+		if errors.As(err, &rejection) {
+			return nil, rejection
+		}
+
 		switch {
 		case errors.Is(err, adapter.ErrPurchaseFormInvalid):
 			return nil, supplyport.ErrUpstreamFormInvalid

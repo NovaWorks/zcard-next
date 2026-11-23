@@ -25,6 +25,8 @@ type OrderItem struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// 租户（0=主站；由 interceptor 自动注入，业务不手写）
 	SubsiteID uint64 `json:"subsite_id,omitempty"`
+	// UpstreamCardCipher holds the value of the "upstream_card_cipher" field.
+	UpstreamCardCipher []byte `json:"upstream_card_cipher,omitempty"`
 	// 父订单（硬外键 → orders）
 	OrderID uint64 `json:"order_id,omitempty"`
 	// ProductID holds the value of the "product_id" field.
@@ -120,7 +122,7 @@ func (*OrderItem) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case orderitem.FieldSocialSchema, orderitem.FieldSmsProduct, orderitem.FieldFormAnswers, orderitem.FieldUpstreamSourceSnapshot, orderitem.FieldCommissionSnapshot, orderitem.FieldProfitSnapshot:
+		case orderitem.FieldUpstreamCardCipher, orderitem.FieldSocialSchema, orderitem.FieldSmsProduct, orderitem.FieldFormAnswers, orderitem.FieldUpstreamSourceSnapshot, orderitem.FieldCommissionSnapshot, orderitem.FieldProfitSnapshot:
 			values[i] = new([]byte)
 		case orderitem.FieldInventoryTracked:
 			values[i] = new(sql.NullBool)
@@ -168,6 +170,12 @@ func (_m *OrderItem) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field subsite_id", values[i])
 			} else if value.Valid {
 				_m.SubsiteID = uint64(value.Int64)
+			}
+		case orderitem.FieldUpstreamCardCipher:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field upstream_card_cipher", values[i])
+			} else if value != nil {
+				_m.UpstreamCardCipher = *value
 			}
 		case orderitem.FieldOrderID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -422,6 +430,9 @@ func (_m *OrderItem) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("subsite_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SubsiteID))
+	builder.WriteString(", ")
+	builder.WriteString("upstream_card_cipher=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UpstreamCardCipher))
 	builder.WriteString(", ")
 	builder.WriteString("order_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.OrderID))

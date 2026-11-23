@@ -14,11 +14,12 @@ function toggle(id: number, value: string, checked: boolean) { const values = ne
     <div v-for="c in controls" :key="c.id" class="field">
       <label :for="`${prefix || 'order'}-${c.id}`">{{ c.name }} <span v-if="c.required" class="required">{{ $t('（必填）') }}</span></label>
       <select v-if="c.type === 'select'" :id="`${prefix || 'order'}-${c.id}`" class="input" :value="modelValue[String(c.id)] || ''" :required="c.required" @change="set(c.id, ($event.target as HTMLSelectElement).value)">
-        <option value="">{{ $t('请选择') }}</option><option v-for="o in c.options || []" :key="o">{{ o }}</option>
+        <option value="">{{ $t('请选择') }}</option><option v-for="o in c.options || []" :key="o" :value="o">{{ c.option_labels?.[o] || o }}</option>
       </select>
       <div v-else-if="c.type === 'radio' || c.type === 'checkbox'" class="options" :aria-label="c.name">
-        <label v-for="o in c.options || []" :key="o"><input :type="c.type" :name="`${prefix || 'order'}-${c.id}`" :checked="c.type === 'radio' ? modelValue[String(c.id)] === o : (modelValue[String(c.id)] || '').split(',').includes(o)" @change="c.type === 'radio' ? set(c.id,o) : toggle(c.id,o,($event.target as HTMLInputElement).checked)" />{{ o }}</label>
+        <label v-for="o in c.options || []" :key="o"><input :type="c.type" :name="`${prefix || 'order'}-${c.id}`" :checked="c.type === 'radio' ? modelValue[String(c.id)] === o : (modelValue[String(c.id)] || '').split(',').includes(o)" @change="c.type === 'radio' ? set(c.id,o) : toggle(c.id,o,($event.target as HTMLInputElement).checked)" />{{ c.option_labels?.[o] || o }}</label>
       </div>
+      <textarea v-else-if="c.type === 'textarea'" :id="`${prefix || 'order'}-${c.id}`" class="input" rows="4" :value="modelValue[String(c.id)] || ''" :required="c.required" :maxlength="c.max_length || 500" :placeholder="c.placeholder || $t('请输入{0}', [c.name])" autocomplete="off" @input="set(c.id,($event.target as HTMLTextAreaElement).value)" />
       <input v-else :id="`${prefix || 'order'}-${c.id}`" class="input" :type="c.type === 'password' ? 'password' : c.type === 'number' ? 'number' : 'text'" :value="modelValue[String(c.id)] || ''" :required="c.required" :maxlength="c.max_length || 500" :placeholder="c.placeholder || $t('请输入{0}', [c.name])" autocomplete="off" @input="set(c.id,($event.target as HTMLInputElement).value)" />
       <small v-if="c.validation === 'tron'">{{ $t('填写 TRON 接收地址，请核对后再付款。') }}</small>
       <small v-else-if="c.validation === 'url'">{{ $t('填写完整链接，包含 https://。') }}</small>

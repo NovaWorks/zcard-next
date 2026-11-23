@@ -10,11 +10,19 @@ import (
 
 // CartItem 管线购物车行（券范围判定输入）。
 type CartItem struct {
-	SkuID      uint64
-	ProductID  uint64
-	CategoryID uint64
-	Quantity   int32
-	UnitPrice  money.Cents // 券前折后单价，不含分站加价；调用方剔除禁止用券的行
+	TotalAmount *money.Cents // Exact complete line amount when unit cents do not divide.
+	SkuID       uint64
+	ProductID   uint64
+	CategoryID  uint64
+	Quantity    int32
+	UnitPrice   money.Cents // 券前折后单价，不含分站加价；调用方剔除禁止用券的行
+}
+
+func (i CartItem) Amount() money.Cents {
+	if i.TotalAmount != nil {
+		return *i.TotalAmount
+	}
+	return i.UnitPrice * money.Cents(i.Quantity)
 }
 
 // CouponResolver 优惠券解析（order 价格管线步骤 5 消费）。

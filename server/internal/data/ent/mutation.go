@@ -43806,6 +43806,7 @@ type OrderItemMutation struct {
 	updated_at               *time.Time
 	subsite_id               *uint64
 	addsubsite_id            *int64
+	upstream_card_cipher     *[]byte
 	product_id               *uint64
 	addproduct_id            *int64
 	sku_id                   *uint64
@@ -44092,6 +44093,55 @@ func (m *OrderItemMutation) AddedSubsiteID() (r int64, exists bool) {
 func (m *OrderItemMutation) ResetSubsiteID() {
 	m.subsite_id = nil
 	m.addsubsite_id = nil
+}
+
+// SetUpstreamCardCipher sets the "upstream_card_cipher" field.
+func (m *OrderItemMutation) SetUpstreamCardCipher(b []byte) {
+	m.upstream_card_cipher = &b
+}
+
+// UpstreamCardCipher returns the value of the "upstream_card_cipher" field in the mutation.
+func (m *OrderItemMutation) UpstreamCardCipher() (r []byte, exists bool) {
+	v := m.upstream_card_cipher
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpstreamCardCipher returns the old "upstream_card_cipher" field's value of the OrderItem entity.
+// If the OrderItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderItemMutation) OldUpstreamCardCipher(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpstreamCardCipher is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpstreamCardCipher requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpstreamCardCipher: %w", err)
+	}
+	return oldValue.UpstreamCardCipher, nil
+}
+
+// ClearUpstreamCardCipher clears the value of the "upstream_card_cipher" field.
+func (m *OrderItemMutation) ClearUpstreamCardCipher() {
+	m.upstream_card_cipher = nil
+	m.clearedFields[orderitem.FieldUpstreamCardCipher] = struct{}{}
+}
+
+// UpstreamCardCipherCleared returns if the "upstream_card_cipher" field was cleared in this mutation.
+func (m *OrderItemMutation) UpstreamCardCipherCleared() bool {
+	_, ok := m.clearedFields[orderitem.FieldUpstreamCardCipher]
+	return ok
+}
+
+// ResetUpstreamCardCipher resets all changes to the "upstream_card_cipher" field.
+func (m *OrderItemMutation) ResetUpstreamCardCipher() {
+	m.upstream_card_cipher = nil
+	delete(m.clearedFields, orderitem.FieldUpstreamCardCipher)
 }
 
 // SetOrderID sets the "order_id" field.
@@ -45775,7 +45825,7 @@ func (m *OrderItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderItemMutation) Fields() []string {
-	fields := make([]string, 0, 35)
+	fields := make([]string, 0, 36)
 	if m.created_at != nil {
 		fields = append(fields, orderitem.FieldCreatedAt)
 	}
@@ -45784,6 +45834,9 @@ func (m *OrderItemMutation) Fields() []string {
 	}
 	if m.subsite_id != nil {
 		fields = append(fields, orderitem.FieldSubsiteID)
+	}
+	if m.upstream_card_cipher != nil {
+		fields = append(fields, orderitem.FieldUpstreamCardCipher)
 	}
 	if m._order != nil {
 		fields = append(fields, orderitem.FieldOrderID)
@@ -45895,6 +45948,8 @@ func (m *OrderItemMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case orderitem.FieldSubsiteID:
 		return m.SubsiteID()
+	case orderitem.FieldUpstreamCardCipher:
+		return m.UpstreamCardCipher()
 	case orderitem.FieldOrderID:
 		return m.OrderID()
 	case orderitem.FieldProductID:
@@ -45974,6 +46029,8 @@ func (m *OrderItemMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldUpdatedAt(ctx)
 	case orderitem.FieldSubsiteID:
 		return m.OldSubsiteID(ctx)
+	case orderitem.FieldUpstreamCardCipher:
+		return m.OldUpstreamCardCipher(ctx)
 	case orderitem.FieldOrderID:
 		return m.OldOrderID(ctx)
 	case orderitem.FieldProductID:
@@ -46067,6 +46124,13 @@ func (m *OrderItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSubsiteID(v)
+		return nil
+	case orderitem.FieldUpstreamCardCipher:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpstreamCardCipher(v)
 		return nil
 	case orderitem.FieldOrderID:
 		v, ok := value.(uint64)
@@ -46529,6 +46593,9 @@ func (m *OrderItemMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *OrderItemMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(orderitem.FieldUpstreamCardCipher) {
+		fields = append(fields, orderitem.FieldUpstreamCardCipher)
+	}
 	if m.FieldCleared(orderitem.FieldSkuID) {
 		fields = append(fields, orderitem.FieldSkuID)
 	}
@@ -46573,6 +46640,9 @@ func (m *OrderItemMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *OrderItemMutation) ClearField(name string) error {
 	switch name {
+	case orderitem.FieldUpstreamCardCipher:
+		m.ClearUpstreamCardCipher()
+		return nil
 	case orderitem.FieldSkuID:
 		m.ClearSkuID()
 		return nil
@@ -46619,6 +46689,9 @@ func (m *OrderItemMutation) ResetField(name string) error {
 		return nil
 	case orderitem.FieldSubsiteID:
 		m.ResetSubsiteID()
+		return nil
+	case orderitem.FieldUpstreamCardCipher:
+		m.ResetUpstreamCardCipher()
 		return nil
 	case orderitem.FieldOrderID:
 		m.ResetOrderID()
@@ -66387,6 +66460,7 @@ type ProductControlMutation struct {
 	required      *bool
 	options       *[]string
 	appendoptions []string
+	option_labels *map[string]string
 	sort          *int32
 	addsort       *int32
 	clearedFields map[string]struct{}
@@ -66984,6 +67058,55 @@ func (m *ProductControlMutation) ResetOptions() {
 	delete(m.clearedFields, productcontrol.FieldOptions)
 }
 
+// SetOptionLabels sets the "option_labels" field.
+func (m *ProductControlMutation) SetOptionLabels(value map[string]string) {
+	m.option_labels = &value
+}
+
+// OptionLabels returns the value of the "option_labels" field in the mutation.
+func (m *ProductControlMutation) OptionLabels() (r map[string]string, exists bool) {
+	v := m.option_labels
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOptionLabels returns the old "option_labels" field's value of the ProductControl entity.
+// If the ProductControl object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductControlMutation) OldOptionLabels(ctx context.Context) (v map[string]string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOptionLabels is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOptionLabels requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOptionLabels: %w", err)
+	}
+	return oldValue.OptionLabels, nil
+}
+
+// ClearOptionLabels clears the value of the "option_labels" field.
+func (m *ProductControlMutation) ClearOptionLabels() {
+	m.option_labels = nil
+	m.clearedFields[productcontrol.FieldOptionLabels] = struct{}{}
+}
+
+// OptionLabelsCleared returns if the "option_labels" field was cleared in this mutation.
+func (m *ProductControlMutation) OptionLabelsCleared() bool {
+	_, ok := m.clearedFields[productcontrol.FieldOptionLabels]
+	return ok
+}
+
+// ResetOptionLabels resets all changes to the "option_labels" field.
+func (m *ProductControlMutation) ResetOptionLabels() {
+	m.option_labels = nil
+	delete(m.clearedFields, productcontrol.FieldOptionLabels)
+}
+
 // SetSort sets the "sort" field.
 func (m *ProductControlMutation) SetSort(i int32) {
 	m.sort = &i
@@ -67074,7 +67197,7 @@ func (m *ProductControlMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductControlMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, productcontrol.FieldCreatedAt)
 	}
@@ -67107,6 +67230,9 @@ func (m *ProductControlMutation) Fields() []string {
 	}
 	if m.options != nil {
 		fields = append(fields, productcontrol.FieldOptions)
+	}
+	if m.option_labels != nil {
+		fields = append(fields, productcontrol.FieldOptionLabels)
 	}
 	if m.sort != nil {
 		fields = append(fields, productcontrol.FieldSort)
@@ -67141,6 +67267,8 @@ func (m *ProductControlMutation) Field(name string) (ent.Value, bool) {
 		return m.Required()
 	case productcontrol.FieldOptions:
 		return m.Options()
+	case productcontrol.FieldOptionLabels:
+		return m.OptionLabels()
 	case productcontrol.FieldSort:
 		return m.Sort()
 	}
@@ -67174,6 +67302,8 @@ func (m *ProductControlMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldRequired(ctx)
 	case productcontrol.FieldOptions:
 		return m.OldOptions(ctx)
+	case productcontrol.FieldOptionLabels:
+		return m.OldOptionLabels(ctx)
 	case productcontrol.FieldSort:
 		return m.OldSort(ctx)
 	}
@@ -67261,6 +67391,13 @@ func (m *ProductControlMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetOptions(v)
+		return nil
+	case productcontrol.FieldOptionLabels:
+		v, ok := value.(map[string]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOptionLabels(v)
 		return nil
 	case productcontrol.FieldSort:
 		v, ok := value.(int32)
@@ -67353,6 +67490,9 @@ func (m *ProductControlMutation) ClearedFields() []string {
 	if m.FieldCleared(productcontrol.FieldOptions) {
 		fields = append(fields, productcontrol.FieldOptions)
 	}
+	if m.FieldCleared(productcontrol.FieldOptionLabels) {
+		fields = append(fields, productcontrol.FieldOptionLabels)
+	}
 	return fields
 }
 
@@ -67369,6 +67509,9 @@ func (m *ProductControlMutation) ClearField(name string) error {
 	switch name {
 	case productcontrol.FieldOptions:
 		m.ClearOptions()
+		return nil
+	case productcontrol.FieldOptionLabels:
+		m.ClearOptionLabels()
 		return nil
 	}
 	return fmt.Errorf("unknown ProductControl nullable field %s", name)
@@ -67410,6 +67553,9 @@ func (m *ProductControlMutation) ResetField(name string) error {
 		return nil
 	case productcontrol.FieldOptions:
 		m.ResetOptions()
+		return nil
+	case productcontrol.FieldOptionLabels:
+		m.ResetOptionLabels()
 		return nil
 	case productcontrol.FieldSort:
 		m.ResetSort()

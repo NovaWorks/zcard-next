@@ -14092,6 +14092,8 @@ components:
         zcard.api.storefront.v1.CartItem:
             type: object
             properties:
+                cardPurchase:
+                    type: object
                 id:
                     type: string
                 productId:
@@ -14209,6 +14211,8 @@ components:
         zcard.api.storefront.v1.CreateOrderReply:
             type: object
             properties:
+                pointsTotal:
+                    type: string
                 shippingCollect:
                     type: boolean
                     description: At least one item has shipping payable to the carrier on delivery.
@@ -15198,6 +15202,8 @@ components:
                 - quantity
             type: object
             properties:
+                cardSelection:
+                    type: string
                 controlAnswers:
                     type: object
                     additionalProperties:
@@ -15349,6 +15355,8 @@ components:
         zcard.api.storefront.v1.Product:
             type: object
             properties:
+                cardPurchase:
+                    type: object
                 productProperty:
                     type: string
                 trackInventory:
@@ -15446,6 +15454,10 @@ components:
         zcard.api.storefront.v1.ProductControl:
             type: object
             properties:
+                optionLabels:
+                    type: object
+                    additionalProperties:
+                        type: string
                 placeholder:
                     type: string
                 validation:
@@ -16157,6 +16169,8 @@ components:
         zcard.api.supply.v1.CreateSupplyOrderRequest:
             type: object
             properties:
+                cardQuoteId:
+                    type: string
                 productId:
                     type: string
                 skuId:
@@ -16284,6 +16298,8 @@ components:
         zcard.api.supply.v1.SupplyProduct:
             type: object
             properties:
+                cardPurchase:
+                    type: object
                 id:
                     type: string
                 name:

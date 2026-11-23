@@ -14,6 +14,7 @@ import (
 
 // AmountLine 价格管线明细行（对应 ent order_amount_lines）。
 type AmountLine struct {
+	Total      bool   // amount is already the complete quantity total
 	Type       string // base_price / member_discount / group_discount / promo_discount / coupon_discount / points_discount / subsite_markup / fee / rounding_adjust
 	Amount     int64  // 有符号分（折扣为负、加价为正）
 	SourceType string // member_level / coupon / flash_sale / points / subsite / manual

@@ -246,7 +246,7 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 	for _, c := range controls {
 		out.Controls = append(out.Controls, &storefrontv1.ProductControl{
 			Id: c.ID, Name: c.Name, Type: string(c.Type),
-			Required: c.Required, Options: c.Options, Sort: c.Sort,
+			Required: c.Required, Options: c.Options, OptionLabels: c.OptionLabels, Sort: c.Sort,
 			Placeholder: c.Placeholder, Validation: c.Validation, MaxLength: c.MaxLength,
 		})
 	}
@@ -303,6 +303,7 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 	}
 
 	return &storefrontv1.Product{
+		CardPurchase:    cardRulesStruct(p.CardRules),
 		ProductProperty: p.ProductProperty, SalesVisible: &p.SalesVisible, TrackInventory: &p.TrackInventory,
 		SocialSchema: socialStruct(p.SocialSchema), ProductKind: p.ProductKind, DeliveryKind: p.DeliveryKind, SmsProduct: p.SMSProduct, SmsSalesEnabled: data.SMSSalesEnabled(),
 		GoodsType: p.GoodsType, ShippingMode: p.ShippingMode, ShippingFeeCents: p.ShippingFee, ShippingCountries: p.ShippingCountries,

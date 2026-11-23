@@ -1,17 +1,75 @@
 package payment
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/cardpurchase"
 )
+
+type cardPurchaseCipher interface {
+	Open([]byte, uint64, uint64) (string, error)
+}
+
+func (r *PaymentRepoImpl) SetCardPurchaseCipher(cipher cardPurchaseCipher) {
+	r.cardPurchaseCipher = cipher
+}
+
+func (r *PaymentRepoImpl) validateCardRejection(po *ent.ProcurementOrder, it *ent.OrderItem, part *ent.ProcurementItem, driver string) error {
+	if r.cardPurchaseCipher == nil || len(it.UpstreamCardCipher) == 0 {
+		return refundInvalid("采购冻结报价解密不可用")
+	}
+	raw, e := r.cardPurchaseCipher.Open(it.UpstreamCardCipher, it.ID, it.SubsiteID)
+	if e != nil {
+		return refundInvalid("采购冻结报价无法核对")
+	}
+	var f struct {
+		Request supplyport.CardPurchaseRequest `json:"request"`
+		Quote   supplyport.CardPurchaseQuote   `json:"quote"`
+	}
+	if json.Unmarshal([]byte(raw), &f) != nil || f.Request.ProductID != it.ProductID || f.Request.SKUID != it.SkuID || f.Request.Quantity != int(it.Quantity) || f.Request.ConnectionID != po.ConnectionID || f.Request.ProductCode != part.UpstreamSku || f.Quote.CostCents <= 0 || data.SnapshotInt(it.ProfitSnapshot["card_cost_total_cents"]) != f.Quote.CostCents {
+		return refundInvalid("采购冻结报价身份或成本不匹配")
+	}
+	b, e := json.Marshal(po.UpstreamSourceSnapshot[cardpurchase.RejectionSnapshotKey])
+	if e != nil {
+		return e
+	}
+	var proof cardpurchase.RejectionProof
+	if json.Unmarshal(b, &proof) != nil || proof.ValidateReceipt(driver) != nil {
+		return refundInvalid("采购拒绝凭证无效")
+	}
+	if proof.QuoteID != f.Quote.ProviderQuoteID || proof.Currency != f.Quote.ProviderCurrency || proof.NativeCapCents != f.Quote.ProviderAmountCents || proof.ProductID != it.ProductID || proof.SKUID != it.SkuID || proof.ConnectionID != po.ConnectionID || proof.Quantity != it.Quantity || proof.ProductCode != f.Request.ProductCode || proof.UpstreamSKU != f.Request.UpstreamSKU || proof.ConfigurationHash != f.Quote.ConfigurationHash || proof.FrozenCipherHash != fmt.Sprintf("%x", sha256.Sum256(it.UpstreamCardCipher)) {
+		return refundInvalid("采购拒绝凭证与冻结购买不匹配")
+	}
+	sealed, e := base64.StdEncoding.DecodeString(proof.Seal)
+	if e != nil || len(sealed) == 0 {
+		return refundInvalid("采购拒绝凭证认证缺失")
+	}
+	verified, e := r.cardPurchaseCipher.Open(sealed, it.ID, it.SubsiteID)
+	if e != nil {
+		return refundInvalid("采购拒绝凭证认证失败")
+	}
+	canonical, e := proof.SealPayload()
+	if e != nil {
+		return e
+	}
+	if !bytes.Equal([]byte(verified), append([]byte(cardpurchase.RejectionSealPrefix), canonical...)) {
+		return refundInvalid("采购拒绝凭证被修改")
+	}
+	return nil
+}
 
 // RefundRejectedCard is deliberately narrower than the generic gateway refund
 // entry point. A successful wallet payment and an authoritative zero-acceptance
@@ -34,11 +92,12 @@ func (r *PaymentRepoImpl) RefundRejectedCard(ctx context.Context, procurementID 
 			}
 			return nil
 		}
-		if po.Status != "refunding" || po.FailStrategy != "auto_refund" || po.UpstreamOrderID != "" || po.LastError != supplyport.ErrUpstreamNoStock.Error() {
+		proved := po.LastError == supplyport.ErrCardPurchaseRejected.Error()
+		if po.Status != "refunding" || po.FailStrategy != "auto_refund" || po.UpstreamOrderID != "" || !proved && po.LastError != supplyport.ErrUpstreamNoStock.Error() {
 			return refundInvalid("采购结果尚未证明可自动退款")
 		}
 		conn, e := c.SupplyConnection.Get(ctx, po.ConnectionID)
-		if e != nil || conn.Driver != "zcard" {
+		if e != nil || conn.Driver != "zcard" && (!proved || conn.Driver != "acg_faka") {
 			return refundInvalid("该采购需人工核对退款")
 		}
 		parts, e := c.ProcurementItem.Query().Where(procurementitem.ProcurementID(po.ID)).All(ctx)
@@ -59,6 +118,13 @@ func (r *PaymentRepoImpl) RefundRejectedCard(ctx context.Context, procurementID 
 		}
 		if it.Quantity <= 0 || parts[0].Quantity != it.Quantity {
 			return refundInvalid("采购数量与订单不符")
+		}
+		if proved {
+			if e = r.validateCardRejection(po, it, parts[0], conn.Driver); e != nil {
+				return e
+			}
+		} else if len(it.UpstreamCardCipher) > 0 {
+			return refundInvalid("动态采购需要完整拒绝凭证")
 		}
 		o, e := c.Order.Get(ctx, it.OrderID)
 		if e != nil {
@@ -83,7 +149,7 @@ func (r *PaymentRepoImpl) RefundRejectedCard(ctx context.Context, procurementID 
 			return refundInvalid("已有其他退款，需人工核对")
 		}
 		refunded := int64(0)
-		receipt, e := r.RefundToWallet(ctx, o.ID, o.TotalAmount, &refunded, "上游明确缺货且未受理采购，退回原付款余额", 0)
+		receipt, e := r.RefundToWallet(ctx, o.ID, o.TotalAmount, &refunded, "上游采购已明确拒绝且无净扣款，退回原付款余额", 0)
 		if e != nil {
 			return e
 		}

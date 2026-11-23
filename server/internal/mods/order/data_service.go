@@ -74,7 +74,7 @@ func (s *StoreOrderService) createOrder(ctx context.Context, req *storefrontv1.C
 			return nil, errors.BadRequest("order.INVALID_ITEM", "商品 ID 与数量必填")
 		}
 		items = append(items, OrderItemInput{
-			ProductID: it.GetProductId(), SkuID: it.GetSkuId(), Quantity: it.GetQuantity(), ControlAnswers: it.ControlAnswers,
+			CardSelection: it.GetCardSelection(), ProductID: it.GetProductId(), SkuID: it.GetSkuId(), Quantity: it.GetQuantity(), ControlAnswers: it.ControlAnswers,
 		})
 	}
 	// 登录态绑定买家（userAuthMiddleware 注入的 claims；0=游客单）
@@ -97,7 +97,7 @@ func (s *StoreOrderService) createOrder(ctx context.Context, req *storefrontv1.C
 	if replay, e := s.uc.ReplayOrder(ctx, input); e != nil {
 		return nil, mapOrderErr(e)
 	} else if replay != nil {
-		return &storefrontv1.CreateOrderReply{OrderNo: replay.OrderNo, TotalCents: replay.TotalCents, ShippingCents: replay.ShippingCents, ShippingCollect: replay.ShippingCollect, ExpiresAt: replay.ExpiresAt.Unix(), OrderAccessToken: replay.OrderAccessToken}, nil
+		return &storefrontv1.CreateOrderReply{PointsTotal: replay.PointsTotal, OrderNo: replay.OrderNo, TotalCents: replay.TotalCents, ShippingCents: replay.ShippingCents, ShippingCollect: replay.ShippingCollect, ExpiresAt: replay.ExpiresAt.Unix(), OrderAccessToken: replay.OrderAccessToken}, nil
 	}
 	if !quote && s.captcha != nil && claims == nil {
 		if err := s.captcha.VerifyScene(ctx, captcha.SceneOrder, req.GetCaptchaId(), req.GetCaptchaCode()); err != nil {
@@ -108,7 +108,7 @@ func (s *StoreOrderService) createOrder(ctx context.Context, req *storefrontv1.C
 	if err != nil {
 		return nil, mapOrderErr(err)
 	}
-	return &storefrontv1.CreateOrderReply{
+	return &storefrontv1.CreateOrderReply{PointsTotal: res.PointsTotal,
 		OrderNo: res.OrderNo, TotalCents: res.TotalCents, ShippingCents: res.ShippingCents, ShippingCollect: res.ShippingCollect, QuoteKey: res.QuoteKey, ExpiresAt: res.ExpiresAt.Unix(), OrderAccessToken: res.OrderAccessToken,
 	}, nil
 }
@@ -581,6 +581,12 @@ func toAdminOrderPB(o *ent.Order, items []*ent.OrderItem, lines []*ent.OrderAmou
 func mapOrderErr(err error) error {
 	msg := err.Error()
 	switch {
+	case contains(msg, "QUOTE_CHANGED"):
+		return errors.BadRequest("order.QUOTE_CHANGED", "商品或价格已变化，请重新确认金额")
+	case contains(msg, "QUOTE_EXPIRED"):
+		return errors.BadRequest("order.QUOTE_EXPIRED", "报价已过期，请重新确认金额")
+	case contains(msg, "QUOTE_UNAVAILABLE"):
+		return errors.BadRequest("order.QUOTE_UNAVAILABLE", strings.TrimPrefix(msg, "order.QUOTE_UNAVAILABLE: "))
 	case contains(msg, "FORM_INVALID"):
 		return errors.BadRequest("order.FORM_INVALID", strings.TrimPrefix(msg, "order.FORM_INVALID: "))
 	case stderrors.Is(err, couponport.ErrFlashReserved):

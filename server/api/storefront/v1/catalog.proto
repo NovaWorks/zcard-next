@@ -80,6 +80,7 @@ message FlashOffer {
 }
 
 message Product {
+ google.protobuf.Struct card_purchase = 85;
   string product_property = 71;
   optional bool track_inventory = 72;
   optional bool sales_visible = 73;
@@ -132,6 +133,7 @@ message Product {
 
 // ProductControl 自定义控件定义（下单表单渲染）。
 message ProductControl {
+ map<string,string> option_labels = 10;
   string placeholder = 7;
   string validation = 8;
   int32 max_length = 9;

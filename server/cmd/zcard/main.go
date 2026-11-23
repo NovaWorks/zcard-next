@@ -495,6 +495,7 @@ func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.
 	// 破环点：order 超时取消慢通道顺延探测 ← payment 实现
 	// （wire 环 OrderUsecase ↔ PaymentRepoImpl，装配期手工注入——同 dp.Register 模式）
 	orderUC.SetSlowPaymentChecker(payRepo)
+	payRepo.SetCardPurchaseCipher(orderUC.AccessCipher)
 	// 破环点：上游代发项下单前实时库存预检 ← supply 网关实现
 	orderUC.SetStockGate(stockGate)
 	storeOrderSvc.SetRecoverySender(notifyDisp)

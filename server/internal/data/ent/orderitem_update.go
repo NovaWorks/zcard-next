@@ -57,6 +57,18 @@ func (_u *OrderItemUpdate) AddSubsiteID(v int64) *OrderItemUpdate {
 	return _u
 }
 
+// SetUpstreamCardCipher sets the "upstream_card_cipher" field.
+func (_u *OrderItemUpdate) SetUpstreamCardCipher(v []byte) *OrderItemUpdate {
+	_u.mutation.SetUpstreamCardCipher(v)
+	return _u
+}
+
+// ClearUpstreamCardCipher clears the value of the "upstream_card_cipher" field.
+func (_u *OrderItemUpdate) ClearUpstreamCardCipher() *OrderItemUpdate {
+	_u.mutation.ClearUpstreamCardCipher()
+	return _u
+}
+
 // SetOrderID sets the "order_id" field.
 func (_u *OrderItemUpdate) SetOrderID(v uint64) *OrderItemUpdate {
 	_u.mutation.SetOrderID(v)
@@ -731,6 +743,12 @@ func (_u *OrderItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.AddedSubsiteID(); ok {
 		_spec.AddField(orderitem.FieldSubsiteID, field.TypeUint64, value)
 	}
+	if value, ok := _u.mutation.UpstreamCardCipher(); ok {
+		_spec.SetField(orderitem.FieldUpstreamCardCipher, field.TypeBytes, value)
+	}
+	if _u.mutation.UpstreamCardCipherCleared() {
+		_spec.ClearField(orderitem.FieldUpstreamCardCipher, field.TypeBytes)
+	}
 	if value, ok := _u.mutation.ProductID(); ok {
 		_spec.SetField(orderitem.FieldProductID, field.TypeUint64, value)
 	}
@@ -980,6 +998,18 @@ func (_u *OrderItemUpdateOne) SetNillableSubsiteID(v *uint64) *OrderItemUpdateOn
 // AddSubsiteID adds value to the "subsite_id" field.
 func (_u *OrderItemUpdateOne) AddSubsiteID(v int64) *OrderItemUpdateOne {
 	_u.mutation.AddSubsiteID(v)
+	return _u
+}
+
+// SetUpstreamCardCipher sets the "upstream_card_cipher" field.
+func (_u *OrderItemUpdateOne) SetUpstreamCardCipher(v []byte) *OrderItemUpdateOne {
+	_u.mutation.SetUpstreamCardCipher(v)
+	return _u
+}
+
+// ClearUpstreamCardCipher clears the value of the "upstream_card_cipher" field.
+func (_u *OrderItemUpdateOne) ClearUpstreamCardCipher() *OrderItemUpdateOne {
+	_u.mutation.ClearUpstreamCardCipher()
 	return _u
 }
 
@@ -1686,6 +1716,12 @@ func (_u *OrderItemUpdateOne) sqlSave(ctx context.Context) (_node *OrderItem, er
 	}
 	if value, ok := _u.mutation.AddedSubsiteID(); ok {
 		_spec.AddField(orderitem.FieldSubsiteID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.UpstreamCardCipher(); ok {
+		_spec.SetField(orderitem.FieldUpstreamCardCipher, field.TypeBytes, value)
+	}
+	if _u.mutation.UpstreamCardCipherCleared() {
+		_spec.ClearField(orderitem.FieldUpstreamCardCipher, field.TypeBytes)
 	}
 	if value, ok := _u.mutation.ProductID(); ok {
 		_spec.SetField(orderitem.FieldProductID, field.TypeUint64, value)

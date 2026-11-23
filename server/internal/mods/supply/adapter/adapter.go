@@ -15,6 +15,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/cardpurchase"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/purchaseform"
 	"time"
 )
@@ -83,6 +84,7 @@ type SKU struct {
 
 // Product 上游商品（统一输出分）。
 type Product struct {
+	CardRules      *cardpurchase.Rules
 	FormFields     []purchaseform.Field
 	ProductKind    string
 	DeliveryKind   string
@@ -120,13 +122,17 @@ type ProductList struct {
 
 // CreateOrderReq 采购提交请求（DownstreamOrderNo 即幂等键，随请求发送）。
 type CreateOrderReq struct {
-	ManualFormData    map[string]any
-	ProductCode       string // 上游商品标识（acg-faka: shared_code；dujiao: sku_id；zcard: product_id）
-	UpstreamSKU       string // 规格 SKU 标识（本地 product_skus.upstream_sku_id；acg=race|k=v 编码、dujiao=sku_id 覆盖 ProductCode；空=无规格）
-	Quantity          int
-	DownstreamOrderNo string // 幂等键（防重复下单；acg-faka 作 request_no 防重）
-	TraceID           string
-	CallbackURL       string // 空 = 不用回调（轮询/巡检兜底）
+	CardID             string
+	CardQuoteID        string
+	CardMaxAmountCents int64
+	CardCurrency       string
+	ManualFormData     map[string]any
+	ProductCode        string // 上游商品标识（acg-faka: shared_code；dujiao: sku_id；zcard: product_id）
+	UpstreamSKU        string // 规格 SKU 标识（本地 product_skus.upstream_sku_id；acg=race|k=v 编码、dujiao=sku_id 覆盖 ProductCode；空=无规格）
+	Quantity           int
+	DownstreamOrderNo  string // 幂等键（防重复下单；acg-faka 作 request_no 防重）
+	TraceID            string
+	CallbackURL        string // 空 = 不用回调（轮询/巡检兜底）
 }
 
 // CreateOrderResult 采购提交结果。

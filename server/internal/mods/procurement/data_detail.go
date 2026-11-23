@@ -42,9 +42,9 @@ func (s *AdminProcurementService) detail(ctx context.Context, po *ent.Procuremen
 	out.SaleUnitCents = item.UnitPrice
 	out.SaleAmountCents = item.Amount
 	out.CostUnitCents = item.Cost
-	out.CostTotalCents = item.Cost * int64(item.Quantity)
+	out.CostTotalCents = data.OrderItemCostTotal(item)
 	out.CostBasis = "unrecorded"
-	if item.Cost > 0 {
+	if out.CostTotalCents > 0 {
 		out.CostBasis = "order_snapshot"
 	}
 	items, err := c.OrderItem.Query().Where(orderitem.OrderID(o.ID)).Order(ent.Asc(orderitem.FieldID)).All(ctx)

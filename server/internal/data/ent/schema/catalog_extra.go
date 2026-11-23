@@ -65,12 +65,13 @@ func (ProductControl) Fields() []ent.Field {
 		field.Uint64("id"),
 		field.Uint64("product_id"),
 		field.String("name").MaxLen(60),
-		field.Enum("type").Values("text", "password", "select", "number", "checkbox", "radio"),
+		field.Enum("type").Values("text", "password", "select", "number", "checkbox", "radio", "textarea"),
 		field.String("placeholder").Default(""),
 		field.String("validation").Default("text"),
 		field.Int32("max_length").Default(500),
 		field.Bool("required").Default(false),
 		field.JSON("options", []string{}).Optional().Comment("选项（select/checkbox/radio）"),
+		field.JSON("option_labels", map[string]string{}).Optional(),
 		field.Int32("sort").Default(0),
 	}
 }

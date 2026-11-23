@@ -13,7 +13,7 @@ func (a *zCardAdapter) CheckQuantity(ctx context.Context, code, sku string, quan
 	if quantity < 1 {
 		return false, ErrProductUnavailable
 	}
-	q := url.Values{"quantity": {strconv.Itoa(quantity)}, "capabilities": {"card_purchase.v1"}}
+	q := url.Values{"quantity": {strconv.Itoa(quantity)}, "capabilities": {"card_purchase.v1", "card_purchase.v2"}}
 	if sku != "" {
 		q.Set("sku_id", sku)
 	}

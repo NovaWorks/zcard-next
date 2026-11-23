@@ -1568,71 +1568,71 @@ func init() {
 	// orderitem.DefaultSubsiteID holds the default value on creation for the subsite_id field.
 	orderitem.DefaultSubsiteID = orderitemDescSubsiteID.Default.(uint64)
 	// orderitemDescProductName is the schema descriptor for product_name field.
-	orderitemDescProductName := orderitemFields[4].Descriptor()
+	orderitemDescProductName := orderitemFields[5].Descriptor()
 	// orderitem.DefaultProductName holds the default value on creation for the product_name field.
 	orderitem.DefaultProductName = orderitemDescProductName.Default.(string)
 	// orderitemDescDeliveryKind is the schema descriptor for delivery_kind field.
-	orderitemDescDeliveryKind := orderitemFields[5].Descriptor()
+	orderitemDescDeliveryKind := orderitemFields[6].Descriptor()
 	// orderitem.DefaultDeliveryKind holds the default value on creation for the delivery_kind field.
 	orderitem.DefaultDeliveryKind = orderitemDescDeliveryKind.Default.(string)
 	// orderitemDescSocialPurchaseSnapshot is the schema descriptor for social_purchase_snapshot field.
-	orderitemDescSocialPurchaseSnapshot := orderitemFields[6].Descriptor()
+	orderitemDescSocialPurchaseSnapshot := orderitemFields[7].Descriptor()
 	// orderitem.DefaultSocialPurchaseSnapshot holds the default value on creation for the social_purchase_snapshot field.
 	orderitem.DefaultSocialPurchaseSnapshot = orderitemDescSocialPurchaseSnapshot.Default.(string)
 	// orderitemDescAssignedAdminID is the schema descriptor for assigned_admin_id field.
-	orderitemDescAssignedAdminID := orderitemFields[12].Descriptor()
+	orderitemDescAssignedAdminID := orderitemFields[13].Descriptor()
 	// orderitem.DefaultAssignedAdminID holds the default value on creation for the assigned_admin_id field.
 	orderitem.DefaultAssignedAdminID = orderitemDescAssignedAdminID.Default.(uint64)
 	// orderitemDescSkuName is the schema descriptor for sku_name field.
-	orderitemDescSkuName := orderitemFields[13].Descriptor()
+	orderitemDescSkuName := orderitemFields[14].Descriptor()
 	// orderitem.SkuNameValidator is a validator for the "sku_name" field. It is called by the builders before save.
 	orderitem.SkuNameValidator = orderitemDescSkuName.Validators[0].(func(string) error)
 	// orderitemDescCost is the schema descriptor for cost field.
-	orderitemDescCost := orderitemFields[17].Descriptor()
+	orderitemDescCost := orderitemFields[18].Descriptor()
 	// orderitem.DefaultCost holds the default value on creation for the cost field.
 	orderitem.DefaultCost = orderitemDescCost.Default.(int64)
 	// orderitemDescGoodsType is the schema descriptor for goods_type field.
-	orderitemDescGoodsType := orderitemFields[18].Descriptor()
+	orderitemDescGoodsType := orderitemFields[19].Descriptor()
 	// orderitem.DefaultGoodsType holds the default value on creation for the goods_type field.
 	orderitem.DefaultGoodsType = orderitemDescGoodsType.Default.(string)
 	// orderitemDescInventoryTracked is the schema descriptor for inventory_tracked field.
-	orderitemDescInventoryTracked := orderitemFields[19].Descriptor()
+	orderitemDescInventoryTracked := orderitemFields[20].Descriptor()
 	// orderitem.DefaultInventoryTracked holds the default value on creation for the inventory_tracked field.
 	orderitem.DefaultInventoryTracked = orderitemDescInventoryTracked.Default.(bool)
 	// orderitemDescPaidAmount is the schema descriptor for paid_amount field.
-	orderitemDescPaidAmount := orderitemFields[20].Descriptor()
+	orderitemDescPaidAmount := orderitemFields[21].Descriptor()
 	// orderitem.DefaultPaidAmount holds the default value on creation for the paid_amount field.
 	orderitem.DefaultPaidAmount = orderitemDescPaidAmount.Default.(int64)
 	// orderitemDescShippingAmount is the schema descriptor for shipping_amount field.
-	orderitemDescShippingAmount := orderitemFields[21].Descriptor()
+	orderitemDescShippingAmount := orderitemFields[22].Descriptor()
 	// orderitem.DefaultShippingAmount holds the default value on creation for the shipping_amount field.
 	orderitem.DefaultShippingAmount = orderitemDescShippingAmount.Default.(int64)
 	// orderitemDescRefundedAmount is the schema descriptor for refunded_amount field.
-	orderitemDescRefundedAmount := orderitemFields[22].Descriptor()
+	orderitemDescRefundedAmount := orderitemFields[23].Descriptor()
 	// orderitem.DefaultRefundedAmount holds the default value on creation for the refunded_amount field.
 	orderitem.DefaultRefundedAmount = orderitemDescRefundedAmount.Default.(int64)
 	// orderitemDescRefundedShipping is the schema descriptor for refunded_shipping field.
-	orderitemDescRefundedShipping := orderitemFields[23].Descriptor()
+	orderitemDescRefundedShipping := orderitemFields[24].Descriptor()
 	// orderitem.DefaultRefundedShipping holds the default value on creation for the refunded_shipping field.
 	orderitem.DefaultRefundedShipping = orderitemDescRefundedShipping.Default.(int64)
 	// orderitemDescCanceledQuantity is the schema descriptor for canceled_quantity field.
-	orderitemDescCanceledQuantity := orderitemFields[24].Descriptor()
+	orderitemDescCanceledQuantity := orderitemFields[25].Descriptor()
 	// orderitem.DefaultCanceledQuantity holds the default value on creation for the canceled_quantity field.
 	orderitem.DefaultCanceledQuantity = orderitemDescCanceledQuantity.Default.(int32)
 	// orderitemDescShippedQuantity is the schema descriptor for shipped_quantity field.
-	orderitemDescShippedQuantity := orderitemFields[25].Descriptor()
+	orderitemDescShippedQuantity := orderitemFields[26].Descriptor()
 	// orderitem.DefaultShippedQuantity holds the default value on creation for the shipped_quantity field.
 	orderitem.DefaultShippedQuantity = orderitemDescShippedQuantity.Default.(int32)
 	// orderitemDescReceivedQuantity is the schema descriptor for received_quantity field.
-	orderitemDescReceivedQuantity := orderitemFields[26].Descriptor()
+	orderitemDescReceivedQuantity := orderitemFields[27].Descriptor()
 	// orderitem.DefaultReceivedQuantity holds the default value on creation for the received_quantity field.
 	orderitem.DefaultReceivedQuantity = orderitemDescReceivedQuantity.Default.(int32)
 	// orderitemDescReturnedQuantity is the schema descriptor for returned_quantity field.
-	orderitemDescReturnedQuantity := orderitemFields[27].Descriptor()
+	orderitemDescReturnedQuantity := orderitemFields[28].Descriptor()
 	// orderitem.DefaultReturnedQuantity holds the default value on creation for the returned_quantity field.
 	orderitem.DefaultReturnedQuantity = orderitemDescReturnedQuantity.Default.(int32)
 	// orderitemDescFulfillmentStatus is the schema descriptor for fulfillment_status field.
-	orderitemDescFulfillmentStatus := orderitemFields[30].Descriptor()
+	orderitemDescFulfillmentStatus := orderitemFields[31].Descriptor()
 	// orderitem.DefaultFulfillmentStatus holds the default value on creation for the fulfillment_status field.
 	orderitem.DefaultFulfillmentStatus = orderitemDescFulfillmentStatus.Default.(string)
 	// orderitem.FulfillmentStatusValidator is a validator for the "fulfillment_status" field. It is called by the builders before save.
@@ -2400,7 +2400,7 @@ func init() {
 	// productcontrol.DefaultRequired holds the default value on creation for the required field.
 	productcontrol.DefaultRequired = productcontrolDescRequired.Default.(bool)
 	// productcontrolDescSort is the schema descriptor for sort field.
-	productcontrolDescSort := productcontrolFields[9].Descriptor()
+	productcontrolDescSort := productcontrolFields[10].Descriptor()
 	// productcontrol.DefaultSort holds the default value on creation for the sort field.
 	productcontrol.DefaultSort = productcontrolDescSort.Default.(int32)
 	productdeliverysourceMixin := schema.ProductDeliverySource{}.Mixin()

@@ -8,6 +8,7 @@ import "google/api/annotations.proto";
 import "storefront/v1/catalog.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
 
 // StoreCartService 购物车(销账）：登录态专属 CRUD；
 // 结算复用 StoreOrderService.CreateOrder（多商品一单支付，零下单改动）。
@@ -54,6 +55,7 @@ message RemoveCartItemRequest {
 }
 
 message CartItem {
+ google.protobuf.Struct card_purchase = 15;
   uint64 id = 1;
   uint64 product_id = 2;
   uint64 sku_id = 3;

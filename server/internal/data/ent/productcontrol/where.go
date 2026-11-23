@@ -539,6 +539,16 @@ func OptionsNotNil() predicate.ProductControl {
 	return predicate.ProductControl(sql.FieldNotNull(FieldOptions))
 }
 
+// OptionLabelsIsNil applies the IsNil predicate on the "option_labels" field.
+func OptionLabelsIsNil() predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldIsNull(FieldOptionLabels))
+}
+
+// OptionLabelsNotNil applies the NotNil predicate on the "option_labels" field.
+func OptionLabelsNotNil() predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldNotNull(FieldOptionLabels))
+}
+
 // SortEQ applies the EQ predicate on the "sort" field.
 func SortEQ(v int32) predicate.ProductControl {
 	return predicate.ProductControl(sql.FieldEQ(FieldSort, v))

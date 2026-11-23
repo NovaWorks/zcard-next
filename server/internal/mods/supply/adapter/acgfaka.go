@@ -385,7 +385,7 @@ func (a *acgFakaAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*
 	// repeat a purchase on timeout/5xx; an uncertain result needs reconciliation.
 	data, err := a.signedPost(withoutRetries(ctx), "/shared/commodity/trade", params)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: ACG 采购响应未确认", ErrPurchaseUncertain)
 	}
 	raw, err := parseResp(data)
 	if err != nil {

@@ -70,6 +70,11 @@ func SubsiteID(v uint64) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldSubsiteID, v))
 }
 
+// UpstreamCardCipher applies equality check predicate on the "upstream_card_cipher" field. It's identical to UpstreamCardCipherEQ.
+func UpstreamCardCipher(v []byte) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldUpstreamCardCipher, v))
+}
+
 // OrderID applies equality check predicate on the "order_id" field. It's identical to OrderIDEQ.
 func OrderID(v uint64) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldOrderID, v))
@@ -313,6 +318,56 @@ func SubsiteIDLT(v uint64) predicate.OrderItem {
 // SubsiteIDLTE applies the LTE predicate on the "subsite_id" field.
 func SubsiteIDLTE(v uint64) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldLTE(FieldSubsiteID, v))
+}
+
+// UpstreamCardCipherEQ applies the EQ predicate on the "upstream_card_cipher" field.
+func UpstreamCardCipherEQ(v []byte) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldUpstreamCardCipher, v))
+}
+
+// UpstreamCardCipherNEQ applies the NEQ predicate on the "upstream_card_cipher" field.
+func UpstreamCardCipherNEQ(v []byte) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldUpstreamCardCipher, v))
+}
+
+// UpstreamCardCipherIn applies the In predicate on the "upstream_card_cipher" field.
+func UpstreamCardCipherIn(vs ...[]byte) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldUpstreamCardCipher, vs...))
+}
+
+// UpstreamCardCipherNotIn applies the NotIn predicate on the "upstream_card_cipher" field.
+func UpstreamCardCipherNotIn(vs ...[]byte) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldUpstreamCardCipher, vs...))
+}
+
+// UpstreamCardCipherGT applies the GT predicate on the "upstream_card_cipher" field.
+func UpstreamCardCipherGT(v []byte) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldUpstreamCardCipher, v))
+}
+
+// UpstreamCardCipherGTE applies the GTE predicate on the "upstream_card_cipher" field.
+func UpstreamCardCipherGTE(v []byte) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldUpstreamCardCipher, v))
+}
+
+// UpstreamCardCipherLT applies the LT predicate on the "upstream_card_cipher" field.
+func UpstreamCardCipherLT(v []byte) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldUpstreamCardCipher, v))
+}
+
+// UpstreamCardCipherLTE applies the LTE predicate on the "upstream_card_cipher" field.
+func UpstreamCardCipherLTE(v []byte) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldUpstreamCardCipher, v))
+}
+
+// UpstreamCardCipherIsNil applies the IsNil predicate on the "upstream_card_cipher" field.
+func UpstreamCardCipherIsNil() predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIsNull(FieldUpstreamCardCipher))
+}
+
+// UpstreamCardCipherNotNil applies the NotNil predicate on the "upstream_card_cipher" field.
+func UpstreamCardCipherNotNil() predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotNull(FieldUpstreamCardCipher))
 }
 
 // OrderIDEQ applies the EQ predicate on the "order_id" field.

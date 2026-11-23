@@ -19,6 +19,8 @@ const address = reactive(emptyAddress());
 const regions = ref<RegionData>({});
 const allowed = ref<string[]>([]);
 const body = ref<CreateOrderInput>();
+const needsShipping = ref(true);
+const uncertain = ref(false);
 const busy = ref(false);
 const error = ref("");
 const quote = ref<CreateOrderReply>();
@@ -53,16 +55,18 @@ function changeCountry() {
 }
 async function open(
   input: CreateOrderInput,
-  deliveryCountries: string[],
+  deliveryCountries?: string[],
 ): Promise<CreateOrderReply | null> {
-  body.value = input;
-  allowed.value = deliveryCountries;
+  body.value = JSON.parse(JSON.stringify(input));
+  needsShipping.value = deliveryCountries !== undefined;
+  uncertain.value = false;
+  allowed.value = deliveryCountries || [];
   error.value = "";
   quote.value = undefined;
   attempted = false;
   touched.clear();
   fieldErrors.value = {};
-  if (!allowed.value.includes(address.country)) {
+  if (needsShipping.value && !allowed.value.includes(address.country)) {
     address.country = allowed.value.includes("CN") ? "CN" : allowed.value[0] || "";
     changeCountry();
   }
@@ -71,7 +75,7 @@ async function open(
   const result = new Promise<CreateOrderReply | null>((resolve) => {
     finish = resolve;
   });
-  if (!Object.keys(regions.value).length) {
+  if (needsShipping.value && !Object.keys(regions.value).length) {
     busy.value = true;
     const r = await api.get<{ data_json: string }>("/shipping/regions");
     busy.value = false;
@@ -83,11 +87,11 @@ async function open(
         error.value = $t("地址数据加载失败，请关闭后重试");
       }
   }
-  if (!allowed.value.length) error.value = $t("所选商品没有共同的可配送国家，请分开下单");
+  if (needsShipping.value && !allowed.value.length) error.value = $t("所选商品没有共同的可配送国家，请分开下单");
   return result;
 }
 function close(result: CreateOrderReply | null = null) {
-  if (busy.value) return;
+  if (busy.value || uncertain.value) return;
   dialog.value?.close();
   finish?.(result);
   finish = undefined;
@@ -95,7 +99,7 @@ function close(result: CreateOrderReply | null = null) {
 async function submit() {
   if (!body.value || busy.value) return;
   attempted = true;
-  fieldErrors.value = validateAddress(address, regions.value);
+  fieldErrors.value = needsShipping.value ? validateAddress(address, regions.value) : {};
   if (Object.keys(fieldErrors.value).length) {
     await nextTick();
     dialog.value?.querySelector<HTMLElement>(`#shipping-${Object.keys(fieldErrors.value)[0]}`)?.focus();
@@ -104,7 +108,7 @@ async function submit() {
   busy.value = true;
   error.value = "";
   try {
-    const input = { ...body.value, shipping_address: { ...address } };
+    const input = { ...body.value, ...(needsShipping.value ? { shipping_address: { ...address } } : {}) };
     if (!quote.value) {
       const r = await quoteOrder(input);
       busy.value = false;
@@ -112,7 +116,27 @@ async function submit() {
         error.value = r.error;
         return;
       }
-      quote.value = r.data!;
+      // Proto3 omits a zero total from the JSON response.
+      const total = r.data?.total_cents === undefined ? 0 : r.data.total_cents;
+      if (!r.data?.quote_key || !Number.isSafeInteger(total) || total < 0) {
+        error.value = $t('报价暂不可用，请重试');
+        return;
+      }
+      if (body.value.use_points && (!Number.isSafeInteger(r.data.points_total) || (r.data.points_total || 0) <= 0 || total !== 0)) {
+        error.value = $t('积分报价暂不可用，请重新核算');
+        return;
+      }
+      quote.value = { ...r.data, total_cents: total };
+      return;
+    }
+    if (body.value.use_points && (!Number.isSafeInteger(quote.value.points_total) || (quote.value.points_total || 0) <= 0 || quote.value.total_cents !== 0)) {
+      quote.value = undefined;
+      error.value = $t('积分报价暂不可用，请重新核算');
+      return;
+    }
+    if (!uncertain.value && quote.value.expires_at > 0 && quote.value.expires_at <= Date.now() / 1000) {
+      quote.value = undefined;
+      error.value = $t('报价已过期，请重新核算金额');
       return;
     }
     const signature = JSON.stringify(input);
@@ -139,8 +163,19 @@ async function submit() {
     busy.value = false;
     if (r.error) {
       error.value = r.error;
+      if (r.status === undefined || r.status >= 500) uncertain.value = true;
+      else {
+        uncertain.value = false;
+        if (/QUOTE_(CHANGED|EXPIRED|REQUIRED)/.test(r.reason || '')) quote.value = undefined;
+      }
       return;
     }
+    if (!r.data?.order_no) {
+      uncertain.value = true;
+      error.value = $t('提交结果未确认，请先确认原下单结果，避免重复下单。');
+      return;
+    }
+    uncertain.value = false;
     if (storageKey)
       try {
         sessionStorage.removeItem(storageKey);
@@ -166,11 +201,11 @@ defineExpose({ open });
   >
     <form novalidate @submit.prevent="submit">
       <div class="shipping-head">
-        <h2 id="shipping-title">{{ $t('填写收货地址') }}</h2>
-        <button type="button" class="btn secondary" :disabled="busy" @click="close()">{{ $t('关闭') }}</button>
+        <h2 id="shipping-title">{{ needsShipping ? $t('填写收货地址') : $t('确认订单金额') }}</h2>
+        <button type="button" class="btn secondary" :disabled="busy || uncertain" @click="close()">{{ $t('关闭') }}</button>
       </div>
-      <p class="muted">{{ $t('实体商品将寄送至以下地址。确认金额后再创建订单。') }}</p>
-      <fieldset :disabled="busy" class="shipping-fields shipping-recipient">
+      <p class="muted">{{ needsShipping ? $t('实体商品将寄送至以下地址。确认金额后再创建订单。') : $t('按本次数量和填写资料核算实际总价，确认后再创建订单。') }}</p>
+      <fieldset v-if="needsShipping" :disabled="busy" class="shipping-fields shipping-recipient">
         <legend>{{ $t('收货人') }}</legend>
         <label for="shipping-name">{{ $t('收货人姓名') }}
           <input id="shipping-name" v-model="address.name" required maxlength="100" class="input" autocomplete="shipping name" :aria-invalid="!!fieldErrors.name" :aria-describedby="fieldErrors.name ? 'shipping-name-error' : undefined" @blur="checkField('name')" />
@@ -181,7 +216,7 @@ defineExpose({ open });
           <span v-if="fieldErrors.phone" id="shipping-phone-error" class="field-error">{{ $t(fieldErrors.phone) }}</span>
         </label>
       </fieldset>
-      <fieldset :disabled="busy" class="shipping-fields shipping-address">
+      <fieldset v-if="needsShipping" :disabled="busy" class="shipping-fields shipping-address">
         <legend>{{ $t('配送地址') }}</legend>
         <label for="shipping-country">{{ $t('国家或地区') }}
           <select id="shipping-country" v-model="address.country" required class="input" autocomplete="shipping country" :aria-invalid="!!fieldErrors.country" :aria-describedby="fieldErrors.country ? 'shipping-country-error' : undefined" @change="changeCountry" @blur="checkField('country')">
@@ -209,12 +244,14 @@ defineExpose({ open });
         </label>
       </fieldset>
       <p v-if="error" role="alert" class="error">{{ uiText(error) }}</p>
+      <p v-if="uncertain" role="status" class="muted">{{ $t('提交结果未确认，请先确认原下单结果，避免重复下单。') }}</p>
       <div v-if="quote" class="shipping-quote" aria-live="polite">
+        <strong v-if="body?.use_points" class="shipping-points">{{ $t('本次兑换需要 {0} 积分', [quote.points_total]) }}</strong>
         <span
           >{{ $t('优惠后商品金额') }} {{
             formatMoney(Number(quote.total_cents || 0) - Number(quote.shipping_cents || 0))
           }}</span
-        ><span>{{ $t(quote.shipping_collect ? '在线支付运费' : '运费') }} {{ formatMoney(quote.shipping_cents || 0) }}</span
+        ><span v-if="needsShipping">{{ $t(quote.shipping_collect ? '在线支付运费' : '运费') }} {{ formatMoney(quote.shipping_cents || 0) }}</span
         ><strong>{{ $t('合计') }} {{ formatMoney(quote.total_cents || 0) }}</strong
         ><span v-if="quote.shipping_collect">{{ $t('到付商品的运费由快递在收货时收取。') }}</span>
         <small class="muted">{{ $t('支付渠道手续费将在支付前单独显示。') }}</small>
@@ -223,11 +260,11 @@ defineExpose({ open });
         v-if="quote"
         type="button"
         class="btn secondary"
-        :disabled="busy"
+        :disabled="busy || uncertain"
         @click="quote = undefined"
       > {{ $t('重新核算金额') }} </button>
-      <button class="btn btn-primary shipping-submit" :disabled="busy || !countries.length">
-        {{ busy ? $t('正在处理…') : quote ? $t('确认地址及金额，创建订单') : $t('核算商品金额及运费') }}
+      <button class="btn btn-primary shipping-submit" :disabled="busy || (needsShipping && !countries.length)">
+        {{ busy ? $t('正在处理…') : uncertain ? $t('确认原下单结果') : quote ? (needsShipping ? $t('确认地址及金额，创建订单') : $t('确认金额，创建订单')) : (needsShipping ? $t('核算商品金额及运费') : $t('核算实际总价')) }}
       </button>
     </form>
   </dialog>

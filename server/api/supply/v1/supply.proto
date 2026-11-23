@@ -6,6 +6,7 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/supply/v1;supply
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
 
 // SupplyService 对外供货 API（本站作上游，ZCard Supply v2 协议）。
 // 里程碑 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
@@ -129,6 +130,7 @@ message GetStockReply {
 }
 
 message SupplyProduct {
+ google.protobuf.Struct card_purchase = 80;
   string id = 1;
   string name = 2;
   int64 price = 3; // 分（供货价口径：定价覆盖 > 基础价）
@@ -152,6 +154,7 @@ message SupplySku {
 // ---- 订单 ----
 
 message CreateSupplyOrderRequest {
+ string card_quote_id = 20;
   string product_id = 1; // 商品标识（本地商品 id）
   string sku_id = 2; // 可选
   int32 quantity = 3;

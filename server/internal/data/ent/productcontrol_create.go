@@ -144,6 +144,12 @@ func (_c *ProductControlCreate) SetOptions(v []string) *ProductControlCreate {
 	return _c
 }
 
+// SetOptionLabels sets the "option_labels" field.
+func (_c *ProductControlCreate) SetOptionLabels(v map[string]string) *ProductControlCreate {
+	_c.mutation.SetOptionLabels(v)
+	return _c
+}
+
 // SetSort sets the "sort" field.
 func (_c *ProductControlCreate) SetSort(v int32) *ProductControlCreate {
 	_c.mutation.SetSort(v)
@@ -355,6 +361,10 @@ func (_c *ProductControlCreate) createSpec() (*ProductControl, *sqlgraph.CreateS
 		_spec.SetField(productcontrol.FieldOptions, field.TypeJSON, value)
 		_node.Options = value
 	}
+	if value, ok := _c.mutation.OptionLabels(); ok {
+		_spec.SetField(productcontrol.FieldOptionLabels, field.TypeJSON, value)
+		_node.OptionLabels = value
+	}
 	if value, ok := _c.mutation.Sort(); ok {
 		_spec.SetField(productcontrol.FieldSort, field.TypeInt32, value)
 		_node.Sort = value
@@ -552,6 +562,24 @@ func (u *ProductControlUpsert) UpdateOptions() *ProductControlUpsert {
 // ClearOptions clears the value of the "options" field.
 func (u *ProductControlUpsert) ClearOptions() *ProductControlUpsert {
 	u.SetNull(productcontrol.FieldOptions)
+	return u
+}
+
+// SetOptionLabels sets the "option_labels" field.
+func (u *ProductControlUpsert) SetOptionLabels(v map[string]string) *ProductControlUpsert {
+	u.Set(productcontrol.FieldOptionLabels, v)
+	return u
+}
+
+// UpdateOptionLabels sets the "option_labels" field to the value that was provided on create.
+func (u *ProductControlUpsert) UpdateOptionLabels() *ProductControlUpsert {
+	u.SetExcluded(productcontrol.FieldOptionLabels)
+	return u
+}
+
+// ClearOptionLabels clears the value of the "option_labels" field.
+func (u *ProductControlUpsert) ClearOptionLabels() *ProductControlUpsert {
+	u.SetNull(productcontrol.FieldOptionLabels)
 	return u
 }
 
@@ -789,6 +817,27 @@ func (u *ProductControlUpsertOne) UpdateOptions() *ProductControlUpsertOne {
 func (u *ProductControlUpsertOne) ClearOptions() *ProductControlUpsertOne {
 	return u.Update(func(s *ProductControlUpsert) {
 		s.ClearOptions()
+	})
+}
+
+// SetOptionLabels sets the "option_labels" field.
+func (u *ProductControlUpsertOne) SetOptionLabels(v map[string]string) *ProductControlUpsertOne {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.SetOptionLabels(v)
+	})
+}
+
+// UpdateOptionLabels sets the "option_labels" field to the value that was provided on create.
+func (u *ProductControlUpsertOne) UpdateOptionLabels() *ProductControlUpsertOne {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.UpdateOptionLabels()
+	})
+}
+
+// ClearOptionLabels clears the value of the "option_labels" field.
+func (u *ProductControlUpsertOne) ClearOptionLabels() *ProductControlUpsertOne {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.ClearOptionLabels()
 	})
 }
 
@@ -1195,6 +1244,27 @@ func (u *ProductControlUpsertBulk) UpdateOptions() *ProductControlUpsertBulk {
 func (u *ProductControlUpsertBulk) ClearOptions() *ProductControlUpsertBulk {
 	return u.Update(func(s *ProductControlUpsert) {
 		s.ClearOptions()
+	})
+}
+
+// SetOptionLabels sets the "option_labels" field.
+func (u *ProductControlUpsertBulk) SetOptionLabels(v map[string]string) *ProductControlUpsertBulk {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.SetOptionLabels(v)
+	})
+}
+
+// UpdateOptionLabels sets the "option_labels" field to the value that was provided on create.
+func (u *ProductControlUpsertBulk) UpdateOptionLabels() *ProductControlUpsertBulk {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.UpdateOptionLabels()
+	})
+}
+
+// ClearOptionLabels clears the value of the "option_labels" field.
+func (u *ProductControlUpsertBulk) ClearOptionLabels() *ProductControlUpsertBulk {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.ClearOptionLabels()
 	})
 }
 

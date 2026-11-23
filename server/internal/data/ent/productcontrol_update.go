@@ -186,6 +186,18 @@ func (_u *ProductControlUpdate) ClearOptions() *ProductControlUpdate {
 	return _u
 }
 
+// SetOptionLabels sets the "option_labels" field.
+func (_u *ProductControlUpdate) SetOptionLabels(v map[string]string) *ProductControlUpdate {
+	_u.mutation.SetOptionLabels(v)
+	return _u
+}
+
+// ClearOptionLabels clears the value of the "option_labels" field.
+func (_u *ProductControlUpdate) ClearOptionLabels() *ProductControlUpdate {
+	_u.mutation.ClearOptionLabels()
+	return _u
+}
+
 // SetSort sets the "sort" field.
 func (_u *ProductControlUpdate) SetSort(v int32) *ProductControlUpdate {
 	_u.mutation.ResetSort()
@@ -321,6 +333,12 @@ func (_u *ProductControlUpdate) sqlSave(ctx context.Context) (_node int, err err
 	}
 	if _u.mutation.OptionsCleared() {
 		_spec.ClearField(productcontrol.FieldOptions, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.OptionLabels(); ok {
+		_spec.SetField(productcontrol.FieldOptionLabels, field.TypeJSON, value)
+	}
+	if _u.mutation.OptionLabelsCleared() {
+		_spec.ClearField(productcontrol.FieldOptionLabels, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.Sort(); ok {
 		_spec.SetField(productcontrol.FieldSort, field.TypeInt32, value)
@@ -505,6 +523,18 @@ func (_u *ProductControlUpdateOne) ClearOptions() *ProductControlUpdateOne {
 	return _u
 }
 
+// SetOptionLabels sets the "option_labels" field.
+func (_u *ProductControlUpdateOne) SetOptionLabels(v map[string]string) *ProductControlUpdateOne {
+	_u.mutation.SetOptionLabels(v)
+	return _u
+}
+
+// ClearOptionLabels clears the value of the "option_labels" field.
+func (_u *ProductControlUpdateOne) ClearOptionLabels() *ProductControlUpdateOne {
+	_u.mutation.ClearOptionLabels()
+	return _u
+}
+
 // SetSort sets the "sort" field.
 func (_u *ProductControlUpdateOne) SetSort(v int32) *ProductControlUpdateOne {
 	_u.mutation.ResetSort()
@@ -670,6 +700,12 @@ func (_u *ProductControlUpdateOne) sqlSave(ctx context.Context) (_node *ProductC
 	}
 	if _u.mutation.OptionsCleared() {
 		_spec.ClearField(productcontrol.FieldOptions, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.OptionLabels(); ok {
+		_spec.SetField(productcontrol.FieldOptionLabels, field.TypeJSON, value)
+	}
+	if _u.mutation.OptionLabelsCleared() {
+		_spec.ClearField(productcontrol.FieldOptionLabels, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.Sort(); ok {
 		_spec.SetField(productcontrol.FieldSort, field.TypeInt32, value)

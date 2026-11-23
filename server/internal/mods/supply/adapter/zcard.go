@@ -10,6 +10,8 @@ import (
 	"encoding/json"
 	"fmt"
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/cardpurchase"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/purchaseform"
 	"log/slog"
 	"net/url"
@@ -195,7 +197,20 @@ func (a *zCardAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*Cr
 		"downstream_order_no": req.DownstreamOrderNo,
 		"callback_url":        req.CallbackURL,
 	}
-	if req.UpstreamSKU != "" || len(req.ManualFormData) > 0 {
+	if req.CardID != "" && req.CardQuoteID == "" {
+		return nil, ErrPurchaseFormInvalid
+	}
+	if req.CardQuoteID != "" {
+		if req.CardMaxAmountCents <= 0 || !money.ValidCents(req.CardMaxAmountCents) || len(req.CardCurrency) != 3 || req.CardCurrency != strings.ToUpper(req.CardCurrency) {
+			return nil, ErrPurchaseFormInvalid
+		}
+		body["required_capability"] = cardpurchase.Capability
+		body["card_quote_id"] = req.CardQuoteID
+		body["max_supply_amount_cents"] = req.CardMaxAmountCents
+		body["currency"] = req.CardCurrency
+		body["sku_id"] = req.UpstreamSKU
+		body["manual_form_data"] = req.ManualFormData
+	} else if req.UpstreamSKU != "" || len(req.ManualFormData) > 0 {
 		body["required_capability"] = "card_purchase.v1"
 		body["sku_id"] = req.UpstreamSKU
 		body["manual_form_data"] = req.ManualFormData
@@ -221,6 +236,43 @@ func (a *zCardAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*Cr
 	}
 	if err := decodeZCard(data, &resp); err != nil {
 		return nil, fmt.Errorf("adapter.zcard: 解析下单响应失败: %w", err)
+	}
+	if req.CardQuoteID != "" && (resp.Status == "rejected" || resp.Status == "refunded") {
+		// Only an owned receipt with a definitive zero net supplier charge can
+		// authorize the existing permanent-failure refund path.
+		id := idString(resp.SupplyOrderID)
+		if receiptID, e := strconv.ParseUint(id, 10, 64); e != nil || receiptID == 0 {
+			return nil, ErrPurchaseUncertain
+		}
+		proof := func(cause error) error {
+			return &supplyport.CardPurchaseRejection{QuoteID: req.CardQuoteID, ReceiptID: id, Currency: req.CardCurrency, Status: resp.Status, ErrorCode: resp.ErrorCode, AmountCents: int64(resp.Amount), Charged: resp.Charged, Cause: cause}
+		}
+		if resp.Status == "refunded" {
+			if !resp.Charged || int64(resp.Amount) != req.CardMaxAmountCents {
+				return nil, ErrPurchaseUncertain
+			}
+			switch resp.ErrorCode {
+			case "no_stock":
+				return nil, proof(ErrNoStock)
+			case "card_quote_changed":
+				return nil, proof(ErrProductUnavailable)
+			default:
+				return nil, ErrPurchaseUncertain
+			}
+		}
+		if resp.Charged || resp.Amount != 0 {
+			return nil, ErrPurchaseUncertain
+		}
+		switch resp.ErrorCode {
+		case "no_stock":
+			return nil, proof(ErrNoStock)
+		case "insufficient_balance":
+			return nil, proof(ErrInsufficientBalance)
+		case "card_quote_expired", "product_unavailable", "product_changed", "SUPPLY_RESTRICTED", "price_changed", "connection_unavailable", "connection_changed":
+			return nil, proof(ErrProductUnavailable)
+		default:
+			return nil, ErrPurchaseUncertain
+		}
 	}
 	if resp.Status == "rejected" {
 		if resp.Charged {
@@ -340,7 +392,8 @@ func (a *zCardAdapter) RefundOrder(ctx context.Context, upstreamOrderID string) 
 
 // zCardProduct 上游商品行（字段对齐 1.x mapProduct）。
 type zCardProduct struct {
-	PurchaseForm json.RawMessage `json:"purchase_form"`
+	CardRules    *cardpurchase.Rules `json:"card_purchase"`
+	PurchaseForm json.RawMessage     `json:"purchase_form"`
 	SKUs         []struct {
 		ID       string             `json:"id"`
 		Code     string             `json:"code"`
@@ -367,6 +420,7 @@ type zCardProduct struct {
 
 func (p zCardProduct) toProduct() Product {
 	out := Product{
+		CardRules:   p.CardRules,
 		ProductKind: normalizedProductKind(p.ProductKind), DeliveryKind: normalizedDeliveryKind(p.DeliveryKind), SMSProduct: publicSMSProduct(p.SMSProduct), SocialSchema: p.SocialSchema,
 		ID:             idString(p.ID),
 		Name:           p.Name,
@@ -379,8 +433,12 @@ func (p zCardProduct) toProduct() Product {
 		IsActive:       p.IsActive,
 		Stock:          p.Stock,
 	}
+	if _, err := cardpurchase.Decode(p.CardRules); err != nil {
+		out.IsActive = false
+	}
 	if p.SKUs != nil {
 		out.UpstreamExtra = map[string]any{"sku_catalog_complete": true}
+		out.SKUs = make([]SKU, 0, len(p.SKUs))
 	}
 	for _, v := range p.SKUs {
 		if !v.IsActive {
@@ -392,11 +450,19 @@ func (p zCardProduct) toProduct() Product {
 		}
 		out.SKUs = append(out.SKUs, SKU{ID: v.ID, Code: v.ID, Name: name, Price: int64(v.Price), Stock: v.Stock, IsActive: v.IsActive, SpecValues: map[string]string{}})
 	}
+	if len(p.SKUs) > 0 && len(out.SKUs) == 0 {
+		out.IsActive = false
+	}
 	fields, e := purchaseform.ParseSchema(p.PurchaseForm)
 	if e != nil {
 		out.IsActive = false
 	} else {
 		out.FormFields = fields
+		// V2 metadata declares a complete purchase contract. An omitted empty
+		// form therefore clears removed controls; legacy peers remain unknown.
+		if fields == nil && p.CardRules != nil {
+			out.FormFields = []purchaseform.Field{}
+		}
 	}
 	return out
 }
@@ -458,7 +524,7 @@ func decodeZCard(raw []byte, v any) error {
 	return d.Decode(v)
 }
 func smsCatalogQuery() url.Values {
-	return url.Values{"capabilities": {supplyport.SMSCapability, supplyport.SMSProductCatalog, supplyport.SMSProductPurchase, supplyport.SocialCapability, "card_purchase.v1"}}
+	return url.Values{"capabilities": {supplyport.SMSCapability, supplyport.SMSProductCatalog, supplyport.SMSProductPurchase, supplyport.SocialCapability, "card_purchase.v1", cardpurchase.Capability}}
 }
 func normalizedDeliveryKind(v string) string {
 	if v == "" {
