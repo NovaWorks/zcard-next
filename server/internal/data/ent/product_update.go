@@ -709,6 +709,18 @@ func (_u *ProductUpdate) ClearUpstreamProductCode() *ProductUpdate {
 	return _u
 }
 
+// SetUpstreamNavigation sets the "upstream_navigation" field.
+func (_u *ProductUpdate) SetUpstreamNavigation(v map[string]string) *ProductUpdate {
+	_u.mutation.SetUpstreamNavigation(v)
+	return _u
+}
+
+// ClearUpstreamNavigation clears the value of the "upstream_navigation" field.
+func (_u *ProductUpdate) ClearUpstreamNavigation() *ProductUpdate {
+	_u.mutation.ClearUpstreamNavigation()
+	return _u
+}
+
 // SetUpstreamSyncedAt sets the "upstream_synced_at" field.
 func (_u *ProductUpdate) SetUpstreamSyncedAt(v time.Time) *ProductUpdate {
 	_u.mutation.SetUpstreamSyncedAt(v)
@@ -1351,6 +1363,12 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.UpstreamProductCodeCleared() {
 		_spec.ClearField(product.FieldUpstreamProductCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.UpstreamNavigation(); ok {
+		_spec.SetField(product.FieldUpstreamNavigation, field.TypeJSON, value)
+	}
+	if _u.mutation.UpstreamNavigationCleared() {
+		_spec.ClearField(product.FieldUpstreamNavigation, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.UpstreamSyncedAt(); ok {
 		_spec.SetField(product.FieldUpstreamSyncedAt, field.TypeTime, value)
@@ -2209,6 +2227,18 @@ func (_u *ProductUpdateOne) ClearUpstreamProductCode() *ProductUpdateOne {
 	return _u
 }
 
+// SetUpstreamNavigation sets the "upstream_navigation" field.
+func (_u *ProductUpdateOne) SetUpstreamNavigation(v map[string]string) *ProductUpdateOne {
+	_u.mutation.SetUpstreamNavigation(v)
+	return _u
+}
+
+// ClearUpstreamNavigation clears the value of the "upstream_navigation" field.
+func (_u *ProductUpdateOne) ClearUpstreamNavigation() *ProductUpdateOne {
+	_u.mutation.ClearUpstreamNavigation()
+	return _u
+}
+
 // SetUpstreamSyncedAt sets the "upstream_synced_at" field.
 func (_u *ProductUpdateOne) SetUpstreamSyncedAt(v time.Time) *ProductUpdateOne {
 	_u.mutation.SetUpstreamSyncedAt(v)
@@ -2881,6 +2911,12 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if _u.mutation.UpstreamProductCodeCleared() {
 		_spec.ClearField(product.FieldUpstreamProductCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.UpstreamNavigation(); ok {
+		_spec.SetField(product.FieldUpstreamNavigation, field.TypeJSON, value)
+	}
+	if _u.mutation.UpstreamNavigationCleared() {
+		_spec.ClearField(product.FieldUpstreamNavigation, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.UpstreamSyncedAt(); ok {
 		_spec.SetField(product.FieldUpstreamSyncedAt, field.TypeTime, value)

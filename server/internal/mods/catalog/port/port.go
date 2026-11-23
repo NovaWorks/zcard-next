@@ -222,6 +222,7 @@ type UpstreamProductInput struct {
 	SocialSchema        map[string]any
 	ConnectionID        uint64 // products.upstream_source_id
 	UpstreamProductCode string // products.upstream_product_code（UNIQUE 判据）
+	UpstreamPageID      string // 仅管理员网页导航，不改变对接码或报价
 	UpstreamSyncedAt    time.Time
 	Name                string
 	Description         string

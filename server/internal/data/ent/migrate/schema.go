@@ -1794,6 +1794,7 @@ var (
 		{Name: "status", Type: field.TypeInt8, Default: 1},
 		{Name: "upstream_source_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "upstream_product_code", Type: field.TypeString, Nullable: true, Size: 128},
+		{Name: "upstream_navigation", Type: field.TypeJSON, Nullable: true},
 		{Name: "upstream_synced_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "auto_listing", Type: field.TypeBool, Default: false},
 		{Name: "listing_reason", Type: field.TypeString, Size: 40, Default: ""},

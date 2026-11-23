@@ -540,6 +540,12 @@ func (_c *ProductCreate) SetNillableUpstreamProductCode(v *string) *ProductCreat
 	return _c
 }
 
+// SetUpstreamNavigation sets the "upstream_navigation" field.
+func (_c *ProductCreate) SetUpstreamNavigation(v map[string]string) *ProductCreate {
+	_c.mutation.SetUpstreamNavigation(v)
+	return _c
+}
+
 // SetUpstreamSyncedAt sets the "upstream_synced_at" field.
 func (_c *ProductCreate) SetUpstreamSyncedAt(v time.Time) *ProductCreate {
 	_c.mutation.SetUpstreamSyncedAt(v)
@@ -1352,6 +1358,10 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 		_spec.SetField(product.FieldUpstreamProductCode, field.TypeString, value)
 		_node.UpstreamProductCode = value
 	}
+	if value, ok := _c.mutation.UpstreamNavigation(); ok {
+		_spec.SetField(product.FieldUpstreamNavigation, field.TypeJSON, value)
+		_node.UpstreamNavigation = value
+	}
 	if value, ok := _c.mutation.UpstreamSyncedAt(); ok {
 		_spec.SetField(product.FieldUpstreamSyncedAt, field.TypeTime, value)
 		_node.UpstreamSyncedAt = value
@@ -2125,6 +2135,24 @@ func (u *ProductUpsert) UpdateUpstreamProductCode() *ProductUpsert {
 // ClearUpstreamProductCode clears the value of the "upstream_product_code" field.
 func (u *ProductUpsert) ClearUpstreamProductCode() *ProductUpsert {
 	u.SetNull(product.FieldUpstreamProductCode)
+	return u
+}
+
+// SetUpstreamNavigation sets the "upstream_navigation" field.
+func (u *ProductUpsert) SetUpstreamNavigation(v map[string]string) *ProductUpsert {
+	u.Set(product.FieldUpstreamNavigation, v)
+	return u
+}
+
+// UpdateUpstreamNavigation sets the "upstream_navigation" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateUpstreamNavigation() *ProductUpsert {
+	u.SetExcluded(product.FieldUpstreamNavigation)
+	return u
+}
+
+// ClearUpstreamNavigation clears the value of the "upstream_navigation" field.
+func (u *ProductUpsert) ClearUpstreamNavigation() *ProductUpsert {
+	u.SetNull(product.FieldUpstreamNavigation)
 	return u
 }
 
@@ -3140,6 +3168,27 @@ func (u *ProductUpsertOne) UpdateUpstreamProductCode() *ProductUpsertOne {
 func (u *ProductUpsertOne) ClearUpstreamProductCode() *ProductUpsertOne {
 	return u.Update(func(s *ProductUpsert) {
 		s.ClearUpstreamProductCode()
+	})
+}
+
+// SetUpstreamNavigation sets the "upstream_navigation" field.
+func (u *ProductUpsertOne) SetUpstreamNavigation(v map[string]string) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetUpstreamNavigation(v)
+	})
+}
+
+// UpdateUpstreamNavigation sets the "upstream_navigation" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateUpstreamNavigation() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateUpstreamNavigation()
+	})
+}
+
+// ClearUpstreamNavigation clears the value of the "upstream_navigation" field.
+func (u *ProductUpsertOne) ClearUpstreamNavigation() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.ClearUpstreamNavigation()
 	})
 }
 
@@ -4358,6 +4407,27 @@ func (u *ProductUpsertBulk) UpdateUpstreamProductCode() *ProductUpsertBulk {
 func (u *ProductUpsertBulk) ClearUpstreamProductCode() *ProductUpsertBulk {
 	return u.Update(func(s *ProductUpsert) {
 		s.ClearUpstreamProductCode()
+	})
+}
+
+// SetUpstreamNavigation sets the "upstream_navigation" field.
+func (u *ProductUpsertBulk) SetUpstreamNavigation(v map[string]string) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetUpstreamNavigation(v)
+	})
+}
+
+// UpdateUpstreamNavigation sets the "upstream_navigation" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateUpstreamNavigation() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateUpstreamNavigation()
+	})
+}
+
+// ClearUpstreamNavigation clears the value of the "upstream_navigation" field.
+func (u *ProductUpsertBulk) ClearUpstreamNavigation() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.ClearUpstreamNavigation()
 	})
 }
 

@@ -12,9 +12,9 @@ import (
 )
 
 type Input struct {
-	ConnectionID                            uint64
-	Name, Driver, BaseURL, Code, SKU, Stage string
-	Settings                                map[string]any
+	ConnectionID                                    uint64
+	Name, Driver, BaseURL, Code, SKU, Stage, PageID string
+	Settings                                        map[string]any
 }
 
 var numeric = regexp.MustCompile(`^[0-9]+$`)
@@ -33,13 +33,17 @@ func Resolve(in Input) map[string]any {
 			product, sku = parts[0], parts[1]
 		}
 	}
+	pageID := validPageID(in.PageID)
+	if in.Driver == "acg_faka" {
+		product = pageID
+	}
 	website := Website(in.BaseURL)
 	if configured, _ := in.Settings["website_url"].(string); configured != "" {
 		website = cleanRoot(configured)
 	}
 	out := map[string]any{"version": "1", "kind": kind, "stage": in.Stage,
 		"connection_id": strconv.FormatUint(in.ConnectionID, 10), "connection_name": in.Name,
-		"driver": in.Driver, "product_code": in.Code, "product_id": product, "sku_id": sku,
+		"driver": in.Driver, "product_code": in.Code, "product_id": product, "page_id": pageID, "sku_id": sku,
 		"website_url": website, "product_url": "", "link_status": "website_only"}
 	if kind == "self" {
 		out["link_status"] = "self"
@@ -50,13 +54,17 @@ func Resolve(in Input) map[string]any {
 		switch in.Driver {
 		case "zcard":
 			template = "{base}/product/{product_id}"
+		case "acg_faka":
+			if pageID != "" {
+				template = "{base}/item/{product_id}"
+			}
 		case "mcy_shop":
 			if numeric.MatchString(product) {
 				template = "{base}/item?id={product_id}"
 			}
 		}
 	}
-	if website != "" && product != "" && template != "" {
+	if website != "" && template != "" && (product != "" || !strings.Contains(template, "{product_id}")) {
 		if link := expand(template, website, in.Code, product, sku); link != "" {
 			out["product_url"], out["link_status"] = link, "product"
 		} else {
@@ -132,4 +140,36 @@ func Proto(source map[string]any) *structpb.Struct {
 	}
 	out, _ := structpb.NewStruct(source)
 	return out
+}
+
+func validPageID(raw string) string {
+	id, err := strconv.ParseUint(raw, 10, 64)
+	if err != nil || id == 0 {
+		return ""
+	}
+	return strconv.FormatUint(id, 10)
+}
+
+// Navigation binds a private page ID to the exact direct supplier and API code.
+func Navigation(connection uint64, code, pageID string) map[string]string {
+	if pageID = validPageID(pageID); connection == 0 || code == "" || pageID == "" {
+		return nil
+	}
+	return map[string]string{"connection_id": strconv.FormatUint(connection, 10), "product_code": code, "page_id": pageID}
+}
+
+func PageID(navigation map[string]string, connection uint64, code string) string {
+	if navigation["connection_id"] != strconv.FormatUint(connection, 10) || navigation["product_code"] != code {
+		return ""
+	}
+	return validPageID(navigation["page_id"])
+}
+
+// SnapshotPageID never follows a product that has since been rebound.
+func SnapshotPageID(source map[string]any, connection uint64, code string) string {
+	if source["connection_id"] != strconv.FormatUint(connection, 10) || source["product_code"] != code {
+		return ""
+	}
+	pageID, _ := source["page_id"].(string)
+	return validPageID(pageID)
 }

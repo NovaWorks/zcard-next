@@ -100,6 +100,8 @@ const (
 	FieldUpstreamSourceID = "upstream_source_id"
 	// FieldUpstreamProductCode holds the string denoting the upstream_product_code field in the database.
 	FieldUpstreamProductCode = "upstream_product_code"
+	// FieldUpstreamNavigation holds the string denoting the upstream_navigation field in the database.
+	FieldUpstreamNavigation = "upstream_navigation"
 	// FieldUpstreamSyncedAt holds the string denoting the upstream_synced_at field in the database.
 	FieldUpstreamSyncedAt = "upstream_synced_at"
 	// FieldAutoListing holds the string denoting the auto_listing field in the database.
@@ -195,6 +197,7 @@ var Columns = []string{
 	FieldStatus,
 	FieldUpstreamSourceID,
 	FieldUpstreamProductCode,
+	FieldUpstreamNavigation,
 	FieldUpstreamSyncedAt,
 	FieldAutoListing,
 	FieldListingReason,

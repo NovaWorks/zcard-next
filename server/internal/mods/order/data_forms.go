@@ -13,6 +13,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/cardpurchase"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/purchaseform"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/upstreamsource"
 	"math"
 	"math/big"
 	"net/url"
@@ -84,7 +85,7 @@ func (uc *OrderUsecase) prepareServices(ctx context.Context, in CreateOrderInput
 		if sku != nil {
 			upstreamSKU = sku.UpstreamSkuID
 		}
-		v.sourceSnapshot, err = data.CaptureUpstreamSource(ctx, c, p.UpstreamSourceID, p.UpstreamProductCode, upstreamSKU, "order")
+		v.sourceSnapshot, err = data.CaptureUpstreamSource(ctx, c, p.UpstreamSourceID, p.UpstreamProductCode, upstreamSKU, "order", upstreamsource.PageID(p.UpstreamNavigation, p.UpstreamSourceID, p.UpstreamProductCode))
 		if err != nil {
 			return nil, err
 		}

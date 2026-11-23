@@ -177,6 +177,7 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 		ID       any    `json:"id"`
 		Name     string `json:"name"`
 		Children []struct {
+			PageID       json.RawMessage `json:"id"`
 			Code         string          `json:"code"`
 			Name         string          `json:"name"`
 			Price        FlexNum         `json:"price"`
@@ -282,6 +283,7 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 			}
 			out.Items = append(out.Items, Product{
 				ID:             p.Code,
+				PageID:         acgPageID(p.PageID),
 				Name:           p.Name,
 				CategoryID:     catID,
 				Price:          p.Price.Cents(),

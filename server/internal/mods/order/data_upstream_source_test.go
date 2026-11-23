@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/upstreamsource"
 	"strings"
 	"testing"
 
@@ -46,5 +47,21 @@ func TestCreateOrderFreezesPrivateUpstreamSource(t *testing.T) {
 		if strings.Contains(string(b), private) {
 			t.Fatal("source leaked to buyer", string(b))
 		}
+	}
+}
+
+func TestCreateACGOrderFreezesWebPageAndDockingCode(t *testing.T) {
+	d, uc, pid := newGateEnv(t)
+	ctx := context.Background()
+	d.Client.SupplyConnection.Create().SetID(9).SetName("private-acg").SetDriver("acg_faka").SetBaseURL("https://acg-private.example").SetCredentials([]byte("secret")).SaveX(ctx)
+	d.Client.Product.UpdateOneID(pid).SetUpstreamProductCode("CA814E42E563538A").SetUpstreamNavigation(upstreamsource.Navigation(9, "CA814E42E563538A", "1111")).ExecX(ctx)
+	uc.SetStockGate(&fakeStockGate{})
+	_, e := uc.CreateOrder(ctx, CreateOrderInput{UserID: 3, QueryPassword: "test1234", Items: []OrderItemInput{{ProductID: pid, Quantity: 1}}})
+	if e != nil {
+		t.Fatal(e)
+	}
+	it := d.Client.OrderItem.Query().OnlyX(ctx)
+	if it.UpstreamSourceSnapshot["product_url"] != "https://acg-private.example/item/1111" || it.UpstreamSourceSnapshot["product_code"] != "CA814E42E563538A" {
+		t.Fatal(it.UpstreamSourceSnapshot)
 	}
 }

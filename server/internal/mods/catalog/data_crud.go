@@ -24,6 +24,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/upstreamsource"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -916,6 +917,7 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 			SetStatus(status).
 			SetUpstreamSourceID(in.ConnectionID).
 			SetUpstreamProductCode(in.UpstreamProductCode).
+			SetUpstreamNavigation(upstreamsource.Navigation(in.ConnectionID, in.UpstreamProductCode, in.UpstreamPageID)).
 			SetUpstreamSyncedAt(in.UpstreamSyncedAt).SetCategoryProtected(in.CategoryProtected)
 		if in.CategoryID > 0 {
 			create.SetCategoryID(in.CategoryID)
@@ -973,7 +975,8 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 	}
 	upd := data.Client(ctx, r.data).Product.UpdateOneID(existing.ID).Where(product.StatusGTE(0)).
 		SetName(in.Name).
-		SetUpstreamSyncedAt(in.UpstreamSyncedAt)
+		SetUpstreamSyncedAt(in.UpstreamSyncedAt).
+		SetUpstreamNavigation(upstreamsource.Navigation(in.ConnectionID, in.UpstreamProductCode, in.UpstreamPageID))
 	if existing.ProductKind != in.ProductKind {
 		return 0, false, fmt.Errorf("商品类型不能变化")
 	}

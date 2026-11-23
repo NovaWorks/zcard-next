@@ -91,6 +91,7 @@ type Product struct {
 	SMSProduct     map[string]string
 	SocialSchema   map[string]any
 	ID             string
+	PageID         string // 网页商品 ID，仅管理员导航；下单仍使用 ID 对接码
 	Name           string
 	CategoryID     string
 	Price          int64 // 分

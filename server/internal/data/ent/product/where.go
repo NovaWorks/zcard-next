@@ -1850,6 +1850,16 @@ func UpstreamProductCodeContainsFold(v string) predicate.Product {
 	return predicate.Product(sql.FieldContainsFold(FieldUpstreamProductCode, v))
 }
 
+// UpstreamNavigationIsNil applies the IsNil predicate on the "upstream_navigation" field.
+func UpstreamNavigationIsNil() predicate.Product {
+	return predicate.Product(sql.FieldIsNull(FieldUpstreamNavigation))
+}
+
+// UpstreamNavigationNotNil applies the NotNil predicate on the "upstream_navigation" field.
+func UpstreamNavigationNotNil() predicate.Product {
+	return predicate.Product(sql.FieldNotNull(FieldUpstreamNavigation))
+}
+
 // UpstreamSyncedAtEQ applies the EQ predicate on the "upstream_synced_at" field.
 func UpstreamSyncedAtEQ(v time.Time) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldUpstreamSyncedAt, v))

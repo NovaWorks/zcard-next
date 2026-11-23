@@ -31,8 +31,11 @@ func missingProcurementSource(po *ent.ProcurementOrder) bool {
 	return po.ConnectionID == 0 || po.LastError == MissingProcurementReason || po.UpstreamSourceSnapshot["record_kind"] == "missing_purchase" || po.UpstreamSourceSnapshot["kind"] == "self"
 }
 
-func CaptureUpstreamSource(ctx context.Context, c *ent.Client, id uint64, code, sku, stage string) (map[string]any, error) {
+func CaptureUpstreamSource(ctx context.Context, c *ent.Client, id uint64, code, sku, stage string, pageID ...string) (map[string]any, error) {
 	in := upstreamsource.Input{ConnectionID: id, Code: code, SKU: sku, Stage: stage}
+	if len(pageID) > 0 {
+		in.PageID = pageID[0]
+	}
 	if id != 0 {
 		conn, err := c.SupplyConnection.Get(ctx, id)
 		if err != nil && !ent.IsNotFound(err) {
@@ -72,7 +75,7 @@ func CurrentProductSources(ctx context.Context, c *ent.Client, ids []uint64) (ma
 		}
 	}
 	for _, p := range rows {
-		in := upstreamsource.Input{ConnectionID: p.UpstreamSourceID, Code: p.UpstreamProductCode, Stage: "current"}
+		in := upstreamsource.Input{ConnectionID: p.UpstreamSourceID, Code: p.UpstreamProductCode, Stage: "current", PageID: upstreamsource.PageID(p.UpstreamNavigation, p.UpstreamSourceID, p.UpstreamProductCode)}
 		if conn := connections[p.UpstreamSourceID]; conn != nil {
 			in.Name, in.Driver, in.BaseURL, in.Settings = conn.Name, conn.Driver, conn.BaseURL, conn.Settings
 		}

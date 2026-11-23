@@ -24,6 +24,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementorder"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/upstreamsource"
 )
 
 // 哨兵错误。
@@ -94,7 +95,15 @@ func (r *ProcureRepo) CreatePending(ctx context.Context, orderItemID, connection
 		if len(sku) > 0 {
 			upstreamSKU = sku[0]
 		}
-		source, err := data.CaptureUpstreamSource(ctx, data.Client(ctx, r.data), connectionID, productCode, upstreamSKU, "purchase")
+		pageID := ""
+		original, err := data.Client(ctx, r.data).OrderItem.Get(ctx, orderItemID)
+		if err != nil && !ent.IsNotFound(err) {
+			return err
+		}
+		if original != nil {
+			pageID = upstreamsource.SnapshotPageID(original.UpstreamSourceSnapshot, connectionID, productCode)
+		}
+		source, err := data.CaptureUpstreamSource(ctx, data.Client(ctx, r.data), connectionID, productCode, upstreamSKU, "purchase", pageID)
 		if err != nil {
 			return err
 		}

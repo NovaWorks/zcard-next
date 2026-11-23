@@ -2266,55 +2266,55 @@ func init() {
 	// product.UpstreamProductCodeValidator is a validator for the "upstream_product_code" field. It is called by the builders before save.
 	product.UpstreamProductCodeValidator = productDescUpstreamProductCode.Validators[0].(func(string) error)
 	// productDescAutoListing is the schema descriptor for auto_listing field.
-	productDescAutoListing := productFields[41].Descriptor()
+	productDescAutoListing := productFields[42].Descriptor()
 	// product.DefaultAutoListing holds the default value on creation for the auto_listing field.
 	product.DefaultAutoListing = productDescAutoListing.Default.(bool)
 	// productDescListingReason is the schema descriptor for listing_reason field.
-	productDescListingReason := productFields[42].Descriptor()
+	productDescListingReason := productFields[43].Descriptor()
 	// product.DefaultListingReason holds the default value on creation for the listing_reason field.
 	product.DefaultListingReason = productDescListingReason.Default.(string)
 	// product.ListingReasonValidator is a validator for the "listing_reason" field. It is called by the builders before save.
 	product.ListingReasonValidator = productDescListingReason.Validators[0].(func(string) error)
 	// productDescListingRestoreStatus is the schema descriptor for listing_restore_status field.
-	productDescListingRestoreStatus := productFields[43].Descriptor()
+	productDescListingRestoreStatus := productFields[44].Descriptor()
 	// product.DefaultListingRestoreStatus holds the default value on creation for the listing_restore_status field.
 	product.DefaultListingRestoreStatus = productDescListingRestoreStatus.Default.(int8)
 	// productDescListingChangedAt is the schema descriptor for listing_changed_at field.
-	productDescListingChangedAt := productFields[44].Descriptor()
+	productDescListingChangedAt := productFields[45].Descriptor()
 	// product.DefaultListingChangedAt holds the default value on creation for the listing_changed_at field.
 	product.DefaultListingChangedAt = productDescListingChangedAt.Default.(int64)
 	// productDescListingObservedAt is the schema descriptor for listing_observed_at field.
-	productDescListingObservedAt := productFields[45].Descriptor()
+	productDescListingObservedAt := productFields[46].Descriptor()
 	// product.DefaultListingObservedAt holds the default value on creation for the listing_observed_at field.
 	product.DefaultListingObservedAt = productDescListingObservedAt.Default.(int64)
 	// productDescListingZeroSince is the schema descriptor for listing_zero_since field.
-	productDescListingZeroSince := productFields[46].Descriptor()
+	productDescListingZeroSince := productFields[47].Descriptor()
 	// product.DefaultListingZeroSince holds the default value on creation for the listing_zero_since field.
 	product.DefaultListingZeroSince = productDescListingZeroSince.Default.(int64)
 	// productDescListingLastStock is the schema descriptor for listing_last_stock field.
-	productDescListingLastStock := productFields[47].Descriptor()
+	productDescListingLastStock := productFields[48].Descriptor()
 	// product.DefaultListingLastStock holds the default value on creation for the listing_last_stock field.
 	product.DefaultListingLastStock = productDescListingLastStock.Default.(int32)
 	// productDescListingRestocked is the schema descriptor for listing_restocked field.
-	productDescListingRestocked := productFields[48].Descriptor()
+	productDescListingRestocked := productFields[49].Descriptor()
 	// product.DefaultListingRestocked holds the default value on creation for the listing_restocked field.
 	product.DefaultListingRestocked = productDescListingRestocked.Default.(bool)
 	// productDescListingMessage is the schema descriptor for listing_message field.
-	productDescListingMessage := productFields[49].Descriptor()
+	productDescListingMessage := productFields[50].Descriptor()
 	// product.DefaultListingMessage holds the default value on creation for the listing_message field.
 	product.DefaultListingMessage = productDescListingMessage.Default.(string)
 	// product.ListingMessageValidator is a validator for the "listing_message" field. It is called by the builders before save.
 	product.ListingMessageValidator = productDescListingMessage.Validators[0].(func(string) error)
 	// productDescIsLocked is the schema descriptor for is_locked field.
-	productDescIsLocked := productFields[50].Descriptor()
+	productDescIsLocked := productFields[51].Descriptor()
 	// product.DefaultIsLocked holds the default value on creation for the is_locked field.
 	product.DefaultIsLocked = productDescIsLocked.Default.(bool)
 	// productDescLockVersion is the schema descriptor for lock_version field.
-	productDescLockVersion := productFields[51].Descriptor()
+	productDescLockVersion := productFields[52].Descriptor()
 	// product.DefaultLockVersion holds the default value on creation for the lock_version field.
 	product.DefaultLockVersion = productDescLockVersion.Default.(int64)
 	// productDescLockedBy is the schema descriptor for locked_by field.
-	productDescLockedBy := productFields[52].Descriptor()
+	productDescLockedBy := productFields[53].Descriptor()
 	// product.DefaultLockedBy holds the default value on creation for the locked_by field.
 	product.DefaultLockedBy = productDescLockedBy.Default.(uint64)
 	productcontentbatchMixin := schema.ProductContentBatch{}.Mixin()

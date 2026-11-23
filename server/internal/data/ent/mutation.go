@@ -61032,6 +61032,7 @@ type ProductMutation struct {
 	upstream_source_id        *uint64
 	addupstream_source_id     *int64
 	upstream_product_code     *string
+	upstream_navigation       *map[string]string
 	upstream_synced_at        *time.Time
 	auto_listing              *bool
 	listing_reason            *string
@@ -63111,6 +63112,55 @@ func (m *ProductMutation) ResetUpstreamProductCode() {
 	delete(m.clearedFields, product.FieldUpstreamProductCode)
 }
 
+// SetUpstreamNavigation sets the "upstream_navigation" field.
+func (m *ProductMutation) SetUpstreamNavigation(value map[string]string) {
+	m.upstream_navigation = &value
+}
+
+// UpstreamNavigation returns the value of the "upstream_navigation" field in the mutation.
+func (m *ProductMutation) UpstreamNavigation() (r map[string]string, exists bool) {
+	v := m.upstream_navigation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpstreamNavigation returns the old "upstream_navigation" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldUpstreamNavigation(ctx context.Context) (v map[string]string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpstreamNavigation is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpstreamNavigation requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpstreamNavigation: %w", err)
+	}
+	return oldValue.UpstreamNavigation, nil
+}
+
+// ClearUpstreamNavigation clears the value of the "upstream_navigation" field.
+func (m *ProductMutation) ClearUpstreamNavigation() {
+	m.upstream_navigation = nil
+	m.clearedFields[product.FieldUpstreamNavigation] = struct{}{}
+}
+
+// UpstreamNavigationCleared returns if the "upstream_navigation" field was cleared in this mutation.
+func (m *ProductMutation) UpstreamNavigationCleared() bool {
+	_, ok := m.clearedFields[product.FieldUpstreamNavigation]
+	return ok
+}
+
+// ResetUpstreamNavigation resets all changes to the "upstream_navigation" field.
+func (m *ProductMutation) ResetUpstreamNavigation() {
+	m.upstream_navigation = nil
+	delete(m.clearedFields, product.FieldUpstreamNavigation)
+}
+
 // SetUpstreamSyncedAt sets the "upstream_synced_at" field.
 func (m *ProductMutation) SetUpstreamSyncedAt(t time.Time) {
 	m.upstream_synced_at = &t
@@ -63923,7 +63973,7 @@ func (m *ProductMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductMutation) Fields() []string {
-	fields := make([]string, 0, 56)
+	fields := make([]string, 0, 57)
 	if m.created_at != nil {
 		fields = append(fields, product.FieldCreatedAt)
 	}
@@ -64049,6 +64099,9 @@ func (m *ProductMutation) Fields() []string {
 	}
 	if m.upstream_product_code != nil {
 		fields = append(fields, product.FieldUpstreamProductCode)
+	}
+	if m.upstream_navigation != nil {
+		fields = append(fields, product.FieldUpstreamNavigation)
 	}
 	if m.upstream_synced_at != nil {
 		fields = append(fields, product.FieldUpstreamSyncedAt)
@@ -64184,6 +64237,8 @@ func (m *ProductMutation) Field(name string) (ent.Value, bool) {
 		return m.UpstreamSourceID()
 	case product.FieldUpstreamProductCode:
 		return m.UpstreamProductCode()
+	case product.FieldUpstreamNavigation:
+		return m.UpstreamNavigation()
 	case product.FieldUpstreamSyncedAt:
 		return m.UpstreamSyncedAt()
 	case product.FieldAutoListing:
@@ -64305,6 +64360,8 @@ func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldUpstreamSourceID(ctx)
 	case product.FieldUpstreamProductCode:
 		return m.OldUpstreamProductCode(ctx)
+	case product.FieldUpstreamNavigation:
+		return m.OldUpstreamNavigation(ctx)
 	case product.FieldUpstreamSyncedAt:
 		return m.OldUpstreamSyncedAt(ctx)
 	case product.FieldAutoListing:
@@ -64635,6 +64692,13 @@ func (m *ProductMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpstreamProductCode(v)
+		return nil
+	case product.FieldUpstreamNavigation:
+		v, ok := value.(map[string]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpstreamNavigation(v)
 		return nil
 	case product.FieldUpstreamSyncedAt:
 		v, ok := value.(time.Time)
@@ -65031,6 +65095,9 @@ func (m *ProductMutation) ClearedFields() []string {
 	if m.FieldCleared(product.FieldUpstreamProductCode) {
 		fields = append(fields, product.FieldUpstreamProductCode)
 	}
+	if m.FieldCleared(product.FieldUpstreamNavigation) {
+		fields = append(fields, product.FieldUpstreamNavigation)
+	}
 	if m.FieldCleared(product.FieldUpstreamSyncedAt) {
 		fields = append(fields, product.FieldUpstreamSyncedAt)
 	}
@@ -65086,6 +65153,9 @@ func (m *ProductMutation) ClearField(name string) error {
 		return nil
 	case product.FieldUpstreamProductCode:
 		m.ClearUpstreamProductCode()
+		return nil
+	case product.FieldUpstreamNavigation:
+		m.ClearUpstreamNavigation()
 		return nil
 	case product.FieldUpstreamSyncedAt:
 		m.ClearUpstreamSyncedAt()
@@ -65226,6 +65296,9 @@ func (m *ProductMutation) ResetField(name string) error {
 		return nil
 	case product.FieldUpstreamProductCode:
 		m.ResetUpstreamProductCode()
+		return nil
+	case product.FieldUpstreamNavigation:
+		m.ResetUpstreamNavigation()
 		return nil
 	case product.FieldUpstreamSyncedAt:
 		m.ResetUpstreamSyncedAt()

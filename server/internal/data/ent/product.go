@@ -102,6 +102,8 @@ type Product struct {
 	UpstreamSourceID uint64 `json:"upstream_source_id,omitempty"`
 	// 上游商品标识（M2）
 	UpstreamProductCode string `json:"upstream_product_code,omitempty"`
+	// 管理员商品直达信息，绑定原连接及对接码；不对外供货
+	UpstreamNavigation map[string]string `json:"upstream_navigation,omitempty"`
 	// UpstreamSyncedAt holds the value of the "upstream_synced_at" field.
 	UpstreamSyncedAt time.Time `json:"upstream_synced_at,omitempty"`
 	// AutoListing holds the value of the "auto_listing" field.
@@ -170,7 +172,7 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case product.FieldSmsProduct, product.FieldSocialSchema, product.FieldShippingCountries, product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig:
+		case product.FieldSmsProduct, product.FieldSocialSchema, product.FieldShippingCountries, product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig, product.FieldUpstreamNavigation:
 			values[i] = new([]byte)
 		case product.FieldCategoryProtected, product.FieldTrackInventory, product.FieldSalesVisible, product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend, product.FieldAutoListing, product.FieldListingRestocked, product.FieldIsLocked:
 			values[i] = new(sql.NullBool)
@@ -465,6 +467,14 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpstreamProductCode = value.String
 			}
+		case product.FieldUpstreamNavigation:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field upstream_navigation", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.UpstreamNavigation); err != nil {
+					return fmt.Errorf("unmarshal field upstream_navigation: %w", err)
+				}
+			}
 		case product.FieldUpstreamSyncedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field upstream_synced_at", values[i])
@@ -721,6 +731,9 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("upstream_product_code=")
 	builder.WriteString(_m.UpstreamProductCode)
+	builder.WriteString(", ")
+	builder.WriteString("upstream_navigation=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UpstreamNavigation))
 	builder.WriteString(", ")
 	builder.WriteString("upstream_synced_at=")
 	builder.WriteString(_m.UpstreamSyncedAt.Format(time.ANSIC))
