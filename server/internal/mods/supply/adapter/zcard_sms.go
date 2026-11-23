@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
+	"maps"
 	"net/url"
 	"unicode/utf8"
 )
@@ -144,9 +145,19 @@ func (a *zCardAdapter) RefreshProduct(ctx context.Context, source *Product) (*Pr
 	if p.SocialSchema != nil {
 		copy.SocialSchema = p.SocialSchema
 	}
+	decoded := p.toProduct()
+	if decoded.UpstreamExtra["sku_catalog_complete"] == true {
+		copy.UpstreamExtra = maps.Clone(copy.UpstreamExtra)
+		if copy.UpstreamExtra == nil {
+			copy.UpstreamExtra = map[string]any{}
+		}
+		copy.UpstreamExtra["sku_catalog_complete"] = true
+	}
+	copy.SKUs = decoded.SKUs
+	copy.FormFields = decoded.FormFields
 	copy.Price = int64(p.Price)
 	copy.FactoryPrice = int64(p.Price)
-	copy.IsActive = p.IsActive
+	copy.IsActive = decoded.IsActive
 	copy.Stock = p.Stock
 	if p.Name != "" {
 		copy.Name = p.Name

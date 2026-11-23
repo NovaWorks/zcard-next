@@ -65,6 +65,7 @@ func ParseSchema(raw json.RawMessage) ([]Field, error) {
 			Options            []string
 			Min, Max           *float64
 			MaxLen             *int `json:"max_len"`
+			MaxLength          *int `json:"max_length"`
 		}
 	}
 	if err := json.Unmarshal(raw, &schema); err != nil {
@@ -91,6 +92,9 @@ func ParseSchema(raw json.RawMessage) ([]Field, error) {
 		}
 		if utf8.RuneCountInString(f.Label) > 60 {
 			f.Label = string([]rune(f.Label)[:60])
+		}
+		if v.MaxLength != nil {
+			v.MaxLen = v.MaxLength
 		}
 		if v.MaxLen != nil {
 			if *v.MaxLen <= 0 {

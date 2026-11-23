@@ -129,7 +129,7 @@ func (g *Gateway) Submit(ctx context.Context, req supplyport.PurchaseRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	if len(req.ManualFormData) > 0 && conn.Driver != "dujiao_next" && conn.Driver != "mcy_shop" {
+	if len(req.ManualFormData) > 0 && conn.Driver != "dujiao_next" && conn.Driver != "mcy_shop" && conn.Driver != "zcard" {
 		return nil, supplyport.ErrUpstreamFormInvalid
 	}
 	res, err := a.CreateOrder(ctx, adapter.CreateOrderReq{

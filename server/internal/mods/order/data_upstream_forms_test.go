@@ -10,7 +10,7 @@ import (
 )
 
 func TestUpstreamFormOrderSnapshotsSupplierKeys(t *testing.T) {
-	for _, driver := range []string{"dujiao_next", "mcy_shop"} {
+	for _, driver := range []string{"dujiao_next", "mcy_shop", "zcard"} {
 		t.Run(driver, func(t *testing.T) { testUpstreamFormOrderSnapshotsSupplierKeys(t, driver) })
 	}
 }

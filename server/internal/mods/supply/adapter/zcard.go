@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/purchaseform"
 	"log/slog"
 	"net/url"
 	"strconv"
@@ -167,10 +168,14 @@ func (a *zCardAdapter) ListProducts(ctx context.Context, page, pageSize int, inc
 	return out, nil
 }
 
-func (a *zCardAdapter) GetStock(ctx context.Context, productCode, _ string) (int32, error) {
+func (a *zCardAdapter) GetStock(ctx context.Context, productCode, sku string) (int32, error) {
 	ctx = stockReadContext(ctx)
 	path := "/api/supply/products/" + url.PathEscape(productCode) + "/stock"
-	data, err := a.request(ctx, "GET", path, smsCatalogQuery(), nil)
+	q := smsCatalogQuery()
+	if sku != "" {
+		q.Set("sku_id", sku)
+	}
+	data, err := a.request(ctx, "GET", path, q, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -190,8 +195,17 @@ func (a *zCardAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*Cr
 		"downstream_order_no": req.DownstreamOrderNo,
 		"callback_url":        req.CallbackURL,
 	}
+	if req.UpstreamSKU != "" || len(req.ManualFormData) > 0 {
+		body["required_capability"] = "card_purchase.v1"
+		body["sku_id"] = req.UpstreamSKU
+		body["manual_form_data"] = req.ManualFormData
+	}
 	data, err := a.request(ctx, "POST", "/api/supply/orders", nil, body)
 	if err != nil {
+		switch strings.ToLower(upstreamErrorCode(err)) {
+		case "supply.form_invalid", "supply.sku_invalid", "supply.sku_required", "supply.capability_required":
+			return nil, ErrPurchaseFormInvalid
+		}
 		return nil, err
 	}
 	var resp struct {
@@ -326,6 +340,15 @@ func (a *zCardAdapter) RefundOrder(ctx context.Context, upstreamOrderID string) 
 
 // zCardProduct 上游商品行（字段对齐 1.x mapProduct）。
 type zCardProduct struct {
+	PurchaseForm json.RawMessage `json:"purchase_form"`
+	SKUs         []struct {
+		ID       string             `json:"id"`
+		Code     string             `json:"code"`
+		Name     string             `json:"name"`
+		Price    supplyport.Integer `json:"price"`
+		Stock    int32              `json:"stock"`
+		IsActive bool               `json:"is_active"`
+	} `json:"skus"`
 	ProductKind    string             `json:"product_kind"`
 	DeliveryKind   string             `json:"delivery_kind"`
 	SMSProduct     map[string]string  `json:"sms_product"`
@@ -343,7 +366,7 @@ type zCardProduct struct {
 }
 
 func (p zCardProduct) toProduct() Product {
-	return Product{
+	out := Product{
 		ProductKind: normalizedProductKind(p.ProductKind), DeliveryKind: normalizedDeliveryKind(p.DeliveryKind), SMSProduct: publicSMSProduct(p.SMSProduct), SocialSchema: p.SocialSchema,
 		ID:             idString(p.ID),
 		Name:           p.Name,
@@ -356,6 +379,26 @@ func (p zCardProduct) toProduct() Product {
 		IsActive:       p.IsActive,
 		Stock:          p.Stock,
 	}
+	if p.SKUs != nil {
+		out.UpstreamExtra = map[string]any{"sku_catalog_complete": true}
+	}
+	for _, v := range p.SKUs {
+		if !v.IsActive {
+			continue
+		}
+		name := v.Name
+		if name == "" {
+			name = v.Code
+		}
+		out.SKUs = append(out.SKUs, SKU{ID: v.ID, Code: v.ID, Name: name, Price: int64(v.Price), Stock: v.Stock, IsActive: v.IsActive, SpecValues: map[string]string{}})
+	}
+	fields, e := purchaseform.ParseSchema(p.PurchaseForm)
+	if e != nil {
+		out.IsActive = false
+	} else {
+		out.FormFields = fields
+	}
+	return out
 }
 
 // idString 上游 id 可能是 number/string，统一字符串化（铁律：对外标识一律字符串）。
@@ -415,7 +458,7 @@ func decodeZCard(raw []byte, v any) error {
 	return d.Decode(v)
 }
 func smsCatalogQuery() url.Values {
-	return url.Values{"capabilities": {supplyport.SMSCapability, supplyport.SMSProductCatalog, supplyport.SMSProductPurchase, supplyport.SocialCapability}}
+	return url.Values{"capabilities": {supplyport.SMSCapability, supplyport.SMSProductCatalog, supplyport.SMSProductPurchase, supplyport.SocialCapability, "card_purchase.v1"}}
 }
 func normalizedDeliveryKind(v string) string {
 	if v == "" {
