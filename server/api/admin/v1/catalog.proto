@@ -51,6 +51,10 @@ service AdminCatalogService {
     option (google.api.http) = { post: "/api/v1/admin/products/batch-category" body: "*" };
   }
 
+  rpc BatchUpdateProductSort(BatchUpdateProductSortRequest) returns (BatchUpdateProductSortReply) {
+    option (google.api.http) = { post: "/api/v1/admin/products/batch-sort" body: "*" };
+  }
+
   rpc PreviewBatchUpdateProductContent(PreviewBatchProductContentRequest) returns (BatchProductContentPreview) {
     option (google.api.http) = { post: "/api/v1/admin/products/batch-content/preview" body: "*" };
   }
@@ -354,6 +358,19 @@ message BatchUpdateProductCategoryRequest {
   uint64 category_id = 2 [(google.api.field_behavior) = REQUIRED];
 }
 message BatchUpdateProductCategoryReply {
+  int32 updated = 1;
+  int32 skipped_locked = 2;
+}
+
+message ProductSortInput {
+  uint64 id = 1;
+  int32 sort = 2; // 非负整数，数字越小越靠前
+  int32 expected_sort = 3; // 编辑前的排序，防止覆盖其他管理员的调整
+}
+message BatchUpdateProductSortRequest {
+  repeated ProductSortInput items = 1;
+}
+message BatchUpdateProductSortReply {
   int32 updated = 1;
   int32 skipped_locked = 2;
 }

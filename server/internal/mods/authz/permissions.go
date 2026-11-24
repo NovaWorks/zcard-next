@@ -127,6 +127,8 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductStatus", Method: "POST", Path: "/api/v1/admin/products/batch-status"},
 		Perm{Code: "catalog:write", Desc: "批量修改商品分类（超管）", Domain: "catalog", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductCategory", Method: "POST", Path: "/api/v1/admin/products/batch-category"},
+		Perm{Code: "catalog:write", Desc: "批量修改商品排序（超管）", Domain: "catalog", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductSort", Method: "POST", Path: "/api/v1/admin/products/batch-sort"},
 		Perm{Code: "catalog:write", Desc: "批量修改商品内容", Domain: "catalog", AdminOnly: true, Op: "zcard.api.admin.v1.AdminCatalogService/GetBatchProductContentResult", Method: "GET", Path: "/api/v1/admin/products/batch-content/results/{request_id}"},
 		Perm{Code: "catalog:write", Desc: "批量修改商品内容", Domain: "catalog", AdminOnly: true, Op: "zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductContent", Method: "POST", Path: "/api/v1/admin/products/batch-content"},
 		Perm{Code: "catalog:write", Desc: "批量修改商品内容", Domain: "catalog", AdminOnly: true, Op: "zcard.api.admin.v1.AdminCatalogService/PreviewBatchUpdateProductContent", Method: "POST", Path: "/api/v1/admin/products/batch-content/preview"},

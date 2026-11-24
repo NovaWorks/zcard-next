@@ -3659,6 +3659,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.BatchProductContentResult'
+    /api/v1/admin/products/batch-sort:
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_BatchUpdateProductSort
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.BatchUpdateProductSortRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.BatchUpdateProductSortReply'
     /api/v1/admin/products/batch-status:
         post:
             tags:
@@ -8537,6 +8555,22 @@ components:
                         type: string
                 categoryId:
                     type: string
+        zcard.api.admin.v1.BatchUpdateProductSortReply:
+            type: object
+            properties:
+                updated:
+                    type: integer
+                    format: int32
+                skippedLocked:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.BatchUpdateProductSortRequest:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ProductSortInput'
         zcard.api.admin.v1.BatchUpdateProductStatusReply:
             type: object
             properties:
@@ -12007,6 +12041,17 @@ components:
                     format: int32
                 autoListing:
                     type: boolean
+        zcard.api.admin.v1.ProductSortInput:
+            type: object
+            properties:
+                id:
+                    type: string
+                sort:
+                    type: integer
+                    format: int32
+                expectedSort:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.PromotionItem:
             type: object
             properties:

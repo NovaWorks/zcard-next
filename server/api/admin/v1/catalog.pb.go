@@ -1608,6 +1608,162 @@ func (x *BatchUpdateProductCategoryReply) GetSkippedLocked() int32 {
 	return 0
 }
 
+type ProductSortInput struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Sort          int32                  `protobuf:"varint,2,opt,name=sort,proto3" json:"sort,omitempty"`                                     // 非负整数，数字越小越靠前
+	ExpectedSort  int32                  `protobuf:"varint,3,opt,name=expected_sort,json=expectedSort,proto3" json:"expected_sort,omitempty"` // 编辑前的排序，防止覆盖其他管理员的调整
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProductSortInput) Reset() {
+	*x = ProductSortInput{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProductSortInput) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProductSortInput) ProtoMessage() {}
+
+func (x *ProductSortInput) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProductSortInput.ProtoReflect.Descriptor instead.
+func (*ProductSortInput) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ProductSortInput) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ProductSortInput) GetSort() int32 {
+	if x != nil {
+		return x.Sort
+	}
+	return 0
+}
+
+func (x *ProductSortInput) GetExpectedSort() int32 {
+	if x != nil {
+		return x.ExpectedSort
+	}
+	return 0
+}
+
+type BatchUpdateProductSortRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*ProductSortInput    `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BatchUpdateProductSortRequest) Reset() {
+	*x = BatchUpdateProductSortRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BatchUpdateProductSortRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchUpdateProductSortRequest) ProtoMessage() {}
+
+func (x *BatchUpdateProductSortRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchUpdateProductSortRequest.ProtoReflect.Descriptor instead.
+func (*BatchUpdateProductSortRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *BatchUpdateProductSortRequest) GetItems() []*ProductSortInput {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+type BatchUpdateProductSortReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Updated       int32                  `protobuf:"varint,1,opt,name=updated,proto3" json:"updated,omitempty"`
+	SkippedLocked int32                  `protobuf:"varint,2,opt,name=skipped_locked,json=skippedLocked,proto3" json:"skipped_locked,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BatchUpdateProductSortReply) Reset() {
+	*x = BatchUpdateProductSortReply{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BatchUpdateProductSortReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchUpdateProductSortReply) ProtoMessage() {}
+
+func (x *BatchUpdateProductSortReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchUpdateProductSortReply.ProtoReflect.Descriptor instead.
+func (*BatchUpdateProductSortReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *BatchUpdateProductSortReply) GetUpdated() int32 {
+	if x != nil {
+		return x.Updated
+	}
+	return 0
+}
+
+func (x *BatchUpdateProductSortReply) GetSkippedLocked() int32 {
+	if x != nil {
+		return x.SkippedLocked
+	}
+	return 0
+}
+
 type CategoryList struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Categories    []*Category            `protobuf:"bytes,1,rep,name=categories,proto3" json:"categories,omitempty"`
@@ -1617,7 +1773,7 @@ type CategoryList struct {
 
 func (x *CategoryList) Reset() {
 	*x = CategoryList{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[12]
+	mi := &file_admin_v1_catalog_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1629,7 +1785,7 @@ func (x *CategoryList) String() string {
 func (*CategoryList) ProtoMessage() {}
 
 func (x *CategoryList) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[12]
+	mi := &file_admin_v1_catalog_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1642,7 +1798,7 @@ func (x *CategoryList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CategoryList.ProtoReflect.Descriptor instead.
 func (*CategoryList) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{12}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *CategoryList) GetCategories() []*Category {
@@ -1669,7 +1825,7 @@ type Category struct {
 
 func (x *Category) Reset() {
 	*x = Category{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[13]
+	mi := &file_admin_v1_catalog_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1681,7 +1837,7 @@ func (x *Category) String() string {
 func (*Category) ProtoMessage() {}
 
 func (x *Category) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[13]
+	mi := &file_admin_v1_catalog_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1694,7 +1850,7 @@ func (x *Category) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Category.ProtoReflect.Descriptor instead.
 func (*Category) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{13}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Category) GetId() uint64 {
@@ -1765,7 +1921,7 @@ type CreateCategoryRequest struct {
 
 func (x *CreateCategoryRequest) Reset() {
 	*x = CreateCategoryRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[14]
+	mi := &file_admin_v1_catalog_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1777,7 +1933,7 @@ func (x *CreateCategoryRequest) String() string {
 func (*CreateCategoryRequest) ProtoMessage() {}
 
 func (x *CreateCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[14]
+	mi := &file_admin_v1_catalog_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1790,7 +1946,7 @@ func (x *CreateCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCategoryRequest.ProtoReflect.Descriptor instead.
 func (*CreateCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{14}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *CreateCategoryRequest) GetName() string {
@@ -1839,7 +1995,7 @@ type UpdateCategoryRequest struct {
 
 func (x *UpdateCategoryRequest) Reset() {
 	*x = UpdateCategoryRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[15]
+	mi := &file_admin_v1_catalog_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1851,7 +2007,7 @@ func (x *UpdateCategoryRequest) String() string {
 func (*UpdateCategoryRequest) ProtoMessage() {}
 
 func (x *UpdateCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[15]
+	mi := &file_admin_v1_catalog_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1864,7 +2020,7 @@ func (x *UpdateCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCategoryRequest.ProtoReflect.Descriptor instead.
 func (*UpdateCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{15}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *UpdateCategoryRequest) GetId() uint64 {
@@ -1921,7 +2077,7 @@ type ReorderCategoriesRequest struct {
 
 func (x *ReorderCategoriesRequest) Reset() {
 	*x = ReorderCategoriesRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[16]
+	mi := &file_admin_v1_catalog_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1933,7 +2089,7 @@ func (x *ReorderCategoriesRequest) String() string {
 func (*ReorderCategoriesRequest) ProtoMessage() {}
 
 func (x *ReorderCategoriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[16]
+	mi := &file_admin_v1_catalog_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1946,7 +2102,7 @@ func (x *ReorderCategoriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderCategoriesRequest.ProtoReflect.Descriptor instead.
 func (*ReorderCategoriesRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{16}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ReorderCategoriesRequest) GetParentId() uint64 {
@@ -1972,7 +2128,7 @@ type DeleteCategoryRequest struct {
 
 func (x *DeleteCategoryRequest) Reset() {
 	*x = DeleteCategoryRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[17]
+	mi := &file_admin_v1_catalog_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1984,7 +2140,7 @@ func (x *DeleteCategoryRequest) String() string {
 func (*DeleteCategoryRequest) ProtoMessage() {}
 
 func (x *DeleteCategoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[17]
+	mi := &file_admin_v1_catalog_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1997,7 +2153,7 @@ func (x *DeleteCategoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCategoryRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCategoryRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{17}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *DeleteCategoryRequest) GetId() uint64 {
@@ -2016,7 +2172,7 @@ type TagList struct {
 
 func (x *TagList) Reset() {
 	*x = TagList{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[18]
+	mi := &file_admin_v1_catalog_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2028,7 +2184,7 @@ func (x *TagList) String() string {
 func (*TagList) ProtoMessage() {}
 
 func (x *TagList) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[18]
+	mi := &file_admin_v1_catalog_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2041,7 +2197,7 @@ func (x *TagList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TagList.ProtoReflect.Descriptor instead.
 func (*TagList) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{18}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *TagList) GetTags() []*Tag {
@@ -2066,7 +2222,7 @@ type Tag struct {
 
 func (x *Tag) Reset() {
 	*x = Tag{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[19]
+	mi := &file_admin_v1_catalog_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2078,7 +2234,7 @@ func (x *Tag) String() string {
 func (*Tag) ProtoMessage() {}
 
 func (x *Tag) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[19]
+	mi := &file_admin_v1_catalog_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2091,7 +2247,7 @@ func (x *Tag) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tag.ProtoReflect.Descriptor instead.
 func (*Tag) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{19}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *Tag) GetId() uint64 {
@@ -2156,7 +2312,7 @@ type CreateTagRequest struct {
 
 func (x *CreateTagRequest) Reset() {
 	*x = CreateTagRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[20]
+	mi := &file_admin_v1_catalog_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2168,7 +2324,7 @@ func (x *CreateTagRequest) String() string {
 func (*CreateTagRequest) ProtoMessage() {}
 
 func (x *CreateTagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[20]
+	mi := &file_admin_v1_catalog_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2181,7 +2337,7 @@ func (x *CreateTagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTagRequest.ProtoReflect.Descriptor instead.
 func (*CreateTagRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{20}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *CreateTagRequest) GetName() string {
@@ -2228,7 +2384,7 @@ type DeleteTagRequest struct {
 
 func (x *DeleteTagRequest) Reset() {
 	*x = DeleteTagRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[21]
+	mi := &file_admin_v1_catalog_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2240,7 +2396,7 @@ func (x *DeleteTagRequest) String() string {
 func (*DeleteTagRequest) ProtoMessage() {}
 
 func (x *DeleteTagRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[21]
+	mi := &file_admin_v1_catalog_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2253,7 +2409,7 @@ func (x *DeleteTagRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTagRequest.ProtoReflect.Descriptor instead.
 func (*DeleteTagRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{21}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *DeleteTagRequest) GetId() uint64 {
@@ -2272,7 +2428,7 @@ type ListControlsRequest struct {
 
 func (x *ListControlsRequest) Reset() {
 	*x = ListControlsRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[22]
+	mi := &file_admin_v1_catalog_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2284,7 +2440,7 @@ func (x *ListControlsRequest) String() string {
 func (*ListControlsRequest) ProtoMessage() {}
 
 func (x *ListControlsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[22]
+	mi := &file_admin_v1_catalog_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2297,7 +2453,7 @@ func (x *ListControlsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListControlsRequest.ProtoReflect.Descriptor instead.
 func (*ListControlsRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{22}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ListControlsRequest) GetProductId() uint64 {
@@ -2316,7 +2472,7 @@ type ControlList struct {
 
 func (x *ControlList) Reset() {
 	*x = ControlList{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[23]
+	mi := &file_admin_v1_catalog_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2328,7 +2484,7 @@ func (x *ControlList) String() string {
 func (*ControlList) ProtoMessage() {}
 
 func (x *ControlList) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[23]
+	mi := &file_admin_v1_catalog_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2341,7 +2497,7 @@ func (x *ControlList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ControlList.ProtoReflect.Descriptor instead.
 func (*ControlList) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{23}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ControlList) GetControls() []*AdminControl {
@@ -2369,7 +2525,7 @@ type AdminControl struct {
 
 func (x *AdminControl) Reset() {
 	*x = AdminControl{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[24]
+	mi := &file_admin_v1_catalog_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2381,7 +2537,7 @@ func (x *AdminControl) String() string {
 func (*AdminControl) ProtoMessage() {}
 
 func (x *AdminControl) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[24]
+	mi := &file_admin_v1_catalog_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2394,7 +2550,7 @@ func (x *AdminControl) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdminControl.ProtoReflect.Descriptor instead.
 func (*AdminControl) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{24}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *AdminControl) GetPlaceholder() string {
@@ -2484,7 +2640,7 @@ type CreateControlRequest struct {
 
 func (x *CreateControlRequest) Reset() {
 	*x = CreateControlRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[25]
+	mi := &file_admin_v1_catalog_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2496,7 +2652,7 @@ func (x *CreateControlRequest) String() string {
 func (*CreateControlRequest) ProtoMessage() {}
 
 func (x *CreateControlRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[25]
+	mi := &file_admin_v1_catalog_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2509,7 +2665,7 @@ func (x *CreateControlRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateControlRequest.ProtoReflect.Descriptor instead.
 func (*CreateControlRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{25}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *CreateControlRequest) GetPlaceholder() string {
@@ -2592,7 +2748,7 @@ type UpdateControlRequest struct {
 
 func (x *UpdateControlRequest) Reset() {
 	*x = UpdateControlRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[26]
+	mi := &file_admin_v1_catalog_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2604,7 +2760,7 @@ func (x *UpdateControlRequest) String() string {
 func (*UpdateControlRequest) ProtoMessage() {}
 
 func (x *UpdateControlRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[26]
+	mi := &file_admin_v1_catalog_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2617,7 +2773,7 @@ func (x *UpdateControlRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateControlRequest.ProtoReflect.Descriptor instead.
 func (*UpdateControlRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{26}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *UpdateControlRequest) GetPlaceholder() string {
@@ -2692,7 +2848,7 @@ type DeleteControlRequest struct {
 
 func (x *DeleteControlRequest) Reset() {
 	*x = DeleteControlRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[27]
+	mi := &file_admin_v1_catalog_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2704,7 +2860,7 @@ func (x *DeleteControlRequest) String() string {
 func (*DeleteControlRequest) ProtoMessage() {}
 
 func (x *DeleteControlRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[27]
+	mi := &file_admin_v1_catalog_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2717,7 +2873,7 @@ func (x *DeleteControlRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteControlRequest.ProtoReflect.Descriptor instead.
 func (*DeleteControlRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{27}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *DeleteControlRequest) GetId() uint64 {
@@ -2738,7 +2894,7 @@ type ListReviewsRequest struct {
 
 func (x *ListReviewsRequest) Reset() {
 	*x = ListReviewsRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[28]
+	mi := &file_admin_v1_catalog_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2750,7 +2906,7 @@ func (x *ListReviewsRequest) String() string {
 func (*ListReviewsRequest) ProtoMessage() {}
 
 func (x *ListReviewsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[28]
+	mi := &file_admin_v1_catalog_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2763,7 +2919,7 @@ func (x *ListReviewsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReviewsRequest.ProtoReflect.Descriptor instead.
 func (*ListReviewsRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{28}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ListReviewsRequest) GetStatus() string {
@@ -2797,7 +2953,7 @@ type ListReviewsReply struct {
 
 func (x *ListReviewsReply) Reset() {
 	*x = ListReviewsReply{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[29]
+	mi := &file_admin_v1_catalog_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2809,7 +2965,7 @@ func (x *ListReviewsReply) String() string {
 func (*ListReviewsReply) ProtoMessage() {}
 
 func (x *ListReviewsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[29]
+	mi := &file_admin_v1_catalog_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2822,7 +2978,7 @@ func (x *ListReviewsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReviewsReply.ProtoReflect.Descriptor instead.
 func (*ListReviewsReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{29}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ListReviewsReply) GetReviews() []*ReviewItem {
@@ -2856,7 +3012,7 @@ type ReviewItem struct {
 
 func (x *ReviewItem) Reset() {
 	*x = ReviewItem{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[30]
+	mi := &file_admin_v1_catalog_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2868,7 +3024,7 @@ func (x *ReviewItem) String() string {
 func (*ReviewItem) ProtoMessage() {}
 
 func (x *ReviewItem) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[30]
+	mi := &file_admin_v1_catalog_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2881,7 +3037,7 @@ func (x *ReviewItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReviewItem.ProtoReflect.Descriptor instead.
 func (*ReviewItem) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{30}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *ReviewItem) GetId() uint64 {
@@ -2949,7 +3105,7 @@ type ApproveReviewRequest struct {
 
 func (x *ApproveReviewRequest) Reset() {
 	*x = ApproveReviewRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[31]
+	mi := &file_admin_v1_catalog_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2961,7 +3117,7 @@ func (x *ApproveReviewRequest) String() string {
 func (*ApproveReviewRequest) ProtoMessage() {}
 
 func (x *ApproveReviewRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[31]
+	mi := &file_admin_v1_catalog_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2974,7 +3130,7 @@ func (x *ApproveReviewRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApproveReviewRequest.ProtoReflect.Descriptor instead.
 func (*ApproveReviewRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{31}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ApproveReviewRequest) GetId() uint64 {
@@ -2993,7 +3149,7 @@ type RejectReviewRequest struct {
 
 func (x *RejectReviewRequest) Reset() {
 	*x = RejectReviewRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[32]
+	mi := &file_admin_v1_catalog_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3005,7 +3161,7 @@ func (x *RejectReviewRequest) String() string {
 func (*RejectReviewRequest) ProtoMessage() {}
 
 func (x *RejectReviewRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[32]
+	mi := &file_admin_v1_catalog_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3018,7 +3174,7 @@ func (x *RejectReviewRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RejectReviewRequest.ProtoReflect.Descriptor instead.
 func (*RejectReviewRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{32}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *RejectReviewRequest) GetId() uint64 {
@@ -3044,7 +3200,7 @@ type VirtualReviewItem struct {
 
 func (x *VirtualReviewItem) Reset() {
 	*x = VirtualReviewItem{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[33]
+	mi := &file_admin_v1_catalog_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3056,7 +3212,7 @@ func (x *VirtualReviewItem) String() string {
 func (*VirtualReviewItem) ProtoMessage() {}
 
 func (x *VirtualReviewItem) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[33]
+	mi := &file_admin_v1_catalog_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3069,7 +3225,7 @@ func (x *VirtualReviewItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VirtualReviewItem.ProtoReflect.Descriptor instead.
 func (*VirtualReviewItem) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{33}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *VirtualReviewItem) GetId() uint64 {
@@ -3134,7 +3290,7 @@ type CreateVirtualReviewRequest struct {
 
 func (x *CreateVirtualReviewRequest) Reset() {
 	*x = CreateVirtualReviewRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[34]
+	mi := &file_admin_v1_catalog_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3146,7 +3302,7 @@ func (x *CreateVirtualReviewRequest) String() string {
 func (*CreateVirtualReviewRequest) ProtoMessage() {}
 
 func (x *CreateVirtualReviewRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[34]
+	mi := &file_admin_v1_catalog_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3159,7 +3315,7 @@ func (x *CreateVirtualReviewRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateVirtualReviewRequest.ProtoReflect.Descriptor instead.
 func (*CreateVirtualReviewRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{34}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *CreateVirtualReviewRequest) GetProductId() uint64 {
@@ -3206,7 +3362,7 @@ type ListSkusRequest struct {
 
 func (x *ListSkusRequest) Reset() {
 	*x = ListSkusRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[35]
+	mi := &file_admin_v1_catalog_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3218,7 +3374,7 @@ func (x *ListSkusRequest) String() string {
 func (*ListSkusRequest) ProtoMessage() {}
 
 func (x *ListSkusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[35]
+	mi := &file_admin_v1_catalog_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3231,7 +3387,7 @@ func (x *ListSkusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSkusRequest.ProtoReflect.Descriptor instead.
 func (*ListSkusRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{35}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *ListSkusRequest) GetProductId() uint64 {
@@ -3250,7 +3406,7 @@ type SkuList struct {
 
 func (x *SkuList) Reset() {
 	*x = SkuList{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[36]
+	mi := &file_admin_v1_catalog_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3262,7 +3418,7 @@ func (x *SkuList) String() string {
 func (*SkuList) ProtoMessage() {}
 
 func (x *SkuList) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[36]
+	mi := &file_admin_v1_catalog_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3275,7 +3431,7 @@ func (x *SkuList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SkuList.ProtoReflect.Descriptor instead.
 func (*SkuList) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{36}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *SkuList) GetSkus() []*Sku {
@@ -3304,7 +3460,7 @@ type Sku struct {
 
 func (x *Sku) Reset() {
 	*x = Sku{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[37]
+	mi := &file_admin_v1_catalog_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3316,7 +3472,7 @@ func (x *Sku) String() string {
 func (*Sku) ProtoMessage() {}
 
 func (x *Sku) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[37]
+	mi := &file_admin_v1_catalog_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3329,7 +3485,7 @@ func (x *Sku) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Sku.ProtoReflect.Descriptor instead.
 func (*Sku) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{37}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *Sku) GetPhysicalStock() int64 {
@@ -3419,7 +3575,7 @@ type CreateSkuRequest struct {
 
 func (x *CreateSkuRequest) Reset() {
 	*x = CreateSkuRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[38]
+	mi := &file_admin_v1_catalog_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3431,7 +3587,7 @@ func (x *CreateSkuRequest) String() string {
 func (*CreateSkuRequest) ProtoMessage() {}
 
 func (x *CreateSkuRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[38]
+	mi := &file_admin_v1_catalog_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3444,7 +3600,7 @@ func (x *CreateSkuRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSkuRequest.ProtoReflect.Descriptor instead.
 func (*CreateSkuRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{38}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *CreateSkuRequest) GetPhysicalStock() int64 {
@@ -3528,7 +3684,7 @@ type UpdateSkuRequest struct {
 
 func (x *UpdateSkuRequest) Reset() {
 	*x = UpdateSkuRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[39]
+	mi := &file_admin_v1_catalog_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3540,7 +3696,7 @@ func (x *UpdateSkuRequest) String() string {
 func (*UpdateSkuRequest) ProtoMessage() {}
 
 func (x *UpdateSkuRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[39]
+	mi := &file_admin_v1_catalog_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3553,7 +3709,7 @@ func (x *UpdateSkuRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSkuRequest.ProtoReflect.Descriptor instead.
 func (*UpdateSkuRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{39}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *UpdateSkuRequest) GetExpectedPhysicalStock() int64 {
@@ -3635,7 +3791,7 @@ type DeleteSkuRequest struct {
 
 func (x *DeleteSkuRequest) Reset() {
 	*x = DeleteSkuRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[40]
+	mi := &file_admin_v1_catalog_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3647,7 +3803,7 @@ func (x *DeleteSkuRequest) String() string {
 func (*DeleteSkuRequest) ProtoMessage() {}
 
 func (x *DeleteSkuRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[40]
+	mi := &file_admin_v1_catalog_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3660,7 +3816,7 @@ func (x *DeleteSkuRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteSkuRequest.ProtoReflect.Descriptor instead.
 func (*DeleteSkuRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{40}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *DeleteSkuRequest) GetId() uint64 {
@@ -3679,7 +3835,7 @@ type MemberGroupList struct {
 
 func (x *MemberGroupList) Reset() {
 	*x = MemberGroupList{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[41]
+	mi := &file_admin_v1_catalog_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3691,7 +3847,7 @@ func (x *MemberGroupList) String() string {
 func (*MemberGroupList) ProtoMessage() {}
 
 func (x *MemberGroupList) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[41]
+	mi := &file_admin_v1_catalog_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3704,7 +3860,7 @@ func (x *MemberGroupList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MemberGroupList.ProtoReflect.Descriptor instead.
 func (*MemberGroupList) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{41}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *MemberGroupList) GetGroups() []*MemberGroup {
@@ -3730,7 +3886,7 @@ type MemberGroup struct {
 
 func (x *MemberGroup) Reset() {
 	*x = MemberGroup{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[42]
+	mi := &file_admin_v1_catalog_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3742,7 +3898,7 @@ func (x *MemberGroup) String() string {
 func (*MemberGroup) ProtoMessage() {}
 
 func (x *MemberGroup) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[42]
+	mi := &file_admin_v1_catalog_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3755,7 +3911,7 @@ func (x *MemberGroup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MemberGroup.ProtoReflect.Descriptor instead.
 func (*MemberGroup) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{42}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *MemberGroup) GetId() uint64 {
@@ -3821,7 +3977,7 @@ type CreateMemberGroupRequest struct {
 
 func (x *CreateMemberGroupRequest) Reset() {
 	*x = CreateMemberGroupRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[43]
+	mi := &file_admin_v1_catalog_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3833,7 +3989,7 @@ func (x *CreateMemberGroupRequest) String() string {
 func (*CreateMemberGroupRequest) ProtoMessage() {}
 
 func (x *CreateMemberGroupRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[43]
+	mi := &file_admin_v1_catalog_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3846,7 +4002,7 @@ func (x *CreateMemberGroupRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateMemberGroupRequest.ProtoReflect.Descriptor instead.
 func (*CreateMemberGroupRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{43}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *CreateMemberGroupRequest) GetName() string {
@@ -3906,7 +4062,7 @@ type UpdateMemberGroupRequest struct {
 
 func (x *UpdateMemberGroupRequest) Reset() {
 	*x = UpdateMemberGroupRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[44]
+	mi := &file_admin_v1_catalog_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3918,7 +4074,7 @@ func (x *UpdateMemberGroupRequest) String() string {
 func (*UpdateMemberGroupRequest) ProtoMessage() {}
 
 func (x *UpdateMemberGroupRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[44]
+	mi := &file_admin_v1_catalog_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3931,7 +4087,7 @@ func (x *UpdateMemberGroupRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateMemberGroupRequest.ProtoReflect.Descriptor instead.
 func (*UpdateMemberGroupRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{44}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *UpdateMemberGroupRequest) GetId() uint64 {
@@ -3992,7 +4148,7 @@ type DeleteMemberGroupRequest struct {
 
 func (x *DeleteMemberGroupRequest) Reset() {
 	*x = DeleteMemberGroupRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[45]
+	mi := &file_admin_v1_catalog_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4004,7 +4160,7 @@ func (x *DeleteMemberGroupRequest) String() string {
 func (*DeleteMemberGroupRequest) ProtoMessage() {}
 
 func (x *DeleteMemberGroupRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[45]
+	mi := &file_admin_v1_catalog_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4017,7 +4173,7 @@ func (x *DeleteMemberGroupRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteMemberGroupRequest.ProtoReflect.Descriptor instead.
 func (*DeleteMemberGroupRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{45}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *DeleteMemberGroupRequest) GetId() uint64 {
@@ -4039,7 +4195,7 @@ type MergeCategoriesRequest struct {
 
 func (x *MergeCategoriesRequest) Reset() {
 	*x = MergeCategoriesRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[46]
+	mi := &file_admin_v1_catalog_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4051,7 +4207,7 @@ func (x *MergeCategoriesRequest) String() string {
 func (*MergeCategoriesRequest) ProtoMessage() {}
 
 func (x *MergeCategoriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[46]
+	mi := &file_admin_v1_catalog_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4064,7 +4220,7 @@ func (x *MergeCategoriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MergeCategoriesRequest.ProtoReflect.Descriptor instead.
 func (*MergeCategoriesRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{46}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *MergeCategoriesRequest) GetSourceIds() []uint64 {
@@ -4099,7 +4255,7 @@ type MergeCategoriesReply struct {
 
 func (x *MergeCategoriesReply) Reset() {
 	*x = MergeCategoriesReply{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[47]
+	mi := &file_admin_v1_catalog_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4111,7 +4267,7 @@ func (x *MergeCategoriesReply) String() string {
 func (*MergeCategoriesReply) ProtoMessage() {}
 
 func (x *MergeCategoriesReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[47]
+	mi := &file_admin_v1_catalog_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4124,7 +4280,7 @@ func (x *MergeCategoriesReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MergeCategoriesReply.ProtoReflect.Descriptor instead.
 func (*MergeCategoriesReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{47}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *MergeCategoriesReply) GetCategories() int32 {
@@ -4163,7 +4319,7 @@ type ProductContentPatch struct {
 
 func (x *ProductContentPatch) Reset() {
 	*x = ProductContentPatch{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[48]
+	mi := &file_admin_v1_catalog_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4175,7 +4331,7 @@ func (x *ProductContentPatch) String() string {
 func (*ProductContentPatch) ProtoMessage() {}
 
 func (x *ProductContentPatch) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[48]
+	mi := &file_admin_v1_catalog_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4188,7 +4344,7 @@ func (x *ProductContentPatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProductContentPatch.ProtoReflect.Descriptor instead.
 func (*ProductContentPatch) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{48}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *ProductContentPatch) GetCoverAction() int32 {
@@ -4245,7 +4401,7 @@ type PreviewBatchProductContentRequest struct {
 
 func (x *PreviewBatchProductContentRequest) Reset() {
 	*x = PreviewBatchProductContentRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[49]
+	mi := &file_admin_v1_catalog_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4257,7 +4413,7 @@ func (x *PreviewBatchProductContentRequest) String() string {
 func (*PreviewBatchProductContentRequest) ProtoMessage() {}
 
 func (x *PreviewBatchProductContentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[49]
+	mi := &file_admin_v1_catalog_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4270,7 +4426,7 @@ func (x *PreviewBatchProductContentRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use PreviewBatchProductContentRequest.ProtoReflect.Descriptor instead.
 func (*PreviewBatchProductContentRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{49}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *PreviewBatchProductContentRequest) GetIds() []uint64 {
@@ -4318,7 +4474,7 @@ type BatchProductContentTarget struct {
 
 func (x *BatchProductContentTarget) Reset() {
 	*x = BatchProductContentTarget{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[50]
+	mi := &file_admin_v1_catalog_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4330,7 +4486,7 @@ func (x *BatchProductContentTarget) String() string {
 func (*BatchProductContentTarget) ProtoMessage() {}
 
 func (x *BatchProductContentTarget) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[50]
+	mi := &file_admin_v1_catalog_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4343,7 +4499,7 @@ func (x *BatchProductContentTarget) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchProductContentTarget.ProtoReflect.Descriptor instead.
 func (*BatchProductContentTarget) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{50}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *BatchProductContentTarget) GetId() uint64 {
@@ -4428,7 +4584,7 @@ type BatchProductContentPreview struct {
 
 func (x *BatchProductContentPreview) Reset() {
 	*x = BatchProductContentPreview{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[51]
+	mi := &file_admin_v1_catalog_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4440,7 +4596,7 @@ func (x *BatchProductContentPreview) String() string {
 func (*BatchProductContentPreview) ProtoMessage() {}
 
 func (x *BatchProductContentPreview) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[51]
+	mi := &file_admin_v1_catalog_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4453,7 +4609,7 @@ func (x *BatchProductContentPreview) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchProductContentPreview.ProtoReflect.Descriptor instead.
 func (*BatchProductContentPreview) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{51}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *BatchProductContentPreview) GetRequestId() string {
@@ -4542,7 +4698,7 @@ type BatchProductContentRequest struct {
 
 func (x *BatchProductContentRequest) Reset() {
 	*x = BatchProductContentRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[52]
+	mi := &file_admin_v1_catalog_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4554,7 +4710,7 @@ func (x *BatchProductContentRequest) String() string {
 func (*BatchProductContentRequest) ProtoMessage() {}
 
 func (x *BatchProductContentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[52]
+	mi := &file_admin_v1_catalog_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4567,7 +4723,7 @@ func (x *BatchProductContentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchProductContentRequest.ProtoReflect.Descriptor instead.
 func (*BatchProductContentRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{52}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *BatchProductContentRequest) GetRequestId() string {
@@ -4590,7 +4746,7 @@ type BatchProductContentResult struct {
 
 func (x *BatchProductContentResult) Reset() {
 	*x = BatchProductContentResult{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[53]
+	mi := &file_admin_v1_catalog_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4602,7 +4758,7 @@ func (x *BatchProductContentResult) String() string {
 func (*BatchProductContentResult) ProtoMessage() {}
 
 func (x *BatchProductContentResult) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[53]
+	mi := &file_admin_v1_catalog_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4615,7 +4771,7 @@ func (x *BatchProductContentResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchProductContentResult.ProtoReflect.Descriptor instead.
 func (*BatchProductContentResult) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{53}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *BatchProductContentResult) GetSkippedLocked() int32 {
@@ -4664,7 +4820,7 @@ type SetProductLockRequest struct {
 
 func (x *SetProductLockRequest) Reset() {
 	*x = SetProductLockRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[54]
+	mi := &file_admin_v1_catalog_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4676,7 +4832,7 @@ func (x *SetProductLockRequest) String() string {
 func (*SetProductLockRequest) ProtoMessage() {}
 
 func (x *SetProductLockRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[54]
+	mi := &file_admin_v1_catalog_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4689,7 +4845,7 @@ func (x *SetProductLockRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetProductLockRequest.ProtoReflect.Descriptor instead.
 func (*SetProductLockRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{54}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *SetProductLockRequest) GetId() uint64 {
@@ -4722,7 +4878,7 @@ type GetCategoryPlacementsRequest struct {
 
 func (x *GetCategoryPlacementsRequest) Reset() {
 	*x = GetCategoryPlacementsRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[55]
+	mi := &file_admin_v1_catalog_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4734,7 +4890,7 @@ func (x *GetCategoryPlacementsRequest) String() string {
 func (*GetCategoryPlacementsRequest) ProtoMessage() {}
 
 func (x *GetCategoryPlacementsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[55]
+	mi := &file_admin_v1_catalog_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4747,7 +4903,7 @@ func (x *GetCategoryPlacementsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCategoryPlacementsRequest.ProtoReflect.Descriptor instead.
 func (*GetCategoryPlacementsRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{55}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *GetCategoryPlacementsRequest) GetCategoryId() uint64 {
@@ -4769,7 +4925,7 @@ type CategoryPlacementInput struct {
 
 func (x *CategoryPlacementInput) Reset() {
 	*x = CategoryPlacementInput{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[56]
+	mi := &file_admin_v1_catalog_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4781,7 +4937,7 @@ func (x *CategoryPlacementInput) String() string {
 func (*CategoryPlacementInput) ProtoMessage() {}
 
 func (x *CategoryPlacementInput) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[56]
+	mi := &file_admin_v1_catalog_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4794,7 +4950,7 @@ func (x *CategoryPlacementInput) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CategoryPlacementInput.ProtoReflect.Descriptor instead.
 func (*CategoryPlacementInput) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{56}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *CategoryPlacementInput) GetProductId() uint64 {
@@ -4836,7 +4992,7 @@ type CategoryPlacementItem struct {
 
 func (x *CategoryPlacementItem) Reset() {
 	*x = CategoryPlacementItem{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[57]
+	mi := &file_admin_v1_catalog_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4848,7 +5004,7 @@ func (x *CategoryPlacementItem) String() string {
 func (*CategoryPlacementItem) ProtoMessage() {}
 
 func (x *CategoryPlacementItem) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[57]
+	mi := &file_admin_v1_catalog_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4861,7 +5017,7 @@ func (x *CategoryPlacementItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CategoryPlacementItem.ProtoReflect.Descriptor instead.
 func (*CategoryPlacementItem) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{57}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *CategoryPlacementItem) GetPlacement() *CategoryPlacementInput {
@@ -4896,7 +5052,7 @@ type CategoryPlacementsReply struct {
 
 func (x *CategoryPlacementsReply) Reset() {
 	*x = CategoryPlacementsReply{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[58]
+	mi := &file_admin_v1_catalog_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4908,7 +5064,7 @@ func (x *CategoryPlacementsReply) String() string {
 func (*CategoryPlacementsReply) ProtoMessage() {}
 
 func (x *CategoryPlacementsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[58]
+	mi := &file_admin_v1_catalog_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4921,7 +5077,7 @@ func (x *CategoryPlacementsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CategoryPlacementsReply.ProtoReflect.Descriptor instead.
 func (*CategoryPlacementsReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{58}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *CategoryPlacementsReply) GetCategoryId() uint64 {
@@ -4956,7 +5112,7 @@ type SetCategoryPlacementsRequest struct {
 
 func (x *SetCategoryPlacementsRequest) Reset() {
 	*x = SetCategoryPlacementsRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[59]
+	mi := &file_admin_v1_catalog_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4968,7 +5124,7 @@ func (x *SetCategoryPlacementsRequest) String() string {
 func (*SetCategoryPlacementsRequest) ProtoMessage() {}
 
 func (x *SetCategoryPlacementsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[59]
+	mi := &file_admin_v1_catalog_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4981,7 +5137,7 @@ func (x *SetCategoryPlacementsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetCategoryPlacementsRequest.ProtoReflect.Descriptor instead.
 func (*SetCategoryPlacementsRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{59}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *SetCategoryPlacementsRequest) GetCategoryId() uint64 {
@@ -5015,7 +5171,7 @@ type DeliverySourcesRequest struct {
 
 func (x *DeliverySourcesRequest) Reset() {
 	*x = DeliverySourcesRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[60]
+	mi := &file_admin_v1_catalog_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5027,7 +5183,7 @@ func (x *DeliverySourcesRequest) String() string {
 func (*DeliverySourcesRequest) ProtoMessage() {}
 
 func (x *DeliverySourcesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[60]
+	mi := &file_admin_v1_catalog_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5040,7 +5196,7 @@ func (x *DeliverySourcesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeliverySourcesRequest.ProtoReflect.Descriptor instead.
 func (*DeliverySourcesRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{60}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *DeliverySourcesRequest) GetProductId() uint64 {
@@ -5078,7 +5234,7 @@ type DeliverySourceInfo struct {
 
 func (x *DeliverySourceInfo) Reset() {
 	*x = DeliverySourceInfo{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[61]
+	mi := &file_admin_v1_catalog_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5090,7 +5246,7 @@ func (x *DeliverySourceInfo) String() string {
 func (*DeliverySourceInfo) ProtoMessage() {}
 
 func (x *DeliverySourceInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[61]
+	mi := &file_admin_v1_catalog_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5103,7 +5259,7 @@ func (x *DeliverySourceInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeliverySourceInfo.ProtoReflect.Descriptor instead.
 func (*DeliverySourceInfo) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{61}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *DeliverySourceInfo) GetId() uint64 {
@@ -5210,7 +5366,7 @@ type DeliveryReceiptOption struct {
 
 func (x *DeliveryReceiptOption) Reset() {
 	*x = DeliveryReceiptOption{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[62]
+	mi := &file_admin_v1_catalog_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5222,7 +5378,7 @@ func (x *DeliveryReceiptOption) String() string {
 func (*DeliveryReceiptOption) ProtoMessage() {}
 
 func (x *DeliveryReceiptOption) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[62]
+	mi := &file_admin_v1_catalog_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5235,7 +5391,7 @@ func (x *DeliveryReceiptOption) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeliveryReceiptOption.ProtoReflect.Descriptor instead.
 func (*DeliveryReceiptOption) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{62}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *DeliveryReceiptOption) GetProcurementId() uint64 {
@@ -5284,7 +5440,7 @@ type DeliverySourcesReply struct {
 
 func (x *DeliverySourcesReply) Reset() {
 	*x = DeliverySourcesReply{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[63]
+	mi := &file_admin_v1_catalog_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5296,7 +5452,7 @@ func (x *DeliverySourcesReply) String() string {
 func (*DeliverySourcesReply) ProtoMessage() {}
 
 func (x *DeliverySourcesReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[63]
+	mi := &file_admin_v1_catalog_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5309,7 +5465,7 @@ func (x *DeliverySourcesReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeliverySourcesReply.ProtoReflect.Descriptor instead.
 func (*DeliverySourcesReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{63}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *DeliverySourcesReply) GetSources() []*DeliverySourceInfo {
@@ -5353,7 +5509,7 @@ type SetDeliverySourceRequest struct {
 
 func (x *SetDeliverySourceRequest) Reset() {
 	*x = SetDeliverySourceRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[64]
+	mi := &file_admin_v1_catalog_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5365,7 +5521,7 @@ func (x *SetDeliverySourceRequest) String() string {
 func (*SetDeliverySourceRequest) ProtoMessage() {}
 
 func (x *SetDeliverySourceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[64]
+	mi := &file_admin_v1_catalog_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5378,7 +5534,7 @@ func (x *SetDeliverySourceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetDeliverySourceRequest.ProtoReflect.Descriptor instead.
 func (*SetDeliverySourceRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{64}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *SetDeliverySourceRequest) GetProductId() uint64 {
@@ -5479,7 +5635,7 @@ type ClassifyProductsRequest struct {
 
 func (x *ClassifyProductsRequest) Reset() {
 	*x = ClassifyProductsRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[65]
+	mi := &file_admin_v1_catalog_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5491,7 +5647,7 @@ func (x *ClassifyProductsRequest) String() string {
 func (*ClassifyProductsRequest) ProtoMessage() {}
 
 func (x *ClassifyProductsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[65]
+	mi := &file_admin_v1_catalog_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5504,7 +5660,7 @@ func (x *ClassifyProductsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClassifyProductsRequest.ProtoReflect.Descriptor instead.
 func (*ClassifyProductsRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{65}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *ClassifyProductsRequest) GetKeywords() []string {
@@ -5562,7 +5718,7 @@ type ClassificationProduct struct {
 
 func (x *ClassificationProduct) Reset() {
 	*x = ClassificationProduct{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[66]
+	mi := &file_admin_v1_catalog_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5574,7 +5730,7 @@ func (x *ClassificationProduct) String() string {
 func (*ClassificationProduct) ProtoMessage() {}
 
 func (x *ClassificationProduct) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[66]
+	mi := &file_admin_v1_catalog_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5587,7 +5743,7 @@ func (x *ClassificationProduct) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClassificationProduct.ProtoReflect.Descriptor instead.
 func (*ClassificationProduct) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{66}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *ClassificationProduct) GetId() uint64 {
@@ -5639,7 +5795,7 @@ type ClassifyProductsReply struct {
 
 func (x *ClassifyProductsReply) Reset() {
 	*x = ClassifyProductsReply{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[67]
+	mi := &file_admin_v1_catalog_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5651,7 +5807,7 @@ func (x *ClassifyProductsReply) String() string {
 func (*ClassifyProductsReply) ProtoMessage() {}
 
 func (x *ClassifyProductsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[67]
+	mi := &file_admin_v1_catalog_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5664,7 +5820,7 @@ func (x *ClassifyProductsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClassifyProductsReply.ProtoReflect.Descriptor instead.
 func (*ClassifyProductsReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{67}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *ClassifyProductsReply) GetItems() []*ClassificationProduct {
@@ -5722,7 +5878,7 @@ type ManageProductListingRequest struct {
 
 func (x *ManageProductListingRequest) Reset() {
 	*x = ManageProductListingRequest{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[68]
+	mi := &file_admin_v1_catalog_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5734,7 +5890,7 @@ func (x *ManageProductListingRequest) String() string {
 func (*ManageProductListingRequest) ProtoMessage() {}
 
 func (x *ManageProductListingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[68]
+	mi := &file_admin_v1_catalog_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5747,7 +5903,7 @@ func (x *ManageProductListingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManageProductListingRequest.ProtoReflect.Descriptor instead.
 func (*ManageProductListingRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{68}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *ManageProductListingRequest) GetAction() string {
@@ -5800,7 +5956,7 @@ type ProductListingTarget struct {
 
 func (x *ProductListingTarget) Reset() {
 	*x = ProductListingTarget{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[69]
+	mi := &file_admin_v1_catalog_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5812,7 +5968,7 @@ func (x *ProductListingTarget) String() string {
 func (*ProductListingTarget) ProtoMessage() {}
 
 func (x *ProductListingTarget) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[69]
+	mi := &file_admin_v1_catalog_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5825,7 +5981,7 @@ func (x *ProductListingTarget) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProductListingTarget.ProtoReflect.Descriptor instead.
 func (*ProductListingTarget) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{69}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *ProductListingTarget) GetId() uint64 {
@@ -5893,7 +6049,7 @@ type ManageProductListingReply struct {
 
 func (x *ManageProductListingReply) Reset() {
 	*x = ManageProductListingReply{}
-	mi := &file_admin_v1_catalog_proto_msgTypes[70]
+	mi := &file_admin_v1_catalog_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5905,7 +6061,7 @@ func (x *ManageProductListingReply) String() string {
 func (*ManageProductListingReply) ProtoMessage() {}
 
 func (x *ManageProductListingReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_catalog_proto_msgTypes[70]
+	mi := &file_admin_v1_catalog_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5918,7 +6074,7 @@ func (x *ManageProductListingReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManageProductListingReply.ProtoReflect.Descriptor instead.
 func (*ManageProductListingReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{70}
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *ManageProductListingReply) GetItems() []*ProductListingTarget {
@@ -6189,6 +6345,15 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\vcategory_id\x18\x02 \x01(\x04B\x03\xe0A\x02R\n" +
 	"categoryId\"b\n" +
 	"\x1fBatchUpdateProductCategoryReply\x12\x18\n" +
+	"\aupdated\x18\x01 \x01(\x05R\aupdated\x12%\n" +
+	"\x0eskipped_locked\x18\x02 \x01(\x05R\rskippedLocked\"[\n" +
+	"\x10ProductSortInput\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
+	"\x04sort\x18\x02 \x01(\x05R\x04sort\x12#\n" +
+	"\rexpected_sort\x18\x03 \x01(\x05R\fexpectedSort\"[\n" +
+	"\x1dBatchUpdateProductSortRequest\x12:\n" +
+	"\x05items\x18\x01 \x03(\v2$.zcard.api.admin.v1.ProductSortInputR\x05items\"^\n" +
+	"\x1bBatchUpdateProductSortReply\x12\x18\n" +
 	"\aupdated\x18\x01 \x01(\x05R\aupdated\x12%\n" +
 	"\x0eskipped_locked\x18\x02 \x01(\x05R\rskippedLocked\"L\n" +
 	"\fCategoryList\x12<\n" +
@@ -6622,7 +6787,7 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\tconflicts\x18\x05 \x01(\x05R\tconflicts\x12 \n" +
 	"\vunsupported\x18\x06 \x01(\x05R\vunsupported\x12\x16\n" +
 	"\x06failed\x18\a \x01(\x05R\x06failed\x12\x1c\n" +
-	"\ttruncated\x18\b \x01(\bR\ttruncated2\xec/\n" +
+	"\ttruncated\x18\b \x01(\bR\ttruncated2\x991\n" +
 	"\x13AdminCatalogService\x12\x96\x01\n" +
 	"\x10ClassifyProducts\x12+.zcard.api.admin.v1.ClassifyProductsRequest\x1a).zcard.api.admin.v1.ClassifyProductsReply\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/products/classify\x12\xa8\x01\n" +
 	"\x12GetDeliverySources\x12*.zcard.api.admin.v1.DeliverySourcesRequest\x1a(.zcard.api.admin.v1.DeliverySourcesReply\"<\x82\xd3\xe4\x93\x026\x124/api/v1/admin/products/{product_id}/delivery-sources\x12\xac\x01\n" +
@@ -6635,7 +6800,8 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\rDeleteProduct\x12(.zcard.api.admin.v1.DeleteProductRequest\x1a\x16.google.protobuf.Empty\"#\x82\xd3\xe4\x93\x02\x1d*\x1b/api/v1/admin/products/{id}\x12\x9b\x01\n" +
 	"\x14PreviewDeleteProduct\x12%.zcard.api.admin.v1.GetProductRequest\x1a(.zcard.api.admin.v1.DeleteProductPreview\"2\x82\xd3\xe4\x93\x02,\x12*/api/v1/admin/products/{id}/delete-preview\x12\xb2\x01\n" +
 	"\x18BatchUpdateProductStatus\x123.zcard.api.admin.v1.BatchUpdateProductStatusRequest\x1a1.zcard.api.admin.v1.BatchUpdateProductStatusReply\".\x82\xd3\xe4\x93\x02(:\x01*\"#/api/v1/admin/products/batch-status\x12\xba\x01\n" +
-	"\x1aBatchUpdateProductCategory\x125.zcard.api.admin.v1.BatchUpdateProductCategoryRequest\x1a3.zcard.api.admin.v1.BatchUpdateProductCategoryReply\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/admin/products/batch-category\x12\xc2\x01\n" +
+	"\x1aBatchUpdateProductCategory\x125.zcard.api.admin.v1.BatchUpdateProductCategoryRequest\x1a3.zcard.api.admin.v1.BatchUpdateProductCategoryReply\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/admin/products/batch-category\x12\xaa\x01\n" +
+	"\x16BatchUpdateProductSort\x121.zcard.api.admin.v1.BatchUpdateProductSortRequest\x1a/.zcard.api.admin.v1.BatchUpdateProductSortReply\",\x82\xd3\xe4\x93\x02&:\x01*\"!/api/v1/admin/products/batch-sort\x12\xc2\x01\n" +
 	" PreviewBatchUpdateProductContent\x125.zcard.api.admin.v1.PreviewBatchProductContentRequest\x1a..zcard.api.admin.v1.BatchProductContentPreview\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/admin/products/batch-content/preview\x12\xab\x01\n" +
 	"\x19BatchUpdateProductContent\x12..zcard.api.admin.v1.BatchProductContentRequest\x1a-.zcard.api.admin.v1.BatchProductContentResult\"/\x82\xd3\xe4\x93\x02):\x01*\"$/api/v1/admin/products/batch-content\x12\xc0\x01\n" +
 	"\x1cGetBatchProductContentResult\x12..zcard.api.admin.v1.BatchProductContentRequest\x1a-.zcard.api.admin.v1.BatchProductContentResult\"A\x82\xd3\xe4\x93\x02;\x129/api/v1/admin/products/batch-content/results/{request_id}\x12\xa1\x01\n" +
@@ -6681,7 +6847,7 @@ func file_admin_v1_catalog_proto_rawDescGZIP() []byte {
 	return file_admin_v1_catalog_proto_rawDescData
 }
 
-var file_admin_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 76)
+var file_admin_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 79)
 var file_admin_v1_catalog_proto_goTypes = []any{
 	(*ListProductsRequest)(nil),               // 0: zcard.api.admin.v1.ListProductsRequest
 	(*ListProductsReply)(nil),                 // 1: zcard.api.admin.v1.ListProductsReply
@@ -6695,191 +6861,197 @@ var file_admin_v1_catalog_proto_goTypes = []any{
 	(*BatchUpdateProductStatusReply)(nil),     // 9: zcard.api.admin.v1.BatchUpdateProductStatusReply
 	(*BatchUpdateProductCategoryRequest)(nil), // 10: zcard.api.admin.v1.BatchUpdateProductCategoryRequest
 	(*BatchUpdateProductCategoryReply)(nil),   // 11: zcard.api.admin.v1.BatchUpdateProductCategoryReply
-	(*CategoryList)(nil),                      // 12: zcard.api.admin.v1.CategoryList
-	(*Category)(nil),                          // 13: zcard.api.admin.v1.Category
-	(*CreateCategoryRequest)(nil),             // 14: zcard.api.admin.v1.CreateCategoryRequest
-	(*UpdateCategoryRequest)(nil),             // 15: zcard.api.admin.v1.UpdateCategoryRequest
-	(*ReorderCategoriesRequest)(nil),          // 16: zcard.api.admin.v1.ReorderCategoriesRequest
-	(*DeleteCategoryRequest)(nil),             // 17: zcard.api.admin.v1.DeleteCategoryRequest
-	(*TagList)(nil),                           // 18: zcard.api.admin.v1.TagList
-	(*Tag)(nil),                               // 19: zcard.api.admin.v1.Tag
-	(*CreateTagRequest)(nil),                  // 20: zcard.api.admin.v1.CreateTagRequest
-	(*DeleteTagRequest)(nil),                  // 21: zcard.api.admin.v1.DeleteTagRequest
-	(*ListControlsRequest)(nil),               // 22: zcard.api.admin.v1.ListControlsRequest
-	(*ControlList)(nil),                       // 23: zcard.api.admin.v1.ControlList
-	(*AdminControl)(nil),                      // 24: zcard.api.admin.v1.AdminControl
-	(*CreateControlRequest)(nil),              // 25: zcard.api.admin.v1.CreateControlRequest
-	(*UpdateControlRequest)(nil),              // 26: zcard.api.admin.v1.UpdateControlRequest
-	(*DeleteControlRequest)(nil),              // 27: zcard.api.admin.v1.DeleteControlRequest
-	(*ListReviewsRequest)(nil),                // 28: zcard.api.admin.v1.ListReviewsRequest
-	(*ListReviewsReply)(nil),                  // 29: zcard.api.admin.v1.ListReviewsReply
-	(*ReviewItem)(nil),                        // 30: zcard.api.admin.v1.ReviewItem
-	(*ApproveReviewRequest)(nil),              // 31: zcard.api.admin.v1.ApproveReviewRequest
-	(*RejectReviewRequest)(nil),               // 32: zcard.api.admin.v1.RejectReviewRequest
-	(*VirtualReviewItem)(nil),                 // 33: zcard.api.admin.v1.VirtualReviewItem
-	(*CreateVirtualReviewRequest)(nil),        // 34: zcard.api.admin.v1.CreateVirtualReviewRequest
-	(*ListSkusRequest)(nil),                   // 35: zcard.api.admin.v1.ListSkusRequest
-	(*SkuList)(nil),                           // 36: zcard.api.admin.v1.SkuList
-	(*Sku)(nil),                               // 37: zcard.api.admin.v1.Sku
-	(*CreateSkuRequest)(nil),                  // 38: zcard.api.admin.v1.CreateSkuRequest
-	(*UpdateSkuRequest)(nil),                  // 39: zcard.api.admin.v1.UpdateSkuRequest
-	(*DeleteSkuRequest)(nil),                  // 40: zcard.api.admin.v1.DeleteSkuRequest
-	(*MemberGroupList)(nil),                   // 41: zcard.api.admin.v1.MemberGroupList
-	(*MemberGroup)(nil),                       // 42: zcard.api.admin.v1.MemberGroup
-	(*CreateMemberGroupRequest)(nil),          // 43: zcard.api.admin.v1.CreateMemberGroupRequest
-	(*UpdateMemberGroupRequest)(nil),          // 44: zcard.api.admin.v1.UpdateMemberGroupRequest
-	(*DeleteMemberGroupRequest)(nil),          // 45: zcard.api.admin.v1.DeleteMemberGroupRequest
-	(*MergeCategoriesRequest)(nil),            // 46: zcard.api.admin.v1.MergeCategoriesRequest
-	(*MergeCategoriesReply)(nil),              // 47: zcard.api.admin.v1.MergeCategoriesReply
-	(*ProductContentPatch)(nil),               // 48: zcard.api.admin.v1.ProductContentPatch
-	(*PreviewBatchProductContentRequest)(nil), // 49: zcard.api.admin.v1.PreviewBatchProductContentRequest
-	(*BatchProductContentTarget)(nil),         // 50: zcard.api.admin.v1.BatchProductContentTarget
-	(*BatchProductContentPreview)(nil),        // 51: zcard.api.admin.v1.BatchProductContentPreview
-	(*BatchProductContentRequest)(nil),        // 52: zcard.api.admin.v1.BatchProductContentRequest
-	(*BatchProductContentResult)(nil),         // 53: zcard.api.admin.v1.BatchProductContentResult
-	(*SetProductLockRequest)(nil),             // 54: zcard.api.admin.v1.SetProductLockRequest
-	(*GetCategoryPlacementsRequest)(nil),      // 55: zcard.api.admin.v1.GetCategoryPlacementsRequest
-	(*CategoryPlacementInput)(nil),            // 56: zcard.api.admin.v1.CategoryPlacementInput
-	(*CategoryPlacementItem)(nil),             // 57: zcard.api.admin.v1.CategoryPlacementItem
-	(*CategoryPlacementsReply)(nil),           // 58: zcard.api.admin.v1.CategoryPlacementsReply
-	(*SetCategoryPlacementsRequest)(nil),      // 59: zcard.api.admin.v1.SetCategoryPlacementsRequest
-	(*DeliverySourcesRequest)(nil),            // 60: zcard.api.admin.v1.DeliverySourcesRequest
-	(*DeliverySourceInfo)(nil),                // 61: zcard.api.admin.v1.DeliverySourceInfo
-	(*DeliveryReceiptOption)(nil),             // 62: zcard.api.admin.v1.DeliveryReceiptOption
-	(*DeliverySourcesReply)(nil),              // 63: zcard.api.admin.v1.DeliverySourcesReply
-	(*SetDeliverySourceRequest)(nil),          // 64: zcard.api.admin.v1.SetDeliverySourceRequest
-	(*ClassifyProductsRequest)(nil),           // 65: zcard.api.admin.v1.ClassifyProductsRequest
-	(*ClassificationProduct)(nil),             // 66: zcard.api.admin.v1.ClassificationProduct
-	(*ClassifyProductsReply)(nil),             // 67: zcard.api.admin.v1.ClassifyProductsReply
-	(*ManageProductListingRequest)(nil),       // 68: zcard.api.admin.v1.ManageProductListingRequest
-	(*ProductListingTarget)(nil),              // 69: zcard.api.admin.v1.ProductListingTarget
-	(*ManageProductListingReply)(nil),         // 70: zcard.api.admin.v1.ManageProductListingReply
-	nil,                                       // 71: zcard.api.admin.v1.Sku.SpecValuesEntry
-	nil,                                       // 72: zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntry
-	nil,                                       // 73: zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntry
-	nil,                                       // 74: zcard.api.admin.v1.ClassifyProductsRequest.RevisionsEntry
-	nil,                                       // 75: zcard.api.admin.v1.ManageProductListingRequest.RevisionsEntry
-	(*structpb.Struct)(nil),                   // 76: google.protobuf.Struct
-	(*emptypb.Empty)(nil),                     // 77: google.protobuf.Empty
+	(*ProductSortInput)(nil),                  // 12: zcard.api.admin.v1.ProductSortInput
+	(*BatchUpdateProductSortRequest)(nil),     // 13: zcard.api.admin.v1.BatchUpdateProductSortRequest
+	(*BatchUpdateProductSortReply)(nil),       // 14: zcard.api.admin.v1.BatchUpdateProductSortReply
+	(*CategoryList)(nil),                      // 15: zcard.api.admin.v1.CategoryList
+	(*Category)(nil),                          // 16: zcard.api.admin.v1.Category
+	(*CreateCategoryRequest)(nil),             // 17: zcard.api.admin.v1.CreateCategoryRequest
+	(*UpdateCategoryRequest)(nil),             // 18: zcard.api.admin.v1.UpdateCategoryRequest
+	(*ReorderCategoriesRequest)(nil),          // 19: zcard.api.admin.v1.ReorderCategoriesRequest
+	(*DeleteCategoryRequest)(nil),             // 20: zcard.api.admin.v1.DeleteCategoryRequest
+	(*TagList)(nil),                           // 21: zcard.api.admin.v1.TagList
+	(*Tag)(nil),                               // 22: zcard.api.admin.v1.Tag
+	(*CreateTagRequest)(nil),                  // 23: zcard.api.admin.v1.CreateTagRequest
+	(*DeleteTagRequest)(nil),                  // 24: zcard.api.admin.v1.DeleteTagRequest
+	(*ListControlsRequest)(nil),               // 25: zcard.api.admin.v1.ListControlsRequest
+	(*ControlList)(nil),                       // 26: zcard.api.admin.v1.ControlList
+	(*AdminControl)(nil),                      // 27: zcard.api.admin.v1.AdminControl
+	(*CreateControlRequest)(nil),              // 28: zcard.api.admin.v1.CreateControlRequest
+	(*UpdateControlRequest)(nil),              // 29: zcard.api.admin.v1.UpdateControlRequest
+	(*DeleteControlRequest)(nil),              // 30: zcard.api.admin.v1.DeleteControlRequest
+	(*ListReviewsRequest)(nil),                // 31: zcard.api.admin.v1.ListReviewsRequest
+	(*ListReviewsReply)(nil),                  // 32: zcard.api.admin.v1.ListReviewsReply
+	(*ReviewItem)(nil),                        // 33: zcard.api.admin.v1.ReviewItem
+	(*ApproveReviewRequest)(nil),              // 34: zcard.api.admin.v1.ApproveReviewRequest
+	(*RejectReviewRequest)(nil),               // 35: zcard.api.admin.v1.RejectReviewRequest
+	(*VirtualReviewItem)(nil),                 // 36: zcard.api.admin.v1.VirtualReviewItem
+	(*CreateVirtualReviewRequest)(nil),        // 37: zcard.api.admin.v1.CreateVirtualReviewRequest
+	(*ListSkusRequest)(nil),                   // 38: zcard.api.admin.v1.ListSkusRequest
+	(*SkuList)(nil),                           // 39: zcard.api.admin.v1.SkuList
+	(*Sku)(nil),                               // 40: zcard.api.admin.v1.Sku
+	(*CreateSkuRequest)(nil),                  // 41: zcard.api.admin.v1.CreateSkuRequest
+	(*UpdateSkuRequest)(nil),                  // 42: zcard.api.admin.v1.UpdateSkuRequest
+	(*DeleteSkuRequest)(nil),                  // 43: zcard.api.admin.v1.DeleteSkuRequest
+	(*MemberGroupList)(nil),                   // 44: zcard.api.admin.v1.MemberGroupList
+	(*MemberGroup)(nil),                       // 45: zcard.api.admin.v1.MemberGroup
+	(*CreateMemberGroupRequest)(nil),          // 46: zcard.api.admin.v1.CreateMemberGroupRequest
+	(*UpdateMemberGroupRequest)(nil),          // 47: zcard.api.admin.v1.UpdateMemberGroupRequest
+	(*DeleteMemberGroupRequest)(nil),          // 48: zcard.api.admin.v1.DeleteMemberGroupRequest
+	(*MergeCategoriesRequest)(nil),            // 49: zcard.api.admin.v1.MergeCategoriesRequest
+	(*MergeCategoriesReply)(nil),              // 50: zcard.api.admin.v1.MergeCategoriesReply
+	(*ProductContentPatch)(nil),               // 51: zcard.api.admin.v1.ProductContentPatch
+	(*PreviewBatchProductContentRequest)(nil), // 52: zcard.api.admin.v1.PreviewBatchProductContentRequest
+	(*BatchProductContentTarget)(nil),         // 53: zcard.api.admin.v1.BatchProductContentTarget
+	(*BatchProductContentPreview)(nil),        // 54: zcard.api.admin.v1.BatchProductContentPreview
+	(*BatchProductContentRequest)(nil),        // 55: zcard.api.admin.v1.BatchProductContentRequest
+	(*BatchProductContentResult)(nil),         // 56: zcard.api.admin.v1.BatchProductContentResult
+	(*SetProductLockRequest)(nil),             // 57: zcard.api.admin.v1.SetProductLockRequest
+	(*GetCategoryPlacementsRequest)(nil),      // 58: zcard.api.admin.v1.GetCategoryPlacementsRequest
+	(*CategoryPlacementInput)(nil),            // 59: zcard.api.admin.v1.CategoryPlacementInput
+	(*CategoryPlacementItem)(nil),             // 60: zcard.api.admin.v1.CategoryPlacementItem
+	(*CategoryPlacementsReply)(nil),           // 61: zcard.api.admin.v1.CategoryPlacementsReply
+	(*SetCategoryPlacementsRequest)(nil),      // 62: zcard.api.admin.v1.SetCategoryPlacementsRequest
+	(*DeliverySourcesRequest)(nil),            // 63: zcard.api.admin.v1.DeliverySourcesRequest
+	(*DeliverySourceInfo)(nil),                // 64: zcard.api.admin.v1.DeliverySourceInfo
+	(*DeliveryReceiptOption)(nil),             // 65: zcard.api.admin.v1.DeliveryReceiptOption
+	(*DeliverySourcesReply)(nil),              // 66: zcard.api.admin.v1.DeliverySourcesReply
+	(*SetDeliverySourceRequest)(nil),          // 67: zcard.api.admin.v1.SetDeliverySourceRequest
+	(*ClassifyProductsRequest)(nil),           // 68: zcard.api.admin.v1.ClassifyProductsRequest
+	(*ClassificationProduct)(nil),             // 69: zcard.api.admin.v1.ClassificationProduct
+	(*ClassifyProductsReply)(nil),             // 70: zcard.api.admin.v1.ClassifyProductsReply
+	(*ManageProductListingRequest)(nil),       // 71: zcard.api.admin.v1.ManageProductListingRequest
+	(*ProductListingTarget)(nil),              // 72: zcard.api.admin.v1.ProductListingTarget
+	(*ManageProductListingReply)(nil),         // 73: zcard.api.admin.v1.ManageProductListingReply
+	nil,                                       // 74: zcard.api.admin.v1.Sku.SpecValuesEntry
+	nil,                                       // 75: zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntry
+	nil,                                       // 76: zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntry
+	nil,                                       // 77: zcard.api.admin.v1.ClassifyProductsRequest.RevisionsEntry
+	nil,                                       // 78: zcard.api.admin.v1.ManageProductListingRequest.RevisionsEntry
+	(*structpb.Struct)(nil),                   // 79: google.protobuf.Struct
+	(*emptypb.Empty)(nil),                     // 80: google.protobuf.Empty
 }
 var file_admin_v1_catalog_proto_depIdxs = []int32{
 	3,  // 0: zcard.api.admin.v1.ListProductsReply.products:type_name -> zcard.api.admin.v1.AdminProduct
-	76, // 1: zcard.api.admin.v1.AdminProduct.upstream_source:type_name -> google.protobuf.Struct
-	13, // 2: zcard.api.admin.v1.CategoryList.categories:type_name -> zcard.api.admin.v1.Category
-	13, // 3: zcard.api.admin.v1.Category.children:type_name -> zcard.api.admin.v1.Category
-	19, // 4: zcard.api.admin.v1.TagList.tags:type_name -> zcard.api.admin.v1.Tag
-	24, // 5: zcard.api.admin.v1.ControlList.controls:type_name -> zcard.api.admin.v1.AdminControl
-	30, // 6: zcard.api.admin.v1.ListReviewsReply.reviews:type_name -> zcard.api.admin.v1.ReviewItem
-	37, // 7: zcard.api.admin.v1.SkuList.skus:type_name -> zcard.api.admin.v1.Sku
-	71, // 8: zcard.api.admin.v1.Sku.spec_values:type_name -> zcard.api.admin.v1.Sku.SpecValuesEntry
-	72, // 9: zcard.api.admin.v1.CreateSkuRequest.spec_values:type_name -> zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntry
-	73, // 10: zcard.api.admin.v1.UpdateSkuRequest.spec_values:type_name -> zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntry
-	42, // 11: zcard.api.admin.v1.MemberGroupList.groups:type_name -> zcard.api.admin.v1.MemberGroup
-	48, // 12: zcard.api.admin.v1.PreviewBatchProductContentRequest.patch:type_name -> zcard.api.admin.v1.ProductContentPatch
-	48, // 13: zcard.api.admin.v1.BatchProductContentPreview.patch:type_name -> zcard.api.admin.v1.ProductContentPatch
-	50, // 14: zcard.api.admin.v1.BatchProductContentPreview.targets:type_name -> zcard.api.admin.v1.BatchProductContentTarget
-	56, // 15: zcard.api.admin.v1.CategoryPlacementItem.placement:type_name -> zcard.api.admin.v1.CategoryPlacementInput
-	3,  // 16: zcard.api.admin.v1.CategoryPlacementItem.product:type_name -> zcard.api.admin.v1.AdminProduct
-	57, // 17: zcard.api.admin.v1.CategoryPlacementsReply.items:type_name -> zcard.api.admin.v1.CategoryPlacementItem
-	56, // 18: zcard.api.admin.v1.SetCategoryPlacementsRequest.items:type_name -> zcard.api.admin.v1.CategoryPlacementInput
-	61, // 19: zcard.api.admin.v1.DeliverySourcesReply.sources:type_name -> zcard.api.admin.v1.DeliverySourceInfo
-	62, // 20: zcard.api.admin.v1.DeliverySourcesReply.receipts:type_name -> zcard.api.admin.v1.DeliveryReceiptOption
-	74, // 21: zcard.api.admin.v1.ClassifyProductsRequest.revisions:type_name -> zcard.api.admin.v1.ClassifyProductsRequest.RevisionsEntry
-	66, // 22: zcard.api.admin.v1.ClassifyProductsReply.items:type_name -> zcard.api.admin.v1.ClassificationProduct
-	0,  // 23: zcard.api.admin.v1.ManageProductListingRequest.filter:type_name -> zcard.api.admin.v1.ListProductsRequest
-	75, // 24: zcard.api.admin.v1.ManageProductListingRequest.revisions:type_name -> zcard.api.admin.v1.ManageProductListingRequest.RevisionsEntry
-	69, // 25: zcard.api.admin.v1.ManageProductListingReply.items:type_name -> zcard.api.admin.v1.ProductListingTarget
-	65, // 26: zcard.api.admin.v1.AdminCatalogService.ClassifyProducts:input_type -> zcard.api.admin.v1.ClassifyProductsRequest
-	60, // 27: zcard.api.admin.v1.AdminCatalogService.GetDeliverySources:input_type -> zcard.api.admin.v1.DeliverySourcesRequest
-	64, // 28: zcard.api.admin.v1.AdminCatalogService.SetDeliverySource:input_type -> zcard.api.admin.v1.SetDeliverySourceRequest
-	0,  // 29: zcard.api.admin.v1.AdminCatalogService.ListProducts:input_type -> zcard.api.admin.v1.ListProductsRequest
-	2,  // 30: zcard.api.admin.v1.AdminCatalogService.GetProduct:input_type -> zcard.api.admin.v1.GetProductRequest
-	4,  // 31: zcard.api.admin.v1.AdminCatalogService.CreateProduct:input_type -> zcard.api.admin.v1.CreateProductRequest
-	5,  // 32: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:input_type -> zcard.api.admin.v1.UpdateProductRequest
-	6,  // 33: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:input_type -> zcard.api.admin.v1.DeleteProductRequest
-	2,  // 34: zcard.api.admin.v1.AdminCatalogService.PreviewDeleteProduct:input_type -> zcard.api.admin.v1.GetProductRequest
-	8,  // 35: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductStatus:input_type -> zcard.api.admin.v1.BatchUpdateProductStatusRequest
-	10, // 36: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductCategory:input_type -> zcard.api.admin.v1.BatchUpdateProductCategoryRequest
-	49, // 37: zcard.api.admin.v1.AdminCatalogService.PreviewBatchUpdateProductContent:input_type -> zcard.api.admin.v1.PreviewBatchProductContentRequest
-	52, // 38: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductContent:input_type -> zcard.api.admin.v1.BatchProductContentRequest
-	52, // 39: zcard.api.admin.v1.AdminCatalogService.GetBatchProductContentResult:input_type -> zcard.api.admin.v1.BatchProductContentRequest
-	68, // 40: zcard.api.admin.v1.AdminCatalogService.ManageProductListing:input_type -> zcard.api.admin.v1.ManageProductListingRequest
-	54, // 41: zcard.api.admin.v1.AdminCatalogService.SetProductLock:input_type -> zcard.api.admin.v1.SetProductLockRequest
-	55, // 42: zcard.api.admin.v1.AdminCatalogService.GetCategoryPlacements:input_type -> zcard.api.admin.v1.GetCategoryPlacementsRequest
-	59, // 43: zcard.api.admin.v1.AdminCatalogService.SetCategoryPlacements:input_type -> zcard.api.admin.v1.SetCategoryPlacementsRequest
-	77, // 44: zcard.api.admin.v1.AdminCatalogService.ListCategories:input_type -> google.protobuf.Empty
-	14, // 45: zcard.api.admin.v1.AdminCatalogService.CreateCategory:input_type -> zcard.api.admin.v1.CreateCategoryRequest
-	15, // 46: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:input_type -> zcard.api.admin.v1.UpdateCategoryRequest
-	17, // 47: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:input_type -> zcard.api.admin.v1.DeleteCategoryRequest
-	46, // 48: zcard.api.admin.v1.AdminCatalogService.MergeCategories:input_type -> zcard.api.admin.v1.MergeCategoriesRequest
-	16, // 49: zcard.api.admin.v1.AdminCatalogService.ReorderCategories:input_type -> zcard.api.admin.v1.ReorderCategoriesRequest
-	77, // 50: zcard.api.admin.v1.AdminCatalogService.ListTags:input_type -> google.protobuf.Empty
-	20, // 51: zcard.api.admin.v1.AdminCatalogService.CreateTag:input_type -> zcard.api.admin.v1.CreateTagRequest
-	21, // 52: zcard.api.admin.v1.AdminCatalogService.DeleteTag:input_type -> zcard.api.admin.v1.DeleteTagRequest
-	22, // 53: zcard.api.admin.v1.AdminCatalogService.ListControls:input_type -> zcard.api.admin.v1.ListControlsRequest
-	25, // 54: zcard.api.admin.v1.AdminCatalogService.CreateControl:input_type -> zcard.api.admin.v1.CreateControlRequest
-	26, // 55: zcard.api.admin.v1.AdminCatalogService.UpdateControl:input_type -> zcard.api.admin.v1.UpdateControlRequest
-	27, // 56: zcard.api.admin.v1.AdminCatalogService.DeleteControl:input_type -> zcard.api.admin.v1.DeleteControlRequest
-	28, // 57: zcard.api.admin.v1.AdminCatalogService.ListReviews:input_type -> zcard.api.admin.v1.ListReviewsRequest
-	31, // 58: zcard.api.admin.v1.AdminCatalogService.ApproveReview:input_type -> zcard.api.admin.v1.ApproveReviewRequest
-	32, // 59: zcard.api.admin.v1.AdminCatalogService.RejectReview:input_type -> zcard.api.admin.v1.RejectReviewRequest
-	34, // 60: zcard.api.admin.v1.AdminCatalogService.CreateVirtualReview:input_type -> zcard.api.admin.v1.CreateVirtualReviewRequest
-	35, // 61: zcard.api.admin.v1.AdminCatalogService.ListSkus:input_type -> zcard.api.admin.v1.ListSkusRequest
-	38, // 62: zcard.api.admin.v1.AdminCatalogService.CreateSku:input_type -> zcard.api.admin.v1.CreateSkuRequest
-	39, // 63: zcard.api.admin.v1.AdminCatalogService.UpdateSku:input_type -> zcard.api.admin.v1.UpdateSkuRequest
-	40, // 64: zcard.api.admin.v1.AdminCatalogService.DeleteSku:input_type -> zcard.api.admin.v1.DeleteSkuRequest
-	77, // 65: zcard.api.admin.v1.AdminCatalogService.ListMemberGroups:input_type -> google.protobuf.Empty
-	43, // 66: zcard.api.admin.v1.AdminCatalogService.CreateMemberGroup:input_type -> zcard.api.admin.v1.CreateMemberGroupRequest
-	44, // 67: zcard.api.admin.v1.AdminCatalogService.UpdateMemberGroup:input_type -> zcard.api.admin.v1.UpdateMemberGroupRequest
-	45, // 68: zcard.api.admin.v1.AdminCatalogService.DeleteMemberGroup:input_type -> zcard.api.admin.v1.DeleteMemberGroupRequest
-	67, // 69: zcard.api.admin.v1.AdminCatalogService.ClassifyProducts:output_type -> zcard.api.admin.v1.ClassifyProductsReply
-	63, // 70: zcard.api.admin.v1.AdminCatalogService.GetDeliverySources:output_type -> zcard.api.admin.v1.DeliverySourcesReply
-	63, // 71: zcard.api.admin.v1.AdminCatalogService.SetDeliverySource:output_type -> zcard.api.admin.v1.DeliverySourcesReply
-	1,  // 72: zcard.api.admin.v1.AdminCatalogService.ListProducts:output_type -> zcard.api.admin.v1.ListProductsReply
-	3,  // 73: zcard.api.admin.v1.AdminCatalogService.GetProduct:output_type -> zcard.api.admin.v1.AdminProduct
-	3,  // 74: zcard.api.admin.v1.AdminCatalogService.CreateProduct:output_type -> zcard.api.admin.v1.AdminProduct
-	3,  // 75: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:output_type -> zcard.api.admin.v1.AdminProduct
-	77, // 76: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:output_type -> google.protobuf.Empty
-	7,  // 77: zcard.api.admin.v1.AdminCatalogService.PreviewDeleteProduct:output_type -> zcard.api.admin.v1.DeleteProductPreview
-	9,  // 78: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductStatus:output_type -> zcard.api.admin.v1.BatchUpdateProductStatusReply
-	11, // 79: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductCategory:output_type -> zcard.api.admin.v1.BatchUpdateProductCategoryReply
-	51, // 80: zcard.api.admin.v1.AdminCatalogService.PreviewBatchUpdateProductContent:output_type -> zcard.api.admin.v1.BatchProductContentPreview
-	53, // 81: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductContent:output_type -> zcard.api.admin.v1.BatchProductContentResult
-	53, // 82: zcard.api.admin.v1.AdminCatalogService.GetBatchProductContentResult:output_type -> zcard.api.admin.v1.BatchProductContentResult
-	70, // 83: zcard.api.admin.v1.AdminCatalogService.ManageProductListing:output_type -> zcard.api.admin.v1.ManageProductListingReply
-	3,  // 84: zcard.api.admin.v1.AdminCatalogService.SetProductLock:output_type -> zcard.api.admin.v1.AdminProduct
-	58, // 85: zcard.api.admin.v1.AdminCatalogService.GetCategoryPlacements:output_type -> zcard.api.admin.v1.CategoryPlacementsReply
-	58, // 86: zcard.api.admin.v1.AdminCatalogService.SetCategoryPlacements:output_type -> zcard.api.admin.v1.CategoryPlacementsReply
-	12, // 87: zcard.api.admin.v1.AdminCatalogService.ListCategories:output_type -> zcard.api.admin.v1.CategoryList
-	13, // 88: zcard.api.admin.v1.AdminCatalogService.CreateCategory:output_type -> zcard.api.admin.v1.Category
-	13, // 89: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:output_type -> zcard.api.admin.v1.Category
-	77, // 90: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:output_type -> google.protobuf.Empty
-	47, // 91: zcard.api.admin.v1.AdminCatalogService.MergeCategories:output_type -> zcard.api.admin.v1.MergeCategoriesReply
-	77, // 92: zcard.api.admin.v1.AdminCatalogService.ReorderCategories:output_type -> google.protobuf.Empty
-	18, // 93: zcard.api.admin.v1.AdminCatalogService.ListTags:output_type -> zcard.api.admin.v1.TagList
-	19, // 94: zcard.api.admin.v1.AdminCatalogService.CreateTag:output_type -> zcard.api.admin.v1.Tag
-	77, // 95: zcard.api.admin.v1.AdminCatalogService.DeleteTag:output_type -> google.protobuf.Empty
-	23, // 96: zcard.api.admin.v1.AdminCatalogService.ListControls:output_type -> zcard.api.admin.v1.ControlList
-	24, // 97: zcard.api.admin.v1.AdminCatalogService.CreateControl:output_type -> zcard.api.admin.v1.AdminControl
-	24, // 98: zcard.api.admin.v1.AdminCatalogService.UpdateControl:output_type -> zcard.api.admin.v1.AdminControl
-	77, // 99: zcard.api.admin.v1.AdminCatalogService.DeleteControl:output_type -> google.protobuf.Empty
-	29, // 100: zcard.api.admin.v1.AdminCatalogService.ListReviews:output_type -> zcard.api.admin.v1.ListReviewsReply
-	30, // 101: zcard.api.admin.v1.AdminCatalogService.ApproveReview:output_type -> zcard.api.admin.v1.ReviewItem
-	30, // 102: zcard.api.admin.v1.AdminCatalogService.RejectReview:output_type -> zcard.api.admin.v1.ReviewItem
-	33, // 103: zcard.api.admin.v1.AdminCatalogService.CreateVirtualReview:output_type -> zcard.api.admin.v1.VirtualReviewItem
-	36, // 104: zcard.api.admin.v1.AdminCatalogService.ListSkus:output_type -> zcard.api.admin.v1.SkuList
-	37, // 105: zcard.api.admin.v1.AdminCatalogService.CreateSku:output_type -> zcard.api.admin.v1.Sku
-	37, // 106: zcard.api.admin.v1.AdminCatalogService.UpdateSku:output_type -> zcard.api.admin.v1.Sku
-	77, // 107: zcard.api.admin.v1.AdminCatalogService.DeleteSku:output_type -> google.protobuf.Empty
-	41, // 108: zcard.api.admin.v1.AdminCatalogService.ListMemberGroups:output_type -> zcard.api.admin.v1.MemberGroupList
-	42, // 109: zcard.api.admin.v1.AdminCatalogService.CreateMemberGroup:output_type -> zcard.api.admin.v1.MemberGroup
-	42, // 110: zcard.api.admin.v1.AdminCatalogService.UpdateMemberGroup:output_type -> zcard.api.admin.v1.MemberGroup
-	77, // 111: zcard.api.admin.v1.AdminCatalogService.DeleteMemberGroup:output_type -> google.protobuf.Empty
-	69, // [69:112] is the sub-list for method output_type
-	26, // [26:69] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	79, // 1: zcard.api.admin.v1.AdminProduct.upstream_source:type_name -> google.protobuf.Struct
+	12, // 2: zcard.api.admin.v1.BatchUpdateProductSortRequest.items:type_name -> zcard.api.admin.v1.ProductSortInput
+	16, // 3: zcard.api.admin.v1.CategoryList.categories:type_name -> zcard.api.admin.v1.Category
+	16, // 4: zcard.api.admin.v1.Category.children:type_name -> zcard.api.admin.v1.Category
+	22, // 5: zcard.api.admin.v1.TagList.tags:type_name -> zcard.api.admin.v1.Tag
+	27, // 6: zcard.api.admin.v1.ControlList.controls:type_name -> zcard.api.admin.v1.AdminControl
+	33, // 7: zcard.api.admin.v1.ListReviewsReply.reviews:type_name -> zcard.api.admin.v1.ReviewItem
+	40, // 8: zcard.api.admin.v1.SkuList.skus:type_name -> zcard.api.admin.v1.Sku
+	74, // 9: zcard.api.admin.v1.Sku.spec_values:type_name -> zcard.api.admin.v1.Sku.SpecValuesEntry
+	75, // 10: zcard.api.admin.v1.CreateSkuRequest.spec_values:type_name -> zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntry
+	76, // 11: zcard.api.admin.v1.UpdateSkuRequest.spec_values:type_name -> zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntry
+	45, // 12: zcard.api.admin.v1.MemberGroupList.groups:type_name -> zcard.api.admin.v1.MemberGroup
+	51, // 13: zcard.api.admin.v1.PreviewBatchProductContentRequest.patch:type_name -> zcard.api.admin.v1.ProductContentPatch
+	51, // 14: zcard.api.admin.v1.BatchProductContentPreview.patch:type_name -> zcard.api.admin.v1.ProductContentPatch
+	53, // 15: zcard.api.admin.v1.BatchProductContentPreview.targets:type_name -> zcard.api.admin.v1.BatchProductContentTarget
+	59, // 16: zcard.api.admin.v1.CategoryPlacementItem.placement:type_name -> zcard.api.admin.v1.CategoryPlacementInput
+	3,  // 17: zcard.api.admin.v1.CategoryPlacementItem.product:type_name -> zcard.api.admin.v1.AdminProduct
+	60, // 18: zcard.api.admin.v1.CategoryPlacementsReply.items:type_name -> zcard.api.admin.v1.CategoryPlacementItem
+	59, // 19: zcard.api.admin.v1.SetCategoryPlacementsRequest.items:type_name -> zcard.api.admin.v1.CategoryPlacementInput
+	64, // 20: zcard.api.admin.v1.DeliverySourcesReply.sources:type_name -> zcard.api.admin.v1.DeliverySourceInfo
+	65, // 21: zcard.api.admin.v1.DeliverySourcesReply.receipts:type_name -> zcard.api.admin.v1.DeliveryReceiptOption
+	77, // 22: zcard.api.admin.v1.ClassifyProductsRequest.revisions:type_name -> zcard.api.admin.v1.ClassifyProductsRequest.RevisionsEntry
+	69, // 23: zcard.api.admin.v1.ClassifyProductsReply.items:type_name -> zcard.api.admin.v1.ClassificationProduct
+	0,  // 24: zcard.api.admin.v1.ManageProductListingRequest.filter:type_name -> zcard.api.admin.v1.ListProductsRequest
+	78, // 25: zcard.api.admin.v1.ManageProductListingRequest.revisions:type_name -> zcard.api.admin.v1.ManageProductListingRequest.RevisionsEntry
+	72, // 26: zcard.api.admin.v1.ManageProductListingReply.items:type_name -> zcard.api.admin.v1.ProductListingTarget
+	68, // 27: zcard.api.admin.v1.AdminCatalogService.ClassifyProducts:input_type -> zcard.api.admin.v1.ClassifyProductsRequest
+	63, // 28: zcard.api.admin.v1.AdminCatalogService.GetDeliverySources:input_type -> zcard.api.admin.v1.DeliverySourcesRequest
+	67, // 29: zcard.api.admin.v1.AdminCatalogService.SetDeliverySource:input_type -> zcard.api.admin.v1.SetDeliverySourceRequest
+	0,  // 30: zcard.api.admin.v1.AdminCatalogService.ListProducts:input_type -> zcard.api.admin.v1.ListProductsRequest
+	2,  // 31: zcard.api.admin.v1.AdminCatalogService.GetProduct:input_type -> zcard.api.admin.v1.GetProductRequest
+	4,  // 32: zcard.api.admin.v1.AdminCatalogService.CreateProduct:input_type -> zcard.api.admin.v1.CreateProductRequest
+	5,  // 33: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:input_type -> zcard.api.admin.v1.UpdateProductRequest
+	6,  // 34: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:input_type -> zcard.api.admin.v1.DeleteProductRequest
+	2,  // 35: zcard.api.admin.v1.AdminCatalogService.PreviewDeleteProduct:input_type -> zcard.api.admin.v1.GetProductRequest
+	8,  // 36: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductStatus:input_type -> zcard.api.admin.v1.BatchUpdateProductStatusRequest
+	10, // 37: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductCategory:input_type -> zcard.api.admin.v1.BatchUpdateProductCategoryRequest
+	13, // 38: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductSort:input_type -> zcard.api.admin.v1.BatchUpdateProductSortRequest
+	52, // 39: zcard.api.admin.v1.AdminCatalogService.PreviewBatchUpdateProductContent:input_type -> zcard.api.admin.v1.PreviewBatchProductContentRequest
+	55, // 40: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductContent:input_type -> zcard.api.admin.v1.BatchProductContentRequest
+	55, // 41: zcard.api.admin.v1.AdminCatalogService.GetBatchProductContentResult:input_type -> zcard.api.admin.v1.BatchProductContentRequest
+	71, // 42: zcard.api.admin.v1.AdminCatalogService.ManageProductListing:input_type -> zcard.api.admin.v1.ManageProductListingRequest
+	57, // 43: zcard.api.admin.v1.AdminCatalogService.SetProductLock:input_type -> zcard.api.admin.v1.SetProductLockRequest
+	58, // 44: zcard.api.admin.v1.AdminCatalogService.GetCategoryPlacements:input_type -> zcard.api.admin.v1.GetCategoryPlacementsRequest
+	62, // 45: zcard.api.admin.v1.AdminCatalogService.SetCategoryPlacements:input_type -> zcard.api.admin.v1.SetCategoryPlacementsRequest
+	80, // 46: zcard.api.admin.v1.AdminCatalogService.ListCategories:input_type -> google.protobuf.Empty
+	17, // 47: zcard.api.admin.v1.AdminCatalogService.CreateCategory:input_type -> zcard.api.admin.v1.CreateCategoryRequest
+	18, // 48: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:input_type -> zcard.api.admin.v1.UpdateCategoryRequest
+	20, // 49: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:input_type -> zcard.api.admin.v1.DeleteCategoryRequest
+	49, // 50: zcard.api.admin.v1.AdminCatalogService.MergeCategories:input_type -> zcard.api.admin.v1.MergeCategoriesRequest
+	19, // 51: zcard.api.admin.v1.AdminCatalogService.ReorderCategories:input_type -> zcard.api.admin.v1.ReorderCategoriesRequest
+	80, // 52: zcard.api.admin.v1.AdminCatalogService.ListTags:input_type -> google.protobuf.Empty
+	23, // 53: zcard.api.admin.v1.AdminCatalogService.CreateTag:input_type -> zcard.api.admin.v1.CreateTagRequest
+	24, // 54: zcard.api.admin.v1.AdminCatalogService.DeleteTag:input_type -> zcard.api.admin.v1.DeleteTagRequest
+	25, // 55: zcard.api.admin.v1.AdminCatalogService.ListControls:input_type -> zcard.api.admin.v1.ListControlsRequest
+	28, // 56: zcard.api.admin.v1.AdminCatalogService.CreateControl:input_type -> zcard.api.admin.v1.CreateControlRequest
+	29, // 57: zcard.api.admin.v1.AdminCatalogService.UpdateControl:input_type -> zcard.api.admin.v1.UpdateControlRequest
+	30, // 58: zcard.api.admin.v1.AdminCatalogService.DeleteControl:input_type -> zcard.api.admin.v1.DeleteControlRequest
+	31, // 59: zcard.api.admin.v1.AdminCatalogService.ListReviews:input_type -> zcard.api.admin.v1.ListReviewsRequest
+	34, // 60: zcard.api.admin.v1.AdminCatalogService.ApproveReview:input_type -> zcard.api.admin.v1.ApproveReviewRequest
+	35, // 61: zcard.api.admin.v1.AdminCatalogService.RejectReview:input_type -> zcard.api.admin.v1.RejectReviewRequest
+	37, // 62: zcard.api.admin.v1.AdminCatalogService.CreateVirtualReview:input_type -> zcard.api.admin.v1.CreateVirtualReviewRequest
+	38, // 63: zcard.api.admin.v1.AdminCatalogService.ListSkus:input_type -> zcard.api.admin.v1.ListSkusRequest
+	41, // 64: zcard.api.admin.v1.AdminCatalogService.CreateSku:input_type -> zcard.api.admin.v1.CreateSkuRequest
+	42, // 65: zcard.api.admin.v1.AdminCatalogService.UpdateSku:input_type -> zcard.api.admin.v1.UpdateSkuRequest
+	43, // 66: zcard.api.admin.v1.AdminCatalogService.DeleteSku:input_type -> zcard.api.admin.v1.DeleteSkuRequest
+	80, // 67: zcard.api.admin.v1.AdminCatalogService.ListMemberGroups:input_type -> google.protobuf.Empty
+	46, // 68: zcard.api.admin.v1.AdminCatalogService.CreateMemberGroup:input_type -> zcard.api.admin.v1.CreateMemberGroupRequest
+	47, // 69: zcard.api.admin.v1.AdminCatalogService.UpdateMemberGroup:input_type -> zcard.api.admin.v1.UpdateMemberGroupRequest
+	48, // 70: zcard.api.admin.v1.AdminCatalogService.DeleteMemberGroup:input_type -> zcard.api.admin.v1.DeleteMemberGroupRequest
+	70, // 71: zcard.api.admin.v1.AdminCatalogService.ClassifyProducts:output_type -> zcard.api.admin.v1.ClassifyProductsReply
+	66, // 72: zcard.api.admin.v1.AdminCatalogService.GetDeliverySources:output_type -> zcard.api.admin.v1.DeliverySourcesReply
+	66, // 73: zcard.api.admin.v1.AdminCatalogService.SetDeliverySource:output_type -> zcard.api.admin.v1.DeliverySourcesReply
+	1,  // 74: zcard.api.admin.v1.AdminCatalogService.ListProducts:output_type -> zcard.api.admin.v1.ListProductsReply
+	3,  // 75: zcard.api.admin.v1.AdminCatalogService.GetProduct:output_type -> zcard.api.admin.v1.AdminProduct
+	3,  // 76: zcard.api.admin.v1.AdminCatalogService.CreateProduct:output_type -> zcard.api.admin.v1.AdminProduct
+	3,  // 77: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:output_type -> zcard.api.admin.v1.AdminProduct
+	80, // 78: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:output_type -> google.protobuf.Empty
+	7,  // 79: zcard.api.admin.v1.AdminCatalogService.PreviewDeleteProduct:output_type -> zcard.api.admin.v1.DeleteProductPreview
+	9,  // 80: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductStatus:output_type -> zcard.api.admin.v1.BatchUpdateProductStatusReply
+	11, // 81: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductCategory:output_type -> zcard.api.admin.v1.BatchUpdateProductCategoryReply
+	14, // 82: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductSort:output_type -> zcard.api.admin.v1.BatchUpdateProductSortReply
+	54, // 83: zcard.api.admin.v1.AdminCatalogService.PreviewBatchUpdateProductContent:output_type -> zcard.api.admin.v1.BatchProductContentPreview
+	56, // 84: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductContent:output_type -> zcard.api.admin.v1.BatchProductContentResult
+	56, // 85: zcard.api.admin.v1.AdminCatalogService.GetBatchProductContentResult:output_type -> zcard.api.admin.v1.BatchProductContentResult
+	73, // 86: zcard.api.admin.v1.AdminCatalogService.ManageProductListing:output_type -> zcard.api.admin.v1.ManageProductListingReply
+	3,  // 87: zcard.api.admin.v1.AdminCatalogService.SetProductLock:output_type -> zcard.api.admin.v1.AdminProduct
+	61, // 88: zcard.api.admin.v1.AdminCatalogService.GetCategoryPlacements:output_type -> zcard.api.admin.v1.CategoryPlacementsReply
+	61, // 89: zcard.api.admin.v1.AdminCatalogService.SetCategoryPlacements:output_type -> zcard.api.admin.v1.CategoryPlacementsReply
+	15, // 90: zcard.api.admin.v1.AdminCatalogService.ListCategories:output_type -> zcard.api.admin.v1.CategoryList
+	16, // 91: zcard.api.admin.v1.AdminCatalogService.CreateCategory:output_type -> zcard.api.admin.v1.Category
+	16, // 92: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:output_type -> zcard.api.admin.v1.Category
+	80, // 93: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:output_type -> google.protobuf.Empty
+	50, // 94: zcard.api.admin.v1.AdminCatalogService.MergeCategories:output_type -> zcard.api.admin.v1.MergeCategoriesReply
+	80, // 95: zcard.api.admin.v1.AdminCatalogService.ReorderCategories:output_type -> google.protobuf.Empty
+	21, // 96: zcard.api.admin.v1.AdminCatalogService.ListTags:output_type -> zcard.api.admin.v1.TagList
+	22, // 97: zcard.api.admin.v1.AdminCatalogService.CreateTag:output_type -> zcard.api.admin.v1.Tag
+	80, // 98: zcard.api.admin.v1.AdminCatalogService.DeleteTag:output_type -> google.protobuf.Empty
+	26, // 99: zcard.api.admin.v1.AdminCatalogService.ListControls:output_type -> zcard.api.admin.v1.ControlList
+	27, // 100: zcard.api.admin.v1.AdminCatalogService.CreateControl:output_type -> zcard.api.admin.v1.AdminControl
+	27, // 101: zcard.api.admin.v1.AdminCatalogService.UpdateControl:output_type -> zcard.api.admin.v1.AdminControl
+	80, // 102: zcard.api.admin.v1.AdminCatalogService.DeleteControl:output_type -> google.protobuf.Empty
+	32, // 103: zcard.api.admin.v1.AdminCatalogService.ListReviews:output_type -> zcard.api.admin.v1.ListReviewsReply
+	33, // 104: zcard.api.admin.v1.AdminCatalogService.ApproveReview:output_type -> zcard.api.admin.v1.ReviewItem
+	33, // 105: zcard.api.admin.v1.AdminCatalogService.RejectReview:output_type -> zcard.api.admin.v1.ReviewItem
+	36, // 106: zcard.api.admin.v1.AdminCatalogService.CreateVirtualReview:output_type -> zcard.api.admin.v1.VirtualReviewItem
+	39, // 107: zcard.api.admin.v1.AdminCatalogService.ListSkus:output_type -> zcard.api.admin.v1.SkuList
+	40, // 108: zcard.api.admin.v1.AdminCatalogService.CreateSku:output_type -> zcard.api.admin.v1.Sku
+	40, // 109: zcard.api.admin.v1.AdminCatalogService.UpdateSku:output_type -> zcard.api.admin.v1.Sku
+	80, // 110: zcard.api.admin.v1.AdminCatalogService.DeleteSku:output_type -> google.protobuf.Empty
+	44, // 111: zcard.api.admin.v1.AdminCatalogService.ListMemberGroups:output_type -> zcard.api.admin.v1.MemberGroupList
+	45, // 112: zcard.api.admin.v1.AdminCatalogService.CreateMemberGroup:output_type -> zcard.api.admin.v1.MemberGroup
+	45, // 113: zcard.api.admin.v1.AdminCatalogService.UpdateMemberGroup:output_type -> zcard.api.admin.v1.MemberGroup
+	80, // 114: zcard.api.admin.v1.AdminCatalogService.DeleteMemberGroup:output_type -> google.protobuf.Empty
+	71, // [71:115] is the sub-list for method output_type
+	27, // [27:71] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_catalog_proto_init() }
@@ -6891,21 +7063,21 @@ func file_admin_v1_catalog_proto_init() {
 	file_admin_v1_catalog_proto_msgTypes[3].OneofWrappers = []any{}
 	file_admin_v1_catalog_proto_msgTypes[4].OneofWrappers = []any{}
 	file_admin_v1_catalog_proto_msgTypes[5].OneofWrappers = []any{}
-	file_admin_v1_catalog_proto_msgTypes[15].OneofWrappers = []any{}
-	file_admin_v1_catalog_proto_msgTypes[24].OneofWrappers = []any{}
-	file_admin_v1_catalog_proto_msgTypes[25].OneofWrappers = []any{}
-	file_admin_v1_catalog_proto_msgTypes[26].OneofWrappers = []any{}
-	file_admin_v1_catalog_proto_msgTypes[37].OneofWrappers = []any{}
-	file_admin_v1_catalog_proto_msgTypes[38].OneofWrappers = []any{}
-	file_admin_v1_catalog_proto_msgTypes[39].OneofWrappers = []any{}
-	file_admin_v1_catalog_proto_msgTypes[49].OneofWrappers = []any{}
+	file_admin_v1_catalog_proto_msgTypes[18].OneofWrappers = []any{}
+	file_admin_v1_catalog_proto_msgTypes[27].OneofWrappers = []any{}
+	file_admin_v1_catalog_proto_msgTypes[28].OneofWrappers = []any{}
+	file_admin_v1_catalog_proto_msgTypes[29].OneofWrappers = []any{}
+	file_admin_v1_catalog_proto_msgTypes[40].OneofWrappers = []any{}
+	file_admin_v1_catalog_proto_msgTypes[41].OneofWrappers = []any{}
+	file_admin_v1_catalog_proto_msgTypes[42].OneofWrappers = []any{}
+	file_admin_v1_catalog_proto_msgTypes[52].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_catalog_proto_rawDesc), len(file_admin_v1_catalog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   76,
+			NumMessages:   79,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

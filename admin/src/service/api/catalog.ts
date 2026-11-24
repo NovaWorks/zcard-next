@@ -72,6 +72,20 @@ export function updateProduct(id: number, data: Record<string, any>) {
   });
 }
 
+export interface ProductSortInput {
+  id: number;
+  sort: number;
+  expected_sort: number;
+}
+
+export function batchUpdateProductSort(items: ProductSortInput[]) {
+  return request<{ updated: number; skipped_locked?: number }>({
+    url: "/api/v1/admin/products/batch-sort",
+    method: "post",
+    data: { items },
+  });
+}
+
 export interface ProductDeletePreview {
   name: string;
   order_count: number | string;

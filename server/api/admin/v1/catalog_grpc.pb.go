@@ -31,6 +31,7 @@ const (
 	AdminCatalogService_PreviewDeleteProduct_FullMethodName             = "/zcard.api.admin.v1.AdminCatalogService/PreviewDeleteProduct"
 	AdminCatalogService_BatchUpdateProductStatus_FullMethodName         = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductStatus"
 	AdminCatalogService_BatchUpdateProductCategory_FullMethodName       = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductCategory"
+	AdminCatalogService_BatchUpdateProductSort_FullMethodName           = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductSort"
 	AdminCatalogService_PreviewBatchUpdateProductContent_FullMethodName = "/zcard.api.admin.v1.AdminCatalogService/PreviewBatchUpdateProductContent"
 	AdminCatalogService_BatchUpdateProductContent_FullMethodName        = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductContent"
 	AdminCatalogService_GetBatchProductContentResult_FullMethodName     = "/zcard.api.admin.v1.AdminCatalogService/GetBatchProductContentResult"
@@ -84,6 +85,7 @@ type AdminCatalogServiceClient interface {
 	// BatchUpdateProductStatus 批量上下架（列表多选操作；status 1=上架 0=下架 2=隐藏）。
 	BatchUpdateProductStatus(ctx context.Context, in *BatchUpdateProductStatusRequest, opts ...grpc.CallOption) (*BatchUpdateProductStatusReply, error)
 	BatchUpdateProductCategory(ctx context.Context, in *BatchUpdateProductCategoryRequest, opts ...grpc.CallOption) (*BatchUpdateProductCategoryReply, error)
+	BatchUpdateProductSort(ctx context.Context, in *BatchUpdateProductSortRequest, opts ...grpc.CallOption) (*BatchUpdateProductSortReply, error)
 	PreviewBatchUpdateProductContent(ctx context.Context, in *PreviewBatchProductContentRequest, opts ...grpc.CallOption) (*BatchProductContentPreview, error)
 	BatchUpdateProductContent(ctx context.Context, in *BatchProductContentRequest, opts ...grpc.CallOption) (*BatchProductContentResult, error)
 	GetBatchProductContentResult(ctx context.Context, in *BatchProductContentRequest, opts ...grpc.CallOption) (*BatchProductContentResult, error)
@@ -237,6 +239,16 @@ func (c *adminCatalogServiceClient) BatchUpdateProductCategory(ctx context.Conte
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BatchUpdateProductCategoryReply)
 	err := c.cc.Invoke(ctx, AdminCatalogService_BatchUpdateProductCategory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) BatchUpdateProductSort(ctx context.Context, in *BatchUpdateProductSortRequest, opts ...grpc.CallOption) (*BatchUpdateProductSortReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BatchUpdateProductSortReply)
+	err := c.cc.Invoke(ctx, AdminCatalogService_BatchUpdateProductSort_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -582,6 +594,7 @@ type AdminCatalogServiceServer interface {
 	// BatchUpdateProductStatus 批量上下架（列表多选操作；status 1=上架 0=下架 2=隐藏）。
 	BatchUpdateProductStatus(context.Context, *BatchUpdateProductStatusRequest) (*BatchUpdateProductStatusReply, error)
 	BatchUpdateProductCategory(context.Context, *BatchUpdateProductCategoryRequest) (*BatchUpdateProductCategoryReply, error)
+	BatchUpdateProductSort(context.Context, *BatchUpdateProductSortRequest) (*BatchUpdateProductSortReply, error)
 	PreviewBatchUpdateProductContent(context.Context, *PreviewBatchProductContentRequest) (*BatchProductContentPreview, error)
 	BatchUpdateProductContent(context.Context, *BatchProductContentRequest) (*BatchProductContentResult, error)
 	GetBatchProductContentResult(context.Context, *BatchProductContentRequest) (*BatchProductContentResult, error)
@@ -663,6 +676,9 @@ func (UnimplementedAdminCatalogServiceServer) BatchUpdateProductStatus(context.C
 }
 func (UnimplementedAdminCatalogServiceServer) BatchUpdateProductCategory(context.Context, *BatchUpdateProductCategoryRequest) (*BatchUpdateProductCategoryReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method BatchUpdateProductCategory not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) BatchUpdateProductSort(context.Context, *BatchUpdateProductSortRequest) (*BatchUpdateProductSortReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method BatchUpdateProductSort not implemented")
 }
 func (UnimplementedAdminCatalogServiceServer) PreviewBatchUpdateProductContent(context.Context, *PreviewBatchProductContentRequest) (*BatchProductContentPreview, error) {
 	return nil, status.Error(codes.Unimplemented, "method PreviewBatchUpdateProductContent not implemented")
@@ -975,6 +991,24 @@ func _AdminCatalogService_BatchUpdateProductCategory_Handler(srv interface{}, ct
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminCatalogServiceServer).BatchUpdateProductCategory(ctx, req.(*BatchUpdateProductCategoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_BatchUpdateProductSort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchUpdateProductSortRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).BatchUpdateProductSort(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_BatchUpdateProductSort_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).BatchUpdateProductSort(ctx, req.(*BatchUpdateProductSortRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1605,6 +1639,10 @@ var AdminCatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BatchUpdateProductCategory",
 			Handler:    _AdminCatalogService_BatchUpdateProductCategory_Handler,
+		},
+		{
+			MethodName: "BatchUpdateProductSort",
+			Handler:    _AdminCatalogService_BatchUpdateProductSort_Handler,
 		},
 		{
 			MethodName: "PreviewBatchUpdateProductContent",

@@ -33,11 +33,13 @@ import {
   deleteProduct,
   batchUpdateProductStatus,
   batchUpdateProductCategory,
+  batchUpdateProductSort,
   fetchCategories,
   fetchSupplyConnectionOptions,
 } from "@/service/api";
 import { formatMoney, centsToYuan, currencyUnit, yuanToFen } from "@/utils/money";
 import { checkAuth } from "@/directives";
+import { useAppStore } from "@/store/modules/app";
 import MediaField from "@/components/common/media-picker/media-field.vue";
 import RichEditor from "@/components/common/rich-editor/index.vue";
 import TablePager from "@/components/common/table-pager.vue";
@@ -59,6 +61,7 @@ defineOptions({ name: "ProductManagement" });
 
 const route = useRoute();
 const router = useRouter();
+const appStore = useAppStore();
 
 const loading = ref(false);
 const saving = ref(false);
@@ -195,7 +198,7 @@ onBeforeRouteLeave(async () => {
   return true;
 });
 function beforeUnload(event: BeforeUnloadEvent) {
-  if (showCreate.value && (hasUnsaved.value || editorBusy.value)) {
+  if ((showCreate.value && (hasUnsaved.value || editorBusy.value)) || sortDraftCount.value || sortSaving.value) {
     event.preventDefault();
     event.returnValue = "";
   }
@@ -385,6 +388,79 @@ function contentSaved() {
   checkedKeys.value = [];
   loadList();
 }
+
+// 排序草稿跨页保留，统一提交；使用专用接口，避免商品全量更新覆盖其他字段。
+const sortDrafts = ref<Record<number, { id: number; sort: number | null; expected_sort: number }>>({});
+const sortSaving = ref(false);
+const sortError = ref("");
+const sortDraftCount = computed(() => Object.keys(sortDrafts.value).length);
+const sortOffPageCount = computed(
+  () => Object.values(sortDrafts.value).filter((item) => !products.value.some((p) => p.id === item.id)).length,
+);
+const sortInvalid = computed(() => Object.values(sortDrafts.value).some(
+  (item) => item.sort === null || !Number.isInteger(item.sort) || item.sort < 0 || item.sort > 2147483647,
+));
+function editSort(row: any, value: number | null) {
+  if (sortSaving.value || row.is_locked || !checkAuth("catalog:write")) return;
+  const original = sortDrafts.value[row.id]?.expected_sort ?? Number(row.sort || 0);
+  if (value === original) {
+    delete sortDrafts.value[row.id];
+  } else {
+    if (!sortDrafts.value[row.id] && sortDraftCount.value >= 1000) {
+      window.$message?.warning("每次最多调整 1000 件商品，请先保存当前排序");
+      return;
+    }
+    sortDrafts.value[row.id] = { id: row.id, sort: value, expected_sort: original };
+  }
+  sortError.value = "";
+}
+function resetSortDrafts() {
+  sortDrafts.value = {};
+  sortError.value = "";
+}
+async function saveSort() {
+  if (!sortDraftCount.value || sortSaving.value || sortInvalid.value || !checkAuth("catalog:write")) return;
+  sortSaving.value = true;
+  sortError.value = "";
+  try {
+    const items = Object.values(sortDrafts.value).map((item) => ({ ...item, sort: item.sort! }));
+    const { data, error } = await batchUpdateProductSort(items);
+    if (error || !data) {
+      sortError.value = (error as any)?.response?.data?.message || "排序保存未成功，修改已保留，请重试。";
+      return;
+    }
+    resetSortDrafts();
+    batchReport.value = `已保存 ${data.updated || 0} 件商品的排序，跳过锁定商品 ${data.skipped_locked || 0} 件`;
+    batchFailures.value = [];
+    window.$message?.success(batchReport.value);
+    await loadList();
+  } finally {
+    sortSaving.value = false;
+  }
+}
+onBeforeRouteLeave(async () => {
+  if (sortSaving.value) {
+    window.$message?.warning("正在保存排序，请稍后离开");
+    return false;
+  }
+  if (!sortDraftCount.value) return true;
+  return new Promise<boolean>((resolve) => {
+    if (!window.$dialog) return resolve(false);
+    window.$dialog.warning({
+      title: "放弃未保存的排序？",
+      content: `还有 ${sortDraftCount.value} 件商品的排序尚未保存。`,
+      positiveText: "放弃修改",
+      negativeText: "继续编辑",
+      onPositiveClick: () => {
+        resetSortDrafts();
+        resolve(true);
+      },
+      onNegativeClick: () => resolve(false),
+      onClose: () => resolve(false),
+      onEsc: () => resolve(false),
+    });
+  });
+});
 
 // ── 单元格价格编辑（售价/成本）：铅笔图标 → 气泡输入（大厂轻量编辑模式）──
 // 金额纯文本居中展示；点笔弹 NPopover（受控显隐），气泡内输入金额 → 确定/Enter 保存、Esc 关闭。
@@ -687,9 +763,29 @@ function stepNext() {
   if (step.value < stepCount.value) step.value += 1;
 }
 
-const columns: DataTableColumns<any> = [
+const columns = computed<DataTableColumns<any>>(() => [
   { type: "selection" },
   { title: "ID", key: "id", width: 56 },
+  {
+    title: "排序",
+    key: "sort",
+    width: 104,
+    render: (row) => !checkAuth("catalog:write")
+      ? String(row.sort || 0)
+      : h(NInputNumber, {
+          value: sortDrafts.value[row.id] ? sortDrafts.value[row.id].sort : Number(row.sort || 0),
+          size: "small",
+          min: 0,
+          max: 2147483647,
+          updateValueOnInput: true,
+          showButton: false,
+          disabled: row.is_locked || sortSaving.value || loading.value,
+          status: sortDrafts.value[row.id] ? "warning" : undefined,
+          title: row.is_locked ? "商品已锁定，请先解锁后修改排序" : "商城综合排序生效，分类置顶优先；修改后点击保存排序",
+          inputProps: { "aria-label": `商品 ${row.name} 的排序` },
+          "onUpdate:value": (value: number | null) => editSort(row, value),
+        }),
+  },
   {
     title: "封面",
     key: "cover",
@@ -937,7 +1033,7 @@ const columns: DataTableColumns<any> = [
     title: "操作",
     key: "actions",
     width: 166,
-    fixed: "right",
+    fixed: appStore.isMobile ? undefined : "right",
     render: (row) => {
       const actions: { key: string; label: string; disabled?: boolean; run: () => void }[] = [];
       if (checkAuth("inventory:import") && row.stock_type === "card" && row.product_kind !== "social_service" && (row.product_property || row.goods_type) !== "physical") {
@@ -976,7 +1072,7 @@ const columns: DataTableColumns<any> = [
       });
     },
   },
-];
+]);
 
 let listSequence = 0;
 async function loadList() {
@@ -1677,10 +1773,22 @@ onMounted(() => {
         >
       </div>
 
+      <div v-if="checkAuth('catalog:write')" class="mb-8px flex shrink-0 flex-wrap items-center gap-8px text-12px">
+        <span>商品通用排序，数字越小越靠前；可筛选分类后批量修改。</span>
+        <template v-if="sortDraftCount">
+          <span role="status" aria-live="polite">待保存 {{ sortDraftCount }} 件<span v-if="sortOffPageCount">（其他页或筛选外 {{ sortOffPageCount }} 件）</span></span>
+          <NButton size="small" type="primary" :loading="sortSaving" :disabled="sortInvalid || loading" @click="saveSort">保存排序（{{ sortDraftCount }}）</NButton>
+          <NButton size="small" :disabled="sortSaving" @click="resetSortDrafts">取消排序修改</NButton>
+        </template>
+      </div>
+      <NAlert v-if="sortError || sortInvalid" type="warning" class="mb-8px shrink-0" role="alert">
+        {{ sortInvalid ? "排序不能为空，请输入 0～2147483647 的整数。" : sortError }}
+      </NAlert>
+
       <NDataTable
         size="small"
         flex-height
-        :scroll-x="1200"
+        :scroll-x="1304"
         class="min-h-0 flex-1"
         :columns="columns"
         :data="products"
