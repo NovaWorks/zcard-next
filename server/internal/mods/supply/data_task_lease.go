@@ -42,10 +42,27 @@ func (s *SyncService) RunSync(ctx context.Context, taskID uint64) error {
 	runCtx, cancel := context.WithCancel(context.WithValue(ctx, taskLeaseKey{}, lease))
 	heartbeatDone := make(chan struct{})
 	defer func() {
+		interrupted := runCtx.Err() != nil
 		cancel()
 		<-heartbeatDone
 		cleanup, stop := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 		defer stop()
+		// An expired/canceled context cannot persist its own final task state.
+		// Only the current lease owner may finalize the interrupted worker.
+		current, err := s.repo.GetConnection(cleanup, lease.connectionID)
+		if interrupted && err == nil && current.SyncLeaseToken == token {
+			latest, e := s.repo.GetSyncTask(cleanup, taskID)
+			if e == nil && latest.Status == supplysynctask.StatusProcessing {
+				status, code, summary := supplysynctask.StatusFailed, "TASK_INTERRUPTED", "任务执行已中断，已完成的商品保留，可重新同步"
+				if !latest.CancelRequestedAt.IsZero() {
+					status, code, summary = supplysynctask.StatusCanceled, "", ""
+				} else if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+					code, summary = "TASK_TIMEOUT", "任务已达到执行时间上限，已完成的商品保留"
+				}
+				_ = s.repo.FinishTask(cleanup, taskID, status, code, summary)
+				s.publishCompleted(cleanup, lease.connectionID, taskID, string(status))
+			}
+		}
 		_, _ = s.repo.entClient(cleanup).SupplyConnection.Update().Where(supplyconnection.ID(lease.connectionID), supplyconnection.SyncLeaseToken(token)).SetSyncLeaseUntil(0).SetSyncLeaseToken("").SetSyncTaskID(0).Save(cleanup)
 	}()
 	go func() {
@@ -57,8 +74,8 @@ func (s *SyncService) RunSync(ctx context.Context, taskID uint64) error {
 			case <-runCtx.Done():
 				return
 			case <-ticker.C:
-				count, e := s.repo.entClient(runCtx).SupplyConnection.Update().Where(supplyconnection.ID(lease.connectionID), supplyconnection.SyncLeaseToken(token), supplyconnection.SyncLeaseUntilGT(time.Now().Unix())).SetSyncLeaseUntil(time.Now().Unix() + taskLeaseSeconds).Save(runCtx)
-				if e != nil || count != 1 {
+				canceled, e := s.heartbeatTask(runCtx, lease, taskID)
+				if e != nil || canceled {
 					cancel()
 					return
 				}
@@ -77,6 +94,30 @@ func (s *SyncService) RunSync(ctx context.Context, taskID uint64) error {
 		return s.runImportTask(runCtx, task)
 	}
 	return s.runSync(runCtx, taskID)
+}
+
+// Catalog adapters may perform many paced reads before returning a page. Keep
+// their task heartbeat current and observe cancellation throughout those reads.
+func (s *SyncService) heartbeatTask(ctx context.Context, lease taskLease, taskID uint64) (bool, error) {
+	count, err := s.repo.entClient(ctx).SupplyConnection.Update().Where(
+		supplyconnection.ID(lease.connectionID), supplyconnection.SyncLeaseToken(lease.token), supplyconnection.SyncLeaseUntilGT(time.Now().Unix()),
+	).SetSyncLeaseUntil(time.Now().Unix() + taskLeaseSeconds).Save(ctx)
+	if err != nil {
+		return false, err
+	}
+	if count != 1 {
+		return false, errTaskLeaseLost
+	}
+	task, err := s.repo.GetSyncTask(ctx, taskID)
+	if err != nil {
+		return false, err
+	}
+	if !task.CancelRequestedAt.IsZero() {
+		return true, nil
+	}
+	// Do not rewrite counters concurrently with the main worker's progress flush.
+	err = s.repo.entClient(ctx).SupplySyncTask.UpdateOneID(taskID).SetHeartbeatAt(time.Now().UTC()).Exec(ctx)
+	return false, err
 }
 
 func (s *SyncService) guardTaskLease(ctx context.Context) error {

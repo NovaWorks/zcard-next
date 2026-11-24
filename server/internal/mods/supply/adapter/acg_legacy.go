@@ -14,7 +14,7 @@ func legacyAccountPrices(inv *acgInventory) (map[string]int64, error) {
 	var meta struct {
 		DeliveryWay *int            `json:"delivery_way"`
 		DraftStatus *int            `json:"draft_status"`
-		Config      *string         `json:"config"`
+		Config      *acgConfig      `json:"config"`
 		Category    json.RawMessage `json:"is_category"`
 		Price       json.RawMessage `json:"factory_price"`
 	}
@@ -24,7 +24,7 @@ func legacyAccountPrices(inv *acgInventory) (map[string]int64, error) {
 	if meta.DeliveryWay == nil || *meta.DeliveryWay != 0 || meta.DraftStatus == nil || *meta.DraftStatus != 0 || meta.Config == nil {
 		return nil, fmt.Errorf("无法确认旧版货源的发货方式或报价规格")
 	}
-	races, prices, err := legacyPriceSections(*meta.Config)
+	races, prices, err := legacyPriceSections(string(*meta.Config))
 	if err != nil {
 		return nil, err
 	}

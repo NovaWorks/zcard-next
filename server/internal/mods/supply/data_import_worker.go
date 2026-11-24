@@ -52,6 +52,7 @@ func (s *SyncService) runImportTask(ctx context.Context, task *ent.SupplySyncTas
 // created the task is long gone; its deadline never becomes an item failure.
 func (s *SyncService) executeImportItems(ctx context.Context, task *ent.SupplySyncTask, payload *importPayload, conn *ent.SupplyConnection, a adapter.Adapter) error {
 	c := s.repo.entClient(ctx)
+	readCtx := adapter.WithRequestInterval(ctx, loadScheduleSettings(conn).QuoteDelay)
 	workQuery := func() *ent.SupplyImportItemQuery {
 		q := c.SupplyImportItem.Query().Where(supplyimportitem.TaskID(task.ID))
 		if len(payload.ActiveCodes) > 0 {
@@ -119,7 +120,7 @@ func (s *SyncService) executeImportItems(ctx context.Context, task *ent.SupplySy
 			}
 			continue
 		}
-		err = s.attemptImportItem(ctx, task, payload, conn, a, item)
+		err = s.attemptImportItem(readCtx, task, payload, conn, a, item)
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}

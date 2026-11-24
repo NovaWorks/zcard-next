@@ -135,6 +135,9 @@ func (t *transport) do(ctx context.Context, method, path string, query url.Value
 				return nil, fmt.Errorf("%w: %w", ctx.Err(), lastErr)
 			}
 		}
+		if err := waitRequestInterval(ctx); err != nil {
+			return nil, err
+		}
 		attemptHeaders := headers
 		if signer, ok := ctx.Value(requestSignerKey{}).(requestSigner); ok {
 			attemptHeaders = signer()

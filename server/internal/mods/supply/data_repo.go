@@ -468,11 +468,21 @@ func (r *SupplyRepoImpl) TouchTask(ctx context.Context, id uint64, p TaskProgres
 
 // SetTaskProcessing 任务开工（pending → processing，记 started_at）。
 func (r *SupplyRepoImpl) SetTaskProcessing(ctx context.Context, id uint64, total int32) error {
-	_, err := data.Client(ctx, r.data).SupplySyncTask.UpdateOneID(id).
+	task, err := r.GetSyncTask(ctx, id)
+	if err != nil {
+		return err
+	}
+	update := data.Client(ctx, r.data).SupplySyncTask.UpdateOneID(id).
 		SetStatus(supplysynctask.StatusProcessing).
+		SetErrorCode("").SetErrorContext("").
+		ClearFinishedAt().SetCurrentStage("").SetCurrentPage(0).
 		SetStartedAt(time.Now().UTC()).
-		SetTotalCount(total).
-		Save(ctx)
+		SetTotalCount(total)
+	if task.Scope != ScopeImport {
+		update.SetProcessedCount(0).SetCreatedCount(0).SetUpdatedCount(0).
+			SetPriceUpdatedCount(0).SetManualSkippedCount(0).SetHiddenCount(0).SetDeletedCount(0)
+	}
+	_, err = update.Save(ctx)
 	return err
 }
 
@@ -480,13 +490,9 @@ func (r *SupplyRepoImpl) SetTaskProcessing(ctx context.Context, id uint64, total
 func (r *SupplyRepoImpl) FinishTask(ctx context.Context, id uint64, status supplysynctask.Status, errorCode, errorContext string) error {
 	upd := data.Client(ctx, r.data).SupplySyncTask.UpdateOneID(id).
 		SetStatus(status).
+		SetErrorCode(errorCode).
+		SetErrorContext(errorContext).
 		SetFinishedAt(time.Now().UTC())
-	if errorCode != "" {
-		upd.SetErrorCode(errorCode)
-	}
-	if errorContext != "" {
-		upd.SetErrorContext(errorContext)
-	}
 	_, err := upd.Save(ctx)
 	return err
 }

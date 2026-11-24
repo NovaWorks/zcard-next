@@ -332,12 +332,14 @@ function handleCancelTask(id: number) {
 }
 
 // 手动重跑（failed/canceled/done 均可按原参数重建任务）
+const hasStockFailures = (row: any) => ["STOCK_QUERY_FAILED", "PARTIAL_STOCK_FAILED"].includes(row.error_code);
+const isPartialSync = (row: any) => row.status === "failed" && ["PARTIAL_SYNC_FAILED", "PARTIAL_STOCK_FAILED"].includes(row.error_code);
 async function handleRerunTask(row: any) {
   if (row.scope === "import") { selectedImportTask.value = Number(row.id); return; }
   const { error } = await createSupplySyncTask({
     connection_id: row.connection_id,
-    scope: row.error_code === "STOCK_QUERY_FAILED" ? "stock" : row.scope || "collect",
-    mode: row.error_code === "STOCK_QUERY_FAILED" ? "failed" : row.mode || "full",
+    scope: hasStockFailures(row) ? "stock" : row.scope || "collect",
+    mode: hasStockFailures(row) ? "failed" : row.mode || "full",
   });
   if (!error) {
     window.$message?.success("已重新创建任务");
@@ -356,8 +358,8 @@ const taskColumns: DataTableColumns<any> = [
     render: (r) =>
       h(
         NTag,
-        { size: "small", type: r.status === "done" ? "success" : r.status === "failed" ? "error" : r.status === "processing" ? "info" : r.status === "canceled" ? "default" : "warning", bordered: false },
-        { default: () => r.scope === "import" && r.error_code ? (r.status === "done" ? "部分需处理" : "需处理") : ({ done: "完成", failed: "失败", processing: "执行中", canceled: "已取消", pending: "排队中" } as any)[r.status] || r.status },
+        { size: "small", type: isPartialSync(r) ? "warning" : r.status === "done" ? "success" : r.status === "failed" ? "error" : r.status === "processing" ? "info" : r.status === "canceled" ? "default" : "warning", bordered: false },
+        { default: () => isPartialSync(r) ? "部分完成" : r.scope === "import" && r.error_code ? (r.status === "done" ? "部分需处理" : "需处理") : ({ done: "完成", failed: "失败", processing: "执行中", canceled: "已取消", pending: "排队中" } as any)[r.status] || r.status },
       ),
   },
   {
@@ -381,7 +383,7 @@ const taskColumns: DataTableColumns<any> = [
         "div",
         {
           class: "text-12px",
-          title: `新增 ${r.created || 0} · 更新 ${r.updated || 0} · 价格变更 ${r.price_updated || 0} · 保护跳过（人工改价或商品锁定）${r.manual_skipped || 0} · 隐藏 ${r.hidden || 0} · 对账下架 ${r.deleted || 0}`,
+          title: `新增 ${r.created || 0} · 更新 ${r.updated || 0} · 价格变更 ${r.price_updated || 0} · 跳过（价格保护、商品锁定或不可采购）${r.manual_skipped || 0} · 隐藏 ${r.hidden || 0} · 对账下架 ${r.deleted || 0}`,
         },
         [
           h("span", { class: "text-success" }, `新${r.created || 0}`),
@@ -390,7 +392,7 @@ const taskColumns: DataTableColumns<any> = [
           " ",
           h("span", { class: "text-primary" }, `价${r.price_updated || 0}`),
           " ",
-          h("span", { class: "text-warning" }, `护${r.manual_skipped || 0}`),
+          h("span", { class: "text-warning" }, `跳${r.manual_skipped || 0}`),
           " ",
           h("span", { class: "text-gray-400" }, `藏${r.hidden || 0}`),
           " ",
@@ -404,8 +406,8 @@ const taskColumns: DataTableColumns<any> = [
     minWidth: 150,
     ellipsis: { tooltip: true },
     render: (r) =>
-      r.error_code
-        ? h("span", { title: r.error_context || "", class: "text-error" }, r.scope === "import" ? r.error_context : r.error_code === "STOCK_QUERY_FAILED" ? r.error_context || "库存查询失败" : `${r.error_code}`)
+      r.error_code || r.error_context
+        ? h("span", { title: r.error_context || "", class: r.error_code ? "text-error" : "text-gray-500" }, r.error_context || r.error_code)
         : h("span", { class: "text-gray-400" }, r.status === "done" ? "正常" : "-"),
   },
   {
@@ -419,7 +421,7 @@ const taskColumns: DataTableColumns<any> = [
           ? h(NButton, { size: "tiny", quaternary: true, onClick: () => handleCancelTask(r.id) }, { default: () => "取消" })
           : null,
         r.scope !== "import" && ["failed", "canceled", "done"].includes(r.status) && canWrite()
-          ? h(NButton, { size: "tiny", type: "primary", quaternary: true, onClick: () => handleRerunTask(r) }, { default: () => r.error_code === "STOCK_QUERY_FAILED" ? "重试库存" : "重跑" })
+          ? h(NButton, { size: "tiny", type: "primary", quaternary: true, onClick: () => handleRerunTask(r) }, { default: () => hasStockFailures(r) ? "重试库存" : "重跑" })
           : null,
       ]),
   },
@@ -462,6 +464,7 @@ const scheduleConn = ref<any>(null);
 const schedule = reactive({
   enabled: false,
   request_delay: 1,
+  quote_request_delay_ms: 500,
   stock_concurrency: 3,
   stock_request_delay_ms: 200,
   low_stock: { enabled: false, threshold: 10, interval: 5 },
@@ -507,6 +510,7 @@ function openSchedule(row: any) {
   const s = JSON.parse(row.settings || "{}").schedule || {};
   schedule.enabled = !!s.enabled;
   schedule.request_delay = Number(s.request_delay ?? 1);
+  schedule.quote_request_delay_ms = Number(s.quote_request_delay_ms ?? 500);
   schedule.stock_concurrency = Number(s.stock_concurrency ?? 3);
   schedule.low_stock.enabled = s.low_stock?.enabled === true;
   schedule.low_stock.threshold = Number(s.low_stock?.threshold ?? 10);
@@ -528,11 +532,15 @@ function openSchedule(row: any) {
 }
 
 const scheduleSaving = ref(false);
+const requestTimingError = computed(() => !Number.isInteger(schedule.request_delay) || schedule.request_delay < 0 || schedule.request_delay > 60
+  ? "分页间隔须为 0–60 秒的整数；500ms 请设置在报价请求间隔中"
+  : !Number.isInteger(schedule.quote_request_delay_ms) || schedule.quote_request_delay_ms < 100 || schedule.quote_request_delay_ms > 10000
+  ? "报价请求间隔须为 100–10000 毫秒的整数" : "");
 const lowStockError = computed(() => !Number.isInteger(schedule.low_stock.threshold) || schedule.low_stock.threshold < 1 || schedule.low_stock.threshold > 1000000
   ? "库存数量须为 1–1000000 的整数" : !Number.isInteger(schedule.low_stock.interval) || schedule.low_stock.interval < 5 || schedule.low_stock.interval > 1440
   ? "检查间隔须为 5–1440 分钟的整数" : "");
 async function submitSchedule() {
-  if (lowStockError.value || scheduleSaving.value) return;
+  if (lowStockError.value || requestTimingError.value || scheduleSaving.value) return;
   scheduleSaving.value = true;
   try {
   const parseWindows = (s: string) =>
@@ -547,6 +555,7 @@ async function submitSchedule() {
   settings.schedule = {
     enabled: schedule.enabled,
     request_delay: schedule.request_delay,
+    quote_request_delay_ms: schedule.quote_request_delay_ms,
     stock_concurrency: schedule.stock_concurrency,
     low_stock: { ...schedule.low_stock },
     stock_request_delay_ms: schedule.stock_request_delay_ms,
@@ -936,6 +945,11 @@ onMounted(load);
         <NFormItem label="分页请求间隔(秒)">
           <NInputNumber v-model:value="schedule.request_delay" :min="0" :max="60" class="w-full" />
         </NFormItem>
+        <NFormItem label="报价请求间隔(ms)">
+          <NInputNumber v-model:value="schedule.quote_request_delay_ms" :min="100" :max="10000" :precision="0" class="w-full" :input-props="{ 'aria-label': '报价请求间隔（毫秒）' }" />
+        </NFormItem>
+        <p class="mb-16px text-12px">报价间隔作用于同步中的库存配置读取和逐规格报价，默认 500ms。上方分页间隔单位为秒，不能代替报价限速；库存补查使用下方独立参数。</p>
+        <NAlert v-if="requestTimingError" type="warning" class="mb-16px" role="alert">{{ requestTimingError }}</NAlert>
         <NFormItem label="库存补查并发">
           <NInputNumber v-model:value="schedule.stock_concurrency" :min="1" :max="10" class="w-full" />
         </NFormItem>
@@ -978,7 +992,7 @@ onMounted(load);
       </NForm>
       <template #footer>
         <NButton size="small" class="mr-8px" @click="showSchedule = false">取消</NButton>
-        <NButton size="small" type="primary" :loading="scheduleSaving" :disabled="!canWrite() || !!lowStockError" @click="submitSchedule">保存计划</NButton>
+        <NButton size="small" type="primary" :loading="scheduleSaving" :disabled="!canWrite() || !!lowStockError || !!requestTimingError" @click="submitSchedule">保存计划</NButton>
       </template>
     </NModal>
 

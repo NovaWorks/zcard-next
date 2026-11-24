@@ -104,3 +104,27 @@ func TestInvalidIntervalErrorMessage(t *testing.T) {
 		t.Fatal("错误信息不应为空")
 	}
 }
+
+func TestSyncQueueHonorsExplicitMaintenanceBudget(t *testing.T) {
+	deadline := make(chan time.Duration, 1)
+	q := &SyncQueue{Handler: func(ctx context.Context, _ Task) error {
+		end, ok := ctx.Deadline()
+		if !ok {
+			deadline <- 0
+		} else {
+			deadline <- time.Until(end)
+		}
+		return nil
+	}}
+	if err := q.Enqueue(context.Background(), Task{Type: "maintenance", Timeout: 2 * time.Hour}); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case budget := <-deadline:
+		if budget < 119*time.Minute || budget > 2*time.Hour {
+			t.Fatalf("explicit budget ignored: %s", budget)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("task never started")
+	}
+}

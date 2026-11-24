@@ -93,7 +93,7 @@ func (a *acgFakaAdapter) queryStockRoute(ctx context.Context, mode int, code str
 	if err != nil {
 		return -2, err
 	}
-	raw, err := parseResp(body)
+	raw, err := parseAcgReadResp(body)
 	if err != nil {
 		return -2, err
 	}
@@ -113,11 +113,11 @@ func (a *acgFakaAdapter) queryStockRoute(ctx context.Context, mode int, code str
 		if json.Unmarshal(d["delivery_way"], &way) != nil || way == nil || *way != 0 {
 			return -2, fmt.Errorf("无法确认旧版库存接口的发货方式")
 		}
-		var cfg string
+		var cfg acgConfig
 		if v := d["config"]; len(v) > 0 && string(v) != "null" && json.Unmarshal(v, &cfg) != nil {
 			return -2, fmt.Errorf("无法确认旧版库存接口的规格")
 		}
-		races, _, err := legacyPriceSections(cfg)
+		races, _, err := legacyPriceSections(string(cfg))
 		if err != nil {
 			return -2, err
 		}

@@ -2,6 +2,7 @@ package supply
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
 	"sync/atomic"
@@ -102,8 +103,8 @@ func TestStockBackfillStopsAfterLimitedBatch(t *testing.T) {
 	for i := range items {
 		items[i] = adapter.Product{ID: fmt.Sprint(i), Stock: -2}
 	}
-	if err := svc.backfillStocks(context.Background(), a, scheduleSettings{StockConc: 2}, items, 0); err != nil {
-		t.Fatal(err)
+	if err := svc.backfillStocks(context.Background(), a, scheduleSettings{StockConc: 2}, items, 0); !errors.Is(err, adapter.ErrRateLimited) {
+		t.Fatalf("rate limit not propagated to stop later reads: %v", err)
 	}
 	if a.calls.Load() != 2 {
 		t.Fatalf("continued after rate limit: %d", a.calls.Load())

@@ -13,6 +13,7 @@ package adapter
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -169,7 +170,7 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 	if err != nil {
 		return nil, err
 	}
-	raw, err := parseResp(data)
+	raw, err := parseAcgReadResp(data)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +192,7 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 			DeliveryWay  int             `json:"delivery_way"`
 			DraftStatus  int             `json:"draft_status"`
 			OnlyUser     int             `json:"only_user"` // 1=货主专属（Order.php:878 非货主下单报「请先登录后再购买哦」）
-			Config       string          `json:"config"`    // INI 字符串（标准站 items 直出原始 INI；item 接口为数组——本适配器只消费 items）
+			Config       acgConfig       `json:"config"`    // INI、空 PHP 数组或解析后的配置对象
 		} `json:"children"`
 	}
 	if err := json.Unmarshal(raw, &cats); err != nil {
@@ -236,17 +237,19 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 			}
 			// 目录缺 config 时补查规格。账号售价由 QuoteProduct 再次确认；
 			// 目录和 inventory 的 factory_price 均不能代替最终估价。
-			cfg := p.Config
+			cfg := string(p.Config)
 			draftStatus := p.DraftStatus
+			unavailable := false
 			if !preview && cfg == "" && p.DeliveryWay == 0 && !siteHasConfig {
 				inv, err := a.fetchInventory(ctx, p.Code)
 				// 正式导入不能把规格查询失败的商品当作无规格品写入。
-				if err != nil && selected != nil {
+				if err != nil && (selected != nil || errors.Is(err, ErrRateLimited) || ClassifyImportError(err).Pause || ctx.Err() != nil) {
 					return nil, fmt.Errorf("adapter.acgfaka: 商品 %s 规格加载失败: %w", p.Code, err)
 				}
+				unavailable = errors.Is(err, ErrProductDeleted) || errors.Is(err, ErrProductUnavailable)
 				if err == nil {
 					if inv.Config != "" {
-						cfg = inv.Config
+						cfg = string(inv.Config)
 					}
 					draftStatus = inv.DraftStatus
 				}
@@ -259,7 +262,7 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 			// status 缺省（nil）视为在售：items 语义为「当前分类下可对接商品」；
 			// 显式 0 = 下架（标准 acg-faka 返回显式 status）。
 			statusOK := p.Status == nil || *p.Status == 1
-			active := statusOK && p.DeliveryWay == 0 && draftStatus == 0 && p.OnlyUser == 0
+			active := statusOK && !unavailable && p.DeliveryWay == 0 && draftStatus == 0 && p.OnlyUser == 0
 
 			// 多规格（[category] race + [sku] 加价规格）→ 笛卡尔积组合 SKU
 			// （组合超护栏/含编码保留字符 → 整品隐藏防误售，价格语义不完整）
@@ -315,7 +318,7 @@ type acgInventory struct {
 	DraftStatus  int             `json:"draft_status"`
 	Price        FlexNum         `json:"price"`
 	FactoryPrice FlexNum         `json:"factory_price"` // Only the strict legacy path may use this as an account quote.
-	Config       string          `json:"config"`        // INI 文本
+	Config       acgConfig       `json:"config"`        // 统一归一化为 INI
 	IsCategory   any             `json:"is_category"`
 }
 
@@ -325,7 +328,7 @@ func (a *acgFakaAdapter) fetchInventory(ctx context.Context, code string) (*acgI
 	if err != nil {
 		return nil, err
 	}
-	raw, err := parseResp(data)
+	raw, err := parseAcgReadResp(data)
 	if err != nil {
 		return nil, err
 	}

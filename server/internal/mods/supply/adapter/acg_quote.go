@@ -36,7 +36,7 @@ func (a *acgFakaAdapter) accountQuote(ctx context.Context, code, sku string) (in
 	if err != nil {
 		return 0, err
 	}
-	raw, err := parseResp(body)
+	raw, err := parseAcgReadResp(body)
 	if err != nil {
 		return 0, err
 	}
@@ -79,7 +79,7 @@ func (a *acgFakaAdapter) QuoteProduct(ctx context.Context, p *Product) (*Product
 	if inv.DeliveryWay != 0 || inv.DraftStatus != 0 {
 		return nil, fmt.Errorf("%w: 商品不支持自动采购报价", ErrNotSupported)
 	}
-	ini, err := parseAcgINI(inv.Config)
+	ini, err := parseAcgINI(string(inv.Config))
 	if err != nil {
 		return nil, err
 	}

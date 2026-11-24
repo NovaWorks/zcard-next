@@ -34,6 +34,9 @@ func (q *AsynqQueue) Enqueue(ctx context.Context, t Task) error {
 		name = QueueDefault
 	}
 	opts := []asynq.Option{asynq.Queue(name)}
+	if t.Timeout > 0 {
+		opts = append(opts, asynq.Timeout(t.Timeout))
+	}
 	if t.DedupeKey != "" {
 		opts = append(opts, asynq.TaskID(t.DedupeKey))
 	}

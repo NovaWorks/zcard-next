@@ -28,6 +28,8 @@ type Task struct {
 	Queue string
 	// DedupeKey 幂等键（asynq TaskID 语义：同 key 重复入队直接成功）
 	DedupeKey string
+	// Timeout overrides the worker's default budget for long maintenance jobs.
+	Timeout time.Duration
 }
 
 // Enqueuer 入队端口。Enabled() 为 false 表示降级模式（无 Redis），
@@ -57,7 +59,11 @@ func (q *SyncQueue) Enqueue(ctx context.Context, task Task) error {
 		return nil
 	}
 	go func() {
-		runCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Minute)
+		budget := task.Timeout
+		if budget <= 0 {
+			budget = 5 * time.Minute
+		}
+		runCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), budget)
 		defer cancel()
 		if err := q.Handler(runCtx, task); err != nil {
 			q.recordDead(runCtx, task, err)

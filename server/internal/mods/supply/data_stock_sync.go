@@ -86,6 +86,9 @@ func (s *SyncService) runStockOnly(ctx context.Context, task *ent.SupplySyncTask
 	if failed > 0 {
 		status = supplysynctask.StatusFailed
 		code = "STOCK_QUERY_FAILED"
+		if total > failed {
+			code = "PARTIAL_STOCK_FAILED"
+		}
 	}
 	_ = s.repo.FinishTask(ctx, task.ID, status, code, summary)
 	s.publishCompleted(ctx, conn.ID, task.ID, string(status))
