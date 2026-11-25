@@ -8,7 +8,7 @@ Core capabilities include automated card/code delivery, reusable digital content
 
 Physical shipping supports addresses, delivery countries/regions, free shipping, fixed fees, collect-on-delivery shipping fees, packages grouped by order item, carrier and tracking-number entry, receipt confirmation, and return restocking. Collect shipping fees are paid to the carrier rather than added to online shipping charges. Carrier label purchasing and live tracking feeds are not included.
 
-Supplier adapters include zcard, acg_faka (ACG-Faka), dujiao_next (Dujiao Next), mcy_shop (OpenApi plugin required), and csn19 (19csn asynchronous services). Features such as SKU support, order lookup, cancellation, refunds, and callbacks vary by protocol. Online services and SMS activation use dedicated member-wallet purchase flows. SMS activation requires a compatible ZCard supplier, CNY base currency, and a single-item purchase without coupons or points; ZCARD_SMS_SALES_ENABLED=false pauses new SMS sales.
+Supplier adapters include zcard, acg_faka (ACG-Faka), dujiao_next (Dujiao Next), and mcy_shop (OpenApi plugin required). Features such as SKU support, order lookup, cancellation, refunds, and callbacks vary by protocol. Online services and SMS activation use dedicated member-wallet purchase flows. SMS activation requires a compatible ZCard supplier, CNY base currency, and a single-item purchase without coupons or points; ZCARD_SMS_SALES_ENABLED=false pauses new SMS sales.
 
 In-admin online updates support native binaries and official managed single-instance Docker Compose deployments. Managed Compose backup covers SQLite in the application volume or the default companion MySQL; external databases, custom commands, multiple replicas, and bind-mounted data directories are outside automatic management. Updates include signature verification, backups, and health checks. Program rollback is conditional and does not restore the database or guarantee zero downtime.
 
@@ -26,7 +26,6 @@ The README describes current source on main. Check the installed release tag bef
 ## Supplier integrations
 
 - [mcy-shop integration](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/docs/features/mcy-shop.md): Upstream OpenApi and downstream plugin requirements, account quotes, SKUs, and unsupported operations.
-- [19csn integration](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/docs/features/19csn.md): Asynchronous service schemas, quotes, task progress, and settlement.
 - [ACG legacy import compatibility](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/docs/features/acg-legacy-import-compatibility.md): Supported legacy fields, variants, inventory parsing, and import behavior.
 - [ACG synchronization behavior](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/docs/features/acg-sync-feedback.md): Catalog stock, inventory config compatibility, quotation skips, and rate-limit handling.
 

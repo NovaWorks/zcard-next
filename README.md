@@ -31,7 +31,7 @@
 
 **ZCard 2.0（zcard-next）是用 Go 开发的开源自动发卡系统、自托管商城和双向供货平台，采用 MIT 许可证。** 一套系统管理卡密与数字商品、实体商品和在线服务商品，内置管理后台、商城、订单、支付与任务调度。
 
-既可以销售自己的商品，也可以对接异次元 ACG-Faka、独角数卡 Dujiao Next、萌次元 mcy-shop、其他 ZCard 站点或 19csn 服务货源，再通过供货 API 向下游销售。支持 SQLite、MySQL、PostgreSQL，中英文、多货币、三级分销与分站白标；各货源的适用商品和接口能力见下文。
+既可以销售自己的商品，也可以对接异次元 ACG-Faka、独角数卡 Dujiao Next、萌次元 mcy-shop 和其他 ZCard 站点，再通过供货 API 向下游销售。支持 SQLite、MySQL、PostgreSQL，中英文、多货币、三级分销与分站白标；各货源的适用商品和接口能力见下文。
 
 前代版本：[ZCard 1.x](https://github.com/NovaWorks/ZCard)（PHP / Laravel）。本仓库 `zcard-next` 是它的 Go 重写版本。
 
@@ -141,7 +141,6 @@ bash deploy/docker-install.sh
 | **独角数卡 Dujiao Next**（`dujiao_next`） | 商品导入、报价、库存同步与采购；以对方开放的供货接口为准 |
 | **ZCard**（`zcard`） | ZCard 站点间对接，按上游声明的商品与接口能力工作 |
 | **萌次元 mcy-shop**（`mcy_shop`） | 上游需启用 OpenApi 插件；支持多 SKU 与账号报价，详见[萌次元对接说明](docs/features/mcy-shop.md) |
-| **19csn**（`csn19`） | 异步在线服务货源，使用服务规则、报价和任务进度，详见[19csn 对接说明](docs/features/19csn.md) |
 
 - 多货源连接管理、连接测试、商品预览勾选导入、分类映射一键建目录
 - 后台导入任务：显示进度与逐项结果，可停止后继续，重试未完成商品或单独补查库存；关闭页面后任务继续执行
@@ -186,7 +185,7 @@ bash deploy/docker-install.sh
 - 在线服务按上游规则展示链接、数量、评论等字段，支持动态报价、下单资料快照与订单进度；是否可取消、补量，以及实际退款，以该服务能力和供货确认结果为准
 - 短信接码通过兼容的 ZCard 供货端获取国家／地区、平台、报价、号码和验证码，订单页展示接码及结算状态
 - 这两类商品采用会员余额专用购买流程。接码当前要求人民币基础币种、单件独立下单，不支持优惠券和积分；销售开关可用 `ZCARD_SMS_SALES_ENABLED=false` 暂停新接码订单
-- 接口可用性和服务范围取决于实际货源账号及其开放能力；参见 [19csn 服务对接](docs/features/19csn.md)
+- 接口可用性和服务范围取决于实际货源账号及其开放能力
 
 ### 订单与支付
 
@@ -355,7 +354,7 @@ bash deploy/docker-install.sh
 
 **ZCard 2.0 (`zcard-next`) is an MIT-licensed, self-hosted e-commerce platform written in Go.** It supports digital goods and automated card/code delivery, physical products with shipping workflows, online service orders, and bidirectional supplier integration. The release binary embeds the Vue storefront and admin panel. SQLite, MySQL, and PostgreSQL are supported, with Chinese/English storefronts, multiple currencies, wallets, affiliate commissions, and white-label substores.
 
-Supplier adapters include ZCard, ACG-Faka, Dujiao Next, mcy-shop (OpenApi plugin required), and 19csn for asynchronous services. In-admin online updates are available for native binaries and official managed single-instance Docker Compose installations. Provider capabilities, service purchases, database backups, and rollback each have deployment or product-specific requirements described above and in the [deployment guide](doc/部署指南.md). Start with the [AI-readable documentation index](llms.txt) for focused references.
+Supplier adapters include ZCard, ACG-Faka, Dujiao Next, and mcy-shop (OpenApi plugin required). In-admin online updates are available for native binaries and official managed single-instance Docker Compose installations. Provider capabilities, service purchases, database backups, and rollback each have deployment or product-specific requirements described above and in the [deployment guide](doc/部署指南.md). Start with the [AI-readable documentation index](llms.txt) for focused references.
 
 ## 文档导航
 
@@ -364,7 +363,6 @@ Supplier adapters include ZCard, ACG-Faka, Dujiao Next, mcy-shop (OpenApi plugin
 | [部署指南](doc/部署指南.md) | 安装、数据库、HTTPS、后台在线更新、备份与恢复 |
 | [OpenAPI](server/api/openapi.yaml) | 管理后台、商城、供货接口契约 |
 | [萌次元对接](docs/features/mcy-shop.md) | OpenApi 插件、双方对接方法、多 SKU 与供货范围 |
-| [19csn 对接](docs/features/19csn.md) | 异步服务、动态报价、订单进度与结算 |
 | [商品导入、分类与复用发货](docs/features/商品导入分类与复用发货.md) | 导入分类、内容复用与履约配置 |
 | [ACG 导入兼容](docs/features/acg-legacy-import-compatibility.md) | 二开商品字段、规格与库存兼容规则 |
 | [营销抽奖](docs/features/lottery.md) | 抽奖活动、奖品与参与规则 |
