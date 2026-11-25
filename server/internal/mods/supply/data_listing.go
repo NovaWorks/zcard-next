@@ -34,7 +34,7 @@ func (s *SyncService) listingSKUStock(ctx context.Context, a adapter.Adapter, co
 		p.UpstreamExtra = map[string]any{}
 	}
 	p.UpstreamExtra["_local_listing_skus"] = listingSKUSignature(skus)
-	if len(skus) == 0 || !p.IsActive || (p.Stock < -1 && p.StockError != "") {
+	if len(skus) == 0 || !p.IsActive || (p.StockFromCatalog && p.Stock >= 0) || (p.Stock < -1 && p.StockError != "") {
 		return nil
 	}
 	bounded, cancel := context.WithTimeout(ctx, 30*time.Second)

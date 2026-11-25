@@ -105,6 +105,8 @@ type Product struct {
 	StockError     string // 脱敏库存失败说明（仅供后台同步结果）
 	SKUs           []SKU
 	UpstreamExtra  map[string]any // 协议私有字段（同步时原样入 settings/审计）
+
+	StockFromCatalog bool `json:"-"` // Maintenance-only aggregate, never a per-SKU or purchase observation.
 }
 
 // ProductList 商品列表（分页）。

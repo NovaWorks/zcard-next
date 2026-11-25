@@ -310,6 +310,9 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 		listCtx := ctx
 		if conn.Driver == "acg_faka" {
 			listCtx = quoteCtx
+			if preferACGListStock(conn) {
+				listCtx = adapter.WithACGCatalogStock(listCtx)
+			}
 		}
 		list0, err := list(adapter.WithCatalogRead(listCtx), page, 50)
 		if err != nil {
@@ -905,6 +908,11 @@ func stockObservationTime(p *adapter.Product) time.Time {
 	return p.StockCheckedAt
 }
 
+func preferACGListStock(conn *ent.SupplyConnection) bool {
+	mode := conn.Settings["acg_stock_source"]
+	return conn.Driver == "acg_faka" && (mode == nil || mode == "" || mode == "catalog")
+}
+
 func (s *SyncService) backfillCatalogStocks(ctx context.Context, a adapter.Adapter, cfg scheduleSettings, items []adapter.Product, taskID uint64, confirmACG bool) error {
 	if !confirmACG {
 		return s.backfillStocks(ctx, a, cfg, items, taskID)
@@ -912,8 +920,10 @@ func (s *SyncService) backfillCatalogStocks(ctx context.Context, a adapter.Adapt
 	var active []adapter.Product
 	var indices []int
 	for i := range items {
-		items[i].Stock = -2 // Directory stock is a reference, never live availability.
-		if items[i].IsActive {
+		if !items[i].StockFromCatalog || items[i].Stock < 0 {
+			items[i].Stock = -2
+		}
+		if items[i].IsActive && items[i].Stock < -1 {
 			active = append(active, items[i])
 			indices = append(indices, i)
 		}
@@ -932,7 +942,7 @@ func (s *SyncService) backfillStocks(ctx context.Context, a adapter.Adapter, cfg
 			items[i].Stock = -2
 			continue
 		}
-		// ACG 的目录库存由调用方先标为未知；其他协议明确的 0/-1 保持原语义。
+		// ACG 未采用有效列表库存时由调用方标为未知；其他协议保留原语义。
 		if items[i].Stock < -1 {
 			missing = append(missing, i)
 		}

@@ -136,6 +136,7 @@ const form = reactive({
   price_rounding_mode: "none",
   auto_sync_price: true,
   stock_mode: "real",
+  acgStockSource: "catalog",
 });
 
 const credFields = computed(() => {
@@ -178,6 +179,7 @@ function openCreate() {
   form.price_rounding_mode = "none";
   form.auto_sync_price = true;
   form.stock_mode = "real";
+  form.acgStockSource = "catalog";
   Object.keys(credDraft).forEach((k) => delete credDraft[k]);
   showForm.value = true;
 }
@@ -190,6 +192,7 @@ function openEdit(row: any) {
   form.credentials = "";
   form.websiteUrl = "";
   form.productUrlTemplate = "";
+  form.acgStockSource = "catalog";
   form.exchange_rate = row.exchange_rate || 1;
   form.price_markup_percent = row.price_markup_percent || 0;
   form.markupAmountYuan = (row.price_markup_amount || 0) / 100;
@@ -198,6 +201,7 @@ function openEdit(row: any) {
     form.failAction = st.failure_action || "auto_refund";
     form.productUrlTemplate = st.product_url_template || "";
     form.websiteUrl = st.website_url || "";
+    form.acgStockSource = !st.acg_stock_source || st.acg_stock_source === "catalog" ? "catalog" : "live";
   } catch {
     form.failAction = "auto_refund";
   }
@@ -248,6 +252,7 @@ async function submitForm() {
     else delete baseSettings.product_url_template;
     if (form.websiteUrl.trim()) baseSettings.website_url = form.websiteUrl.trim();
     else delete baseSettings.website_url;
+    if (form.driver === "acg_faka") baseSettings.acg_stock_source = form.acgStockSource;
     payload.settings = JSON.stringify(baseSettings);
     if (editingId.value) {
       const { error } = await updateSupplyConnection(editingId.value, payload);
@@ -883,6 +888,12 @@ onMounted(load);
               { label: `向上取整到 0.1 ${currencyUnit()}`, value: 'ceil_tenth' },
             ]"
           />
+        </NFormItem>
+        <NFormItem v-if="form.driver === 'acg_faka'" label="ACG 库存来源">
+          <div class="w-full">
+            <NSelect v-model:value="form.acgStockSource" aria-label="ACG 库存来源" :options="[{ label: '优先列表库存', value: 'catalog' }, { label: '逐件实时补查', value: 'live' }]" />
+            <p class="mt-4px text-12px text-gray-500">默认采用列表中有效的非负总库存，缺失或无效时补查。总库存不代表各规格库存，购买前仍实时校验；列表库存不可靠的渠道可选逐件补查。</p>
+          </div>
         </NFormItem>
         <NFormItem label="同步自动改价">
           <div>

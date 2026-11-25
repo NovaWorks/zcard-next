@@ -226,6 +226,7 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 				continue
 			}
 			stock, _ := parseStock(p.Stock)
+			useCatalogStock := preferACGCatalogStock(ctx) && stock >= 0
 			desc := ""
 			if p.Description != nil {
 				desc = *p.Description
@@ -240,7 +241,7 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 			cfg := string(p.Config)
 			draftStatus := p.DraftStatus
 			unavailable := false
-			if !preview && cfg == "" && p.DeliveryWay == 0 && !siteHasConfig {
+			if !preview && !useCatalogStock && cfg == "" && p.DeliveryWay == 0 && !siteHasConfig {
 				inv, err := a.fetchInventory(ctx, p.Code)
 				// 正式导入不能把规格查询失败的商品当作无规格品写入。
 				if err != nil && (selected != nil || errors.Is(err, ErrRateLimited) || ClassifyImportError(err).Pause || ctx.Err() != nil) {
@@ -297,6 +298,8 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 				IsActive:       active,
 				Stock:          stock,
 				SKUs:           skus,
+
+				StockFromCatalog: useCatalogStock,
 			})
 		}
 	}

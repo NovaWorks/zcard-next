@@ -84,10 +84,31 @@ const server = http.createServer((req, res) => {
       assert.equal(saved.schedule.request_delay, 1);
       assert.equal(saved.schedule.quote_request_delay_ms, 750);
       assert.deepEqual(saved.category_map, { A: 1 });
+      await openMenu("编辑");
+      const edit = page.locator(".n-modal").filter({ hasText: "编辑渠道" });
+      const preferred = edit.getByText("优先列表库存", { exact: true });
+      await expect(preferred).toBeVisible();
+      await preferred.scrollIntoViewIfNeeded();
+      await page.screenshot({ path: path.join(output, `stock-source-${width}.png`), fullPage: true, animations: "disabled" });
+      await preferred.click();
+      await page.getByText("逐件实时补查", { exact: true }).last().click();
+      await edit.getByRole("button", { name: "保存", exact: true }).click();
+      await expect(edit).toHaveCount(0);
+      const live = JSON.parse(requests.at(-1).settings);
+      assert.equal(live.acg_stock_source, "live");
+      assert.deepEqual(live.category_map, { A: 1 });
+      assert.equal(live.schedule.quote_request_delay_ms, 750);
+      await openMenu("编辑");
+      const again = page.locator(".n-modal").filter({ hasText: "编辑渠道" });
+      await again.getByText("逐件实时补查", { exact: true }).click();
+      await page.getByText("优先列表库存", { exact: true }).last().click();
+      await again.getByRole("button", { name: "保存", exact: true }).click();
+      await expect(again).toHaveCount(0);
+      assert.equal(JSON.parse(requests.at(-1).settings).acg_stock_source, "catalog");
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "page overflow");
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(JSON.stringify({ width, partialQuotes: true, partialStock: true, skippedVisible: true, stockOnlyRetry: true, millisecondsSaved: true }));
+      console.log(JSON.stringify({ width, partialQuotes: true, partialStock: true, skippedVisible: true, stockOnlyRetry: true, millisecondsSaved: true, catalogStockSourceSaved: true }));
     }
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 })().catch(error => { console.error(error); server.close(); process.exitCode = 1; });
