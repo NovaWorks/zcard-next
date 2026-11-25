@@ -60,15 +60,15 @@
         <tbody>
           <tr v-for="o in orders" :key="o.order_no">
             <td>{{ o.order_no }}</td>
-            <td><span :class="statusBadge(o.status)">{{ statusText(o.status) }}</span><span v-if="o.shipping_status && o.shipping_status!=='none'" class="badge">{{shippingStatus(o.shipping_status)}}</span></td>
+            <td><span :class="statusBadge(o.status)">{{ orderStatusText(o) }}</span><span v-if="o.shipping_status && o.shipping_status!=='none'" class="badge">{{shippingStatus(o.shipping_status)}}</span></td>
             <td class="price">{{ formatMoney(o.total_cents) }}</td>
-            <td><div>{{ o.item_count }} {{ $t('件') }}</div><small>{{ o.product_summary }}</small><div v-if="o.manual_pending_count && ['paid', 'fulfilling', 'partially_delivered'].includes(o.status)" class="muted">{{ o.manual_pending_count }} {{ $t('项待人工完成') }}</div></td>
+            <td><div>{{ o.item_count }} {{ $t('件') }}</div><small>{{ o.product_summary }}</small><div v-if="o.target_link" class="order-target"><span>{{ $t('目标链接') }}：</span><a v-if="orderTargetLink(o.target_link)" :href="orderTargetLink(o.target_link)" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">{{ o.target_link }}</a><span v-else>{{ o.target_link }}</span></div><div v-if="o.manual_pending_count && ['paid', 'fulfilling', 'partially_delivered'].includes(o.status)" class="muted">{{ o.manual_pending_count }} {{ $t('项待人工完成') }}</div></td>
             <td class="muted">{{ fmtTime(o.created_at) }}</td>
             <td class="actions">
               <router-link class="btn secondary" :to="`/payment/${o.order_no}`" v-if="o.status === 'pending_payment'">{{ $t('去支付') }}</router-link>
               <router-link
                 class="btn secondary"
-                :to="`/fetch?order_no=${o.order_no}`"
+                :to="o.target_link ? `/order/${o.order_no}` : `/fetch?order_no=${o.order_no}`"
                 v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(o.status)"
               >{{ $t('查看交付') }}</router-link>
               <router-link class="btn secondary" :to="`/order/${o.order_no}`">{{ $t('详情') }}</router-link>
@@ -84,13 +84,14 @@
         <div v-for="o in orders" :key="o.order_no" class="mcard">
           <div class="mcard-row">
             <span class="mcard-title">{{ o.order_no }}</span>
-            <span :class="statusBadge(o.status)">{{ statusText(o.status) }}</span><span v-if="o.shipping_status && o.shipping_status!=='none'" class="badge">{{shippingStatus(o.shipping_status)}}</span>
+            <span :class="statusBadge(o.status)">{{ orderStatusText(o) }}</span><span v-if="o.shipping_status && o.shipping_status!=='none'" class="badge">{{shippingStatus(o.shipping_status)}}</span>
           </div>
           <div class="mcard-row">
             <span class="muted">{{ fmtTime(o.created_at) }} · {{ o.item_count }} {{ $t('件') }}</span>
             <span class="price">{{ formatMoney(o.total_cents) }}</span>
           </div>
           <p style="overflow-wrap:anywhere">{{ o.product_summary }}</p>
+          <p v-if="o.target_link" class="order-target"><span>{{ $t('目标链接') }}：</span><a v-if="orderTargetLink(o.target_link)" :href="orderTargetLink(o.target_link)" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">{{ o.target_link }}</a><span v-else>{{ o.target_link }}</span></p>
           <p v-if="o.manual_pending_count && ['paid', 'fulfilling', 'partially_delivered'].includes(o.status)" class="muted">{{ o.manual_pending_count }} {{ $t('项待人工完成') }}</p>
           <div class="mcard-row">
             <span></span>
@@ -98,7 +99,7 @@
               <router-link class="btn secondary" :to="`/payment/${o.order_no}`" v-if="o.status === 'pending_payment'">{{ $t('去支付') }}</router-link>
               <router-link
                 class="btn secondary"
-                :to="`/fetch?order_no=${o.order_no}`"
+                :to="o.target_link ? `/order/${o.order_no}` : `/fetch?order_no=${o.order_no}`"
                 v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(o.status)"
               >{{ $t('查看交付') }}</router-link>
               <router-link class="btn secondary" :to="`/order/${o.order_no}`">{{ $t('详情') }}</router-link>
@@ -330,6 +331,7 @@
 
 <script setup lang="ts">
 import { uiText, t as $t, localeTag } from '@/i18n';
+import { orderTargetLink } from '@/utils/order-links';
 
 import {shippingStatus} from "../../../packages/shipping";
 import { submitPaymentForm as submitForm } from "@/utils/payment-form";
@@ -683,6 +685,12 @@ async function doChangeEmail() {
   emailOk.value = true;
 }
 
+function orderStatusText(o: MyOrderItem): string {
+  if (o.target_link && o.status === 'delivered') return $t('已完成');
+  if (o.target_link && o.status === 'partially_delivered') return $t('部分完成');
+  return statusText(o.status);
+}
+
 function statusText(s: string): string {
   return ({
     get pending_payment() { return $t("待支付"); }, get paid() { return $t("已支付"); }, get fulfilling() { return $t("履约中"); }, get partially_delivered() { return $t("部分发货"); },
@@ -703,6 +711,7 @@ function fmtTime(ts: number): string {
 </script>
 
 <style scoped>
+.order-target{max-width:30rem;min-width:0;overflow-wrap:anywhere;line-height:1.6;font-size:13px}.order-target a{display:block;min-height:44px;align-content:center;color:var(--zc-primary);text-decoration:underline;overflow-wrap:anywhere}
 /* ── 移动端表格→卡片（订单/流水；桌面表格不受影响）── */
 .table-cards { display: none; }
 .mcard {

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
@@ -49,14 +49,17 @@ func TestCSN19LiveImportAndQuoteReadOnly(t *testing.T) {
 	repo, d := newTestRepo(t) // In-memory SQLite; credentials never persist to disk.
 	writer := catalog.NewProductRepoImpl(d, nil)
 	syncer := NewSyncService(repo, writer, writer, nil, nil, nil, slog.Default())
-	admin := NewAdminSupplyService(repo, syncer)
 	credentials, _ := json.Marshal(map[string]string{"api_key": key})
-	connection, err := admin.CreateConnection(ctx, &adminv1.CreateConnectionRequest{Name: "19csn read-only live test", Driver: "csn19", BaseUrl: "https://19csn.com/api", Credentials: string(credentials), ExchangeRate: 1, PriceMarkupPercent: 10, AutoSyncPrice: true})
+	sealed, err := repo.SealCredentials("csn19", "https://19csn.com/api", string(credentials))
+	if err != nil {
+		t.Fatal("seal legacy fixture credentials:", err)
+	}
+	connection, err := repo.CreateConnection(ctx, &ent.SupplyConnection{Name: "19csn legacy read-only test", Driver: "csn19", BaseURL: "https://19csn.com/api", Credentials: sealed, ExchangeRate: 1, PriceMarkupPercent: 10, AutoSyncPrice: true})
 	if err != nil {
 		t.Fatal("create isolated connection:", err)
 	}
 	gateway := NewGateway(repo, nil, writer)
-	client, err := gateway.OpenSocial(ctx, connection.Id)
+	client, err := gateway.OpenSocial(ctx, connection.ID)
 	if err != nil {
 		t.Fatal("open native client:", err)
 	}
@@ -93,7 +96,7 @@ func TestCSN19LiveImportAndQuoteReadOnly(t *testing.T) {
 		if err != nil || quote == nil || quote.AmountCents <= 0 || quote.Currency != "CNY" {
 			t.Fatal("local quote from live account price:", err)
 		}
-		amount, _, err := gateway.PriceSocialRetail(ctx, connection.Id, product.ID, int64(quote.AmountCents))
+		amount, _, err := gateway.PriceSocialRetail(ctx, connection.ID, product.ID, int64(quote.AmountCents))
 		if err != nil || amount < int64(quote.AmountCents) {
 			t.Fatal("local retail pricing:", err)
 		}

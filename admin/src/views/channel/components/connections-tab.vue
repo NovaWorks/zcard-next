@@ -141,8 +141,6 @@ const form = reactive({
 
 const credFields = computed(() => {
   switch (form.driver) {
-    case "csn19":
-      return [{ key: "api_key", label: "API Key" }];
     case "dujiao_next":
       return [
         { key: "api_key", label: "Api Key" },
@@ -185,6 +183,7 @@ function openCreate() {
 }
 
 function openEdit(row: any) {
+  if (row.driver === "csn19") return;
   editingId.value = row.id;
   form.name = row.name;
   form.driver = row.driver;
@@ -644,12 +643,12 @@ function rateCol(t: TableTier) {
 }
 
 // 操作列：full/mid 为「测试 + 同步▾ + 任务 + 更多▾」；compact 收进单个「操作▾」（功能不减）
-function moreMenu(): DropdownOption[] {
+function moreMenu(row: any): DropdownOption[] {
   const opts: DropdownOption[] = [{ label: "⏰ 定时计划", key: "schedule" }];
   if (canWrite())
     opts.push(
       { label: "导入商品", key: "import" },
-      { label: "编辑", key: "edit" },
+      ...(row.driver === "csn19" ? [] : [{ label: "编辑", key: "edit" }]),
       { type: "divider", key: "dv" },
       { label: "删除", key: "delete" },
     );
@@ -663,7 +662,7 @@ function compactMenu(row: any): DropdownOption[] {
   if (canWrite())
     opts.push(
       { label: "导入商品", key: "import" },
-      { label: "编辑", key: "edit" },
+      ...(row.driver === "csn19" ? [] : [{ label: "编辑", key: "edit" }]),
       { type: "divider", key: "dv" },
       { label: "删除", key: "delete" },
     );
@@ -730,7 +729,7 @@ function actionsCol(t: TableTier) {
             h(NButton, { size: "tiny", quaternary: true, onClick: () => openTasks(row.id) }, { default: () => "任务" }),
             h(
               NDropdown,
-              { options: moreMenu(), trigger: "click", onSelect: (key: string) => onRowAction(row, key) },
+              { options: moreMenu(row), trigger: "click", onSelect: (key: string) => onRowAction(row, key) },
               { default: () => h(NButton, { size: "tiny", quaternary: true }, { default: () => "更多 ▾" }) },
             ),
           ]),
@@ -824,15 +823,11 @@ onMounted(load);
               { label: '独角数卡 dujiao-next', value: 'dujiao_next' },
               { label: '异次元 acg-faka', value: 'acg_faka' },
               { label: '萌次元 mcy-shop', value: 'mcy_shop' },
-              { label: '19csn（服务渠道）', value: 'csn19' },
             ]"
           />
         </NFormItem>
         <NAlert v-if="form.driver === 'mcy_shop'" type="info" :bordered="false" class="mb-12px">
           上游需启用 OpenApi 插件，地址填写网站根地址。使用上游的对接 ID 和密钥；采购结果无法确认时转人工核对。
-        </NAlert>
-        <NAlert v-if="form.driver === 'csn19'" type="info" :bordered="false" class="mb-12px">
-          地址可填写 https://19csn.com 或完整 /api/v2 地址，仅需 API Key。支持单次普通服务和自定义评论；套餐、订阅及循环投放需核实计费后再开放。汇率按测试连接返回的账号币种填写，人民币账号填 1。下单结果不明时转人工核对，取消不代表退款。
         </NAlert>
         <NFormItem label="上游地址" required>
           <NInput v-model:value="form.base_url" placeholder="https://up.example.com" />

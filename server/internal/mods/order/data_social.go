@@ -209,6 +209,44 @@ func (uc *OrderUsecase) readFrozenSocial(it *ent.OrderItem) (frozenSocial, error
 	}
 	return f, nil
 }
+
+// socialOrderAnswers reads the original encrypted purchase, including completed
+// and unpaid orders. Only buyer-entered fields are returned, never supplier IDs,
+// quote IDs, account credentials or wholesale prices.
+func (uc *OrderUsecase) socialOrderAnswers(it *ent.OrderItem) ([]map[string]string, error) {
+	if it.DeliveryKind != supplyport.SocialDelivery || it.SocialPurchaseSnapshot == "" {
+		return nil, nil
+	}
+	frozen, err := uc.readFrozenSocial(it)
+	if err != nil {
+		return nil, err
+	}
+	raw, err := json.Marshal(it.SocialSchema)
+	if err != nil {
+		return nil, err
+	}
+	var schema supplyport.SocialSchema
+	if json.Unmarshal(raw, &schema) != nil || schema.Version != 1 {
+		return nil, fmt.Errorf("invalid saved social schema")
+	}
+	answers := make([]map[string]string, 0, len(schema.Fields))
+	for _, field := range schema.Fields {
+		value, exists := frozen.Request.Parameters[field.Key]
+		if !exists {
+			continue
+		}
+		label := field.Label
+		if label == "" {
+			label = map[string]string{"link": "目标链接", "quantity": "服务数量", "comments": "评论内容", "username": "用户名"}[field.Key]
+			if label == "" {
+				label = field.Key
+			}
+		}
+		answers = append(answers, map[string]string{"id": field.Key, "name": label, "type": field.Type, "value": value})
+	}
+	return answers, nil
+}
+
 func (uc *OrderUsecase) validateSocialPayment(ctx context.Context, oid uint64) error {
 	c := data.Client(ctx, uc.Data)
 	items, e := c.OrderItem.Query().Where(orderitem.OrderID(oid), orderitem.DeliveryKind(supplyport.SocialDelivery)).All(ctx)

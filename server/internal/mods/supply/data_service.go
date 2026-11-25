@@ -19,6 +19,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/httpx"
 
+	kerrors "github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -39,6 +40,9 @@ func NewAdminSupplyService(repo *SupplyRepoImpl, sync *SyncService) *AdminSupply
 
 // CreateConnection 创建连接：driver 校验 + base_url SSRF 校验 + 凭据加密。
 func (s *AdminSupplyService) CreateConnection(ctx context.Context, req *adminv1.CreateConnectionRequest) (*adminv1.SupplyConnection, error) {
+	if req.GetDriver() == "csn19" {
+		return nil, kerrors.BadRequest("supply.DRIVER_UNAVAILABLE", "请通过 ZCard 供货版接入服务渠道")
+	}
 	if req.GetDriver() == "" {
 		return nil, errors.New("supply.DRIVER_REQUIRED: 请选择驱动")
 	}

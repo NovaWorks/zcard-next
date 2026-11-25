@@ -1162,7 +1162,7 @@ func (uc *OrderUsecase) ListUserOrders(ctx context.Context, userID uint64, statu
 		size = 20
 	}
 	q := data.Client(ctx, uc.Data).Order.Query().
-		Where(order.UserID(userID)).
+		Where(order.UserID(userID), order.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
 		Order(ent.Desc(order.FieldID))
 	if status != "" {
 		q = q.Where(order.StatusEQ(order.Status(status)))

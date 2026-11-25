@@ -174,3 +174,28 @@ func TestCSN19AddressAndKey(t *testing.T) {
 		t.Fatal(e)
 	}
 }
+
+func TestCSN19InvalidCommentsAreDefinitivelyUnsubmitted(t *testing.T) {
+	for _, legacy := range []bool{false, true} {
+		a, calls := csnFixture(t, func(http.ResponseWriter, *http.Request) { t.Error("invalid comment submitted") })
+		services, err := a.SocialServices(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		schema := services[1].Schema
+		if !schema.Fields[1].DisallowBlankLines {
+			t.Fatal("blank-line rule missing from public schema")
+		}
+		if legacy {
+			schema.Fields[1].DisallowBlankLines = false
+		}
+		schema.Revision = supplyport.SocialSchemaRevision(schema)
+		for _, comments := range []string{"first\n\nsecond", "first\nsecond\n", "first\n \nsecond"} {
+			_, err = a.CreateProviderSocial(context.Background(), supplyport.SocialProviderPurchase{ProductID: "2", SchemaRevision: schema.Revision, Schema: schema, Parameters: supplyport.SocialParameters{"link": "https://example.com/video", "comments": comments}})
+			var rejected *supplyport.SocialRejected
+			if !errors.As(err, &rejected) || rejected.Code != "invalid_parameters" || *calls != 0 {
+				t.Fatalf("local failure became unknown or was sent: legacy=%v err=%v calls=%d", legacy, err, *calls)
+			}
+		}
+	}
+}

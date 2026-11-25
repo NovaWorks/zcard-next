@@ -29,17 +29,18 @@ const (
 type SocialParameters map[string]string
 
 type SocialField struct {
-	Key         string   `json:"key"`
-	Label       string   `json:"label"`
-	Type        string   `json:"type"` // text | url | username | integer | lines | date | enum
-	Required    bool     `json:"required"`
-	Min         *int64   `json:"min,omitempty"`
-	Max         *int64   `json:"max,omitempty"`
-	MaxLength   int      `json:"max_length,omitempty"`
-	MinItems    *int64   `json:"min_items,omitempty"`
-	MaxItems    *int64   `json:"max_items,omitempty"`
-	Options     []string `json:"options,omitempty"`
-	Placeholder string   `json:"placeholder,omitempty"`
+	Key                string   `json:"key"`
+	Label              string   `json:"label"`
+	Type               string   `json:"type"` // text | url | username | integer | lines | date | enum
+	Required           bool     `json:"required"`
+	Min                *int64   `json:"min,omitempty"`
+	Max                *int64   `json:"max,omitempty"`
+	MaxLength          int      `json:"max_length,omitempty"`
+	MinItems           *int64   `json:"min_items,omitempty"`
+	MaxItems           *int64   `json:"max_items,omitempty"`
+	Options            []string `json:"options,omitempty"`
+	Placeholder        string   `json:"placeholder,omitempty"`
+	DisallowBlankLines bool     `json:"disallow_blank_lines,omitempty"`
 }
 
 type SocialQuantity struct {
@@ -164,7 +165,8 @@ type SocialProviderOrder struct {
 
 var ErrSocialSubmitUnknown = errors.New("social: submission outcome unknown; reconcile without resubmitting")
 
-// SocialRejected is authoritative provider rejection before an order was accepted.
+// SocialRejected is a definitive rejection before an upstream order was accepted.
+// It also covers local validation failures before any provider request was sent.
 type SocialRejected struct{ Code string }
 
 func (e *SocialRejected) Error() string { return "social: provider rejected: " + e.Code }
@@ -286,6 +288,13 @@ func ValidateSocialParameters(s SocialSchema, in SocialParameters) (SocialParame
 				return nil, nil, fmt.Errorf("%s is outside its integer range", f.Key)
 			}
 		case "lines":
+			if f.DisallowBlankLines {
+				for _, line := range strings.Split(value, "\n") {
+					if strings.TrimSpace(line) == "" {
+						return nil, nil, fmt.Errorf("%s must not contain blank lines", f.Key)
+					}
+				}
+			}
 			n := socialLineCount(value)
 			if s.Quantity.Mode == "derived_lines" && s.Quantity.LinesField == f.Key && s.Quantity.LinePolicy == "all" {
 				n = int64(len(strings.Split(value, "\n")))

@@ -1,7 +1,7 @@
 import { api } from './client';
 export interface SocialField {
  key:string;label:string;type:'text'|'url'|'username'|'integer'|'lines'|'date'|'enum';required:boolean;
- min?:number;max?:number;max_length?:number;min_items?:number;max_items?:number;options?:string[];placeholder?:string;
+ min?:number;max?:number;max_length?:number;min_items?:number;max_items?:number;options?:string[];placeholder?:string;disallow_blank_lines?:boolean;
 }
 export interface SocialSchema {
  version:number;revision:string;profile:string;fields:SocialField[];

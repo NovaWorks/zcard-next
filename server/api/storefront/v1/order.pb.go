@@ -1035,16 +1035,18 @@ func (x *ListMyOrdersReply) GetTotal() int64 {
 
 // MyOrderItem 我的订单行（金额/状态/时间；卡密取回走 GetOrder）。
 type MyOrderItem struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	ShippingStatus     string                 `protobuf:"bytes,9,opt,name=shipping_status,json=shippingStatus,proto3" json:"shipping_status,omitempty"`
-	OrderNo            string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	Status             string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	TotalCents         int64                  `protobuf:"varint,3,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
-	CreatedAt          int64                  `protobuf:"varint,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	ExpiredAt          int64                  `protobuf:"varint,5,opt,name=expired_at,json=expiredAt,proto3" json:"expired_at,omitempty"`
-	ItemCount          int32                  `protobuf:"varint,6,opt,name=item_count,json=itemCount,proto3" json:"item_count,omitempty"`
-	ProductSummary     string                 `protobuf:"bytes,7,opt,name=product_summary,json=productSummary,proto3" json:"product_summary,omitempty"`
-	ManualPendingCount int32                  `protobuf:"varint,8,opt,name=manual_pending_count,json=manualPendingCount,proto3" json:"manual_pending_count,omitempty"`
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ShippingStatus string                 `protobuf:"bytes,9,opt,name=shipping_status,json=shippingStatus,proto3" json:"shipping_status,omitempty"`
+	OrderNo        string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	Status         string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	TotalCents     int64                  `protobuf:"varint,3,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
+	CreatedAt      int64                  `protobuf:"varint,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	ExpiredAt      int64                  `protobuf:"varint,5,opt,name=expired_at,json=expiredAt,proto3" json:"expired_at,omitempty"`
+	ItemCount      int32                  `protobuf:"varint,6,opt,name=item_count,json=itemCount,proto3" json:"item_count,omitempty"`
+	ProductSummary string                 `protobuf:"bytes,7,opt,name=product_summary,json=productSummary,proto3" json:"product_summary,omitempty"`
+	// Original service target from the encrypted purchase; visible only to the buyer.
+	TargetLink         string `protobuf:"bytes,10,opt,name=target_link,json=targetLink,proto3" json:"target_link,omitempty"`
+	ManualPendingCount int32  `protobuf:"varint,8,opt,name=manual_pending_count,json=manualPendingCount,proto3" json:"manual_pending_count,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1131,6 +1133,13 @@ func (x *MyOrderItem) GetItemCount() int32 {
 func (x *MyOrderItem) GetProductSummary() string {
 	if x != nil {
 		return x.ProductSummary
+	}
+	return ""
+}
+
+func (x *MyOrderItem) GetTargetLink() string {
+	if x != nil {
+		return x.TargetLink
 	}
 	return ""
 }
@@ -2048,7 +2057,7 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\x06status\x18\x03 \x01(\tR\x06status\"g\n" +
 	"\x11ListMyOrdersReply\x12<\n" +
 	"\x06orders\x18\x01 \x03(\v2$.zcard.api.storefront.v1.MyOrderItemR\x06orders\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"\xc2\x02\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xe3\x02\n" +
 	"\vMyOrderItem\x12'\n" +
 	"\x0fshipping_status\x18\t \x01(\tR\x0eshippingStatus\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x16\n" +
@@ -2061,7 +2070,10 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"expired_at\x18\x05 \x01(\x03R\texpiredAt\x12\x1d\n" +
 	"\n" +
 	"item_count\x18\x06 \x01(\x05R\titemCount\x12'\n" +
-	"\x0fproduct_summary\x18\a \x01(\tR\x0eproductSummary\x120\n" +
+	"\x0fproduct_summary\x18\a \x01(\tR\x0eproductSummary\x12\x1f\n" +
+	"\vtarget_link\x18\n" +
+	" \x01(\tR\n" +
+	"targetLink\x120\n" +
 	"\x14manual_pending_count\x18\b \x01(\x05R\x12manualPendingCount\"6\n" +
 	"\x14CancelMyOrderRequest\x12\x1e\n" +
 	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\"2\n" +

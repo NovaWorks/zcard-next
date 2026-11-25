@@ -137,7 +137,7 @@ func (a *csn19Adapter) SocialServices(ctx context.Context) ([]supplyport.SocialS
 		switch strings.ToLower(strings.TrimSpace(row.Type)) {
 		case "default": // Single run only; no unverified drip-feed multiplier.
 		case "custom comments":
-			s.Fields = []supplyport.SocialField{link, {Key: "comments", Label: "评论内容（每行一条，请勿留空行）", Type: "lines", Required: true, MinItems: csnInt(lo), MaxItems: csnInt(hi), MaxLength: 100000}}
+			s.Fields = []supplyport.SocialField{link, {Key: "comments", Label: "评论内容（每行一条，请勿留空行）", Type: "lines", Required: true, MinItems: csnInt(lo), MaxItems: csnInt(hi), MaxLength: 100000, DisallowBlankLines: true}}
 			s.Quantity = supplyport.SocialQuantity{Mode: "derived_lines", LinesField: "comments", LinePolicy: "all", Min: csnInt(lo), Max: csnInt(hi)}
 		case "package":
 			s.Fields = []supplyport.SocialField{link}
@@ -210,19 +210,19 @@ func (*csn19Adapter) RefundOrder(context.Context, string) error { return ErrNotS
 
 func (a *csn19Adapter) CreateProviderSocial(ctx context.Context, r supplyport.SocialProviderPurchase) (*supplyport.SocialProviderOrder, error) {
 	if r.ProductID == "" || r.SchemaRevision == "" || r.SchemaRevision != r.Schema.Revision {
-		return nil, ErrPurchaseFormInvalid
+		return nil, &supplyport.SocialRejected{Code: "invalid_parameters"}
 	}
 	params, _, err := supplyport.ValidateSocialParameters(r.Schema, r.Parameters)
 	if err != nil {
-		return nil, err
+		return nil, &supplyport.SocialRejected{Code: "invalid_parameters"}
 	}
 	if _, err = supplyport.SocialExactAmount(r.Schema, params); err != nil {
-		return nil, err
+		return nil, &supplyport.SocialRejected{Code: "invalid_parameters"}
 	}
 	if comments, ok := params["comments"]; ok {
 		for _, line := range strings.Split(comments, "\n") {
 			if strings.TrimSpace(line) == "" {
-				return nil, ErrPurchaseFormInvalid
+				return nil, &supplyport.SocialRejected{Code: "invalid_parameters"}
 			}
 		}
 	}

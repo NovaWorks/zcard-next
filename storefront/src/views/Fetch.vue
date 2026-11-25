@@ -130,12 +130,13 @@ import { uiText, t as $t, localeTag } from '@/i18n';
 import ShippingDetails from '@/components/ShippingDetails.vue';
 import DeliveryResults from '@/components/DeliveryResults.vue';
 import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { getOrder, getOrderPassword, getOrderAccessToken, consumeOrderAccessLink, rememberOrderPassword, fetchDelivery, listGuestOrders, type FetchDeliveryReply, type GuestOrderItem } from '@/api';
 import { getToken, formatMoney } from '@/api/client';
 import { looksLikeContact } from '@/utils/commerce';
 
 const route = useRoute();
+const router = useRouter();
 const orderNo = ref('');
 const queryPassword = ref('');
 const loading = ref(false);
@@ -199,6 +200,11 @@ async function pickOrder(no: string) {
   shippingOrder.value = null;
   const detail = await getOrder(no, queryPassword.value);
   if (detail.error || !detail.data) { loading.value=false; error.value=detail.error || $t('订单不存在或无权查看'); return; }
+  if (detail.data.items?.some(item=>item.delivery_kind==='social_service')) {
+    loading.value=false;
+    await router.replace(`/order/${encodeURIComponent(no)}`);
+    return;
+  }
   if (detail.data.commerce_version === 1) shippingOrder.value=detail.data;
   if (detail.data.items?.length && detail.data.items.every(i=>i.goods_type==='physical')) {
     result.value={order_no:no,status:detail.data.status,items:[],fetch_count:0};

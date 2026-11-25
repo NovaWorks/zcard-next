@@ -38,12 +38,12 @@
             <div class="od-item-head">
               <span>{{ $t('商品') }}</span><span class="od-ta-r">{{ $t('单价') }}</span><span class="od-ta-c">{{ $t('数量') }}</span><span class="od-ta-r">{{ $t('小计') }}</span>
             </div>
-            <div v-for="(it, i) in order.items" :key="i" class="od-item">
+            <div v-for="(it, i) in order.items" :key="i" class="od-item" :class="{'od-item-social':it.delivery_kind==='social_service'}">
               <div class="od-item-name">{{ it.product_name }}
                 <p class="muted">{{it.goods_type === 'physical' ? $t('快递配送') : it.fulfillment_type === 'manual' ? $t('人工服务') : it.fulfillment_type === 'upstream' ? $t('上游交付') : $t('自动交付')}} · {{itemStatus(it.fulfillment_status)}}</p>
                 <p v-if="it.goods_type === 'physical'" class="muted">{{ $t('已发') }} {{ it.shipped_quantity || 0 }} {{ $t('件 · 已收') }} {{ it.received_quantity || 0 }} {{ $t('件') }}<span v-if="it.canceled_quantity"> {{ $t('· 已取消') }} {{ it.canceled_quantity }} {{ $t('件') }}</span><span v-if="it.returned_quantity"> {{ $t('· 已退货') }} {{ it.returned_quantity }} {{ $t('件') }}</span></p>
                 <p v-else-if="it.canceled_quantity" class="muted">{{ $t('已取消') }} {{ it.canceled_quantity }} {{ $t('件') }}</p>
-                <dl v-if="answers(it.form_answers_json).length" class="od-answers"><div v-for="(a,j) in answers(it.form_answers_json)" :key="j"><dt>{{a.name}}</dt><dd>{{a.value}}</dd></div></dl>
+                <dl v-if="answers(it.form_answers_json).length" class="od-answers"><div v-for="(a,j) in answers(it.form_answers_json)" :key="j"><dt>{{$t(a.name)}}</dt><dd><a v-if="a.type==='url' && orderTargetLink(a.value)" class="od-answer-link" :href="orderTargetLink(a.value)" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">{{a.value}}</a><template v-else>{{a.value}}</template></dd></div></dl>
               </div>
               <div class="od-item-price">{{ formatMoney(it.unit_price_cents) }}</div>
               <div class="od-item-qty"><template v-if="it.delivery_kind==='social_service'">{{ $t('按填写配置') }}</template><template v-else>{{ $t('购买 ×') }}{{ it.quantity }}</template></div>
@@ -90,6 +90,7 @@ import { uiText, t as $t, localeTag } from '@/i18n';
 import OrderAccessRecovery from '@/components/OrderAccessRecovery.vue';
 import SMSOrder from '@/components/SMSOrder.vue';
 import SocialOrder from '@/components/SocialOrder.vue';
+import { orderTargetLink } from '@/utils/order-links';
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { getOrder, getOrderPassword, getOrderAccessToken, orderAccessLink, rememberOrderPassword, cancelMyOrder, type OrderDetail } from '@/api';
@@ -127,7 +128,7 @@ async function cancelOrder() {
   order.value = data;
 }
 
-function answers(raw?:string):{name:string;value:string}[]{try{const x=JSON.parse(raw || '[]');return Array.isArray(x)?x:[]}catch{return []}}
+function answers(raw?:string):{name:string;value:string;type?:string}[]{try{const x=JSON.parse(raw || '[]');return Array.isArray(x)?x:[]}catch{return []}}
 function itemStatus(s?:string){return ({get partial() { return $t("部分完成"); },get shipped() { return $t("已发货"); },get received() { return $t("已收货"); },get pending() { return $t("待处理"); },get delivering() { return $t("处理中"); },get manual() { return $t("待人工核对"); },get failed() { return $t("处理异常"); },get delivered() { return $t("已完成交付"); },get refunded() { return $t("已退款"); }} as Record<string,string>)[s || 'pending'] || s;}
 function statusText(s: string): string {
   if(order.value?.items.some(i=>i.delivery_kind==='social_service')){if(s==='delivered')return $t('已完成');if(s==='partially_delivered')return $t('部分完成');}
@@ -152,6 +153,7 @@ function fmtTime(ts: number): string {
 
 <style scoped>
 .od-answers{margin:8px 0;font-size:13px}.od-answers>div{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.od-answers dt{font-weight:600}.od-answers dd{margin:0;overflow-wrap:anywhere;white-space:pre-wrap;min-width:0}
+.od-answer-link{display:block;min-height:44px;align-content:center;color:var(--zc-primary);text-decoration:underline;overflow-wrap:anywhere}
 .order-detail { display: flex; flex-direction: column; gap: 16px; }
 
 /* 页头 */
@@ -210,6 +212,8 @@ function fmtTime(ts: number): string {
       "price sub";
     row-gap: 6px; padding: 12px 2px;
   }
+  .od-item.od-item-social { grid-template-areas: "name name" "price sub"; }
+  .od-item-social .od-item-qty { display: none; }
   .od-item-name { grid-area: name; }
   .od-item-qty { grid-area: qty; text-align: right; color: #9ca3af; }
   .od-item-price { grid-area: price; text-align: left; }

@@ -179,6 +179,8 @@ message MyOrderItem {
   int64 expired_at = 5;
   int32 item_count = 6;
   string product_summary = 7;
+  // Original service target from the encrypted purchase; visible only to the buyer.
+  string target_link = 10;
   int32 manual_pending_count = 8;
 }
 

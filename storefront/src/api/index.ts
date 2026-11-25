@@ -390,6 +390,7 @@ export interface MyOrderItem {
   expired_at: number;
   item_count: number;
   product_summary: string;
+  target_link?: string;
   manual_pending_count: number;
 }
 

@@ -196,9 +196,16 @@ func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetO
 		if it.SkuName != "" {
 			name += " / " + it.SkuName
 		}
+		formAnswers := it.FormAnswers
+		if it.DeliveryKind == "social_service" && isOwner {
+			formAnswers, err = s.uc.socialOrderAnswers(it)
+			if err != nil {
+				return nil, errors.InternalServer("order.GET_FAILED", "读取下单资料失败")
+			}
+		}
 		reply.Items = append(reply.Items, &storefrontv1.OrderItemReply{
 			ShippingCollect: shippingCollectProducts(o)[strconv.FormatUint(it.ProductID, 10)] == true,
-			DeliveryKind:    it.DeliveryKind, SmsProduct: it.SmsProduct, GoodsType: it.GoodsType, PaidCents: it.PaidAmount, ShippingCents: it.ShippingAmount, ShippedQuantity: it.ShippedQuantity, ReceivedQuantity: it.ReceivedQuantity, CanceledQuantity: it.CanceledQuantity, ReturnedQuantity: it.ReturnedQuantity, Id: it.ID, ProductId: it.ProductID, ProductName: name, Quantity: it.Quantity, UnitPriceCents: it.UnitPrice, AmountCents: it.Amount, SkuName: it.SkuName, FulfillmentType: string(it.FulfillmentType), FulfillmentStatus: it.FulfillmentStatus, FormAnswersJson: answersJSON(it.FormAnswers),
+			DeliveryKind:    it.DeliveryKind, SmsProduct: it.SmsProduct, GoodsType: it.GoodsType, PaidCents: it.PaidAmount, ShippingCents: it.ShippingAmount, ShippedQuantity: it.ShippedQuantity, ReceivedQuantity: it.ReceivedQuantity, CanceledQuantity: it.CanceledQuantity, ReturnedQuantity: it.ReturnedQuantity, Id: it.ID, ProductId: it.ProductID, ProductName: name, Quantity: it.Quantity, UnitPriceCents: it.UnitPrice, AmountCents: it.Amount, SkuName: it.SkuName, FulfillmentType: string(it.FulfillmentType), FulfillmentStatus: it.FulfillmentStatus, FormAnswersJson: answersJSON(formAnswers),
 		})
 	}
 	refunds, e := data.Client(ctx, s.uc.Data).RefundOrder.Query().Where(refundorder.OrderID(o.ID), refundorder.StatusEQ(refundorder.StatusSucceeded)).All(ctx)
@@ -249,6 +256,18 @@ func (s *StoreOrderService) ListMyOrders(ctx context.Context, req *storefrontv1.
 			}
 			if line.SkuName != "" {
 				name += " · " + line.SkuName
+			}
+			if line.DeliveryKind == "social_service" {
+				fields, err := s.uc.socialOrderAnswers(line)
+				if err != nil {
+					return nil, errors.InternalServer("order.LIST_FAILED", "读取下单资料失败")
+				}
+				for _, field := range fields {
+					if field["id"] == "link" && field["type"] == "url" {
+						item.TargetLink = field["value"]
+						break
+					}
+				}
 			}
 			names = append(names, name)
 			if line.FulfillmentType == "manual" && (line.FulfillmentStatus == "pending" || line.FulfillmentStatus == "delivering") {

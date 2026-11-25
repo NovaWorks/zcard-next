@@ -15170,6 +15170,9 @@ components:
                     format: int32
                 productSummary:
                     type: string
+                targetLink:
+                    type: string
+                    description: Original service target from the encrypted purchase; visible only to the buyer.
                 manualPendingCount:
                     type: integer
                     format: int32

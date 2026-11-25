@@ -49,6 +49,7 @@ function validate():boolean{
   if(f.type==='integer'){
    const n=Number(v);if(!/^-?\d+$/.test(v) || !Number.isSafeInteger(n) || (f.min!==undefined && n<Number(f.min)) || (f.max!==undefined && n>Number(f.max)))result[f.key]=$t('请输入范围内的整数');
   }
+  if(f.type==='lines' && f.disallow_blank_lines && v.split('\n').some(line=>!line.trim()))result[f.key]=$t('请删除空行或末尾换行后重新确认');
   if(f.type==='lines'){const count=lineCount(f.key);if((f.min_items!==undefined && count<Number(f.min_items)) || (f.max_items!==undefined && count>Number(f.max_items)))result[f.key]=$t('填写行数不符合服务范围')}
  }
  const q=schema.value?.quantity;
