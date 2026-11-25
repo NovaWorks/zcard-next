@@ -2,10 +2,10 @@
   <img src=".github/logo.png" width="108" alt="ZCard" />
 </p>
 
-<h1 align="center">ZCard 2.0</h1>
+<h1 align="center">ZCard 2.0 · zcard-next</h1>
 
 <p align="center">
-  <strong>数字商品销售 · 自动发卡 · 双向上下游供货</strong><br />
+  <strong>数字与实体商品商城 · 自动发卡与物流发货 · 双向上下游供货</strong><br />
   Go 重写，单二进制交付，内含商城与管理后台。
 </p>
 
@@ -19,17 +19,30 @@
   <a href="#快速开始">快速开始</a> ·
   <a href="doc/部署指南.md"><strong>部署指南</strong></a> ·
   <a href="#功能概览">功能概览</a> ·
+  <a href="#常见问题">常见问题</a> ·
   <a href="#api-文档">API 文档</a> ·
+  <a href="llms.txt">AI 文档索引</a> ·
   <a href="https://github.com/NovaWorks/zcard-next/releases">下载版本</a>
 </p>
 
 <p align="center">
-  <sub>Open-source digital goods storefront and bidirectional supply platform.</sub>
+  <sub>Self-hosted e-commerce in Go: digital goods, physical shipping, online services, and bidirectional supplier integration.</sub>
 </p>
 
-ZCard 既能对接异次元、独角数卡和其他 ZCard 站点自动拿货，也能开放供货 API 向下游系统供货。支持 SQLite、MySQL、PostgreSQL，以及多语言、多货币、三级分销和分站白标。
+**ZCard 2.0（zcard-next）是用 Go 开发的开源自动发卡系统、自托管商城和双向供货平台，采用 MIT 许可证。** 一套系统管理卡密与数字商品、实体商品和在线服务商品，内置管理后台、商城、订单、支付与任务调度。
+
+既可以销售自己的商品，也可以对接异次元 ACG-Faka、独角数卡 Dujiao Next、萌次元 mcy-shop、其他 ZCard 站点或 19csn 服务货源，再通过供货 API 向下游销售。支持 SQLite、MySQL、PostgreSQL，中英文、多货币、三级分销与分站白标；各货源的适用商品和接口能力见下文。
 
 前代版本：[ZCard 1.x](https://github.com/NovaWorks/ZCard)（PHP / Laravel）。本仓库 `zcard-next` 是它的 Go 重写版本。
+
+## 核心优势
+
+- **零售和供货在同一套系统中完成**：可以同时经营本地商品、从多个上游采购、向下游供货，结合本地加价、SKU 供货价与余额账本管理不同销售渠道。
+- **覆盖多种交付方式**：数字商品支持卡密、固定内容、人工与上游交付；实体商品支持运费、包裹和收货流程；在线服务使用专用报价与进度页面。
+- **从轻量部署起步**：官方发行版把商城和后台内嵌到 Go 二进制中，SQLite 可直接运行；业务需要时可选 MySQL、PostgreSQL 和 Redis，无需在服务器安装 PHP 或 Node.js 来运行发行版。
+- **后台直接维护版本**：单二进制和官方受管理的单实例 Docker Compose 支持在线更新，具备发行验签、更新前备份、版本与健康检查，并提供回滚处理路径。
+- **运营与资金功能配套**：钱包、积分、会员价、优惠券、分销佣金、分站定价与分账、退款和对账集中管理，减少另行拼接运营系统的工作。
+- **源码和接口可查**：MIT 开源，提供 protobuf 与 OpenAPI 定义、部署文档和协议说明，便于自托管、二次开发及系统集成。
 
 ## 快速开始
 
@@ -60,7 +73,7 @@ cd zcard-next
 bash deploy/docker-install.sh
 ```
 
-默认下载官方 Linux 发行包并验证签名及 SHA256，无需在服务器编译 Go 或前端。指定版本可执行 `ZCARD_VERSION=v1.2.60 bash deploy/docker-install.sh`；开发者需要源码构建时使用 `bash deploy/docker-install.sh --source`。
+默认选择最新正式发行版；v1.2.95 起使用官方双架构镜像并接入在线更新助手，验证签名与发行文件校验信息，无需在服务器编译 Go 或前端。可通过 `ZCARD_VERSION` 指定已发布的版本；开发者需要源码构建时使用 `bash deploy/docker-install.sh --source`。受管理部署的升级请按[部署指南](doc/部署指南.md#日常管理与后台在线更新)操作。
 
 启动后，浏览器打开 **`http://服务器IP:8000/install`** 完成初始化。Docker 安装向导中的连接信息：
 
@@ -88,33 +101,55 @@ bash deploy/docker-install.sh
 </details>
 
 > [!IMPORTANT]
-> 请备份配置、密钥和数据。单二进制部署支持程序内在线更新；**Docker 通过重建镜像升级**。旧部署请先阅读部署指南中的迁移说明。
+> 请备份配置、密钥和数据。**单二进制与官方受管理的单实例 Docker Compose 均支持后台在线更新**；其他 Docker 部署按各自方式拉取或重建镜像。受管理 Compose 的自动备份适用于应用卷内 SQLite 或默认配套 MySQL，外部数据库、自定义命令、多副本及 bind mount 数据目录不自动接管。程序回滚不等于恢复数据库，具体条件见[部署指南](doc/部署指南.md)。
 
 ## 功能概览
 
 | 能力 | 主要功能 |
 | --- | --- |
-| **双向货源** | 上游拿货、下游供货、价格与库存同步、兼容主流供货协议 |
-| **商品与交易** | 多规格商品、加密卡密、购物车、多种支付方式、自动履约 |
+| **双向货源** | 多上游拿货、下游供货、加价与专属供货价、价格库存同步、后台导入任务 |
+| **数字商品** | 多规格 SKU、加密卡密、固定内容、复用发货、人工及上游交付 |
+| **实体商品** | 收货地址、配送地区、包邮／固定运费／到付、物流单号、分包发货、确认收货与退货入库 |
+| **在线服务与接码** | 服务参数与动态报价、订单进度、短信号码与验证码；使用专用购买流程 |
+| **商品管理** | 分类树、商品复制、商品排序批量保存、商品锁定、自定义下单表单与评价 |
+| **订单与支付** | 游客及会员订单、购物车、多支付驱动、会员余额、退款与对账 |
 | **会员与资金** | 会员等级、钱包、积分、优惠券、提现与退款 |
-| **增长与运营** | 三级分销、分站白标、促销秒杀、经营报表与对账 |
-| **内容与服务** | 多主题、多语言、多货币、SEO、工单及邮件短信通知 |
-| **安全与运维** | RBAC、两步验证、操作审计、数据备份、单二进制与 Docker 部署 |
+| **增长与运营** | 三级分销、分站白标、促销秒杀、营销抽奖、经营报表 |
+| **内容与通知** | 多主题、中英文、多货币、SEO、工单、邮件短信及 Telegram 订单通知 |
+| **安全与运维** | RBAC、两步验证、操作审计、卡密加密、数据备份、后台在线更新 |
 
-展开查看各模块的详细功能：
+## 功能详情
 
-<details>
-<summary><strong>货源、商品与卡密</strong></summary>
+### 商品类型与交付方式
+
+| 类型 | 适用商品与购买流程 |
+| --- | --- |
+| **卡密与数字商品** | 激活码、兑换码、下载链接等；本地卡密自动发货、固定内容直发、复用内容、人工发货或上游代发 |
+| **实体商品** | 收集收货地址与配送地区，结算运费；后台填写承运商和物流单号，买家查看包裹并确认收货 |
+| **在线服务商品** | 按上游服务规则填写链接、数量或评论等资料，确认动态报价后购买，在订单页查看处理进度 |
+| **短信接码商品** | 通过兼容货源选择国家／地区、平台和报价，获取号码及短信验证码，查看取消或结束状态 |
+
+普通商品支持游客或会员购买；在线服务与接码使用会员余额和专用购买流程，不适用普通购物车的全部规则。具体限制见下文。
 
 ### 双向上下游货源对接
 
-**作为下游拿货**（对接异次元 ACG-Faka、独角数卡 Dujiao Next、其他 ZCard 站点）：
+**作为下游拿货**：
+
+| 货源驱动 | 适用范围与前提 |
+| --- | --- |
+| **异次元 ACG-Faka**（`acg_faka`） | 分类、商品、规格、报价、库存及采购；二开站的字段和交付方式按已支持的兼容规则处理 |
+| **独角数卡 Dujiao Next**（`dujiao_next`） | 商品导入、报价、库存同步与采购；以对方开放的供货接口为准 |
+| **ZCard**（`zcard`） | ZCard 站点间对接，按上游声明的商品与接口能力工作 |
+| **萌次元 mcy-shop**（`mcy_shop`） | 上游需启用 OpenApi 插件；支持多 SKU 与账号报价，详见[萌次元对接说明](docs/features/mcy-shop.md) |
+| **19csn**（`csn19`） | 异步在线服务货源，使用服务规则、报价和任务进度，详见[19csn 对接说明](docs/features/19csn.md) |
 
 - 多货源连接管理、连接测试、商品预览勾选导入、分类映射一键建目录
+- 后台导入任务：显示进度与逐项结果，可停止后继续，重试未完成商品或单独补查库存；关闭页面后任务继续执行
 - 全量 / 增量 / 定时同步（价格、库存、上下架，可设间隔与时间窗口防限流）
+- 同步限流熔断与错误提示；不支持自动报价的商品可跳过，任务展示成功、跳过和失败统计
 - 本地定价：比例加价、固定加价；封面采集本地化存储
-- 付款后幂等下单拿货，失败自动进队列重试，可手动重试或转人工
-- 下单前上游实时库存预检，防超卖
+- 付款后创建采购任务，记录采购单和失败详情；按协议能力处理幂等、查单与重试，结果不确定时保留原单待核对，避免重复采购
+- 下单前按所选商品和规格实时校验上游库存；预检不代表已在上游预留库存
 
 **作为上游供货**（开放 `/api/supply/*` API）：
 
@@ -124,22 +159,34 @@ bash deploy/docker-install.sh
 - 幂等下单、未发货订单取消退款、回调通知
 - 安全：HMAC-SHA256 四头签名、时间窗口、nonce 防重放、回调 SSRF 防护
 
-**免修改对接**：供货 API 兼容主流发卡系统的上游对接协议——异次元、独角数卡等系统不需要修改任何代码，把 zcard-next 添加为上游货源即可正常拿货。
+**兼容协议供货**：为支持的异次元、独角数卡及萌次元货源客户端提供兼容入口，按对应协议创建下游账号并配置客户端即可对接。不同版本、二开站、插件以及商品类型存在能力差异，不把一个驱动的多 SKU、退款或回调能力视为所有协议通用；萌次元的双方插件要求与供货范围见[专项说明](docs/features/mcy-shop.md)。
 
 ### 商品与卡密
 
 - 树形分类：拖拽调整层级与排序、分类图标、递归聚合子分类商品
+- 商品列表直接修改排序，跨页保留修改后批量保存；支持商品复制、商品锁定与本地内容保护
 - 多规格 SKU，按规格定价与库存；会员等级价；库存继承
+- 按商品或 SKU 配置履约方式；可复用内容适合重复交付同一份说明、链接或资料，详见[分类与复用发货说明](docs/features/商品导入分类与复用发货.md)
 - 商品自定义表单控件（下单时收集买家信息）、标签、会员商品组、批量上下架
 - 商品评价：审核、虚拟评价、展示开关
 - 卡密批量导入（预览、确认、批次撤销）、keyed-hash 去重、批量导出（超管专属并审计）
 - AES-256-GCM 加密存储（不可关闭），查看完整卡密需二次确认并留审计
 - 单卡禁用/启用、靓号识别、低库存提醒
 
-</details>
+### 实体商品与物流发货
 
-<details>
-<summary><strong>订单、支付与履约</strong></summary>
+- 商品设置可配送国家／地区、是否管理库存，支持实体 SKU 与实物库存管理
+- 运费支持**包邮、固定运费、到付**；到付由快递向收件人收取，不再计入在线支付运费，订单保留成交时的运费条款
+- 买家结算时填写收货地址，后台按订单商品项创建包裹并填写承运商、物流单号；同一订单可按不同商品项分包发货
+- 发货前可更正地址，寄出后可更正物流信息并保留原因；支持买家确认收货、后台收货处理与退货入库
+- 当前提供物流信息录入与包裹状态管理，不包含快递面单自动下单或物流轨迹实时查询；实体商品暂不支持积分兑换
+
+### 在线服务与短信接码
+
+- 在线服务按上游规则展示链接、数量、评论等字段，支持动态报价、下单资料快照与订单进度；是否可取消、补量，以及实际退款，以该服务能力和供货确认结果为准
+- 短信接码通过兼容的 ZCard 供货端获取国家／地区、平台、报价、号码和验证码，订单页展示接码及结算状态
+- 这两类商品采用会员余额专用购买流程。接码当前要求人民币基础币种、单件独立下单，不支持优惠券和积分；销售开关可用 `ZCARD_SMS_SALES_ENABLED=false` 暂停新接码订单
+- 接口可用性和服务范围取决于实际货源账号及其开放能力；参见 [19csn 服务对接](docs/features/19csn.md)
 
 ### 订单与支付
 
@@ -155,17 +202,23 @@ bash deploy/docker-install.sh
 | 支付宝 | 当面付 |
 | 微信支付 | Native |
 | 易支付 | epay 协议，兼容大量第三方聚合站 |
+| 虎皮椒 Xunhupay | 微信／支付宝收款，按 APPID 分别配置渠道 |
 | Stripe | 信用卡，多币种 |
 | PayPal | REST API |
-| USDT | EpuSdt 协议，按链选择收款 |
+| EpuSdt | USDT 收款，按链选择渠道 |
+| BEpusdt | 原生接口，CNY 计价，支持固定币种网络或多链收银台 |
+| UPAY PRO | 原生接口，CNY 计价，支持 USDT、USDC 多链及 TRX |
 
 - 一个支付渠道可承载多种支付方式，收银台按方式选择，支持自定义图标与描述
 - 回调验签、幂等、金额核对；补单、退款（审计）；钱包余额支付
 
+具体币种、支付方式和退款能力以各驱动及支付服务商配置为准，不是所有渠道都具备相同能力。
+
 ### 履约
 
 - 本地卡密自动发货 / 固定内容直发（链接、兑换码）/ 人工发货 / 上游自动代发
-- 付款后事件驱动自动交付，失败可追溯（采购单错误详情）、可重试
+- 支持复用内容、SKU 履约覆盖与实体物流发货；在线服务、接码使用各自的状态流程
+- 付款后事件驱动交付，采购失败可追溯，并按错误类型与协议能力重试或转人工核对
 
 ### 钱包与资金
 
@@ -173,16 +226,12 @@ bash deploy/docker-install.sh
 - 提现：申请、审核、打款，手续费支持固定金额或比例，收款方式白名单
 - 手动调账（超管专属并审计）；积分抵现比例与上限可配
 
-</details>
-
-<details>
-<summary><strong>运营、内容与客户服务</strong></summary>
-
 ### 增长运营
 
 - 三级分销佣金（按订单金额或利润计佣，支持退款逆向扣回）
 - 会员等级：消费积分升降级、等级专属价
 - 优惠券、秒杀、促销活动、首页推荐位、顶部自定义按钮
+- 营销抽奖：活动、奖品、抽奖资格与中奖记录，见[抽奖功能说明](docs/features/lottery.md)
 - 分站白标：分站主绑定自有域名（DNS TXT / HTTP 双验证）、独立定价、订单快照与利润分账账本
 
 ### 工作台与报表
@@ -195,6 +244,7 @@ bash deploy/docker-install.sh
 
 - 工单系统（前台提交、内部备注、解决/关闭流转）
 - 邮件（SMTP）与短信（阿里云、腾讯云、七牛）模板通知、群发预估与取消
+- Telegram 订单通知：新订单、付款成功、发货完成、退款成功；可配置接收目标与话题，查看投递记录并补发
 
 ### 内容与前台
 
@@ -202,11 +252,6 @@ bash deploy/docker-install.sh
 - 多模板体系（PC 与移动端独立模板，主题市场式安装）
 - SEO：robots 与 sitemap 动态生成、SSG 预渲染、爬虫动态渲染，内容修改实时生效
 - 多语言（中/英）、多币种切换；移动端全面适配
-
-</details>
-
-<details>
-<summary><strong>安全、部署与在线更新</strong></summary>
 
 ### 安全与权限
 
@@ -220,11 +265,11 @@ bash deploy/docker-install.sh
 
 - 单二进制交付（管理后台 + 商城 + SQLite 驱动内嵌），双架构 amd64 / arm64
 - 多种安装方式：一键脚本（systemd）、Docker Compose、浏览器向导、命令行
-- 后台一键在线更新（单二进制部署）：GitHub 直连 / 大陆加速镜像（自动探测切换）/ 自建静态源；ED25519 验签、更新前自动备份数据库、新版异常自动回滚、版本历史面板
+- **后台一键在线更新**：单二进制支持 GitHub 直连、大陆加速镜像与自建静态源，提供 ED25519 验签、更新前数据库备份与版本历史
+- **Docker 后台更新**：官方受管理的单实例 Compose 由更新助手验签、拉取固定 digest、停机备份、重建应用并检查镜像、版本与数据库健康；关闭浏览器不会取消已提交任务
+- **回滚边界**：按程序启动状态与数据库迁移兼容性决定回滚路径，不承诺所有失败都能自动回滚，也不自动用旧数据库覆盖新订单；部署条件、备份工具与手动恢复步骤见[部署指南](doc/部署指南.md)
 - 后台任务调度内置（周期任务随服务启动，无需额外 cron）
 - CLI 运维命令：install、serve、migrate、admin、self-update、dbtest、reencrypt-cards
-
-</details>
 
 ## API 文档
 
@@ -235,23 +280,24 @@ bash deploy/docker-install.sh
 
 | 端点 | 说明 |
 |---|---|
-| `POST /api/supply/ping` | 连接测试 |
+| `GET /api/supply/ping` | 连接测试（免签名） |
 | `POST /api/supply/categories` | 商品分类 |
-| `POST /api/supply/products` | 商品列表 |
-| `POST /api/supply/products/{id}` | 商品详情 |
-| `POST /api/supply/products/{id}/stock` | 实时库存 |
+| `GET /api/supply/products` | 商品列表 |
+| `GET /api/supply/products/{id}` | 商品详情 |
+| `GET /api/supply/products/{id}/stock` | 实时库存 |
 | `POST /api/supply/orders` | 幂等下单 |
-| `POST /api/supply/orders/{id}` | 订单查询 |
+| `GET /api/supply/orders` | 时间窗内订单列表与对账 |
+| `GET /api/supply/orders/{id}` | 订单查询 |
 | `POST /api/supply/orders/{id}/cancel` | 取消退款 |
 | `POST /api/supply/orders/{id}/refund` | 申请退款 |
 
-鉴权：HMAC-SHA256 签名（api_key + api_secret），请求带时间窗口与 nonce 防重放；具体签名算法与字段说明见 openapi.yaml 中 SupplyService 各接口描述。
+以上为原生 ZCard Supply 协议。除免签名的连通性探测外，请求使用 HMAC-SHA256 签名（api_key + api_secret），携带 `X-Supply-Key`、`X-Supply-Timestamp`、`X-Supply-Nonce`、`X-Supply-Signature` 四个请求头，通过时间窗口与 nonce 防重放；具体算法和字段见 [Supply protobuf](server/api/supply/v1/supply.proto) 及 OpenAPI。兼容其他系统的协议入口按各自鉴权规则配置。
 
 </details>
 
 ## 为什么开发 2.0
 
-2.0 将商城、后台和内置任务调度集中到单个 Go 程序中，支持多种数据库，简化安装与运维。
+2.0 将商城、后台和内置任务调度集中到单个 Go 程序中，支持多种数据库，简化安装与运维，同时扩展实体商品、在线服务和双向供货等业务场景。
 
 <details>
 <summary><strong>从 1.x 到 2.0：设计取舍与版本对比</strong></summary>
@@ -270,7 +316,7 @@ bash deploy/docker-install.sh
 |---|---|---|
 | 部署 | PHP + Composer + PHP-FPM + Supervisor + cron | 单个二进制文件（前端内嵌） |
 | 后台任务 | 队列强依赖 | Redis 可选，缺失时自动降级为同步执行 |
-| 升级 | 手动重启服务，回退靠手工 | 后台一键更新，失败自动回滚 |
+| 升级 | 手动重启服务，回退靠手工 | 后台在线更新、验签与备份，按兼容性处理程序回滚 |
 | 数据库 | MySQL | SQLite / MySQL / PostgreSQL |
 | 分站与分销 | 互斥 | 可同时使用 |
 
@@ -278,24 +324,53 @@ bash deploy/docker-install.sh
 
 - 编译为单个静态二进制，配合 `go:embed` 把前端打包进去，交叉编译一次就得到完整的安装包，部署就是复制一个文件；
 - goroutine 并发模型适合上游同步、事件分发、队列消费这类异步工作，不需要常驻多个进程；
-- 内存占用低，1核1G 的小服务器可以流畅运行；
+- 小型站点可以从单二进制与 SQLite 起步，再按商品规模、同步量和访问量选择数据库与服务器配置；
 - 静态类型加上架构守护测试（依赖方向、SQL 收口等由 CI 强制），项目长期迭代不容易腐化。
 
 </details>
 
-<details>
-<summary><strong>与同类系统对比</strong></summary>
+## 常见问题
 
-| 对比项 | ZCard 2.0 | dujiao-next | acg-faka |
-|---|---|---|---|
-| 安装 | 单二进制 + 浏览器向导 | 手编配置 + 管理脚本 | 浏览器向导（需填数据库） |
-| 数据库 | 内嵌 SQLite，可选 MySQL/PG | SQLite | 必须 MySQL |
-| Redis | 可选（自动降级） | 可选 | 无 |
-| 在线更新 | 后台一键（验签、回滚、大陆加速） | — | — |
-| 货源对接 | 双向（拿货 + 供货，免修改对接） | 单向拿货 | 单向拿货 |
-| 对账系统 | 内置（任务 + 明细核对） | — | — |
+### ZCard 只能卖卡密吗？
 
-</details>
+可以经营卡密、数字内容、人工交付商品、实体商品和兼容上游的在线服务。实体商品有收货地址、运费与包裹流程；在线服务和短信接码有独立购买及进度页面。
+
+### ZCard 支持一键在线更新吗？
+
+支持。单二进制和官方受管理的单实例 Docker Compose 可在后台在线更新。其他 Docker 部署、外部数据库与自定义部署需要按[部署指南](doc/部署指南.md)确认更新和备份方式；更新可能短暂停机，回滚程序不等于回滚数据库。
+
+### ZCard 能同时作为货源下游和供货上游吗？
+
+可以。同一站点可从多个上游导入和采购商品，也能创建下游账号、配置供货价并通过 API 供货。各协议支持的商品、规格、查单、取消和退款范围不同，接入前应核对相应驱动说明。
+
+### 支持哪些数据库、语言和货币？
+
+支持 SQLite、MySQL、PostgreSQL；前台提供简体中文和英文。基础货币、展示货币与成交汇率快照用于记账及结算，多币种支付仍取决于支付驱动，接码当前仅支持 CNY 基础币种。
+
+### 如何查找接口和具体功能说明？
+
+先查看下方[文档导航](#文档导航)，接口契约以 [OpenAPI](server/api/openapi.yaml) 和 protobuf 定义为准。提供给 AI 助手或检索工具时，可以从纯文本 [llms.txt](llms.txt) 开始，再读取对应 Markdown 文档；具体能力以使用的代码或发行版本为准。
+
+## English overview
+
+**ZCard 2.0 (`zcard-next`) is an MIT-licensed, self-hosted e-commerce platform written in Go.** It supports digital goods and automated card/code delivery, physical products with shipping workflows, online service orders, and bidirectional supplier integration. The release binary embeds the Vue storefront and admin panel. SQLite, MySQL, and PostgreSQL are supported, with Chinese/English storefronts, multiple currencies, wallets, affiliate commissions, and white-label substores.
+
+Supplier adapters include ZCard, ACG-Faka, Dujiao Next, mcy-shop (OpenApi plugin required), and 19csn for asynchronous services. In-admin online updates are available for native binaries and official managed single-instance Docker Compose installations. Provider capabilities, service purchases, database backups, and rollback each have deployment or product-specific requirements described above and in the [deployment guide](doc/部署指南.md). Start with the [AI-readable documentation index](llms.txt) for focused references.
+
+## 文档导航
+
+| 文档 | 内容 |
+| --- | --- |
+| [部署指南](doc/部署指南.md) | 安装、数据库、HTTPS、后台在线更新、备份与恢复 |
+| [OpenAPI](server/api/openapi.yaml) | 管理后台、商城、供货接口契约 |
+| [萌次元对接](docs/features/mcy-shop.md) | OpenApi 插件、双方对接方法、多 SKU 与供货范围 |
+| [19csn 对接](docs/features/19csn.md) | 异步服务、动态报价、订单进度与结算 |
+| [商品导入、分类与复用发货](docs/features/商品导入分类与复用发货.md) | 导入分类、内容复用与履约配置 |
+| [ACG 导入兼容](docs/features/acg-legacy-import-compatibility.md) | 二开商品字段、规格与库存兼容规则 |
+| [营销抽奖](docs/features/lottery.md) | 抽奖活动、奖品与参与规则 |
+| [主题开发](docs/themes/README.md) | 主题包、配置与接口集成 |
+| [llms.txt](llms.txt) | 面向 AI 助手的项目摘要与纯文本引用入口 |
+| [正式发行与更新说明](https://github.com/NovaWorks/zcard-next/releases) | 可部署发行版、附件与版本变更 |
 
 ## 开发与架构
 
@@ -343,7 +418,9 @@ zcard-next/
 ├── storefront/              # 商城前台前端
 ├── deploy/                  # Dockerfile、docker-compose、安装脚本
 ├── scripts/                 # 一键安装脚本
-└── doc/                     # 部署指南
+├── doc/                     # 部署指南
+├── docs/features/           # 功能与协议说明
+└── llms.txt                 # AI 文档索引
 ```
 
 </details>
@@ -370,7 +447,7 @@ zcard-next/
 ## 更新与交流
 
 - **版本发布**：[GitHub Releases](https://github.com/NovaWorks/zcard-next/releases) 提供可部署版本与更新说明。
-- **升级指引**：单二进制可在后台「设置 → 系统更新」升级；Docker 重建镜像。操作步骤与回滚边界见 [部署指南](doc/部署指南.md)。
+- **升级指引**：单二进制与官方受管理的单实例 Docker Compose 支持后台在线更新；其他 Docker 部署按各自方式升级。操作步骤、备份条件与回滚边界见[部署指南](doc/部署指南.md)。
 - **问题反馈**：欢迎通过 [Issues](https://github.com/NovaWorks/zcard-next/issues) 报告问题、提出功能建议，或提交 PR。
 
 | 交流讨论 | 更新通知 |

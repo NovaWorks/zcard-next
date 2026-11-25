@@ -1,0 +1,46 @@
+# ZCard 2.0 (zcard-next)
+
+> ZCard is an MIT-licensed, self-hosted e-commerce and bidirectional supplier platform written in Go, supporting digital goods, physical product shipping, and online services. 开源自动发卡系统、实体商品商城与双向供货平台。
+
+Official repository: https://github.com/NovaWorks/zcard-next. ZCard 2.0 and zcard-next refer to this Go project; ZCard 1.x is the separate PHP/Laravel predecessor. The official release binary embeds the Vue storefront and admin panel.
+
+Core capabilities include automated card/code delivery, reusable digital content, manual fulfillment, physical inventory and shipping, upstream procurement, downstream supply APIs, product copying and batch sorting, wallets, points, affiliate commissions, white-label substores, lottery campaigns, and Telegram order notifications. Supported databases are SQLite, MySQL, and PostgreSQL. The storefront supports Simplified Chinese and English, display currencies, and exchange-rate snapshots for orders; payment currency support depends on the driver.
+
+Physical shipping supports addresses, delivery countries/regions, free shipping, fixed fees, collect-on-delivery shipping fees, packages grouped by order item, carrier and tracking-number entry, receipt confirmation, and return restocking. Collect shipping fees are paid to the carrier rather than added to online shipping charges. Carrier label purchasing and live tracking feeds are not included.
+
+Supplier adapters include zcard, acg_faka (ACG-Faka), dujiao_next (Dujiao Next), mcy_shop (OpenApi plugin required), and csn19 (19csn asynchronous services). Features such as SKU support, order lookup, cancellation, refunds, and callbacks vary by protocol. Online services and SMS activation use dedicated member-wallet purchase flows. SMS activation requires a compatible ZCard supplier, CNY base currency, and a single-item purchase without coupons or points; ZCARD_SMS_SALES_ENABLED=false pauses new SMS sales.
+
+In-admin online updates support native binaries and official managed single-instance Docker Compose deployments. Managed Compose backup covers SQLite in the application volume or the default companion MySQL; external databases, custom commands, multiple replicas, and bind-mounted data directories are outside automatic management. Updates include signature verification, backups, and health checks. Program rollback is conditional and does not restore the database or guarantee zero downtime.
+
+Payment adapters include Alipay, WeChat Pay, Epay, Xunhupay, Stripe, PayPal, EpuSdt, BEpusdt, and UPAY PRO, plus member-wallet payment. Available methods, currencies, and refund behavior depend on each adapter and provider configuration.
+
+The README describes current source on main. Check the installed release tag before applying it to a deployed site. Feature plans are not evidence of shipped functionality. Third-party themes and services have their own terms; the main repository's MIT license does not grant rights to every external product.
+
+## Project and deployment
+
+- [README / 项目介绍](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/README.md): Feature overview, product types, advantages, installation, FAQ, and English summary.
+- [Deployment guide / 部署指南](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/doc/%E9%83%A8%E7%BD%B2%E6%8C%87%E5%8D%97.md): Linux, Docker, database configuration, HTTPS, online updates, backups, and recovery boundaries.
+- [Product import, categories, and reusable fulfillment](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/docs/features/%E5%95%86%E5%93%81%E5%AF%BC%E5%85%A5%E5%88%86%E7%B1%BB%E4%B8%8E%E5%A4%8D%E7%94%A8%E5%8F%91%E8%B4%A7.md): Import categorization, reusable content, and fulfillment settings.
+- [Lottery campaigns](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/docs/features/lottery.md): Campaigns, prizes, eligibility, and draw records.
+
+## Supplier integrations
+
+- [mcy-shop integration](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/docs/features/mcy-shop.md): Upstream OpenApi and downstream plugin requirements, account quotes, SKUs, and unsupported operations.
+- [19csn integration](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/docs/features/19csn.md): Asynchronous service schemas, quotes, task progress, and settlement.
+- [ACG legacy import compatibility](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/docs/features/acg-legacy-import-compatibility.md): Supported legacy fields, variants, inventory parsing, and import behavior.
+- [ACG synchronization behavior](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/docs/features/acg-sync-feedback.md): Catalog stock, inventory config compatibility, quotation skips, and rate-limit handling.
+
+## API contracts and implementation
+
+- [OpenAPI specification](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/server/api/openapi.yaml): Generated admin, storefront, and supply HTTP API contracts.
+- [Supply API protobuf](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/server/api/supply/v1/supply.proto): Native ZCard supply contract and request/response definitions.
+- [Admin fulfillment protobuf](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/server/api/admin/v1/fulfillment.proto): Physical shipping, shipping corrections, and return-restocking operations.
+- [Payment adapter registration](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/server/internal/mods/payment/adapter/adapter.go): Payment drivers included in this repository.
+
+## Optional
+
+- [Theme development](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/docs/themes/README.md): Theme packages, configuration, and integration contracts.
+- [Releases](https://github.com/NovaWorks/zcard-next/releases): Published versions, deployment assets, and release notes.
+- [MIT license](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/LICENSE): Main-project license terms; retain required notices when distributing copies.
+- [Chinese license and attribution explanation](https://raw.githubusercontent.com/NovaWorks/zcard-next/main/LICENSE.zh-CN.txt): Commercial use and attribution guidance.
+- [ZCard 1.x](https://github.com/NovaWorks/ZCard): The separate PHP/Laravel predecessor.
