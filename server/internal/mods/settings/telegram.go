@@ -25,7 +25,7 @@ func telegramLegacyDefaults(items []port.Item) []port.Item {
 	if json.Unmarshal(legacy, &values) != nil {
 		return items
 	}
-	for _, key := range []string{"enabled", "order_enabled", "bot_token", "chat_ids", "events"} {
+	for _, key := range []string{"enabled", "order_enabled", "ticket_enabled", "ticket_events", "bot_token", "chat_ids", "events"} {
 		if value, ok := values[key]; ok && !have["telegram_"+key] {
 			items = append(items, port.Item{Group: "notify", Key: "telegram_" + key, Value: value})
 		}

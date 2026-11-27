@@ -31,6 +31,13 @@ const saving = ref(false);
 const enabled = ref(false);
 const orderEnabled = ref(false);
 const lowStockEnabled = ref(false);
+const ticketEnabled = ref(false);
+const ticketEvents = ref<string[]>(["ticket.created", "ticket.replied", "ticket.urgent"]);
+const ticketEventOptions = [
+ {value:"ticket.created",label:"新工单"},
+ {value:"ticket.replied",label:"客户追加回复"},
+ {value:"ticket.urgent",label:"工单加急"},
+];
 const token = ref("");
 const savedToken = ref(false);
 const events = ref<string[]>(["order.paid"]);
@@ -48,6 +55,8 @@ const state = () =>
     enabled: enabled.value,
     orderEnabled: orderEnabled.value,
     lowStockEnabled: lowStockEnabled.value,
+    ticketEnabled: ticketEnabled.value,
+    ticketEvents: ticketEvents.value,
     token: token.value,
     events: events.value,
     targets: targets.value.map((t) => ({ chat_id: t.chat_id, topic: t.topic })),
@@ -99,6 +108,8 @@ const tokenError = computed(() =>
 const validation = computed(() => {
   if (enabled.value && lowStockEnabled.value && (!targets.value.length || (!savedToken.value && !token.value)))
     return "启用低库存通知需要 Token 和至少一个接收位置";
+  if (enabled.value && ticketEnabled.value && (!targets.value.length || (!savedToken.value && !token.value) || !ticketEvents.value.length))
+    return "启用工单通知需要 Token、至少一个接收位置和一个工单事件";
   if (tokenError.value) return tokenError.value;
   if (targets.value.some((t) => chatError(t) || topicError(t)))
     return "请修正接收位置中标出的错误";
@@ -130,6 +141,8 @@ async function load() {
     enabled.value = values.telegram_enabled === true;
     orderEnabled.value = values.telegram_order_enabled === true;
     lowStockEnabled.value = values.telegram_low_stock_enabled === true;
+    ticketEnabled.value = values.telegram_ticket_enabled === true;
+    ticketEvents.value = values.telegram_ticket_events || ["ticket.created", "ticket.replied", "ticket.urgent"];
     savedToken.value = values.telegram_bot_token === "****";
     token.value = "";
     events.value = values.telegram_events || ["order.paid"];
@@ -168,6 +181,8 @@ async function save() {
       telegram_enabled: enabled.value,
       telegram_order_enabled: orderEnabled.value,
       telegram_low_stock_enabled: lowStockEnabled.value,
+      telegram_ticket_enabled: ticketEnabled.value,
+      telegram_ticket_events: ticketEvents.value,
       telegram_events: events.value,
       telegram_targets: targets.value.map(destination),
     };
@@ -203,7 +218,7 @@ onMounted(load);
     </NAlert>
     <template v-else>
       <p class="mb-16px">
-        向商家个人、管理群或指定话题发送主站订单与低库存提醒。工单设置与此处分别保存。
+        向商家个人、管理群或指定话题发送主站订单、工单与低库存提醒，分别开启后生效。
       </p>
       <NForm
         label-placement="top"
@@ -219,15 +234,26 @@ onMounted(load);
               v-model:value="orderEnabled"
               aria-label="主站订单通知"
             /><span class="ml-8px"
-              >关闭只停止订单通知，其他 TG 告警由通道开关控制</span
+              >关闭只停止订单通知，工单和库存通知使用各自开关</span
             ></NFormItem
           >
+          <NFormItem label="主站工单通知">
+            <NSwitch v-model:value="ticketEnabled" aria-label="主站工单通知" />
+          </NFormItem>
           <NFormItem label="主站低库存通知">
             <NSwitch v-model:value="lowStockEnabled" aria-label="主站低库存通知" />
           </NFormItem>
         </div>
         <NAlert v-if="lowStockEnabled" type="info" :show-icon="false" class="mb-16px">
           请在「系统设置 → 货源」开启库存预警并设置“库存低于此数量时提醒”。首次跌破阈值合并通知，持续低库存不重复发送，降至零可追加一次。恢复后再次跌破受 30 分钟冷却限制；查询失败不会当作缺货。
+        </NAlert>
+        <NFormItem v-if="ticketEnabled" label="工单通知事件">
+          <NCheckboxGroup v-model:value="ticketEvents" aria-label="工单通知事件">
+            <NSpace><NCheckbox v-for="event in ticketEventOptions" :key="event.value" :value="event.value" :label="event.label" /></NSpace>
+          </NCheckboxGroup>
+        </NFormItem>
+        <NAlert v-if="ticketEnabled" type="info" :show-icon="false" class="mb-16px">
+          工单提醒使用下方相同的 Bot 和接收位置。客户每次追问分别提醒；客服回复和内部备注不推送，消息正文及附件请登录后台查看。
         </NAlert>
         <NFormItem
           label="Bot Token"
@@ -340,7 +366,7 @@ onMounted(load);
       <TelegramDelivery
         :unsaved="dirty || saving"
         :targets="savedTargets"
-        :enabled="enabled && (orderEnabled || lowStockEnabled) && savedToken"
+        :enabled="enabled && (orderEnabled || lowStockEnabled || ticketEnabled) && savedToken"
       />
     </template>
   </NCard>

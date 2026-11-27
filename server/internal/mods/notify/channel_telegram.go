@@ -25,6 +25,8 @@ import (
 
 // TelegramConfig bot 配置（settings notify 组 telegram 键）。
 type TelegramConfig struct {
+	TicketEnabled   bool     `json:"ticket_enabled"`
+	TicketEvents    []string `json:"ticket_events"`
 	LowStockEnabled bool     `json:"low_stock_enabled"`
 	OrderEnabled    bool     `json:"order_enabled"`
 	Events          []string `json:"events"`
@@ -50,7 +52,7 @@ func (*TelegramChannel) Name() string { return "telegram" }
 
 // tgConfig 运行时读配置。
 func (c *TelegramChannel) tgConfig(ctx context.Context) (*TelegramConfig, error) {
-	cfg := &TelegramConfig{Events: []string{"order.paid"}}
+	cfg := &TelegramConfig{Events: []string{"order.paid"}, TicketEvents: TelegramTicketEvents()}
 	// Legacy security-alert config remains supported until flat settings are saved.
 	raw, err := c.settings.GetJSON(ctx, "notify", "telegram_enabled")
 	if err != nil {
@@ -67,7 +69,7 @@ func (c *TelegramChannel) tgConfig(ctx context.Context) (*TelegramConfig, error)
 	} else if err = json.Unmarshal(raw, &cfg.Enabled); err != nil {
 		return nil, fmt.Errorf("Telegram 配置格式错误")
 	}
-	for key, dest := range map[string]any{"telegram_bot_token": &cfg.BotToken, "telegram_chat_ids": &cfg.ChatIDs, "telegram_order_enabled": &cfg.OrderEnabled, "telegram_low_stock_enabled": &cfg.LowStockEnabled, "telegram_events": &cfg.Events} {
+	for key, dest := range map[string]any{"telegram_bot_token": &cfg.BotToken, "telegram_chat_ids": &cfg.ChatIDs, "telegram_order_enabled": &cfg.OrderEnabled, "telegram_low_stock_enabled": &cfg.LowStockEnabled, "telegram_ticket_enabled": &cfg.TicketEnabled, "telegram_ticket_events": &cfg.TicketEvents, "telegram_events": &cfg.Events} {
 		raw, err = c.settings.GetJSON(ctx, "notify", key)
 		if err != nil {
 			return nil, err

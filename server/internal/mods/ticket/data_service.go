@@ -7,9 +7,11 @@ import (
 	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -66,20 +68,26 @@ func (s *AdminTicketService) GetTicket(ctx context.Context, req *adminv1.GetTick
 
 // ReplyTicket 客服回复（is_internal 内部备注不触发状态机；正常回复 open→processing）。
 func (s *AdminTicketService) ReplyTicket(ctx context.Context, req *adminv1.AdminReplyRequest) (*emptypb.Empty, error) {
-	t, err := s.repo.GetByNo(ctx, req.GetTicketNo())
+	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
+		t, err := s.repo.GetByNo(ctx, req.GetTicketNo())
+		if err != nil {
+			return err
+		}
+		adminID := adminIDOf(ctx)
+		message, err := s.repo.CreateMessage(ctx, t.ID, "admin", adminID, req.GetContent(), nil, req.GetIsInternal())
+		if err != nil {
+			return err
+		}
+		if !req.GetIsInternal() {
+			if err := s.repo.MarkProcessingOnReply(ctx, t.ID); err != nil {
+				return err
+			}
+			return s.publishReply(ctx, t, adminID, message.ID)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	adminID := adminIDOf(ctx)
-	if _, err := s.repo.CreateMessage(ctx, t.ID, "admin", adminID, req.GetContent(), nil, req.GetIsInternal()); err != nil {
-		return nil, err
-	}
-	if !req.GetIsInternal() {
-		// 首次客服回复：open → processing（首响回填）
-		if err := s.repo.MarkProcessingOnReply(ctx, t.ID); err != nil {
-			return nil, err
-		}
-		s.publishReply(ctx, t, adminID)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -93,7 +101,7 @@ func (s *AdminTicketService) ResolveTicket(ctx context.Context, req *adminv1.Tic
 	if err := s.repo.Transition(ctx, t.ID, "resolved"); err != nil {
 		return nil, err
 	}
-	s.publishReply(ctx, t, adminIDOf(ctx))
+	_ = s.publishReply(ctx, t, adminIDOf(ctx), 0)
 	return &emptypb.Empty{}, nil
 }
 
@@ -121,17 +129,17 @@ func (s *AdminTicketService) AutoCloseResolved(ctx context.Context) {
 	}
 }
 
-func (s *AdminTicketService) publishReply(ctx context.Context, t *ent.Ticket, adminID uint64) {
+func (s *AdminTicketService) publishReply(ctx context.Context, t *ent.Ticket, adminID, messageID uint64) error {
 	if s.outbox == nil {
-		return
+		return nil
 	}
-	payload := map[string]any{"ticket_no": t.TicketNo, "by": "admin", "admin_id": adminID}
+	payload := map[string]any{"ticket_no": t.TicketNo, "by": "admin", "admin_id": adminID, "ticket_id": t.ID, "user_id": t.UserID, "message_id": messageID, "subsite_id": tenancy.FromContext(ctx).SubsiteID}
 	raw, err := jsonMarshalTicket(payload)
 	if err != nil {
-		return
+		return err
 	}
 	agg := "ticket:" + t.TicketNo
-	_ = s.outbox.Write(ctx, "ticket", events.TicketReplied, agg, agg+":replied:"+adminIDKey(adminID), raw)
+	return s.outbox.Write(ctx, "ticket", events.TicketReplied, agg, agg+":replied:message:"+itoaU64(messageID), raw)
 }
 
 func toAdminPB(t *ent.Ticket) *adminv1.AdminTicket {
@@ -164,13 +172,6 @@ func adminIDOf(ctx context.Context) uint64 {
 		return claims.Subject
 	}
 	return 0
-}
-
-func adminIDKey(id uint64) string {
-	if id == 0 {
-		return "0"
-	}
-	return itoaU64(id)
 }
 
 func itoaU64(v uint64) string {

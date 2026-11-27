@@ -132,7 +132,7 @@ func (s *AdminSettingsService) validateSettingValue(ctx context.Context, group, 
 			return errors.BadRequest("settings.INVALID_VALUE", "Telegram 配置格式错误，请检查 Token、Chat ID 或事件选项")
 		}
 		switch key {
-		case "telegram_enabled", "telegram_order_enabled", "telegram_low_stock_enabled":
+		case "telegram_enabled", "telegram_order_enabled", "telegram_low_stock_enabled", "telegram_ticket_enabled":
 			var v *bool
 			if json.Unmarshal(value, &v) != nil || v == nil {
 				return invalid()
@@ -165,6 +165,16 @@ func (s *AdminSettingsService) validateSettingValue(ctx context.Context, group, 
 		case "telegram_targets":
 			if _, err := notifyport.ParseTelegramTargets(value); err != nil {
 				return errors.BadRequest("settings.INVALID_VALUE", err.Error())
+			}
+		case "telegram_ticket_events":
+			var selected []string
+			if json.Unmarshal(value, &selected) != nil || selected == nil {
+				return invalid()
+			}
+			for _, event := range selected {
+				if event != "ticket.created" && event != "ticket.replied" && event != "ticket.urgent" {
+					return invalid()
+				}
 			}
 		case "telegram_events":
 			var v []string

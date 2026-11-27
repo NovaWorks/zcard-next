@@ -27,7 +27,7 @@ type GroupDef struct {
 
 // groups 全部分组目录（ 清裁）。
 var groups = map[string]*GroupDef{
-	"ticket": {Name: "ticket", Desc: "工单 / TG订单通知", Labels: map[string]string{"urgent_fee": "加急费（分，0 为免费）"}, Defaults: map[string]any{"urgent_fee": 0}},
+	"ticket": {Name: "ticket", Desc: "工单", Labels: map[string]string{"urgent_fee": "加急费（分，0 为免费）"}, Defaults: map[string]any{"urgent_fee": 0}},
 	"site": {
 		Name: "site", Desc: "站点基础",
 		Labels: map[string]string{
@@ -326,6 +326,7 @@ var groups = map[string]*GroupDef{
 		Name: "notify", Desc: "邮件短信",
 		Labels: map[string]string{
 			"telegram_enabled": "Telegram 通知通道", "telegram_order_enabled": "Telegram 主站订单通知", "telegram_low_stock_enabled": "Telegram 低库存通知",
+			"telegram_ticket_enabled": "Telegram 主站工单通知", "telegram_ticket_events": "Telegram 工单通知事件",
 			"telegram_bot_token": "Telegram Bot Token", "telegram_chat_ids": "Telegram 接收 Chat ID",
 			"telegram_events": "Telegram 订单通知事件", "telegram_targets": "Telegram 接收位置",
 			"smtp_security": "SMTP 连接方式", "smtp_auth": "SMTP 认证方式", "smtp_tls_verify": "校验 SMTP 服务器证书",
@@ -340,14 +341,16 @@ var groups = map[string]*GroupDef{
 			"sms_template_reset":    "找回密码短信模板（内容需与通道模板一致；变量 {code}{minutes}{site}）",
 		},
 		Options: map[string]map[string]string{
-			"telegram_events": {"order.created": "新订单", "order.paid": "付款成功", "order.delivered": "发货完成", "order.refunded": "退款成功"},
-			"smtp_security":   {"auto": "自动（兼容旧配置）", "plain": "普通 SMTP（不加密）", "tls": "SSL/TLS（通常 465）", "starttls": "STARTTLS（通常 587）"},
-			"smtp_auth":       {"auto": "自动", "plain": "PLAIN", "login": "LOGIN", "cram_md5": "CRAM-MD5", "none": "无需认证（中继）"},
-			"sms_provider":    {"aliyun": "阿里云短信", "tencent": "腾讯云短信", "qiniu": "七牛短信"},
+			"telegram_ticket_events": {"ticket.created": "新工单", "ticket.replied": "客户追加回复", "ticket.urgent": "工单加急"},
+			"telegram_events":        {"order.created": "新订单", "order.paid": "付款成功", "order.delivered": "发货完成", "order.refunded": "退款成功"},
+			"smtp_security":          {"auto": "自动（兼容旧配置）", "plain": "普通 SMTP（不加密）", "tls": "SSL/TLS（通常 465）", "starttls": "STARTTLS（通常 587）"},
+			"smtp_auth":              {"auto": "自动", "plain": "PLAIN", "login": "LOGIN", "cram_md5": "CRAM-MD5", "none": "无需认证（中继）"},
+			"sms_provider":           {"aliyun": "阿里云短信", "tencent": "腾讯云短信", "qiniu": "七牛短信"},
 		},
 		Defaults: map[string]any{
-			"telegram_enabled": false, "telegram_order_enabled": false, "telegram_low_stock_enabled": false,
-			"telegram_targets": nil, "telegram_bot_token": "", "telegram_chat_ids": "", "telegram_events": []string{"order.paid"},
+			"telegram_enabled": false, "telegram_order_enabled": false, "telegram_low_stock_enabled": false, "telegram_ticket_enabled": false,
+			"telegram_ticket_events": []string{"ticket.created", "ticket.replied", "ticket.urgent"},
+			"telegram_targets":       nil, "telegram_bot_token": "", "telegram_chat_ids": "", "telegram_events": []string{"order.paid"},
 			"smtp_security":   "auto",
 			"smtp_auth":       "auto",
 			"smtp_tls_verify": true,

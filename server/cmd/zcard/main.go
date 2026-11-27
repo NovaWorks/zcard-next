@@ -506,6 +506,7 @@ func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.
 	walletRepo.SetCommissionConsumer(affiliateSvc.Repo())
 	// Persist merchant reminders before any supplier HTTP or SMTP work.
 	notifyDisp.RegisterTelegramOrders(dp)
+	notifyDisp.RegisterTelegramTickets(dp)
 	// 事件订阅注册（）：order.paid → 采购（wire 破环点，见 bootstrap/queue.go 注释）
 	dp.Register(data.HandlerReg{
 		Consumer: "procurement.order_paid",

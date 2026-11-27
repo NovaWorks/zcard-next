@@ -238,6 +238,10 @@ function senderName(m: any) {
   return m.sender_type;
 }
 
+watch(() => route.query.ticket_no, (value) => {
+  if (route.path === "/ticket" && typeof value === "string" && value) void openDetail(value);
+}, { immediate: true });
+
 watch(() => route.query.status, () => {
   if (route.path !== "/ticket") return;
   statusFilter.value = routeStatus();

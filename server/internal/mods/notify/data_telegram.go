@@ -49,10 +49,21 @@ func telegramEnabled(cfg *TelegramConfig, event string) bool {
 		return false
 	}
 	if event == "telegram.test" {
-		return cfg.OrderEnabled || cfg.LowStockEnabled
+		return cfg.OrderEnabled || cfg.LowStockEnabled || cfg.TicketEnabled
 	}
 	if event == "stock.low" {
 		return cfg.LowStockEnabled
+	}
+	if strings.HasPrefix(event, "ticket.") {
+		if !cfg.TicketEnabled {
+			return false
+		}
+		for _, selected := range cfg.TicketEvents {
+			if selected == event {
+				return true
+			}
+		}
+		return false
 	}
 	if !cfg.OrderEnabled {
 		return false
@@ -256,14 +267,18 @@ func (d *Dispatcher) EnqueueTelegram(ctx context.Context, env events.Envelope) e
 	body := strings.Join(lines, "\n")
 	return d.repo.enqueueTelegram(ctx, env.EventID, env.Type, o.ID, subject, body, targets)
 }
-func (r *NotifyRepo) enqueueTelegram(ctx context.Context, eventID uint64, event string, bizID uint64, subject, body string, targets []notifyport.TelegramTarget) error {
+func (r *NotifyRepo) enqueueTelegram(ctx context.Context, eventID uint64, event string, bizID uint64, subject, body string, targets []notifyport.TelegramTarget, bizTypes ...string) error {
+	bizType := "order"
+	if len(bizTypes) > 0 {
+		bizType = bizTypes[0]
+	}
 	for _, target := range targets {
 		key := telegramDeliveryKey(eventID, target)
 		vars := map[string]any{}
 		if target.TopicID != 0 {
 			vars["telegram_topic_id"] = strconv.FormatInt(target.TopicID, 10)
 		}
-		err := data.Client(ctx, r.data).NotificationLog.Create().SetVariables(vars).SetDeliveryKey(key).SetEventType(event).SetBizType("order").SetBizID(bizID).
+		err := data.Client(ctx, r.data).NotificationLog.Create().SetVariables(vars).SetDeliveryKey(key).SetEventType(event).SetBizType(bizType).SetBizID(bizID).
 			SetChannel(notificationlog.ChannelTelegram).SetRecipient(target.ChatID).SetSubject(subject).SetBody(body).
 			SetNextAttemptAt(time.Now().UTC()).OnConflict(sql.ConflictColumns(notificationlog.FieldDeliveryKey)).DoNothing().Exec(ctx)
 		if err != nil && !errors.Is(err, dbsql.ErrNoRows) {

@@ -26,6 +26,7 @@ const (
 	WithdrawalReviewed   = "withdrawal.reviewed"
 	TicketCreated        = "ticket.created"
 	TicketReplied        = "ticket.replied"
+	TicketUrgent         = "ticket.urgent"
 	UserRegistered       = "user.registered"
 	RechargeSucceeded    = "recharge.succeeded"
 	SyncCompleted        = "sync.completed"
@@ -64,7 +65,7 @@ func All() []string {
 	return []string{
 		AdminMFAChanged, OrderCreated, OrderPaid, OrderDelivered, OrderCompleted, OrderCanceled, OrderRefunded,
 		PaymentSucceeded, PaymentFailed, RefundRequested, RefundSucceeded,
-		WithdrawalReviewed, TicketCreated, TicketReplied,
+		WithdrawalReviewed, TicketCreated, TicketReplied, TicketUrgent,
 		UserRegistered, RechargeSucceeded, SyncCompleted, SupplyRateLimited,
 		ProcurementFulfilled, ProcurementFailed,
 	}

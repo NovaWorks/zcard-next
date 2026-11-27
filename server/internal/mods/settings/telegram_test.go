@@ -37,3 +37,21 @@ func TestTelegramLegacyFormDoesNotExposeToken(t *testing.T) {
 		}
 	}
 }
+
+func TestTelegramTicketSettingsValidation(t *testing.T) {
+	s := NewAdminSettingsService(nil)
+	for key, values := range map[string][]string{"telegram_ticket_enabled": {"true", "false"}, "telegram_ticket_events": {`[]`, `["ticket.created","ticket.replied","ticket.urgent"]`}} {
+		for _, raw := range values {
+			if err := s.validateSettingValue(context.Background(), "notify", key, json.RawMessage(raw)); err != nil {
+				t.Fatal(key, raw, err)
+			}
+		}
+	}
+	for key, values := range map[string][]string{"telegram_ticket_enabled": {"null", `"true"`}, "telegram_ticket_events": {`null`, `{}`, `["order.paid"]`, `["ticket.deleted"]`}, "telegram_events": {`["ticket.created"]`}} {
+		for _, raw := range values {
+			if err := s.validateSettingValue(context.Background(), "notify", key, json.RawMessage(raw)); err == nil {
+				t.Fatal("accepted invalid", key, raw)
+			}
+		}
+	}
+}

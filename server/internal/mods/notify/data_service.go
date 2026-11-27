@@ -342,7 +342,7 @@ func (s *AdminNotifyService) TestTelegram(ctx context.Context, req *adminv1.Test
 	eventID := uint64(time.Now().UnixNano())
 	reply := &adminv1.TestTelegramReply{}
 	err = data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
-		if err := s.repo.enqueueTelegram(ctx, eventID, "telegram.test", 0, "Telegram 通知测试", "这是一条管理员主动发送的测试消息。此测试用于核对订单和库存通知的接收位置，不包含卡密或查询密码。", targets); err != nil {
+		if err := s.repo.enqueueTelegram(ctx, eventID, "telegram.test", 0, "Telegram 通知测试", "这是一条管理员主动发送的测试消息。此测试用于核对订单、工单和库存通知的接收位置，不包含卡密或查询密码。", targets); err != nil {
 			return err
 		}
 		keys := make([]string, 0, len(targets))

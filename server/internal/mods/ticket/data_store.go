@@ -21,6 +21,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/id"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -67,15 +68,22 @@ func (s *StoreTicketService) CreateTicket(ctx context.Context, req *storefrontv1
 		return nil, err
 	}
 	ticketNo := id.FormatNo("T", snowflakeID)
-	t, err := s.repo.Create(ctx, ticketNo, CreateInput{
-		UserID: userID, GuestContact: req.GetGuestContact(),
-		Type: req.GetType(), OrderID: req.GetOrderId(), ProductID: req.GetProductId(),
-		Content: req.GetContent(), Attachments: req.GetAttachmentMediaIds(),
+	var t *ent.Ticket
+	err = data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
+		var err error
+		t, err = s.repo.Create(ctx, ticketNo, CreateInput{
+			UserID: userID, GuestContact: req.GetGuestContact(),
+			Type: req.GetType(), OrderID: req.GetOrderId(), ProductID: req.GetProductId(),
+			Content: req.GetContent(), Attachments: req.GetAttachmentMediaIds(),
+		})
+		if err != nil {
+			return err
+		}
+		return s.publish(ctx, events.TicketCreated, t, nil)
 	})
 	if err != nil {
 		return nil, err
 	}
-	s.publish(ctx, events.TicketCreated, t, map[string]any{"ticket_no": t.TicketNo})
 	return toStorePB(t), nil
 }
 
@@ -128,20 +136,25 @@ func (s *StoreTicketService) GetTicket(ctx context.Context, req *storefrontv1.Ge
 
 // ReplyTicket 用户回复。
 func (s *StoreTicketService) ReplyTicket(ctx context.Context, req *storefrontv1.ReplyTicketRequest) (*emptypb.Empty, error) {
-	t, err := s.assertAccess(ctx, req.GetTicketNo())
+	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
+		t, err := s.assertAccess(ctx, req.GetTicketNo())
+		if err != nil {
+			return err
+		}
+		message, err := s.repo.CreateMessage(ctx, t.ID, "user", currentUserID(ctx), req.GetContent(), req.GetAttachmentMediaIds(), false)
+		if err != nil {
+			return err
+		}
+		if string(t.Status) == "resolved" {
+			if err := s.repo.Transition(ctx, t.ID, "processing"); err != nil {
+				return err
+			}
+		}
+		return s.publish(ctx, events.TicketReplied, t, map[string]any{"message_id": message.ID, "by": "user"})
+	})
 	if err != nil {
 		return nil, err
 	}
-	if _, err := s.repo.CreateMessage(ctx, t.ID, "user", currentUserID(ctx), req.GetContent(), req.GetAttachmentMediaIds(), false); err != nil {
-		return nil, err
-	}
-	// resolved 追加回复 → processing 重开
-	if string(t.Status) == "resolved" {
-		if err := s.repo.Transition(ctx, t.ID, "processing"); err != nil {
-			return nil, err
-		}
-	}
-	s.publish(ctx, events.TicketReplied, t, map[string]any{"ticket_no": t.TicketNo, "by": "user"})
 	return &emptypb.Empty{}, nil
 }
 
@@ -163,7 +176,6 @@ func (s *StoreTicketService) RateTicket(ctx context.Context, req *storefrontv1.R
 // PayUrgent confirms the quoted fee and commits wallet debit and priority together.
 func (s *StoreTicketService) PayUrgent(ctx context.Context, req *storefrontv1.PayUrgentRequest) (*storefrontv1.PayUrgentReply, error) {
 	reply := &storefrontv1.PayUrgentReply{}
-	var upgraded *ent.Ticket
 	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
 		t, err := s.assertAccess(ctx, req.GetTicketNo())
 		if err != nil {
@@ -213,14 +225,10 @@ func (s *StoreTicketService) PayUrgent(ctx context.Context, req *storefrontv1.Pa
 			}
 		}
 		reply.Paid, reply.FeeCents = true, fee
-		upgraded = t
-		return nil
+		return s.publish(ctx, events.TicketUrgent, t, map[string]any{"urgent": true})
 	})
 	if err != nil {
 		return nil, err
-	}
-	if upgraded != nil {
-		s.publish(ctx, events.TicketReplied, upgraded, map[string]any{"ticket_no": upgraded.TicketNo, "urgent": true})
 	}
 	return reply, nil
 }
@@ -272,20 +280,24 @@ func (s *StoreTicketService) assertAccess(ctx context.Context, ticketNo string) 
 }
 
 // publish 工单事件（notify 消费：用户通知/客服告警）。
-func (s *StoreTicketService) publish(ctx context.Context, typ string, t *ent.Ticket, extra map[string]any) {
+func (s *StoreTicketService) publish(ctx context.Context, typ string, t *ent.Ticket, extra map[string]any) error {
 	if s.outbox == nil {
-		return
+		return nil
 	}
-	payload := map[string]any{"ticket_no": t.TicketNo, "ticket_id": t.ID, "type": string(t.Type)}
+	payload := map[string]any{"ticket_no": t.TicketNo, "ticket_id": t.ID, "type": string(t.Type), "subsite_id": tenancy.FromContext(ctx).SubsiteID, "user_id": t.UserID}
 	for k, v := range extra {
 		payload[k] = v
 	}
 	raw, err := jsonMarshalTicket(payload)
 	if err != nil {
-		return
+		return err
 	}
 	agg := "ticket:" + t.TicketNo
-	_ = s.outbox.Write(ctx, "ticket", typ, agg, agg+":"+typ, raw)
+	key := agg + ":" + typ
+	if messageID, ok := extra["message_id"].(uint64); ok {
+		key += fmt.Sprintf(":message:%d", messageID)
+	}
+	return s.outbox.Write(ctx, "ticket", typ, agg, key, raw)
 }
 
 func currentUserID(ctx context.Context) uint64 {
