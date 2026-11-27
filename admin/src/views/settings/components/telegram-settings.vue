@@ -209,7 +209,7 @@ onMounted(load);
 </script>
 
 <template>
-  <NCard title="TG订单与库存通知" class="mt-24px" size="small">
+  <NCard title="Telegram 通知" class="mt-24px" size="small">
     <NSpin v-if="loading" />
     <NAlert v-else-if="failed" type="error" title="读取 TG 配置失败">
       已有配置未被修改。<NButton class="ml-12px" @click="load"
