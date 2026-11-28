@@ -89,6 +89,24 @@ func TestSubmissionRetryProofConsumedBeforeRemoteCall(t *testing.T) {
 	if safeSubmitRetry(fresh) {
 		t.Fatal("crash could replay an in-flight purchase")
 	}
+	if err := s.PollOne(ctx, po.ID); err != nil {
+		t.Fatal(err)
+	}
+	fresh, _ = s.repo.Get(ctx, po.ID)
+	if fresh.Status != "pending" {
+		t.Fatal("a concurrent worker moved an active submission to manual", fresh)
+	}
+	// If the submitting process died, lease expiry makes it actionable without
+	// repeating the purchase, even when its eventual outcome is unknown.
+	d.Client.ProcurementOrder.UpdateOneID(po.ID).SetNextRetryAt(time.Now().UTC().Add(-time.Second)).ExecX(ctx)
+	if err := s.PollOne(ctx, po.ID); err != nil {
+		t.Fatal(err)
+	}
+	fresh, _ = s.repo.Get(ctx, po.ID)
+	if fresh.Status != "manual" {
+		t.Fatal("expired uncertain submission was bought again or left stuck", fresh)
+	}
+
 }
 
 func TestSubmissionRetryStopsForClosedOrUncertainOrder(t *testing.T) {

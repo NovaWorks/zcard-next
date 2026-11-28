@@ -21,11 +21,13 @@ func safeSubmitRetry(po *ent.ProcurementOrder) bool {
 }
 
 func (s *ProcureService) retrySubmission(ctx context.Context, po *ent.ProcurementOrder) error {
+	// Another worker may have consumed the retry proof and started the original
+	// request. Respect its lease before treating the missing receipt as unknown.
+	if po.Status == procurementorder.StatusPending && po.NextRetryAt.After(time.Now().UTC()) {
+		return nil
+	}
 	if po.Status != procurementorder.StatusPending || !safeSubmitRetry(po) {
 		return s.repo.MarkManual(ctx, po.ID, "上游单号缺失，请核实上游扣款和出货结果后人工补发")
-	}
-	if po.NextRetryAt.After(time.Now().UTC()) {
-		return nil
 	}
 	if int(po.RetryCount) >= len(pollIntervals) {
 		return s.repo.MarkManual(ctx, po.ID, "采购提交重试已耗尽，请检查库存、规格和余额后人工处理")
