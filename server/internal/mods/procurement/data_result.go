@@ -24,6 +24,8 @@ import (
 const PollTaskType = "procurement.poll"
 
 // pollIntervals 指数退避间隔表（秒）：30s×2, 1m×2, 2m×2, 5m×2, 10m×1。
+var patrolSlots = make(chan struct{}, 8)
+
 var pollIntervals = []int{30, 30, 60, 60, 120, 120, 300, 300, 600}
 
 // PollOne 轮询单张采购单（退避表按 retry_count 取间隔；耗尽移交巡检不标记失败）。
@@ -47,9 +49,13 @@ func (s *ProcureService) PollOne(ctx context.Context, poID uint64) error {
 		return s.deliverReceipt(ctx, poID, 0)
 	}
 	if po.UpstreamOrderID == "" {
-		return s.repo.MarkManual(ctx, poID, "上游单号缺失，请核实上游扣款和出货结果后人工补发")
+		return s.retrySubmission(ctx, po)
 	}
 
+	// Advance the scan cursor even when the provider query fails or times out.
+	if err := s.repo.touchPollAttempt(ctx, po.ID); err != nil {
+		return err
+	}
 	// 三通道汇聚：查询上游 → 结果确认
 	info, err := s.gw.Query(ctx, po.ConnectionID, po.UpstreamOrderID)
 	if err != nil {
@@ -130,7 +136,7 @@ func (s *ProcureService) handlePollError(ctx context.Context, poID uint64, err e
 }
 
 // Patrol 巡检：拉 polling/submitted 单逐个查上游；超 24h 卡死 → manual + 事件。
-// cron 每 30 分钟注册（bootstrap.NewCron）。
+// cron 每 15 秒扫描到期单；慢查询在有界后台任务中执行。
 func (s *ProcureService) Patrol(ctx context.Context) {
 	if err := s.repo.reconcileMissing(ctx); err != nil {
 		s.log.Warn("procurement.missing_reconcile_failed", "err", err)
@@ -142,8 +148,12 @@ func (s *ProcureService) Patrol(ctx context.Context) {
 	}
 	now := time.Now().UTC()
 	for _, po := range rows {
-		// 24h 卡死检测（last_poll_at 距今 > 24h）
-		if !po.LastPollAt.IsZero() && now.Sub(po.LastPollAt) > 24*time.Hour {
+		// 没有扫描锚点的旧单也参与超时保护。
+		anchor := po.LastPollAt
+		if anchor.IsZero() {
+			anchor = po.CreatedAt
+		}
+		if now.Sub(anchor) > 24*time.Hour {
 			reason := fmt.Sprintf("采购单 %d 超过 24h 未推进，转人工处理", po.ID)
 			if err := s.repo.MarkManual(ctx, po.ID, reason); err != nil {
 				s.log.Warn("procurement.patrol_manual_failed", "po_id", po.ID, "err", err)
@@ -154,11 +164,24 @@ func (s *ProcureService) Patrol(ctx context.Context) {
 			})
 			continue
 		}
-		ctx2, cancel := context.WithTimeout(ctx, 30*time.Second)
-		err := s.PollOne(ctx2, po.ID)
-		cancel()
-		if err != nil {
-			s.log.Warn("procurement.patrol_poll_failed", "po_id", po.ID, "err", err)
+		if s.enq != nil && s.enq.Enabled() {
+			if err := s.schedulePoll(ctx, po.ID, 0); err != nil {
+				s.log.Warn("procurement.patrol_enqueue_failed", "po_id", po.ID, "err", err)
+			}
+			continue
+		}
+		select {
+		case patrolSlots <- struct{}{}:
+			go func(id uint64) {
+				defer func() { <-patrolSlots }()
+				runCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+				defer cancel()
+				if err := s.PollOne(runCtx, id); err != nil {
+					s.log.Warn("procurement.patrol_poll_failed", "po_id", id, "err", err)
+				}
+			}(po.ID)
+		default:
+			return // Remaining due rows stay eligible for the next scan.
 		}
 	}
 }

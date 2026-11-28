@@ -22,6 +22,7 @@ import (
 
 // 哨兵错误：适配器层把上游协议差异归一化为统一语义（ 同步/ 库存判据）。
 var (
+	errACGItemRead         = errors.New("ACG 单品读取失败，请检查该商品的上级货源")
 	ErrPurchaseFormInvalid = errors.New("上游拒绝购买参数或填写资料，请核对后重试")
 	// ErrCredentialsInvalid identifies a local credential failure, before any
 	// upstream request, so catalog jobs can ask for reconfiguration accurately.
@@ -39,6 +40,7 @@ var (
 	ErrDuplicateSubmit = errors.New("adapter: duplicate submit (request_no already exists)")
 	// ErrPurchaseUncertain means the purchase may have charged the account, but
 	// its receipt cannot be recovered safely. Never retry or auto-refund it.
+	ErrPurchaseRetryable = errors.New("上游明确未受理采购，可重试")
 	ErrPurchaseUncertain = errors.New("adapter: upstream purchase outcome uncertain")
 	// ErrRateLimited 上游限流或疑似 WAF 拦截（429 / 200 但非 JSON）——
 	// 自适应节奏器的降速信号（ S2；AIMD 判据）。
@@ -114,7 +116,9 @@ type ProductList struct {
 	PageSize int
 	Total    int
 	Items    []Product
-	HasMore  bool
+	// SkippedIDs were present but could not be read; preserve their existing bindings and listing state.
+	SkippedIDs []string
+	HasMore    bool
 	// Categories 非 nil 表示商品目录已携带分类，无须再次请求全量目录取分类名。
 	Categories []Category
 	// IncludesInactive 上游是否真的在本次响应里包含了下架商品（dujiao 回声字段）。

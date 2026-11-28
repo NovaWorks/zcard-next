@@ -5,9 +5,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/NovaWorks/zcard-next/server/internal/platform/cardpurchase"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/purchaseform"
-"github.com/NovaWorks/zcard-next/server/internal/platform/cardpurchase"
 )
 
 // StockSnapshot carries display history separately from authoritative availability.
@@ -20,7 +20,7 @@ type StockSnapshot struct {
 
 // Product 商品 DTO（跨模块快照：order 价格管线消费；管理字段不下发）。
 type Product struct {
- CardRules *cardpurchase.Rules
+	CardRules                    *cardpurchase.Rules
 	ProductKind                  string
 	DeliveryKind                 string
 	SMSProduct                   map[string]string
@@ -56,7 +56,7 @@ type Product struct {
 
 // Control 自定义控件 DTO（下单表单渲染）。
 type Control struct {
- OptionLabels map[string]string
+	OptionLabels            map[string]string
 	Placeholder, Validation string
 	MaxLength               int32
 	ID                      uint64
@@ -141,20 +141,20 @@ type PricingResolver interface {
 
 // AdminFilter 管理面商品过滤（含下架/隐藏；成本价下发）。
 type AdminFilter struct {
- SupportsCardPurchaseV2 bool
-	SupportsSocial bool
-	Inventory      string
-	RestockedOnly  bool
-	AutoListing    *bool
-	IsLocked       *bool
-	OptionsOnly    bool // select lightweight product options without stats
-	StockType      string
-	SubsiteID      uint64
-	CategoryID     uint64
-	Keyword        string
-	Status         int8 // -1=全部
-	Page           int32
-	PageSize       int32
+	SupportsCardPurchaseV2 bool
+	SupportsSocial         bool
+	Inventory              string
+	RestockedOnly          bool
+	AutoListing            *bool
+	IsLocked               *bool
+	OptionsOnly            bool // select lightweight product options without stats
+	StockType              string
+	SubsiteID              uint64
+	CategoryID             uint64
+	Keyword                string
+	Status                 int8 // -1=全部
+	Page                   int32
+	PageSize               int32
 	// LowStockThreshold 低库存过滤阈值（>0 时仅返回卡密类且可用库存 < 阈值的商品）
 	LowStockThreshold int
 	OutOfStockOnly    bool // 仅库存为 0；未知和不限不算缺货
@@ -214,7 +214,7 @@ type ProductAdminRepo interface {
 // UpstreamProductInput 货源同步 upsert 输入（）。
 // Price=-1 表示「不更新价格」（价格保护：auto_sync_price=false 或运营已改价）。
 type UpstreamProductInput struct {
- CardRules *cardpurchase.Rules
+	CardRules           *cardpurchase.Rules
 	FormFields          []purchaseform.Field // nil preserves fields; an explicit empty slice clears supplier-managed fields
 	ProductKind         string
 	DeliveryKind        string
@@ -254,6 +254,11 @@ type UpstreamProductWriter interface {
 	UpsertUpstreamProduct(ctx context.Context, in UpstreamProductInput) (productID uint64, created bool, err error)
 }
 
+// UpstreamNavigationBackfiller fills missing website navigation for an existing binding.
+type UpstreamNavigationBackfiller interface {
+	BackfillUpstreamNavigation(ctx context.Context, connectionID uint64, productCode, pageID string) error
+}
+
 // UpstreamProductMaintainer 货源轻量维护端口（ S1：scope=price/status 同步
 // 与删除对账消费，通道 A）。定位判据同上；found=false 表示商品未导入（调用方跳过）。
 type UpstreamProductMaintainer interface {
@@ -269,7 +274,7 @@ type UpstreamProductMaintainer interface {
 // SupplierProduct 供货目录商品（ supplier 消费，通道 A）：
 // 管理面语义（含下架/隐藏），仅下发可公开字段。
 type SupplierProduct struct {
- CardRules *cardpurchase.Rules
+	CardRules    *cardpurchase.Rules
 	ID           uint64
 	Name         string
 	Price        int64 // 分（基础价；覆盖价由 supplier 定价表决定）

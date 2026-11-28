@@ -20,7 +20,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"log/slog"
+	"strings"
 	"time"
 
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
@@ -153,20 +155,39 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 		return err
 	}
 
-	traceID := fmt.Sprintf("po-%d-%s", po.ID, payload.OrderNo)
+	return s.submitClaimed(ctx, po, it)
+}
+
+// submitClaimed always reuses the persisted source, SKU, quantity and request key.
+func (s *ProcureService) submitClaimed(ctx context.Context, po *ent.ProcurementOrder, it *ent.OrderItem) error {
+	pi, err := s.repo.ItemByProcurement(ctx, po.ID)
+	if err != nil {
+		return err
+	}
+	code, _ := po.UpstreamSourceSnapshot["product_code"].(string)
+	if code == "" {
+		code = pi.UpstreamSku
+	}
+	sku, _ := po.UpstreamSourceSnapshot["sku_id"].(string)
+
+	traceID := po.TraceID
+	tracePrefix := fmt.Sprintf("po-%d-", po.ID)
+	if !strings.HasPrefix(traceID, tracePrefix) {
+		traceID = tracePrefix + traceID
+	}
 	_ = s.repo.EnsureTraceID(ctx, po.ID, traceID)
 
 	// 提交
-	form, err := data.UpstreamFormSubmission(it.FormAnswers, p.UpstreamSourceID, p.UpstreamProductCode)
+	form, err := data.UpstreamFormSubmission(it.FormAnswers, po.ConnectionID, code)
 	if err != nil {
 		return s.repo.MarkManual(ctx, po.ID, err.Error())
 	}
 	request := supplyport.PurchaseRequest{
 		ManualFormData:    form,
-		ConnectionID:      p.UpstreamSourceID,
-		ProductCode:       p.UpstreamProductCode,
-		UpstreamSKU:       upstreamSKU,
-		Quantity:          int(quantity),
+		ConnectionID:      po.ConnectionID,
+		ProductCode:       code,
+		UpstreamSKU:       sku,
+		Quantity:          int(pi.Quantity),
 		DownstreamOrderNo: po.DedupeKey,
 		TraceID:           traceID,
 	}
@@ -196,7 +217,7 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 	}
 	switch res.Status {
 	case "delivered":
-		return s.finalizeDelivered(ctx, po.ID, payload.OrderID, orderItemID, productID, payload.SubsiteID, res.Cards, res.Amount)
+		return s.finalizeDelivered(ctx, po.ID, it.OrderID, it.ID, it.ProductID, it.SubsiteID, res.Cards, res.Amount)
 	case "pending", "submitted", "paid", "accepted", "processing":
 		// dujiao 等上游：钱包受理即 paid（异步交付）——轮询/回调推进
 		// 受理：记 upstream_order_id + 退避（默认间隔表首档 30s）
@@ -286,12 +307,22 @@ func (s *ProcureService) handleSubmitError(ctx context.Context, poID uint64, err
 		s.log.Warn("procurement.rejected", "id", poID, "reason", reason)
 		return s.applyFailStrategy(ctx, poID, reason)
 	}
-	// 可重试（网络/上游抖动）：退避后移交轮询
+	if !errors.Is(err, supplyport.ErrUpstreamRetryable) {
+		return s.repo.MarkManual(ctx, poID, "采购结果无法确认，请核对原上游订单后处理；系统不会重新采购")
+	}
+	po, getErr := s.repo.Get(ctx, poID)
+	if getErr != nil {
+		return getErr
+	}
+	if int(po.RetryCount) >= len(pollIntervals) {
+		return s.repo.MarkManual(ctx, poID, "采购提交重试已耗尽，请检查库存、规格和余额后人工处理")
+	}
+	delay := time.Duration(pollIntervals[po.RetryCount]) * time.Second
 	s.log.Warn("procurement.submit_retryable", "id", poID, "err", err)
-	if err := s.repo.BumpRetry(ctx, poID, time.Now().UTC().Add(30*time.Second), err.Error()); err != nil {
+	if err := s.repo.BumpRetry(ctx, poID, time.Now().UTC().Add(delay), submitRetryPrefix+err.Error()); err != nil {
 		return err
 	}
-	return s.schedulePoll(ctx, poID, 30*time.Second)
+	return s.schedulePoll(ctx, poID, delay)
 }
 
 // applyFailStrategy 失败策略：auto_refund → 退款编排；manual → 人工终态 + 事件。
@@ -335,6 +366,10 @@ func (s *ProcureService) applyFailStrategy(ctx context.Context, poID uint64, rea
 
 // schedulePoll 退避调度：入队轮询任务（critical 队列；降级模式进程内执行）。
 func (s *ProcureService) schedulePoll(ctx context.Context, poID uint64, delay time.Duration) error {
+	po, err := s.repo.Get(ctx, poID)
+	if err != nil {
+		return err
+	}
 	payload, _ := json.Marshal(map[string]uint64{"procurement_id": poID})
 	if s.enq == nil || !s.enq.Enabled() {
 		// 降级：直接异步轮询
@@ -352,7 +387,8 @@ func (s *ProcureService) schedulePoll(ctx context.Context, poID uint64, delay ti
 		Type:      PollTaskType,
 		Payload:   payload,
 		Queue:     queue.QueueCritical,
-		DedupeKey: PollTaskType + ":" + fmt.Sprint(poID),
+		DedupeKey: fmt.Sprintf("%s:%d:%d:%d", PollTaskType, poID, po.RetryCount, po.NextRetryAt.UnixNano()),
+		ProcessIn: delay,
 	})
 }
 

@@ -286,6 +286,7 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 	stockTotal, stockFailed := 0, 0
 	var stockErrors []string
 	quoteFailed, quoteSkipped, quoteSucceeded := 0, 0, 0
+	var catalogSkipped []string
 	var quoteErrors []string
 	quoteCtx := adapter.WithRequestInterval(ctx, sched.QuoteDelay)
 
@@ -359,6 +360,12 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 				seen[p.ID] = true
 			}
 		}
+		for _, code := range list0.SkippedIDs {
+			seen[code] = true // Never infer deletion from a failed single-item read.
+			processed++
+			stats.Processed++
+		}
+		catalogSkipped = append(catalogSkipped, list0.SkippedIDs...)
 		stats.Page = page
 
 		maintainable := make([]adapter.Product, 0, len(list0.Items))
@@ -577,13 +584,23 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 		s.publishCompleted(ctx, conn.ID, taskID, "canceled")
 		return err
 	}
-	if quoteFailed == 0 {
+	if quoteFailed == 0 && len(catalogSkipped) == 0 {
 		s.writeSyncAnchor(ctx, conn, scope)
 		if scope == ScopeCollect {
 			now := time.Now().UTC()
 			client := s.repo.entClient(ctx)
 			_, _ = client.SupplyConnection.UpdateOneID(conn.ID).SetLastSyncedAt(now).Save(ctx)
 		}
+	}
+	if len(catalogSkipped) > 0 {
+		count := len(catalogSkipped)
+		if len(catalogSkipped) > 10 {
+			catalogSkipped = catalogSkipped[:10]
+		}
+		_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusFailed, "PARTIAL_SYNC_FAILED", fmt.Sprintf("其余商品同步已完成；%d 件商品读取失败，保留原商品、规格及状态。失败商品（最多显示10件）：%s；报价失败 %d，库存失败 %d。", count, strings.Join(catalogSkipped, "、"), quoteFailed, stockFailed))
+		clearSyncRetry(taskID)
+		s.publishCompleted(ctx, conn.ID, taskID, "failed")
+		return nil
 	}
 	if quoteFailed > 0 {
 		code := "PRICE_QUOTE_FAILED"
@@ -689,6 +706,11 @@ func (s *SyncService) syncOneLocked(ctx context.Context, taskID uint64, task *en
 	if task.Scope == ScopePrice || task.Scope == ScopeStatus || task.Scope == ScopeListing {
 		if notFound {
 			return false, nil
+		}
+		if backfill, ok := s.writer.(catalogport.UpstreamNavigationBackfiller); ok && p.PageID != "" {
+			if err := backfill.BackfillUpstreamNavigation(ctx, conn.ID, p.ID, p.PageID); err != nil {
+				return false, err
+			}
 		}
 		if task.Scope == ScopePrice {
 			return false, s.syncPriceOnly(ctx, conn, mapping, p, task.ForceReprice, stats)
@@ -1395,11 +1417,7 @@ func (s *SyncService) failAndMaybeRetry(ctx context.Context, taskID uint64, conn
 	s.log.Info("supply.sync.retry_scheduled", "task_id", taskID, "attempt", n+1, "delay", delay.String())
 
 	go func() {
-		select {
-		case <-time.After(delay):
-		case <-ctx.Done():
-			return // 宿主 ctx 结束（进程关停）
-		}
+		time.Sleep(delay)
 		runCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), supplyTaskTimeout)
 		defer cancel()
 		// 重跑前检查取消意图（等待期被用户取消则不再复活）

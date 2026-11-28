@@ -86,7 +86,7 @@ func NewCron(catalogPreview *supply.AdminSupplyService, notifyDisp *notify.Dispa
 	c.AddEvery("supply.low_stock", time.Minute, supplySync.ScanLowStock)
 	c.AddEvery("notify.low_stock", time.Minute, notifyDisp.ScanLowStock)
 	c.AddEvery("supply.sync_reap_stale", 10*time.Minute, supplyScheduler.ReapStaleTasks)
-	// ：采购巡检兜底（每 30 分钟拉 polling/submitted 单查上游；24h 卡死转人工）
+	// 采购巡检每 15 秒恢复到期任务；24h 卡死转人工。
 	c.AddEvery("procurement.reusable", 5*time.Second, func(ctx context.Context) {
 		if err := procure.ResumeReusable(ctx); err != nil {
 			slog.ErrorContext(ctx, "procurement.reusable.failed", "error", err)
@@ -94,7 +94,7 @@ func NewCron(catalogPreview *supply.AdminSupplyService, notifyDisp *notify.Dispa
 	})
 	c.AddEvery("procurement.sms", 5*time.Second, procure.RunSMS)
 	c.AddEvery("procurement.social", 5*time.Second, procure.RunSocial)
-	c.AddEvery("procurement.patrol", 30*time.Minute, procure.Patrol)
+	c.AddEvery("procurement.patrol", 15*time.Second, procure.Patrol)
 	// ：供货 nonce 过期清理（每小时）
 	c.AddEvery("supplier.nonce_cleanup", time.Hour, func(ctx context.Context) {
 		_ = supplierRepo.CleanupExpiredNonces(ctx)

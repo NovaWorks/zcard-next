@@ -202,16 +202,13 @@ func (r *ProcureRepo) List(ctx context.Context, status string, page, pageSize in
 	return rows, total, err
 }
 
-// ListPollable polling/submitted 单（巡检拉取；INDEX(status, last_poll_at) 命中）。
+// ListPollable only admits due work; unclaimed pending rows get a five-minute crash grace.
 func (r *ProcureRepo) ListPollable(ctx context.Context, limit int) ([]*ent.ProcurementOrder, error) {
-	return data.Client(ctx, r.data).ProcurementOrder.Query().
-		Where(procurementorder.Or(
-			procurementorder.StatusIn(procurementorder.StatusSubmitted, procurementorder.StatusPolling),
-			procurementorder.And(procurementorder.StatusEQ(procurementorder.StatusPending), procurementorder.CreatedAtLT(time.Now().UTC().Add(-5*time.Minute))),
-		)).
-		Order(ent.Asc(procurementorder.FieldLastPollAt)).
-		Limit(limit).
-		All(ctx)
+	now := time.Now().UTC()
+	return data.Client(ctx, r.data).ProcurementOrder.Query().Where(
+		procurementorder.StatusIn(procurementorder.StatusPending, procurementorder.StatusSubmitted, procurementorder.StatusPolling),
+		procurementorder.Or(procurementorder.NextRetryAtLTE(now), procurementorder.And(procurementorder.NextRetryAtIsNil(), procurementorder.CreatedAtLT(now.Add(-5*time.Minute)))),
+	).Order(ent.Asc(procurementorder.FieldNextRetryAt), ent.Asc(procurementorder.FieldID)).Limit(limit).All(ctx)
 }
 
 // MarkSubmitted 受理（pending → submitted，记 upstream_order_id + 退避）。
@@ -333,12 +330,9 @@ func (r *ProcureRepo) markManual(ctx context.Context, id uint64, reason string) 
 
 // BumpRetry 退避推进（retry_count+1，next_retry_at 后移）。
 func (r *ProcureRepo) BumpRetry(ctx context.Context, id uint64, nextRetryAt time.Time, lastErr string) error {
-	p, err := r.Get(ctx, id)
-	if err != nil {
-		return err
-	}
-	_, err = data.Client(ctx, r.data).ProcurementOrder.UpdateOneID(id).
-		SetRetryCount(p.RetryCount + 1).
+	_, err := data.Client(ctx, r.data).ProcurementOrder.UpdateOneID(id).
+		AddRetryCount(1).
+		SetLastPollAt(time.Now().UTC()).
 		SetNextRetryAt(nextRetryAt).
 		SetLastError(lastErr).
 		Save(ctx)

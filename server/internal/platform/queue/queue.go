@@ -30,6 +30,8 @@ type Task struct {
 	DedupeKey string
 	// Timeout overrides the worker's default budget for long maintenance jobs.
 	Timeout time.Duration
+	// ProcessIn delays execution in persistent queues.
+	ProcessIn time.Duration
 }
 
 // Enqueuer 入队端口。Enabled() 为 false 表示降级模式（无 Redis），

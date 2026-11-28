@@ -213,6 +213,8 @@ func TestAcgFakaParsing(t *testing.T) {
 			_, _ = w.Write([]byte(`{"code":200,"msg":"ok","data":[{"id":5,"name":"分类A","children":[
 				{"code":"P1","name":"商品1","price":"10.50","factory_price":"8.00","status":1,"stock":3},
 				{"code":"P2","name":"商品2","price":"1.25","status":0}]}]}`))
+		case "/shared/commodity/inventory":
+			_, _ = w.Write([]byte(`{"code":200,"data":{"count":3,"config":""}}`))
 		case "/shared/commodity/trade":
 			_, _ = w.Write([]byte(`{"code":200,"msg":"ok","data":{"tradeNo":"T-100","amount":"20.00","secret":"CARD-1\r\nCARD-2\nCARD-3"}}`))
 		case "/shared/commodity/query":

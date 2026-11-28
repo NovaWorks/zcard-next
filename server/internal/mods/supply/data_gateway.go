@@ -123,17 +123,17 @@ func (g *Gateway) ListOrders(ctx context.Context, connectionID uint64, start, en
 func (g *Gateway) Submit(ctx context.Context, req supplyport.PurchaseRequest) (*supplyport.PurchaseResult, error) {
 	conn, err := g.gate(ctx, req.ConnectionID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", supplyport.ErrUpstreamRetryable, err)
 	}
 	a, err := g.adapterFor(ctx, req.ConnectionID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", supplyport.ErrUpstreamRetryable, err)
 	}
 	if len(req.ManualFormData) > 0 && conn.Driver != "dujiao_next" && conn.Driver != "mcy_shop" && conn.Driver != "zcard" && conn.Driver != "acg_faka" {
 		return nil, supplyport.ErrUpstreamFormInvalid
 	}
 	if err := g.verifyFrozenCardPurchase(ctx, req, a, conn); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", supplyport.ErrUpstreamRetryable, err)
 	}
 	res, err := a.CreateOrder(ctx, adapter.CreateOrderReq{
 		ManualFormData: req.ManualFormData,
@@ -166,6 +166,8 @@ func (g *Gateway) Submit(ctx context.Context, req supplyport.PurchaseRequest) (*
 			return nil, supplyport.ErrUpstreamNoStock
 		case errors.Is(err, adapter.ErrDuplicateSubmit):
 			return nil, supplyport.ErrUpstreamDuplicate
+		case errors.Is(err, adapter.ErrPurchaseRetryable):
+			return nil, fmt.Errorf("%w: %w", supplyport.ErrUpstreamRetryable, err)
 		case errors.Is(err, adapter.ErrPurchaseUncertain):
 			return nil, supplyport.ErrUpstreamUncertain
 		}

@@ -215,6 +215,7 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 	}
 	// items 一次全量（无分页）：快照天然含下架商品（is_active 过滤语义下放）→ 对账权威
 	out := &ProductList{IncludesInactive: true, Categories: make([]Category, 0, len(cats))}
+	consecutiveItemThrottle := 0
 	for _, cat := range cats {
 		catID := idString(cat.ID)
 		out.Categories = append(out.Categories, Category{ID: catID, Name: cat.Name})
@@ -248,7 +249,20 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 					return nil, fmt.Errorf("adapter.acgfaka: 商品 %s 规格加载失败: %w", p.Code, err)
 				}
 				unavailable = errors.Is(err, ErrProductDeleted) || errors.Is(err, ErrProductUnavailable)
+				if err != nil && !unavailable {
+					if errors.Is(err, errACGItemRead) {
+						consecutiveItemThrottle++
+						if consecutiveItemThrottle >= 3 {
+							return nil, fmt.Errorf("%w: 连续多个 ACG 商品读取过于频繁，暂停本次读取", ErrRateLimited)
+						}
+					} else {
+						consecutiveItemThrottle = 0
+					}
+					out.SkippedIDs = append(out.SkippedIDs, p.Code)
+					continue // Unknown specs must not overwrite an existing product or stop healthy items.
+				}
 				if err == nil {
+					consecutiveItemThrottle = 0
 					if inv.Config != "" {
 						cfg = string(inv.Config)
 					}
@@ -306,7 +320,7 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	out.Total = len(out.Items)
+	out.Total = len(out.Items) + len(out.SkippedIDs)
 	return out, nil
 }
 
@@ -330,6 +344,10 @@ func (a *acgFakaAdapter) fetchInventory(ctx context.Context, code string) (*acgI
 	data, err := a.signedPost(ctx, "/shared/commodity/inventory", map[string]string{"sharedCode": code})
 	if err != nil {
 		return nil, err
+	}
+	var notice acgResp
+	if json.Unmarshal(data, &notice) == nil && notice.Code == 0 && strings.TrimSpace(notice.Msg) == "服务器频繁请联系客服支持" {
+		return nil, errACGItemRead
 	}
 	raw, err := parseAcgReadResp(data)
 	if err != nil {
@@ -409,7 +427,11 @@ func (a *acgFakaAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*
 		if strings.Contains(err.Error(), "最少购买") || strings.Contains(err.Error(), "最多购买") {
 			return nil, fmt.Errorf("%w: %v", ErrProductUnavailable, err)
 		}
-		return nil, err
+		var rejection acgResp
+		if json.Unmarshal(data, &rejection) == nil && rejection.Code == 0 && strings.TrimSpace(rejection.Msg) == "订单未完成，请检查库存、规格或余额后再试" {
+			return nil, fmt.Errorf("%w: %s", ErrPurchaseRetryable, rejection.Msg)
+		}
+		return nil, fmt.Errorf("%w: ACG 采购结果无法确认", ErrPurchaseUncertain)
 	}
 	var d struct {
 		TradeNo string  `json:"tradeNo"`
@@ -417,7 +439,10 @@ func (a *acgFakaAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*
 		Secret  string  `json:"secret"` // PHP_EOL 拼的多卡
 	}
 	if err := json.Unmarshal(raw, &d); err != nil {
-		return nil, fmt.Errorf("adapter.acgfaka: 解析下单响应失败: %w", err)
+		return nil, fmt.Errorf("%w: ACG 采购响应格式无效", ErrPurchaseUncertain)
+	}
+	if d.TradeNo == "" || d.Amount.Cents() <= 0 {
+		return nil, fmt.Errorf("%w: ACG 采购收据不完整", ErrPurchaseUncertain)
 	}
 	cards := dropPlaceholderCards(splitCards(d.Secret))
 	status := "pending"
